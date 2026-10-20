@@ -1,0 +1,14 @@
+{
+  "name": "@open-draw/studio",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "main": "./src/index.ts",
+  "dependencies": {},
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc"
+  }
+}

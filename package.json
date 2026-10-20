@@ -1,18 +1,29 @@
 {
   "name": "open-draw",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
-  "private": true
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "check:boundaries": "node scripts/check-boundaries.js",
+    "check:deps": "node scripts/check-dependencies.js",
+    "check:bitmap": "node scripts/check-no-bitmap.js",
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:boundaries && npm run check:deps && npm run check:bitmap"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "esbuild": "^0.28.2",
+    "publint": "^0.3.25",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
 }
