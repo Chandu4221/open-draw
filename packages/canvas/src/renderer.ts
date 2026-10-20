@@ -1,5 +1,6 @@
 import type { Camera, ShapeId, ShapeRecord } from '@open-draw/schema';
 import { cameraToTransform } from './camera.js';
+import type { ShapeRegistry } from './registry.js';
 import type { CanvasStore, StoreDiff } from './store.js';
 
 interface ShapeDOMEntry {
@@ -10,16 +11,22 @@ interface ShapeDOMEntry {
 
 /**
  * Pure DOM/SVG Canvas Renderer.
- * Mounts a single root <svg> containing a root viewport <g> driven by Camera transforms.
- * Every shape is rendered as a <g class="od-shape" data-id="..."> with its overlay slot as last child.
+ * Completely polymorphic — delegates shape inner rendering to registered ShapeDefinition plugins.
+ * Maintains the overlay slot structural contract: wrapper's last child with identity transform.
  */
 export class SVGRenderer {
+  readonly registry: ShapeRegistry;
+
   private container: HTMLElement | null = null;
   private svgElement: SVGSVGElement | null = null;
   private viewportGroup: SVGGElement | null = null;
   private shapesLayer: SVGGElement | null = null;
 
   private readonly shapeElements = new Map<ShapeId, ShapeDOMEntry>();
+
+  constructor(registry: ShapeRegistry) {
+    this.registry = registry;
+  }
 
   mount(container: HTMLElement, initialCamera: Camera): void {
     this.container = container;
@@ -77,7 +84,6 @@ export class SVGRenderer {
   }
 
   renderAll(shapes: Iterable<ShapeRecord>): void {
-    // Clear existing
     if (this.shapesLayer) {
       this.shapesLayer.innerHTML = '';
     }
@@ -123,8 +129,9 @@ export class SVGRenderer {
       const shape = store.getShape(id);
       const entry = this.shapeElements.get(id);
       if (shape && entry) {
+        const prevShape = entry.shape;
         entry.shape = shape;
-        this._patchShapeDOM(entry);
+        this._patchShapeDOM(entry, prevShape);
       }
     }
   }
@@ -132,14 +139,14 @@ export class SVGRenderer {
   private _createOrReuseEntry(shape: ShapeRecord): ShapeDOMEntry {
     let entry = this.shapeElements.get(shape.id);
     if (entry) {
+      const prevShape = entry.shape;
       entry.shape = shape;
-      this._patchShapeDOM(entry);
+      this._patchShapeDOM(entry, prevShape);
       return entry;
     }
 
     const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const isGroup = shape.type === 'group';
-    wrapper.setAttribute('class', isGroup ? 'od-shape od-group' : 'od-shape');
+    wrapper.setAttribute('class', 'od-shape');
     wrapper.setAttribute('data-id', shape.id);
     wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})`);
 
@@ -161,41 +168,27 @@ export class SVGRenderer {
 
   private _renderShapeContent(entry: ShapeDOMEntry): void {
     const { wrapper, shape } = entry;
+    const def = this.registry.get(shape.type);
 
-    if (shape.type === 'group') {
-      const content = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      content.setAttribute('class', 'od-group-content');
-      wrapper.appendChild(content);
-    } else {
-      // Default / rect content for Phase 2
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('class', 'od-shape-body');
-      rect.setAttribute('x', '0');
-      rect.setAttribute('y', '0');
-      const width = typeof shape.props['width'] === 'number' ? shape.props['width'] : 100;
-      const height = typeof shape.props['height'] === 'number' ? shape.props['height'] : 100;
-      const fill = typeof shape.props['fill'] === 'string' ? shape.props['fill'] : '#3b82f6';
-      rect.setAttribute('width', String(width));
-      rect.setAttribute('height', String(height));
-      rect.setAttribute('fill', fill);
-      wrapper.appendChild(rect);
+    if (def) {
+      const rendered = def.render(shape, {});
+      if (Array.isArray(rendered)) {
+        for (const el of rendered) {
+          wrapper.appendChild(el);
+        }
+      } else {
+        wrapper.appendChild(rendered);
+      }
     }
   }
 
-  private _patchShapeDOM(entry: ShapeDOMEntry): void {
+  private _patchShapeDOM(entry: ShapeDOMEntry, prevShape: ShapeRecord): void {
     const { wrapper, slot, shape } = entry;
     wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})`);
 
-    if (shape.type !== 'group') {
-      const rect = wrapper.querySelector('.od-shape-body');
-      if (rect) {
-        const width = typeof shape.props['width'] === 'number' ? shape.props['width'] : 100;
-        const height = typeof shape.props['height'] === 'number' ? shape.props['height'] : 100;
-        const fill = typeof shape.props['fill'] === 'string' ? shape.props['fill'] : '#3b82f6';
-        rect.setAttribute('width', String(width));
-        rect.setAttribute('height', String(height));
-        rect.setAttribute('fill', fill);
-      }
+    const def = this.registry.get(shape.type);
+    if (def?.update) {
+      def.update(wrapper, shape, prevShape, {});
     }
 
     // Ensure slot remains the last child

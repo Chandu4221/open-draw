@@ -123,7 +123,7 @@ export class CanvasStore {
     return true;
   }
 
-  transact(fn: () => void): void {
+  beginTransaction(): void {
     if (!this.isTransacting) {
       this.isTransacting = true;
       this.transactionDepth = 1;
@@ -131,50 +131,64 @@ export class CanvasStore {
       this.pendingCreated.clear();
       this.pendingUpdated.clear();
       this.pendingDeleted.clear();
-
-      try {
-        fn();
-
-        // Commit transaction
-        const before = this.transactionInitialShapes;
-        const after = new Map(this.shapes);
-
-        this.undoStack.push({ before, after });
-        this.redoStack = [];
-
-        const diff: StoreDiff = {
-          created: new Set(this.pendingCreated),
-          updated: new Set(this.pendingUpdated),
-          deleted: new Set(this.pendingDeleted),
-        };
-
-        this.isTransacting = false;
-        this.transactionDepth = 0;
-        this.transactionInitialShapes = null;
-
-        if (diff.created.size > 0 || diff.updated.size > 0 || diff.deleted.size > 0) {
-          this.notifyListeners(diff);
-        }
-      } catch (err) {
-        // Rollback transaction atomically
-        if (this.transactionInitialShapes) {
-          this.shapes = new Map(this.transactionInitialShapes);
-        }
-        this.isTransacting = false;
-        this.transactionDepth = 0;
-        this.transactionInitialShapes = null;
-        this.pendingCreated.clear();
-        this.pendingUpdated.clear();
-        this.pendingDeleted.clear();
-        throw err;
-      }
     } else {
       this.transactionDepth++;
-      try {
-        fn();
-      } finally {
-        this.transactionDepth--;
-      }
+    }
+  }
+
+  commitTransaction(): void {
+    if (!this.isTransacting) {
+      return;
+    }
+    this.transactionDepth--;
+    if (this.transactionDepth > 0) {
+      return;
+    }
+
+    const before = this.transactionInitialShapes ?? new Map();
+    const after = new Map(this.shapes);
+
+    this.undoStack.push({ before, after });
+    this.redoStack = [];
+
+    const diff: StoreDiff = {
+      created: new Set(this.pendingCreated),
+      updated: new Set(this.pendingUpdated),
+      deleted: new Set(this.pendingDeleted),
+    };
+
+    this.isTransacting = false;
+    this.transactionDepth = 0;
+    this.transactionInitialShapes = null;
+
+    if (diff.created.size > 0 || diff.updated.size > 0 || diff.deleted.size > 0) {
+      this.notifyListeners(diff);
+    }
+  }
+
+  rollbackTransaction(): void {
+    if (!this.isTransacting) {
+      return;
+    }
+    if (this.transactionInitialShapes) {
+      this.shapes = new Map(this.transactionInitialShapes);
+    }
+    this.isTransacting = false;
+    this.transactionDepth = 0;
+    this.transactionInitialShapes = null;
+    this.pendingCreated.clear();
+    this.pendingUpdated.clear();
+    this.pendingDeleted.clear();
+  }
+
+  transact(fn: () => void): void {
+    this.beginTransaction();
+    try {
+      fn();
+      this.commitTransaction();
+    } catch (err) {
+      this.rollbackTransaction();
+      throw err;
     }
   }
 

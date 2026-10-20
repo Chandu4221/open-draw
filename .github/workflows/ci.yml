@@ -47,5 +47,8 @@ jobs:
       - name: DOM Canvas Isolated Zoom Check
         run: node scripts/check-isolated-zoom.js
 
+      - name: DOM Canvas Shape Branching Check
+        run: node scripts/check-no-shape-branching.js
+
       - name: Portable Documentation Links Check
         run: node scripts/check-portable-links.js
