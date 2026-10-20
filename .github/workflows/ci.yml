@@ -50,5 +50,8 @@ jobs:
       - name: DOM Canvas Shape Branching Check
         run: node scripts/check-no-shape-branching.js
 
+      - name: File Size Discipline Check
+        run: node scripts/check-file-sizes.js
+
       - name: Portable Documentation Links Check
         run: node scripts/check-portable-links.js

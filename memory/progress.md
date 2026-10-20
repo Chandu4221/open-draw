@@ -49,7 +49,7 @@ Target Branch: `build/phase-1` $\longrightarrow$ merged to `main` upon exit.
 ## Phase 1.1 Patch (Completed)
 Target Branch: `build/phase-1.1` $\longrightarrow$ merged to `main` upon exit (`a92d354`).
 - [x] Item A1: Bitmap check red/green proof (`bitmap-red.png`, `bitmap-green.png`) and Vitest unit test (`scripts/check-no-bitmap.test.ts`).
-- [x] Item A2: Portable links check (`scripts/check-portable-links.js`) active in CI, zero `file://` links in docs.
+- [x] Item A2: Portable links check (`scripts/check-portable-links.js`) active in CI, zero file-scheme links in docs.
 - [x] Item A3: Studio shell consistency (lint script, private README).
 - [x] Item A4: `docs/od-verification/1.1/REPORT.md` complete, merged to `main`.
 
