@@ -143,4 +143,141 @@ test.describe('Simple Shapes E2E Suite', () => {
       await page.locator('#canvas-container').screenshot({ path: 'docs/od-verification/2x/ellipse.png' });
     });
   });
+
+  test.describe('B2x.3 Note', () => {
+    test('creates note via tool, drags, undos in single transaction, verifies snapshot & overlay invariant', async ({ page }) => {
+      // 1. Activate note tool
+      await page.evaluate(() => {
+        const editor = (window as any).__od_debug__.editor;
+        editor.setTool('note');
+      });
+
+      const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
+      expect(tool).toBe('note');
+
+      // 2. Click on canvas to create note
+      const containerBox = await page.locator('#canvas-container').boundingBox();
+      expect(containerBox).not.toBeNull();
+      const clickX = (containerBox?.x ?? 0) + 250;
+      const clickY = (containerBox?.y ?? 0) + 180;
+
+      await page.mouse.click(clickX, clickY);
+
+      // 3. Verify shape created in store and DOM
+      const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+      expect(shapes.length).toBe(1);
+      const shape = shapes[0];
+      expect(shape.type).toBe('note');
+      expect(shape.x).toBe(250);
+      expect(shape.y).toBe(180);
+      expect(shape.props.width).toBe(200);
+      expect(shape.props.height).toBe(160);
+
+      // Verify DOM elements rendered
+      const noteElement = page.locator(`.od-shape[data-id="${shape.id}"] .od-note-bg`);
+      await expect(noteElement).toBeVisible();
+
+      // Verify tool reset to 'select'
+      const resetTool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
+      expect(resetTool).toBe('select');
+
+      // 4. Drag the shape: move 70px right and 50px down
+      await page.mouse.move(clickX + 50, clickY + 50);
+      await page.mouse.down();
+      await page.mouse.move(clickX + 80, clickY + 70);
+      await page.mouse.move(clickX + 120, clickY + 100);
+      await page.mouse.up();
+
+      // Verify dragged position
+      const draggedShape = await page.evaluate((id) => (window as any).__od_debug__.editor.getShape(id), shape.id);
+      expect(draggedShape.x).toBe(320);
+      expect(draggedShape.y).toBe(230);
+
+      // 5. Undo: single gesture must undo in EXACTLY ONE transaction
+      const canUndoBefore = await page.evaluate(() => (window as any).__od_debug__.editor.canUndo());
+      expect(canUndoBefore).toBe(true);
+
+      await page.evaluate(() => (window as any).__od_debug__.editor.undo());
+
+      const revertedShape = await page.evaluate((id) => (window as any).__od_debug__.editor.getShape(id), shape.id);
+      expect(revertedShape.x).toBe(250);
+      expect(revertedShape.y).toBe(180);
+
+      // Redo restores dragged position
+      await page.evaluate(() => (window as any).__od_debug__.editor.redo());
+      const redoneShape = await page.evaluate((id) => (window as any).__od_debug__.editor.getShape(id), shape.id);
+      expect(redoneShape.x).toBe(320);
+      expect(redoneShape.y).toBe(230);
+
+      // 6. Snapshot round-trip
+      await page.evaluate(() => {
+        const editor = (window as any).__od_debug__.editor;
+        const snapshot = editor.getSnapshot();
+        editor.loadSnapshot(snapshot);
+      });
+
+      const shapesAfterSnapshot = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+      expect(shapesAfterSnapshot.length).toBe(1);
+      expect(shapesAfterSnapshot[0].id).toBe(shape.id);
+      expect(shapesAfterSnapshot[0].type).toBe('note');
+      expect(shapesAfterSnapshot[0].x).toBe(320);
+      expect(shapesAfterSnapshot[0].y).toBe(230);
+
+      // 7. Overlay-invariant extended to Note
+      await page.evaluate((id) => {
+        const editor = (window as any).__od_debug__.editor;
+        const slot = editor.getOverlaySlot(id);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('class', 'note-overlay-label');
+        text.setAttribute('x', '0');
+        text.setAttribute('y', '0');
+        text.textContent = 'NOTE-LABEL';
+        slot.appendChild(text);
+      }, shape.id);
+
+      const checkSlotInvariant = async (stage: string) => {
+        const res = await page.evaluate((id) => {
+          const editor = (window as any).__od_debug__.editor;
+          const wrapper = document.querySelector(`.od-shape[data-id="${id}"]`) as SVGGElement | null;
+          const slot = editor.getOverlaySlot(id);
+          if (!wrapper || !slot) return { error: 'Not found' };
+
+          const wRect = wrapper.getBoundingClientRect();
+          const sRect = slot.getBoundingClientRect();
+
+          return {
+            dx: Math.abs(sRect.left - wRect.left),
+            dy: Math.abs(sRect.top - wRect.top),
+            isLastChild: wrapper.lastElementChild === slot,
+            pointerEvents: window.getComputedStyle(slot).pointerEvents,
+          };
+        }, shape.id);
+
+        expect(res.error).toBeUndefined();
+        expect(res.dx, `${stage}: slot x drift <= 1px`).toBeLessThanOrEqual(1);
+        expect(res.dy, `${stage}: slot y drift <= 1px`).toBeLessThanOrEqual(1);
+        expect(res.isLastChild, `${stage}: slot is last child`).toBe(true);
+        expect(res.pointerEvents, `${stage}: pointer-events none`).toBe('none');
+      };
+
+      await checkSlotInvariant('initial');
+
+      // Pan camera and verify invariant holds
+      await page.evaluate(() => {
+        const editor = (window as any).__od_debug__.editor;
+        editor.pan(250, -150);
+      });
+      await checkSlotInvariant('after-pan');
+
+      // Zoom camera to 1.8x and verify invariant holds
+      await page.evaluate(() => {
+        const editor = (window as any).__od_debug__.editor;
+        editor.zoomAroundPoint({ x: 300, y: 300 }, 1.8);
+      });
+      await checkSlotInvariant('after-zoom');
+
+      // Capture verification screenshot for exit gate
+      await page.locator('#canvas-container').screenshot({ path: 'docs/od-verification/2x/note.png' });
+    });
+  });
 });

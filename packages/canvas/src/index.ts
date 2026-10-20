@@ -10,6 +10,7 @@ export * from './renderer.js';
 export * from './registry.js';
 export * from './shapes/rect.js';
 export * from './shapes/ellipse/index.js';
+export * from './shapes/note/index.js';
 export * from './shapes/group.js';
 
 export interface CanvasEngineOptions {
