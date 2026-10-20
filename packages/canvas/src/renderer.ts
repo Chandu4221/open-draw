@@ -132,6 +132,12 @@ export class SVGRenderer {
         const prevShape = entry.shape;
         entry.shape = shape;
         this._patchShapeDOM(entry, prevShape);
+        if (
+          prevShape.meta['parent'] !== shape.meta['parent'] ||
+          prevShape.meta['parentId'] !== shape.meta['parentId']
+        ) {
+          this._attachWrapper(shape, entry.wrapper);
+        }
       }
     }
   }
@@ -167,11 +173,11 @@ export class SVGRenderer {
   }
 
   private _renderShapeContent(entry: ShapeDOMEntry): void {
-    const { wrapper, shape } = entry;
+    const { wrapper, slot, shape } = entry;
     const def = this.registry.get(shape.type);
 
     if (def) {
-      const rendered = def.render(shape, {});
+      const rendered = def.render(shape, { overlaySlot: slot });
       if (Array.isArray(rendered)) {
         for (const el of rendered) {
           wrapper.appendChild(el);
@@ -184,11 +190,32 @@ export class SVGRenderer {
 
   private _patchShapeDOM(entry: ShapeDOMEntry, prevShape: ShapeRecord): void {
     const { wrapper, slot, shape } = entry;
-    wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})`);
+    const parentId =
+      typeof shape.meta['parent'] === 'string'
+        ? shape.meta['parent']
+        : typeof shape.meta['parentId'] === 'string'
+          ? shape.meta['parentId']
+          : null;
+
+    let localX = shape.x;
+    let localY = shape.y;
+
+    if (parentId) {
+      const parentEntry = this.shapeElements.get(parentId);
+      if (parentEntry) {
+        const parentDef = this.registry.get(parentEntry.shape.type);
+        if (parentDef?.capabilities?.clipping) {
+          localX = shape.x - parentEntry.shape.x;
+          localY = shape.y - parentEntry.shape.y;
+        }
+      }
+    }
+
+    wrapper.setAttribute('transform', `translate(${localX}, ${localY})`);
 
     const def = this.registry.get(shape.type);
     if (def?.update) {
-      def.update(wrapper, shape, prevShape, {});
+      def.update(wrapper, shape, prevShape, { overlaySlot: slot });
     }
 
     // Ensure slot remains the last child
@@ -198,22 +225,39 @@ export class SVGRenderer {
   }
 
   private _attachWrapper(shape: ShapeRecord, wrapper: SVGGElement): void {
-    const parentId = typeof shape.meta['parentId'] === 'string' ? shape.meta['parentId'] : null;
+    const parentId =
+      typeof shape.meta['parent'] === 'string'
+        ? shape.meta['parent']
+        : typeof shape.meta['parentId'] === 'string'
+          ? shape.meta['parentId']
+          : null;
 
     if (parentId) {
       const parentEntry = this.shapeElements.get(parentId);
       if (parentEntry) {
+        const parentDef = this.registry.get(parentEntry.shape.type);
+        if (parentDef?.capabilities?.clipping) {
+          wrapper.setAttribute(
+            'transform',
+            `translate(${shape.x - parentEntry.shape.x}, ${shape.y - parentEntry.shape.y})`
+          );
+        }
+        const frameChildren = parentEntry.wrapper.querySelector('.od-frame-children');
+        if (frameChildren) {
+          frameChildren.appendChild(wrapper);
+          return;
+        }
         const groupContent = parentEntry.wrapper.querySelector('.od-group-content');
         if (groupContent) {
           groupContent.appendChild(wrapper);
           return;
         }
-        // Fallback: insert before parent's slot to keep slot last child
         parentEntry.wrapper.insertBefore(wrapper, parentEntry.slot);
         return;
       }
     }
 
+    wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})`);
     if (this.shapesLayer && wrapper.parentNode !== this.shapesLayer) {
       this.shapesLayer.appendChild(wrapper);
     }

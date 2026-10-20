@@ -79,10 +79,19 @@ export class CanvasStore {
       throw new Error(`Cannot update non-existent shape "${id}"`);
     }
 
+    let meta = existing.meta;
+    if (patch.meta) {
+      const merged: Record<string, unknown> = { ...existing.meta, ...patch.meta };
+      for (const k of Object.keys(merged)) {
+        if (merged[k] === undefined) delete merged[k];
+      }
+      meta = Object.freeze(merged);
+    }
+
     const updated: ShapeRecord = Object.freeze({
       ...existing,
       ...patch,
-      meta: patch.meta ? Object.freeze({ ...existing.meta, ...patch.meta }) : existing.meta,
+      meta,
       props: patch.props ? Object.freeze({ ...existing.props, ...patch.props }) : existing.props,
     });
 

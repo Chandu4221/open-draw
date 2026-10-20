@@ -8,9 +8,11 @@ import { ellipseDefinition } from './shapes/ellipse/index.js';
 import { noteDefinition } from './shapes/note/index.js';
 import { imageDefinition, attachImageTransferHandlers } from './shapes/image/index.js';
 import { textDefinition } from './shapes/text/index.js';
+import { frameDefinition } from './shapes/frame/index.js';
 import { CanvasStore } from './store.js';
 import { PointerInteractionController } from './interaction.js';
 import { TextEditingManager, type EditorMode } from './capabilities/text-editing/index.js';
+import { ClippingManager } from './capabilities/clipping/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
@@ -28,6 +30,7 @@ export class CanvasEditor {
   readonly renderer: SVGRenderer;
   readonly interaction: PointerInteractionController;
   readonly textEditing: TextEditingManager;
+  readonly clipping: ClippingManager;
 
   mode: EditorMode = 'none';
 
@@ -48,6 +51,7 @@ export class CanvasEditor {
     this.renderer = new SVGRenderer(this.registry);
     this.interaction = new PointerInteractionController(this);
     this.textEditing = new TextEditingManager();
+    this.clipping = new ClippingManager();
 
     // Register built-in shapes through public plugin contract
     this.registerShape(rectDefinition);
@@ -55,6 +59,7 @@ export class CanvasEditor {
     this.registerShape(noteDefinition);
     this.registerShape(imageDefinition);
     this.registerShape(textDefinition);
+    this.registerShape(frameDefinition);
     this.registerShape(groupDefinition);
   }
 
@@ -74,6 +79,9 @@ export class CanvasEditor {
     });
 
     this.unsubscribeStore = this.store.listen((diff) => {
+      for (const deletedId of diff.deleted) {
+        this.clipping.handleParentDeletion(deletedId, this.store);
+      }
       this.renderer.applyDiff(diff, this.store);
     });
 

@@ -4,6 +4,7 @@ export type ResizeHandle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-ri
 
 export interface RenderContext {
   readonly isSelected?: boolean;
+  readonly overlaySlot?: SVGGElement;
 }
 
 export interface InteractionContext {

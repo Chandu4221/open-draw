@@ -1,5 +1,6 @@
 import type { Point, ShapeId } from '@open-draw/schema';
 import type { CanvasEditor } from './editor.js';
+import { findSuggestedParent } from './capabilities/clipping/index.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
@@ -9,6 +10,7 @@ export class PointerInteractionController {
   private dragShapeId: ShapeId | null = null;
   private dragStartPointer: Point | null = null;
   private dragStartShapePos: Point | null = null;
+  private dragChildInitialPositions: Map<ShapeId, Point> = new Map();
 
   constructor(editor: CanvasEditor) {
     this.editor = editor;
@@ -54,6 +56,12 @@ export class PointerInteractionController {
           this.dragShapeId = shapeId;
           this.dragStartPointer = pagePt;
           this.dragStartShapePos = { x: shape.x, y: shape.y };
+          this.dragChildInitialPositions.clear();
+          for (const s of this.editor.store.listShapes()) {
+            if (s.meta['parent'] === shapeId || s.meta['parentId'] === shapeId) {
+              this.dragChildInitialPositions.set(s.id, { x: s.x, y: s.y });
+            }
+          }
           this.editor.store.beginTransaction();
         }
       } else {
@@ -69,6 +77,18 @@ export class PointerInteractionController {
             y: pagePt.y,
             props: def.defaultProps(),
           });
+          const bounds = def.geometry.bounds(shape);
+          const suggested = findSuggestedParent(
+            bounds,
+            this.editor.store.listShapes(),
+            this.editor.registry,
+            shape.id
+          );
+          if (suggested) {
+            this.editor.store.updateShape(shape.id, {
+              meta: { ...shape.meta, parent: suggested.id },
+            });
+          }
           this.editor.selectShape(shape.id);
         });
       }
@@ -91,14 +111,41 @@ export class PointerInteractionController {
       x: this.dragStartShapePos.x + dx,
       y: this.dragStartShapePos.y + dy,
     });
+    for (const [childId, initPos] of this.dragChildInitialPositions) {
+      this.editor.store.updateShape(childId, {
+        x: initPos.x + dx,
+        y: initPos.y + dy,
+      });
+    }
   };
 
   private onPointerUp = (): void => {
     if (this.isDragging) {
+      if (this.dragShapeId) {
+        const dragged = this.editor.store.getShape(this.dragShapeId);
+        if (dragged && !dragged.meta['parent'] && !dragged.meta['parentId']) {
+          const def = this.editor.registry.get(dragged.type);
+          if (def) {
+            const bounds = def.geometry.bounds(dragged);
+            const suggested = findSuggestedParent(
+              bounds,
+              this.editor.store.listShapes(),
+              this.editor.registry,
+              dragged.id
+            );
+            if (suggested) {
+              this.editor.store.updateShape(dragged.id, {
+                meta: { ...dragged.meta, parent: suggested.id },
+              });
+            }
+          }
+        }
+      }
       this.isDragging = false;
       this.dragShapeId = null;
       this.dragStartPointer = null;
       this.dragStartShapePos = null;
+      this.dragChildInitialPositions.clear();
       this.editor.store.commitTransaction();
     }
   };
