@@ -1,6 +1,7 @@
 import type { Point, ShapeId } from '@open-draw/schema';
 import type { CanvasEditor } from './editor.js';
 import { findSuggestedParent } from './capabilities/clipping/index.js';
+import { simplifyRDP } from './shapes/ink/index.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
@@ -11,6 +12,10 @@ export class PointerInteractionController {
   private dragStartPointer: Point | null = null;
   private dragStartShapePos: Point | null = null;
   private dragChildInitialPositions: Map<ShapeId, Point> = new Map();
+
+  private isDrawing = false;
+  private currentInkShapeId: ShapeId | null = null;
+  private currentInkPts: number[] = [];
 
   constructor(editor: CanvasEditor) {
     this.editor = editor;
@@ -67,6 +72,25 @@ export class PointerInteractionController {
       } else {
         this.editor.selectShape(null);
       }
+    } else if (activeTool === 'ink' || activeTool === 'draw' || activeTool === 'highlighter') {
+      const shapeType = activeTool === 'highlighter' ? 'highlighter' : 'ink';
+      const def = this.editor.registry.get(shapeType);
+      if (def) {
+        this.isDrawing = true;
+        this.currentInkPts = [pagePt.x, pagePt.y];
+        this.editor.store.beginTransaction();
+        const shape = this.editor.createShape({
+          type: shapeType,
+          x: pagePt.x,
+          y: pagePt.y,
+          props: {
+            ...def.defaultProps(),
+            pts: [pagePt.x, pagePt.y],
+          },
+        });
+        this.currentInkShapeId = shape.id;
+        this.editor.selectShape(shape.id);
+      }
     } else if (this.editor.registry.has(activeTool)) {
       const def = this.editor.registry.get(activeTool);
       if (def) {
@@ -97,12 +121,24 @@ export class PointerInteractionController {
   };
 
   private onPointerMove = (e: PointerEvent): void => {
-    if (!this.isDragging || !this.dragShapeId || !this.dragStartPointer || !this.dragStartShapePos) {
-      return;
-    }
     const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
     const currentScreenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
     const currentPagePt = this.editor.camera.screenToPage(currentScreenPt);
+
+    if (this.isDrawing && this.currentInkShapeId) {
+      this.currentInkPts.push(currentPagePt.x, currentPagePt.y);
+      const shape = this.editor.store.getShape(this.currentInkShapeId);
+      if (shape) {
+        this.editor.store.updateShape(this.currentInkShapeId, {
+          props: { ...shape.props, pts: [...this.currentInkPts] },
+        });
+      }
+      return;
+    }
+
+    if (!this.isDragging || !this.dragShapeId || !this.dragStartPointer || !this.dragStartShapePos) {
+      return;
+    }
 
     const dx = currentPagePt.x - this.dragStartPointer.x;
     const dy = currentPagePt.y - this.dragStartPointer.y;
@@ -120,6 +156,22 @@ export class PointerInteractionController {
   };
 
   private onPointerUp = (): void => {
+    if (this.isDrawing && this.currentInkShapeId) {
+      const simplified = simplifyRDP(this.currentInkPts, 1.5);
+      const shape = this.editor.store.getShape(this.currentInkShapeId);
+      if (shape) {
+        this.editor.store.updateShape(this.currentInkShapeId, {
+          props: { ...shape.props, pts: simplified },
+        });
+      }
+      this.isDrawing = false;
+      this.currentInkShapeId = null;
+      this.currentInkPts = [];
+      this.editor.store.commitTransaction();
+      this.editor.setTool('select');
+      return;
+    }
+
     if (this.isDragging) {
       if (this.dragShapeId) {
         const dragged = this.editor.store.getShape(this.dragShapeId);

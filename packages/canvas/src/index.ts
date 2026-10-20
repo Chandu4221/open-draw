@@ -15,6 +15,7 @@ export * from './shapes/image/index.js';
 export * from './shapes/text/index.js';
 export * from './shapes/frame/index.js';
 export * from './shapes/arrow/index.js';
+export * from './shapes/ink/index.js';
 export * from './shapes/group.js';
 export * from './capabilities/text-editing/index.js';
 export * from './capabilities/clipping/index.js';

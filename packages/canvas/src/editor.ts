@@ -10,6 +10,7 @@ import { imageDefinition, attachImageTransferHandlers } from './shapes/image/ind
 import { textDefinition } from './shapes/text/index.js';
 import { frameDefinition } from './shapes/frame/index.js';
 import { arrowDefinition } from './shapes/arrow/index.js';
+import { inkDefinition, highlighterDefinition } from './shapes/ink/index.js';
 import { CanvasStore } from './store.js';
 import { PointerInteractionController } from './interaction.js';
 import { TextEditingManager, type EditorMode } from './capabilities/text-editing/index.js';
@@ -65,6 +66,8 @@ export class CanvasEditor {
     this.registerShape(textDefinition);
     this.registerShape(frameDefinition);
     this.registerShape(arrowDefinition);
+    this.registerShape(inkDefinition);
+    this.registerShape(highlighterDefinition);
     this.registerShape(groupDefinition);
   }
 
