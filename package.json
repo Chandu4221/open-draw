@@ -16,8 +16,9 @@
     "check:boundaries": "node scripts/check-boundaries.js",
     "check:deps": "node scripts/check-dependencies.js",
     "check:bitmap": "node scripts/check-no-bitmap.js",
+    "check:zoom": "node scripts/check-isolated-zoom.js",
     "check:links": "node scripts/check-portable-links.js",
-    "verify": "npm run typecheck && npm test && npm run build && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:links"
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:zoom && npm run check:links"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
