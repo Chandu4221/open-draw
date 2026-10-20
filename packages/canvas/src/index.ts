@@ -3,6 +3,8 @@
  * DOM Canvas engine — every shape a real SVG/DOM element.
  */
 
+export * from './store.js';
+
 export interface CanvasEngineOptions {
   readonly readonly?: boolean;
 }
