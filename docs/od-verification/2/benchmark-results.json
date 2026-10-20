@@ -2,31 +2,31 @@
   {
     "shapeCount": 100,
     "domNodeCount": 302,
-    "ttffMs": 30.800000000745058,
-    "avgDragBlockMs": 0.01000000002483527,
+    "ttffMs": 23.699999999254942,
+    "avgDragBlockMs": 0.0033333333830038708,
     "maxDragBlockMs": 0.10000000149011612,
-    "pan02xMs": 16.619999999925493,
-    "pan10xMs": 16.655000000074505,
-    "pan50xMs": 16.665000000037253
+    "pan02xMs": 16.65500000026077,
+    "pan10xMs": 16.665000000037253,
+    "pan50xMs": 16.65499999988824
   },
   {
     "shapeCount": 500,
     "domNodeCount": 1502,
-    "ttffMs": 29.799999997019768,
-    "avgDragBlockMs": 0.0033333333830038708,
-    "maxDragBlockMs": 0.10000000149011612,
-    "pan02xMs": 16.669999999925494,
-    "pan10xMs": 16.675,
+    "ttffMs": 21.699999999254942,
+    "avgDragBlockMs": 0.0033333332588275275,
+    "maxDragBlockMs": 0.09999999776482582,
+    "pan02xMs": 16.469999999925495,
+    "pan10xMs": 16.66000000014901,
     "pan50xMs": 16.665000000037253
   },
   {
     "shapeCount": 1000,
     "domNodeCount": 3002,
-    "ttffMs": 30.5,
-    "avgDragBlockMs": 0.0033333333830038708,
-    "maxDragBlockMs": 0.10000000149011612,
-    "pan02xMs": 16.665000000037253,
-    "pan10xMs": 16.665000000037253,
-    "pan50xMs": 16.66000000014901
+    "ttffMs": 30.400000002235174,
+    "avgDragBlockMs": 0,
+    "maxDragBlockMs": 0,
+    "pan02xMs": 16.669999999925494,
+    "pan10xMs": 16.605000000074504,
+    "pan50xMs": 16.659999999962746
   }
 ]
