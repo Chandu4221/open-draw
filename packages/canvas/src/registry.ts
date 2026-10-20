@@ -1,10 +1,14 @@
 import type { Bounds, Point, ShapeId, ShapeRecord } from '@open-draw/schema';
 
+import type { CanvasStore } from './store.js';
+
 export type ResizeHandle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top' | 'bottom' | 'left' | 'right';
 
 export interface RenderContext {
   readonly isSelected?: boolean;
   readonly overlaySlot?: SVGGElement;
+  readonly store?: CanvasStore;
+  readonly registry?: ShapeRegistry;
 }
 
 export interface InteractionContext {

@@ -23,6 +23,7 @@ export class SVGRenderer {
   private shapesLayer: SVGGElement | null = null;
 
   private readonly shapeElements = new Map<ShapeId, ShapeDOMEntry>();
+  private store: CanvasStore | null = null;
 
   constructor(registry: ShapeRegistry) {
     this.registry = registry;
@@ -83,6 +84,10 @@ export class SVGRenderer {
     return entry ? entry.wrapper : null;
   }
 
+  getShapeRecord(id: ShapeId): ShapeRecord | undefined {
+    return this.shapeElements.get(id)?.shape;
+  }
+
   renderAll(shapes: Iterable<ShapeRecord>): void {
     if (this.shapesLayer) {
       this.shapesLayer.innerHTML = '';
@@ -106,6 +111,8 @@ export class SVGRenderer {
   }
 
   applyDiff(diff: StoreDiff, store: CanvasStore): void {
+    this.store = store;
+
     // 1. Delete
     for (const id of diff.deleted) {
       const entry = this.shapeElements.get(id);
@@ -137,6 +144,20 @@ export class SVGRenderer {
           prevShape.meta['parentId'] !== shape.meta['parentId']
         ) {
           this._attachWrapper(shape, entry.wrapper);
+        }
+      }
+    }
+
+    // 4. Connector reconciliation for bound arrows
+    for (const updatedId of diff.updated) {
+      for (const s of store.listShapes()) {
+        const def = this.registry.get(s.type);
+        if (def?.capabilities?.connector) {
+          const props = s.props as { startBinding?: { shapeId: string }; endBinding?: { shapeId: string } };
+          if (props.startBinding?.shapeId === updatedId || props.endBinding?.shapeId === updatedId) {
+            const entry = this.shapeElements.get(s.id);
+            if (entry) this._patchShapeDOM(entry, entry.shape);
+          }
         }
       }
     }
@@ -177,7 +198,11 @@ export class SVGRenderer {
     const def = this.registry.get(shape.type);
 
     if (def) {
-      const rendered = def.render(shape, { overlaySlot: slot });
+      const rendered = def.render(shape, {
+        overlaySlot: slot,
+        store: this.store ?? undefined,
+        registry: this.registry,
+      });
       if (Array.isArray(rendered)) {
         for (const el of rendered) {
           wrapper.appendChild(el);
@@ -215,7 +240,11 @@ export class SVGRenderer {
 
     const def = this.registry.get(shape.type);
     if (def?.update) {
-      def.update(wrapper, shape, prevShape, { overlaySlot: slot });
+      def.update(wrapper, shape, prevShape, {
+        overlaySlot: slot,
+        store: this.store ?? undefined,
+        registry: this.registry,
+      });
     }
 
     // Ensure slot remains the last child

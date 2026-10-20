@@ -9,10 +9,12 @@ import { noteDefinition } from './shapes/note/index.js';
 import { imageDefinition, attachImageTransferHandlers } from './shapes/image/index.js';
 import { textDefinition } from './shapes/text/index.js';
 import { frameDefinition } from './shapes/frame/index.js';
+import { arrowDefinition } from './shapes/arrow/index.js';
 import { CanvasStore } from './store.js';
 import { PointerInteractionController } from './interaction.js';
 import { TextEditingManager, type EditorMode } from './capabilities/text-editing/index.js';
 import { ClippingManager } from './capabilities/clipping/index.js';
+import { ConnectorManager } from './capabilities/connector/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
@@ -31,6 +33,7 @@ export class CanvasEditor {
   readonly interaction: PointerInteractionController;
   readonly textEditing: TextEditingManager;
   readonly clipping: ClippingManager;
+  readonly connector: ConnectorManager;
 
   mode: EditorMode = 'none';
 
@@ -52,6 +55,7 @@ export class CanvasEditor {
     this.interaction = new PointerInteractionController(this);
     this.textEditing = new TextEditingManager();
     this.clipping = new ClippingManager();
+    this.connector = new ConnectorManager();
 
     // Register built-in shapes through public plugin contract
     this.registerShape(rectDefinition);
@@ -60,6 +64,7 @@ export class CanvasEditor {
     this.registerShape(imageDefinition);
     this.registerShape(textDefinition);
     this.registerShape(frameDefinition);
+    this.registerShape(arrowDefinition);
     this.registerShape(groupDefinition);
   }
 
@@ -80,7 +85,9 @@ export class CanvasEditor {
 
     this.unsubscribeStore = this.store.listen((diff) => {
       for (const deletedId of diff.deleted) {
+        const lastRecord = this.renderer.getShapeRecord(deletedId);
         this.clipping.handleParentDeletion(deletedId, this.store);
+        this.connector.handleTargetDeletion(deletedId, lastRecord, this.store, this.registry);
       }
       this.renderer.applyDiff(diff, this.store);
     });
@@ -156,7 +163,16 @@ export class CanvasEditor {
     if (this.selectedShapeId === id) {
       this.selectedShapeId = null;
     }
-    return this.store.deleteShape(id);
+    const lastRecord = this.store.getShape(id);
+    if (!lastRecord) return false;
+
+    let res = false;
+    this.store.transact(() => {
+      this.clipping.handleParentDeletion(id, this.store);
+      this.connector.handleTargetDeletion(id, lastRecord, this.store, this.registry);
+      res = this.store.deleteShape(id);
+    });
+    return res;
   }
 
   getShape(id: ShapeId): ShapeRecord | undefined {
