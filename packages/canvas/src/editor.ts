@@ -4,6 +4,7 @@ import { ShapeRegistry, type ShapeDefinition } from './registry.js';
 import { SVGRenderer } from './renderer.js';
 import { groupDefinition } from './shapes/group.js';
 import { rectDefinition } from './shapes/rect.js';
+import { ellipseDefinition } from './shapes/ellipse/index.js';
 import { CanvasStore } from './store.js';
 
 export interface CanvasEditorOptions {
@@ -44,6 +45,7 @@ export class CanvasEditor {
 
     // Register built-in shapes through the public plugin contract
     this.registerShape(rectDefinition);
+    this.registerShape(ellipseDefinition);
     this.registerShape(groupDefinition);
   }
 
