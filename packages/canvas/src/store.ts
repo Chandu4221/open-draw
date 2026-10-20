@@ -1,8 +1,5 @@
 import { CorruptSnapshotError, type ShapeId, type ShapeRecord, type Snapshot } from '@open-draw/schema';
 
-// Deliberate violation for shape-type branching red proof
-export const _deliberateShapeBranchViolation = (shape: { type: string }) => shape.type === 'rect';
-
 export interface StoreDiff {
   readonly created: ReadonlySet<ShapeId>;
   readonly updated: ReadonlySet<ShapeId>;
