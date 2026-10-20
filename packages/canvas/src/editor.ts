@@ -6,6 +6,7 @@ import { groupDefinition } from './shapes/group.js';
 import { rectDefinition } from './shapes/rect.js';
 import { ellipseDefinition } from './shapes/ellipse/index.js';
 import { noteDefinition } from './shapes/note/index.js';
+import { imageDefinition, attachImageTransferHandlers } from './shapes/image/index.js';
 import { CanvasStore } from './store.js';
 
 export interface CanvasEditorOptions {
@@ -27,6 +28,7 @@ export class CanvasEditor {
   private container: HTMLElement | null = null;
   private unsubscribeCamera: (() => void) | null = null;
   private unsubscribeStore: (() => void) | null = null;
+  private detachImageTransfer: (() => void) | null = null;
 
   private activeTool: string = 'select';
   private selectedShapeId: ShapeId | null = null;
@@ -48,6 +50,7 @@ export class CanvasEditor {
     this.registerShape(rectDefinition);
     this.registerShape(ellipseDefinition);
     this.registerShape(noteDefinition);
+    this.registerShape(imageDefinition);
     this.registerShape(groupDefinition);
   }
 
@@ -73,10 +76,15 @@ export class CanvasEditor {
     });
 
     this.attachEventListeners(container);
+    this.detachImageTransfer = attachImageTransferHandlers(container, this);
   }
 
   destroy(): void {
     this.detachEventListeners();
+    if (this.detachImageTransfer) {
+      this.detachImageTransfer();
+      this.detachImageTransfer = null;
+    }
     if (this.unsubscribeCamera) {
       this.unsubscribeCamera();
       this.unsubscribeCamera = null;
