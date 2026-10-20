@@ -42,12 +42,32 @@ Target Branch: `build/phase-1` $\longrightarrow$ merged to `main` upon exit.
   - [x] Reverted violation $\to$ verified CI GREEN in GitHub Actions run `39398686496` $\to$ saved screenshot `docs/od-verification/1/ci-green.png` (`77ace07`).
 - [x] **Step 6 — REPORT.md & Phase Exit**:
   - [x] Complete `docs/od-verification/1/REPORT.md` with evidence citations for every checklist item (`0f1e2c6`).
-  - [ ] Merge `build/phase-1` $\to$ `main`.
+  - [x] Merge `build/phase-1` $\to$ `main`.
+
+---
+
+## Phase 1.1 Patch (Completed)
+Target Branch: `build/phase-1.1` $\longrightarrow$ merged to `main` upon exit (`a92d354`).
+- [x] Item A1: Bitmap check red/green proof (`bitmap-red.png`, `bitmap-green.png`) and Vitest unit test (`scripts/check-no-bitmap.test.ts`).
+- [x] Item A2: Portable links check (`scripts/check-portable-links.js`) active in CI, zero `file://` links in docs.
+- [x] Item A3: Studio shell consistency (lint script, private README).
+- [x] Item A4: `docs/od-verification/1.1/REPORT.md` complete, merged to `main`.
+
+---
+
+## Phase 2 — DOM Canvas Core (Completed)
+Target Branch: `build/phase-2` $\longrightarrow$ merged to `main` upon exit (`3c504af`).
+- [x] **Step B1 — Schema Geometry Core**: Pure functions, boundary semantics (inclusive top-left, exclusive bottom-right), 28 unit tests.
+- [x] **Step B2 — Canvas Store**: Immutable shapes, transactions with rollback, undo/redo, snapshot validation, 9 unit tests.
+- [x] **Step B3 — The Camera**: Coordinate transforms, cursor-anchored zoom, isolated zoom math guardrail with red/green proof (`camera-red.png`, `camera-green.png`).
+- [x] **Step B4 — Overlay-Invariant E2E (Soul Test)**: Failing spec committed first (`2cc8a1c`), `SVGRenderer` implemented, passes in Chromium at 0.2×, 1×, 5× with identity transform and pointer-events none asserted (`overlay-0.2x.png`, `overlay-1x.png`, `overlay-5x.png`).
+- [x] **Step B5 — Registry Contract & Rect Plugin**: ADR-005, pluggable `rect` plugin, shape-type branching guardrail with red/green proof (`shapes-red.png`, `shapes-green.png`), rect E2E passing.
+- [x] **Step B6 — Benchmark Spike**: Measured TTFF, drag block, and pan across 100/500/1000 shapes in `docs/od-verification/2/benchmarks.md`; zero perf budgets claimed; culling question `Q-001` scheduled.
+- [x] **Step B7 — Phase 2 Exit Gate**: `docs/od-verification/2/REPORT.md` complete, instructions renamed to `opendraw-phase1-1 phase2-done.md`, merged to `main`.
 
 ---
 
 ## Upcoming Phases (Strict Order — No Overlap)
-- **Phase 2**: DOM Canvas Engine (schema geometry $\to$ store $\to$ camera $\to$ overlay invariant E2E first $\to$ registry contract $\to$ shapes $\to$ grouping $\to$ SDK freeze).
 - **Phase 3**: Semantics Package & Platform Profiles.
 - **Phase 4**: Markdown Compiler (golden fixtures byte-pinned).
 - **Phase 5**: OpenDraw Studio App (React composition shell).
