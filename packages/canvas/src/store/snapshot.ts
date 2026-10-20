@@ -1,5 +1,5 @@
 import { CorruptSnapshotError, type ShapeId, type ShapeRecord, type Snapshot } from '@open-draw/schema';
-import type { MetaValidator } from './types.js';
+import type { MetaValidator, StoreDiff } from './types.js';
 
 export function parseAndValidateSnapshot(
   snapshot: unknown,
@@ -74,3 +74,29 @@ export function parseAndValidateSnapshot(
 
   return newShapes;
 }
+
+export function computeDiff(
+  before: Map<ShapeId, ShapeRecord>,
+  after: Map<ShapeId, ShapeRecord>
+): StoreDiff {
+  const created = new Set<ShapeId>();
+  const updated = new Set<ShapeId>();
+  const deleted = new Set<ShapeId>();
+
+  for (const [id] of after) {
+    if (!before.has(id)) {
+      created.add(id);
+    } else if (before.get(id) !== after.get(id)) {
+      updated.add(id);
+    }
+  }
+
+  for (const [id] of before) {
+    if (!after.has(id)) {
+      deleted.add(id);
+    }
+  }
+
+  return { created, updated, deleted };
+}
+

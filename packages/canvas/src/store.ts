@@ -1,5 +1,5 @@
 import type { ShapeId, ShapeRecord, Snapshot } from '@open-draw/schema';
-import { parseAndValidateSnapshot } from './store/snapshot.js';
+import { computeDiff, parseAndValidateSnapshot } from './store/snapshot.js';
 import type { HistoryEntry, MetaValidator, StoreDiff, StoreListener } from './store/types.js';
 
 export type { HistoryEntry, MetaValidator, StoreDiff, StoreListener };
@@ -135,11 +135,17 @@ export class CanvasStore {
       return;
     }
 
-    const before = this.transactionInitialShapes ?? new Map();
-    const after = new Map(this.shapes);
+    const hasChanges =
+      this.pendingCreated.size > 0 ||
+      this.pendingUpdated.size > 0 ||
+      this.pendingDeleted.size > 0;
 
-    this.undoStack.push({ before, after });
-    this.redoStack = [];
+    if (hasChanges) {
+      const before = this.transactionInitialShapes ?? new Map();
+      const after = new Map(this.shapes);
+      this.undoStack.push({ before, after });
+      this.redoStack = [];
+    }
 
     const diff: StoreDiff = {
       created: new Set(this.pendingCreated),
@@ -151,7 +157,7 @@ export class CanvasStore {
     this.transactionDepth = 0;
     this.transactionInitialShapes = null;
 
-    if (diff.created.size > 0 || diff.updated.size > 0 || diff.deleted.size > 0) {
+    if (hasChanges) {
       this.notifyListeners(diff);
     }
   }
@@ -200,7 +206,7 @@ export class CanvasStore {
     this.redoStack.push({ before: entry.before, after: currentShapes });
     this.shapes = new Map(entry.before);
 
-    const diff = this.computeDiff(currentShapes, this.shapes);
+    const diff = computeDiff(currentShapes, this.shapes);
     this.notifyListeners(diff);
     return true;
   }
@@ -215,7 +221,7 @@ export class CanvasStore {
     this.undoStack.push({ before: currentShapes, after: entry.after });
     this.shapes = new Map(entry.after);
 
-    const diff = this.computeDiff(currentShapes, this.shapes);
+    const diff = computeDiff(currentShapes, this.shapes);
     this.notifyListeners(diff);
     return true;
   }
@@ -272,26 +278,5 @@ export class CanvasStore {
       }
     }
   }
-
-  private computeDiff(before: Map<ShapeId, ShapeRecord>, after: Map<ShapeId, ShapeRecord>): StoreDiff {
-    const created = new Set<ShapeId>();
-    const updated = new Set<ShapeId>();
-    const deleted = new Set<ShapeId>();
-
-    for (const [id] of after) {
-      if (!before.has(id)) {
-        created.add(id);
-      } else if (before.get(id) !== after.get(id)) {
-        updated.add(id);
-      }
-    }
-
-    for (const [id] of before) {
-      if (!after.has(id)) {
-        deleted.add(id);
-      }
-    }
-
-    return { created, updated, deleted };
-  }
 }
+

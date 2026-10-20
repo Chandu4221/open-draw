@@ -12,7 +12,9 @@ export * from './shapes/rect.js';
 export * from './shapes/ellipse/index.js';
 export * from './shapes/note/index.js';
 export * from './shapes/image/index.js';
+export * from './shapes/text/index.js';
 export * from './shapes/group.js';
+export * from './capabilities/text-editing/index.js';
 
 export interface CanvasEngineOptions {
   readonly readonly?: boolean;

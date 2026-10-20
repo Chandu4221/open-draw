@@ -7,7 +7,10 @@ import { rectDefinition } from './shapes/rect.js';
 import { ellipseDefinition } from './shapes/ellipse/index.js';
 import { noteDefinition } from './shapes/note/index.js';
 import { imageDefinition, attachImageTransferHandlers } from './shapes/image/index.js';
+import { textDefinition } from './shapes/text/index.js';
 import { CanvasStore } from './store.js';
+import { PointerInteractionController } from './interaction.js';
+import { TextEditingManager, type EditorMode } from './capabilities/text-editing/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
@@ -15,7 +18,7 @@ export interface CanvasEditorOptions {
 
 /**
  * OpenDraw Canvas Editor
- * Manages canvas rendering, camera state, shape lifecycle, tools, and user interaction.
+ * Composition point for camera, store, registry, renderer, and privileged capabilities.
  */
 export class CanvasEditor {
   readonly store: CanvasStore;
@@ -23,6 +26,10 @@ export class CanvasEditor {
   readonly options: CanvasEditorOptions;
   readonly registry: ShapeRegistry;
   readonly renderer: SVGRenderer;
+  readonly interaction: PointerInteractionController;
+  readonly textEditing: TextEditingManager;
+
+  mode: EditorMode = 'none';
 
   private isMounted = false;
   private container: HTMLElement | null = null;
@@ -33,24 +40,21 @@ export class CanvasEditor {
   private activeTool: string = 'select';
   private selectedShapeId: ShapeId | null = null;
 
-  // Pointer drag state
-  private isDragging = false;
-  private dragShapeId: ShapeId | null = null;
-  private dragStartPointer: Point | null = null;
-  private dragStartShapePos: Point | null = null;
-
   constructor(options: CanvasEditorOptions = {}) {
     this.options = options;
     this.store = new CanvasStore();
     this.camera = new CameraController();
     this.registry = new ShapeRegistry();
     this.renderer = new SVGRenderer(this.registry);
+    this.interaction = new PointerInteractionController(this);
+    this.textEditing = new TextEditingManager();
 
-    // Register built-in shapes through the public plugin contract
+    // Register built-in shapes through public plugin contract
     this.registerShape(rectDefinition);
     this.registerShape(ellipseDefinition);
     this.registerShape(noteDefinition);
     this.registerShape(imageDefinition);
+    this.registerShape(textDefinition);
     this.registerShape(groupDefinition);
   }
 
@@ -59,9 +63,7 @@ export class CanvasEditor {
   }
 
   mount(container: HTMLElement): void {
-    if (this.isMounted) {
-      return;
-    }
+    if (this.isMounted) return;
     this.container = container;
     this.isMounted = true;
     this.renderer.mount(container, this.camera.camera);
@@ -75,12 +77,16 @@ export class CanvasEditor {
       this.renderer.applyDiff(diff, this.store);
     });
 
-    this.attachEventListeners(container);
+    this.interaction.attach(container);
+    container.addEventListener('dblclick', this.onDblClick);
     this.detachImageTransfer = attachImageTransferHandlers(container, this);
   }
 
   destroy(): void {
-    this.detachEventListeners();
+    if (this.container) {
+      this.container.removeEventListener('dblclick', this.onDblClick);
+    }
+    this.interaction.detach();
     if (this.detachImageTransfer) {
       this.detachImageTransfer();
       this.detachImageTransfer = null;
@@ -106,20 +112,47 @@ export class CanvasEditor {
     return this.activeTool;
   }
 
+  selectShape(shapeId: ShapeId | null): void {
+    this.selectedShapeId = shapeId;
+  }
+
   getSelectedShapeId(): ShapeId | null {
     return this.selectedShapeId;
   }
 
-  setSelectedShapeId(id: ShapeId | null): void {
-    this.selectedShapeId = id;
+  createShape(record: {
+    readonly id?: ShapeId;
+    readonly type: string;
+    readonly x: number;
+    readonly y: number;
+    readonly rotation?: number;
+    readonly hidden?: boolean;
+    readonly meta?: Record<string, unknown>;
+    readonly props?: Record<string, unknown>;
+  }): ShapeRecord {
+    const id = record.id ?? `shape-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    return this.store.createShape({
+      ...record,
+      id,
+    });
   }
 
-  undo(): boolean {
-    return this.store.undo();
+  updateShape(
+    id: ShapeId,
+    patch: Partial<Omit<ShapeRecord, 'id' | 'type'>>
+  ): ShapeRecord {
+    return this.store.updateShape(id, patch);
   }
 
-  redo(): boolean {
-    return this.store.redo();
+  deleteShape(id: ShapeId): boolean {
+    if (this.selectedShapeId === id) {
+      this.selectedShapeId = null;
+    }
+    return this.store.deleteShape(id);
+  }
+
+  getShape(id: ShapeId): ShapeRecord | undefined {
+    return this.store.getShape(id);
   }
 
   canUndo(): boolean {
@@ -130,34 +163,12 @@ export class CanvasEditor {
     return this.store.canRedo();
   }
 
-  createShape(record: Partial<ShapeRecord> & { type: string }): ShapeRecord {
-    const id = record.id ?? `shape-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    const x = record.x ?? 0;
-    const y = record.y ?? 0;
-    const def = this.registry.get(record.type);
-    const defaultProps = def ? def.defaultProps() : {};
-
-    return this.store.createShape({
-      ...record,
-      id,
-      x,
-      y,
-      type: record.type,
-      meta: record.meta ?? {},
-      props: (record.props ? { ...defaultProps, ...record.props } : defaultProps) as Record<string, unknown>,
-    });
+  undo(): boolean {
+    return this.store.undo();
   }
 
-  getShape(id: ShapeId): ShapeRecord | undefined {
-    return this.store.getShape(id);
-  }
-
-  updateShape(id: ShapeId, patch: Partial<Omit<ShapeRecord, 'id'>>): ShapeRecord {
-    return this.store.updateShape(id, patch);
-  }
-
-  deleteShape(id: ShapeId): void {
-    this.store.deleteShape(id);
+  redo(): boolean {
+    return this.store.redo();
   }
 
   loadSnapshot(snapshot: Snapshot): void {
@@ -197,88 +208,12 @@ export class CanvasEditor {
     return this.renderer.getShapeWrapper(id);
   }
 
-  private onPointerDown = (e: PointerEvent): void => {
-    const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
-    const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
-    const pagePt = this.camera.screenToPage(screenPt);
+  private onDblClick = (e: MouseEvent): void => {
+    const target = e.target as Element | null;
+    const shapeWrapper = target?.closest('.od-shape');
+    const shapeId = shapeWrapper?.getAttribute('data-id');
+    if (!shapeId) return;
 
-    if (this.activeTool === 'select') {
-      const target = e.target as Element | null;
-      const shapeWrapper = target?.closest('.od-shape');
-      const shapeId = shapeWrapper?.getAttribute('data-id');
-
-      if (shapeId) {
-        this.selectedShapeId = shapeId;
-        const shape = this.store.getShape(shapeId);
-        if (shape) {
-          this.isDragging = true;
-          this.dragShapeId = shapeId;
-          this.dragStartPointer = pagePt;
-          this.dragStartShapePos = { x: shape.x, y: shape.y };
-          // Begin gesture transaction: all movements will fold into this single undo step
-          this.store.beginTransaction();
-        }
-      } else {
-        this.selectedShapeId = null;
-      }
-    } else if (this.registry.has(this.activeTool)) {
-      // Shape creation tool
-      const toolType = this.activeTool;
-      const def = this.registry.get(toolType);
-      if (def) {
-        this.store.transact(() => {
-          const shape = this.createShape({
-            type: toolType,
-            x: pagePt.x,
-            y: pagePt.y,
-            props: def.defaultProps(),
-          });
-          this.selectedShapeId = shape.id;
-        });
-      }
-      this.activeTool = 'select';
-    }
+    this.textEditing.startEditing(shapeId, this);
   };
-
-  private onPointerMove = (e: PointerEvent): void => {
-    if (!this.isDragging || !this.dragShapeId || !this.dragStartPointer || !this.dragStartShapePos) {
-      return;
-    }
-    const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
-    const currentScreenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
-    const currentPagePt = this.camera.screenToPage(currentScreenPt);
-
-    const dx = currentPagePt.x - this.dragStartPointer.x;
-    const dy = currentPagePt.y - this.dragStartPointer.y;
-
-    this.store.updateShape(this.dragShapeId, {
-      x: this.dragStartShapePos.x + dx,
-      y: this.dragStartShapePos.y + dy,
-    });
-  };
-
-  private onPointerUp = (): void => {
-    if (this.isDragging) {
-      this.isDragging = false;
-      this.dragShapeId = null;
-      this.dragStartPointer = null;
-      this.dragStartShapePos = null;
-      // Commit the single gesture transaction
-      this.store.commitTransaction();
-    }
-  };
-
-  private attachEventListeners(container: HTMLElement): void {
-    container.addEventListener('pointerdown', this.onPointerDown);
-    window.addEventListener('pointermove', this.onPointerMove);
-    window.addEventListener('pointerup', this.onPointerUp);
-  }
-
-  private detachEventListeners(): void {
-    if (this.container) {
-      this.container.removeEventListener('pointerdown', this.onPointerDown);
-    }
-    window.removeEventListener('pointermove', this.onPointerMove);
-    window.removeEventListener('pointerup', this.onPointerUp);
-  }
 }
