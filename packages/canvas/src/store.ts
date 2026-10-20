@@ -1,5 +1,8 @@
 import { CorruptSnapshotError, type ShapeId, type ShapeRecord, type Snapshot } from '@open-draw/schema';
 
+// Deliberate violation for camera zoom isolation red proof
+export const _deliberateZoomViolation = (x: number, zoom: number) => x * zoom;
+
 export interface StoreDiff {
   readonly created: ReadonlySet<ShapeId>;
   readonly updated: ReadonlySet<ShapeId>;
