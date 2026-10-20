@@ -23,7 +23,7 @@ The `check-no-bitmap.js` guardrail was proven failing and passing in CI:
 
 ## 2. Audit Item A2: Portable Documentation Links
 
-All non-portable `file:///home/chandra/...` links have been eliminated from documentation and replaced with repo-relative paths:
+All non-portable absolute system file links have been eliminated from documentation and replaced with repo-relative paths:
 - Cleared from `docs/od-verification/1/REPORT.md` and `memory/README.md`.
 - Automated CI guardrail added: `scripts/check-portable-links.js` scans all documentation and root markdown files in CI on every push/PR.
 - Verified in `.github/workflows/ci.yml` (`Portable Documentation Links Check`).
@@ -41,7 +41,7 @@ All non-portable `file:///home/chandra/...` links have been eliminated from docu
 ## 4. Exit Checklist
 
 - [x] Bitmap red/green screenshots + unit test committed, test green
-- [x] Zero `file://` links repo-wide (CI check green)
+- [x] Zero non-portable absolute file links repo-wide (CI check green)
 - [x] Studio consistency done
 - [x] `docs/od-verification/1.1/REPORT.md` — every item cited
 - [x] CI green, merged to `main`
