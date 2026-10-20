@@ -1,5 +1,6 @@
 import type { Camera, Point, ShapeId, ShapeRecord, Snapshot } from '@open-draw/schema';
 import { CameraController, type ZoomOptions } from './camera.js';
+import { SVGRenderer } from './renderer.js';
 import { CanvasStore } from './store.js';
 
 export interface CanvasEditorOptions {
@@ -14,30 +15,47 @@ export class CanvasEditor {
   readonly store: CanvasStore;
   readonly camera: CameraController;
   readonly options: CanvasEditorOptions;
+  readonly renderer: SVGRenderer;
 
-  private container: HTMLElement | null = null;
-  private svgElement: SVGSVGElement | null = null;
-  private viewportGroup: SVGGElement | null = null;
-  private shapesGroup: SVGGElement | null = null;
+  private isMounted = false;
+  private unsubscribeCamera: (() => void) | null = null;
+  private unsubscribeStore: (() => void) | null = null;
 
   constructor(options: CanvasEditorOptions = {}) {
     this.options = options;
     this.store = new CanvasStore();
     this.camera = new CameraController();
+    this.renderer = new SVGRenderer();
   }
 
   mount(container: HTMLElement): void {
-    this.container = container;
+    if (this.isMounted) {
+      return;
+    }
+    this.isMounted = true;
+    this.renderer.mount(container, this.camera.camera);
+    this.renderer.renderAll(this.store.listShapes());
+
+    this.unsubscribeCamera = this.camera.subscribe((cam) => {
+      this.renderer.updateCamera(cam);
+    });
+
+    this.unsubscribeStore = this.store.listen((diff) => {
+      this.renderer.applyDiff(diff, this.store);
+    });
   }
 
   destroy(): void {
-    if (this.svgElement && this.container) {
-      this.container.removeChild(this.svgElement);
+    if (this.unsubscribeCamera) {
+      this.unsubscribeCamera();
+      this.unsubscribeCamera = null;
     }
-    this.container = null;
-    this.svgElement = null;
-    this.viewportGroup = null;
-    this.shapesGroup = null;
+    if (this.unsubscribeStore) {
+      this.unsubscribeStore();
+      this.unsubscribeStore = null;
+    }
+    this.renderer.destroy();
+    this.isMounted = false;
   }
 
   createShape(record: Partial<ShapeRecord> & { type: string }): ShapeRecord {
@@ -59,15 +77,29 @@ export class CanvasEditor {
     return this.store.getShape(id);
   }
 
+  updateShape(id: ShapeId, patch: Partial<Omit<ShapeRecord, 'id'>>): ShapeRecord {
+    return this.store.updateShape(id, patch);
+  }
+
+  deleteShape(id: ShapeId): void {
+    this.store.deleteShape(id);
+  }
+
   loadSnapshot(snapshot: Snapshot): void {
     this.store.loadSnapshot(snapshot);
     if (snapshot.camera) {
       this.camera.setCamera(snapshot.camera);
     }
+    if (this.isMounted) {
+      this.renderer.renderAll(this.store.listShapes());
+    }
   }
 
   getSnapshot(): Snapshot {
-    return this.store.getSnapshot();
+    return {
+      ...this.store.getSnapshot(),
+      camera: this.camera.camera,
+    };
   }
 
   pan(dx: number, dy: number): Camera {
@@ -84,10 +116,13 @@ export class CanvasEditor {
 
   /**
    * Returns the overlay slot element for the specified shape.
-   * In Phase 2 Step B4, this starts as a stub returning null to verify the failing spec first.
+   * Overlay slot is a physical DOM child of the shape wrapper group.
    */
   getOverlaySlot(id: ShapeId): SVGGElement | null {
-    void id;
-    return null;
+    return this.renderer.getOverlaySlot(id);
+  }
+
+  getShapeWrapper(id: ShapeId): SVGGElement | null {
+    return this.renderer.getShapeWrapper(id);
   }
 }

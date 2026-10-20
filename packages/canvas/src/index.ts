@@ -6,6 +6,7 @@
 export * from './store.js';
 export * from './camera.js';
 export * from './editor.js';
+export * from './renderer.js';
 
 export interface CanvasEngineOptions {
   readonly readonly?: boolean;
