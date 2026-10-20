@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CANVAS_SRC = 'packages/canvas/src';
+const CANVAS_SRC = process.argv[2] || 'packages/canvas/src';
 
 function scanDir(dir) {
   if (!fs.existsSync(dir)) return [];

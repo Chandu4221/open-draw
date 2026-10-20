@@ -43,3 +43,6 @@ jobs:
 
       - name: DOM Canvas Bitmap Check
         run: node scripts/check-no-bitmap.js
+
+      - name: Portable Documentation Links Check
+        run: node scripts/check-portable-links.js
