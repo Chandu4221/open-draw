@@ -5,3 +5,4 @@ Per OpenDraw working rules: **never invent**. Anything unspecified is logged her
 
 | ID | Date | Component | Question / Ambiguity | Resolution | Status |
 |---|---|---|---|---|---|
+| `Q-001` | 2026-10-20 | Canvas Renderer (Culling) | At what shape count threshold should viewport culling (DOM element detachment) be activated? Empirical benchmark SPK-001 indicates that 1,000 shapes (3,002 DOM elements) maintain 60fps pan and <0.01ms drag blocking natively without virtualization. Should culling activate at >= 2,000 shapes or remain deferred until Phase 2.x stress tests? | Scheduled for evaluation in Phase 2.x when complex shapes (frames/connectors) are introduced. | Scheduled |

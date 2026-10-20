@@ -1,0 +1,32 @@
+[
+  {
+    "shapeCount": 100,
+    "domNodeCount": 302,
+    "ttffMs": 30.800000000745058,
+    "avgDragBlockMs": 0.01000000002483527,
+    "maxDragBlockMs": 0.10000000149011612,
+    "pan02xMs": 16.619999999925493,
+    "pan10xMs": 16.655000000074505,
+    "pan50xMs": 16.665000000037253
+  },
+  {
+    "shapeCount": 500,
+    "domNodeCount": 1502,
+    "ttffMs": 29.799999997019768,
+    "avgDragBlockMs": 0.0033333333830038708,
+    "maxDragBlockMs": 0.10000000149011612,
+    "pan02xMs": 16.669999999925494,
+    "pan10xMs": 16.675,
+    "pan50xMs": 16.665000000037253
+  },
+  {
+    "shapeCount": 1000,
+    "domNodeCount": 3002,
+    "ttffMs": 30.5,
+    "avgDragBlockMs": 0.0033333333830038708,
+    "maxDragBlockMs": 0.10000000149011612,
+    "pan02xMs": 16.665000000037253,
+    "pan10xMs": 16.665000000037253,
+    "pan50xMs": 16.66000000014901
+  }
+]
