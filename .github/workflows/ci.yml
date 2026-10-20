@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'build/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Typecheck, Test, Build & Guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Import Boundary Check
+        run: node scripts/check-boundaries.js
+
+      - name: Zero Runtime Dependencies Check
+        run: node scripts/check-dependencies.js
+
+      - name: DOM Canvas Bitmap Check
+        run: node scripts/check-no-bitmap.js
