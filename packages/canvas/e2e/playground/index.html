@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenDraw E2E Playground</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #toolbar {
+      height: 40px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      z-index: 10;
+    }
+    #canvas-container {
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 40px);
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <button id="btn-pan">Pan</button>
+      <button id="btn-zoom-in">Zoom In</button>
+      <button id="btn-zoom-out">Zoom Out</button>
+      <button id="btn-reset">Reset</button>
+    </div>
+    <div id="canvas-container"></div>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
