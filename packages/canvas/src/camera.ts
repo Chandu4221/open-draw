@@ -140,6 +140,29 @@ export function zoomAroundPoint(
 }
 
 /**
+ * Fits the camera to focus on given bounds within a viewport.
+ */
+export function fitToBounds(
+  bounds: { x: number; y: number; width: number; height: number },
+  viewportSize: { width: number; height: number },
+  padding = 40
+): Camera {
+  if (bounds.width <= 0 || bounds.height <= 0 || viewportSize.width <= 0 || viewportSize.height <= 0) {
+    return DEFAULT_CAMERA;
+  }
+  const availableW = Math.max(10, viewportSize.width - padding * 2);
+  const availableH = Math.max(10, viewportSize.height - padding * 2);
+  const zoomX = availableW / bounds.width;
+  const zoomY = availableH / bounds.height;
+  const clampedZoom = Math.max(0.1, Math.min(2, Math.min(zoomX, zoomY)));
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
+  const x = viewportSize.width / 2 - centerX * clampedZoom;
+  const y = viewportSize.height / 2 - centerY * clampedZoom;
+  return createCamera({ x, y, zoom: clampedZoom });
+}
+
+/**
  * Produces the SVG transform string for the root viewport group:
  * translate(x, y) scale(zoom)
  */
@@ -206,6 +229,17 @@ export class CameraController {
 
   toTransform(): string {
     return cameraToTransform(this._camera);
+  }
+
+  reset(): Camera {
+    this.setCamera(DEFAULT_CAMERA);
+    return this._camera;
+  }
+
+  fitToBounds(bounds: { x: number; y: number; width: number; height: number }, viewportSize: { width: number; height: number }, padding?: number): Camera {
+    const next = fitToBounds(bounds, viewportSize, padding);
+    this.setCamera(next);
+    return next;
   }
 
   subscribe(listener: (camera: Camera) => void): () => void {
