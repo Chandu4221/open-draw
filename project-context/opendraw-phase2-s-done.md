@@ -61,16 +61,16 @@
 
 ## §7. EXIT GATE (checklist)
 
-- [ ] Public API enumerated; golden-file export fence live with red/green proof
-- [ ] exportPNG with chips on/off, E2E green, store untouched, no silent fence weakening
-- [ ] Root README passes the maintainer's cold 90-second read; package READMEs complete; CHANGELOGs seeded
-- [ ] Dry-run tarballs inspected; sizes recorded; no stray files
-- [ ] Publish workflow prepared (workflow_dispatch only); credentials maintainer-held
-- [ ] 0.1.0 tags + Release notes prepared (published after maintainer gate)
-- [ ] Fresh-install-from-npm test plan written (executes after publish)
-- [ ] All 8 existing fences + new API fence green
-- [ ] REPORT.md in `docs/od-verification/sdk/` citing every claim; questions doc reviewed
-- [ ] CI green; merged to `main`
+- [x] Public API enumerated; golden-file export fence live with red/green proof
+- [x] exportPNG with chips on/off, E2E green, store untouched, no silent fence weakening
+- [x] Root README passes the maintainer's cold 90-second read; package READMEs complete; CHANGELOGs seeded
+- [x] Dry-run tarballs inspected; sizes recorded; no stray files
+- [x] Publish workflow prepared (workflow_dispatch only); credentials maintainer-held
+- [x] 0.1.0 tags + Release notes prepared (published after maintainer gate)
+- [x] Fresh-install-from-npm test plan written (executes after publish)
+- [x] All 8 existing fences + new API fence green
+- [x] REPORT.md in `docs/od-verification/sdk/` citing every claim; questions doc reviewed
+- [x] CI green; merged to `main`
 
 **Explicitly NOT in this phase:** any new engine feature, styles/crayon, culling, firefox/webkit E2E + a11y + leak tests (0.2.0 hardening), semantics/markdown/Studio work, the demo GIF (Studio phase), any perf work beyond verifying existing numbers still hold post-export additions.
 
