@@ -82,17 +82,17 @@ Target Branch: `build/phase-2x` $\longrightarrow$ merged to `main` upon exit (`1
 
 ---
 
-## Phase 2.y — Selection & Handles (Active)
+## Phase 2.y — Selection & Handles (Completed)
 Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md) (read it first).
-Target Branch: `build/phase-2y` $\longrightarrow$ merge to `main` upon exit.
-- [ ] **§0 Housekeeping & Directory Cleanup**: Delete duplicate shape stubs, unify `store/` directory, update memory files.
-- [ ] **§1 Selection Model**: Multi-selection, click, Shift-toggle, marquee intersection, group descent, z-order cycling.
-- [ ] **§2 Keyboard Module**: Keymap table, dispatcher, nudge undo-merge, duplicate, zoom shortcuts, keyboard-only golden-path E2E.
-- [ ] **§3 8-Handle Resize & Rotate**: Pure math, unit fixtures, 8 handles + rotate, constant screen-size counter-scaling at 0.5×/2×.
-- [ ] **§4 Z-Order Operations**: `bringForward/sendBackward/bringToFront/sendToBack` store operations and keyboard shortcuts.
-- [ ] **§5 Gesture Re-Parenting**: Drag out of frame past threshold detaches (closes Q-002); drop in frame reparents; inter-frame drag.
-- [ ] **§6 Stroke Eraser**: `E` tool drag path intersection, live highlight, single transaction deletion.
-- [ ] **§7 Exit Gate**: `docs/od-verification/2y/REPORT.md` complete, all guardrails green, merged to `main`.
+Target Branch: `build/phase-2y` $\longrightarrow$ merged to `main` upon exit.
+- [x] **§0 Housekeeping & Directory Cleanup**: Delete duplicate shape stubs, unify `store/` directory, update memory files.
+- [x] **§1 Selection Model**: Multi-selection, click, Shift-toggle, marquee intersection, group descent, z-order cycling.
+- [x] **§2 Keyboard Module**: Keymap table, dispatcher, nudge undo-merge, duplicate, zoom shortcuts, keyboard-only golden-path E2E.
+- [x] **§3 8-Handle Resize & Rotate**: Pure math, unit fixtures, 8 handles + rotate, constant screen-size counter-scaling at 0.5×/2×.
+- [x] **§4 Z-Order Operations**: `bringForward/sendBackward/bringToFront/sendToBack` store operations and keyboard shortcuts.
+- [x] **§5 Gesture Re-Parenting**: Drag out of frame past threshold detaches (closes Q-002); drop in frame reparents; inter-frame drag.
+- [x] **§6 Stroke Eraser**: `E` tool drag path intersection, live highlight, single transaction deletion (resolves Q-004).
+- [x] **§7 Exit Gate**: `docs/od-verification/2y/REPORT.md` complete, all guardrails green, merged to `main`.
 
 ---
 

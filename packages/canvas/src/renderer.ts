@@ -169,6 +169,7 @@ export class SVGRenderer {
     wrapper.setAttribute('tabindex', '0');
     wrapper.setAttribute('role', 'button');
     const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
+    wrapper.setAttribute('aria-label', String(label));
     const def = this.registry.get(shape.type);
     const bounds = def?.geometry.bounds(shape);
     const rot = shape.rotation && bounds ? ` rotate(${shape.rotation}, ${bounds.width / 2}, ${bounds.height / 2})` : '';

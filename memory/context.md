@@ -27,6 +27,8 @@ schema ──> (none)
 ## Master Context
 - **Master Context**: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md) and [`OPENDRAW.md`](../OPENDRAW.md).
 
-## Active Phase
-- **Phase 2.y: Selection & Handles** (Branch: `build/phase-2y` $\to$ merge to `main` upon exit checklist completion).
-- Focus: §0 Directory cleanup $\to$ §1 Selection Model $\to$ §2 Keyboard Module $\to$ §3 8-Handle Resize System & Rotation $\to$ §4 Z-Order Operations $\to$ §5 Gesture Re-Parenting $\to$ §6 Stroke Eraser $\to$ §7 Phase 2.y Report & Exit Gate.
+## Completed Phase
+- **Phase 2.y: Selection & Handles** (Exit Gate complete, 38 E2E tests, 157 unit tests, 7 guardrails green, merged to `main`).
+
+## Next Phase
+- **SDK Freeze**: `@open-draw/canvas@0.1.0` (README, API docs from ADR-005 + Phase 2 contracts, exportPNG).
