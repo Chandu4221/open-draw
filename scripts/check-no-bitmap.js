@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Guardrail: Bans getContext in DOM Canvas render paths.
+// EXEMPTION POLICY (Q-006 / Phase 2.s §2):
+// The live engine render path is strictly 100% SVG/DOM. getContext is permitted
+// ONLY in serialization-only pathways (e.g. packages/canvas/src/export/png.ts)
+// where SVG is rasterized to a PNG Blob for AI/export flows, marked with `// EXEMPTION:`.
 const CANVAS_SRC = process.argv[2] || 'packages/canvas/src';
 
 function scanDir(dir) {

@@ -20,6 +20,7 @@ import { SelectionManager } from './selection/index.js';
 import { KeyboardDispatcher, type KeyBinding } from './input/index.js';
 import { GestureController } from './gesture/index.js';
 import { FrameTelemetry } from './perf/index.js';
+import { exportPNG, type ExportPngOptions } from './export/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
@@ -139,6 +140,10 @@ export class CanvasEditor {
     this.renderer.destroy();
     this.isMounted = false;
     this.container = null;
+  }
+
+  getContainer(): HTMLElement | null {
+    return this.container;
   }
 
   setTool(toolId: string): void {
@@ -268,6 +273,10 @@ export class CanvasEditor {
 
   getShapeWrapper(id: ShapeId): SVGGElement | null {
     return this.renderer.getShapeWrapper(id);
+  }
+
+  async exportPNG(options?: ExportPngOptions): Promise<Blob> {
+    return exportPNG(this, options);
   }
 
   private onDblClick = (e: MouseEvent): void => {

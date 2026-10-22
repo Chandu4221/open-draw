@@ -25,6 +25,7 @@ export * from './input/index.js';
 export * from './eraser/index.js';
 export * from './gesture/index.js';
 export * from './perf/index.js';
+export * from './export/index.js';
 
 export interface CanvasEngineOptions {
   readonly readonly?: boolean;
