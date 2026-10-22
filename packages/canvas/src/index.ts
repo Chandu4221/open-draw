@@ -22,6 +22,7 @@ export * from './capabilities/clipping/index.js';
 export * from './capabilities/connector/index.js';
 export * from './selection/index.js';
 export * from './input/index.js';
+export * from './eraser/index.js';
 
 export interface CanvasEngineOptions {
   readonly readonly?: boolean;

@@ -8,11 +8,13 @@ import { computeMarqueeBounds, findIntersectingShapes, MarqueeOverlay } from './
 import type { HandleType } from './selection/handles.js';
 import { TransformGestureController } from './selection/transformGesture.js';
 import { handleGestureReparent } from './selection/reparent.js';
+import { StrokeEraserController } from './eraser/index.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
   private container: HTMLElement | null = null;
   private transformGesture: TransformGestureController;
+  private eraser: StrokeEraserController;
 
   private isDragging = false;
   private dragStartPointer: Point | null = null;
@@ -34,6 +36,7 @@ export class PointerInteractionController {
   constructor(editor: CanvasEditor) {
     this.editor = editor;
     this.transformGesture = new TransformGestureController(editor);
+    this.eraser = new StrokeEraserController(editor);
   }
 
   attach(container: HTMLElement): void {
@@ -65,6 +68,8 @@ export class PointerInteractionController {
 
     if (activeTool === 'select') {
       this.onSelectPointerDown(e, pagePt);
+    } else if (activeTool === 'eraser') {
+      this.eraser.start(pagePt);
     } else if (activeTool === 'ink' || activeTool === 'draw' || activeTool === 'highlighter') {
       this.onInkPointerDown(activeTool, pagePt);
     } else if (this.editor.registry.has(activeTool)) {
@@ -197,6 +202,11 @@ export class PointerInteractionController {
       return;
     }
 
+    if (this.eraser.isActive) {
+      this.eraser.move(currentPagePt);
+      return;
+    }
+
     if (this.isDrawing && this.currentInkShapeId) {
       this.currentInkPts.push(currentPagePt.x, currentPagePt.y);
       const shape = this.editor.store.getShape(this.currentInkShapeId);
@@ -235,6 +245,11 @@ export class PointerInteractionController {
   private onPointerUp = (): void => {
     if (this.transformGesture.isTransforming) {
       this.transformGesture.end();
+      return;
+    }
+
+    if (this.eraser.isActive) {
+      this.eraser.end();
       return;
     }
 
