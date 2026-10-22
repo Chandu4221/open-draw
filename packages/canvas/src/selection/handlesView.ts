@@ -31,6 +31,7 @@ export function renderHandles(
     outline.setAttribute('stroke', '#3b82f6');
     outline.setAttribute('stroke-width', '1.5');
     outline.setAttribute('pointer-events', 'none');
+    outline.setAttribute('vector-effect', 'non-scaling-stroke');
     frame.appendChild(outline);
   }
   outline.setAttribute('x', String(localBounds.x));
@@ -47,6 +48,7 @@ export function renderHandles(
     connector.setAttribute('class', 'od-handle-connector');
     connector.setAttribute('stroke', '#3b82f6');
     connector.setAttribute('stroke-width', '1');
+    connector.setAttribute('vector-effect', 'non-scaling-stroke');
     connector.setAttribute('pointer-events', 'none');
     frame.appendChild(connector);
   }
@@ -74,6 +76,7 @@ function _renderHandle(frame: SVGGElement, d: HandleDescriptor, size: number, ha
       circle.setAttribute('fill', '#ffffff');
       circle.setAttribute('stroke', '#3b82f6');
       circle.setAttribute('stroke-width', '1.5');
+      circle.setAttribute('vector-effect', 'non-scaling-stroke');
       circle.style.pointerEvents = 'auto';
       circle.style.cursor = d.cursor;
       frame.appendChild(circle);
@@ -92,6 +95,7 @@ function _renderHandle(frame: SVGGElement, d: HandleDescriptor, size: number, ha
     rect.setAttribute('fill', '#ffffff');
     rect.setAttribute('stroke', '#3b82f6');
     rect.setAttribute('stroke-width', '1.5');
+    rect.setAttribute('vector-effect', 'non-scaling-stroke');
     rect.style.pointerEvents = 'auto';
     rect.style.cursor = d.cursor;
     frame.appendChild(rect);

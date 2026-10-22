@@ -119,6 +119,13 @@ test.describe('Privileged Capability #2: Frame & Clipping E2E Gate', () => {
         props: { width: 250, height: 180, fill: '#3b82f6' },
       });
 
+      const slot = editor.getOverlaySlot(child.id);
+      if (slot) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.textContent = 'CHILD_OVERLAY';
+        slot.appendChild(text);
+      }
+
       return { frameId: frame.id, childId: child.id };
     });
 

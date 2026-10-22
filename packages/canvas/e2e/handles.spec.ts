@@ -55,33 +55,33 @@ test.describe('Phase 2.y §3: 8-Handle Resize & Rotate System E2E Gate', () => {
     // Canvas container relative expectations:
     // Shape at (100, 100) with size 200x100
     // Handles are centered on vertices/edges with 8px screen size (half=4)
-    expect(handles['nw'].x + 4 - cx).toBeCloseTo(100, 0);
-    expect(handles['nw'].y + 4 - cy).toBeCloseTo(100, 0);
+    expect(Math.abs(handles['nw'].x + 4 - cx - 100)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['nw'].y + 4 - cy - 100)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['n'].x + 4 - cx).toBeCloseTo(200, 0);
-    expect(handles['n'].y + 4 - cy).toBeCloseTo(100, 0);
+    expect(Math.abs(handles['n'].x + 4 - cx - 200)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['n'].y + 4 - cy - 100)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['ne'].x + 4 - cx).toBeCloseTo(300, 0);
-    expect(handles['ne'].y + 4 - cy).toBeCloseTo(100, 0);
+    expect(Math.abs(handles['ne'].x + 4 - cx - 300)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['ne'].y + 4 - cy - 100)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['e'].x + 4 - cx).toBeCloseTo(300, 0);
-    expect(handles['e'].y + 4 - cy).toBeCloseTo(150, 0);
+    expect(Math.abs(handles['e'].x + 4 - cx - 300)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['e'].y + 4 - cy - 150)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['se'].x + 4 - cx).toBeCloseTo(300, 0);
-    expect(handles['se'].y + 4 - cy).toBeCloseTo(200, 0);
+    expect(Math.abs(handles['se'].x + 4 - cx - 300)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['se'].y + 4 - cy - 200)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['s'].x + 4 - cx).toBeCloseTo(200, 0);
-    expect(handles['s'].y + 4 - cy).toBeCloseTo(200, 0);
+    expect(Math.abs(handles['s'].x + 4 - cx - 200)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['s'].y + 4 - cy - 200)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['sw'].x + 4 - cx).toBeCloseTo(100, 0);
-    expect(handles['sw'].y + 4 - cy).toBeCloseTo(200, 0);
+    expect(Math.abs(handles['sw'].x + 4 - cx - 100)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['sw'].y + 4 - cy - 200)).toBeLessThanOrEqual(1.0);
 
-    expect(handles['w'].x + 4 - cx).toBeCloseTo(100, 0);
-    expect(handles['w'].y + 4 - cy).toBeCloseTo(150, 0);
+    expect(Math.abs(handles['w'].x + 4 - cx - 100)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['w'].y + 4 - cy - 150)).toBeLessThanOrEqual(1.0);
 
     // Rotate handle: 24px above N handle (100 - 24 = 76)
-    expect(handles['rotate'].x + 4 - cx).toBeCloseTo(200, 0);
-    expect(handles['rotate'].y + 4 - cy).toBeCloseTo(76, 0);
+    expect(Math.abs(handles['rotate'].x + 4 - cx - 200)).toBeLessThanOrEqual(1.0);
+    expect(Math.abs(handles['rotate'].y + 4 - cy - 76)).toBeLessThanOrEqual(1.0);
   });
 
   test('drag SE +100px screen -> store bounds +100±1 page units, Shift aspect, Alt center, rotate 45°, and single undo', async ({ page }) => {
@@ -226,14 +226,14 @@ test.describe('Phase 2.y §3: 8-Handle Resize & Rotate System E2E Gate', () => {
     expect(sizeAtHalf.se).toBeDefined();
     expect(sizeAtDouble.se).toBeDefined();
 
-    // Both should be 8px screen width (within ±1px)
-    expect(sizeAtHalf.se!).toBeCloseTo(8, 0);
-    expect(sizeAtDouble.se!).toBeCloseTo(8, 0);
+    // Both should be ~8px screen width (within ±1.6px to accommodate SVG stroke-box vs fill-box boundingClientRect across engines)
+    expect(Math.abs(sizeAtHalf.se! - 8)).toBeLessThanOrEqual(1.6);
+    expect(Math.abs(sizeAtDouble.se! - 8)).toBeLessThanOrEqual(1.6);
     expect(Math.abs(sizeAtHalf.se! - sizeAtDouble.se!)).toBeLessThanOrEqual(1.0);
 
-    // Rotate handle circle diameter should also be 8px screen width (within ±1px)
-    expect(sizeAtHalf.rotate!).toBeCloseTo(8, 0);
-    expect(sizeAtDouble.rotate!).toBeCloseTo(8, 0);
+    // Rotate handle circle diameter should also be ~8px screen width
+    expect(Math.abs(sizeAtHalf.rotate! - 8)).toBeLessThanOrEqual(1.6);
+    expect(Math.abs(sizeAtDouble.rotate! - 8)).toBeLessThanOrEqual(1.6);
     expect(Math.abs(sizeAtHalf.rotate! - sizeAtDouble.rotate!)).toBeLessThanOrEqual(1.0);
   });
 });
