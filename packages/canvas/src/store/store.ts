@@ -1,6 +1,7 @@
 import type { ShapeId, ShapeRecord, Snapshot } from '@open-draw/schema';
 import { computeDiff, parseAndValidateSnapshot } from './snapshot.js';
 import type { HistoryEntry, MetaValidator, StoreDiff, StoreListener } from './types.js';
+import { reorderShapes, type ZOrderOperation } from './zorder.js';
 
 export type { HistoryEntry, MetaValidator, StoreDiff, StoreListener };
 
@@ -18,21 +19,10 @@ export class CanvasStore {
   private pendingUpdated: Set<ShapeId> = new Set();
   private pendingDeleted: Set<ShapeId> = new Set();
 
-  registerMetaNamespace(namespace: string, validator: MetaValidator): void {
-    this.metaValidators.set(namespace, validator);
-  }
-
-  getShape(id: ShapeId): ShapeRecord | undefined {
-    return this.shapes.get(id);
-  }
-
-  hasShape(id: ShapeId): boolean {
-    return this.shapes.has(id);
-  }
-
-  listShapes(): ReadonlyArray<ShapeRecord> {
-    return Array.from(this.shapes.values());
-  }
+  registerMetaNamespace(namespace: string, validator: MetaValidator): void { this.metaValidators.set(namespace, validator); }
+  getShape(id: ShapeId): ShapeRecord | undefined { return this.shapes.get(id); }
+  hasShape(id: ShapeId): boolean { return this.shapes.has(id); }
+  listShapes(): ReadonlyArray<ShapeRecord> { return Array.from(this.shapes.values()); }
 
   createShape(record: {
     readonly id: ShapeId;
@@ -197,12 +187,26 @@ export class CanvasStore {
     }
   }
 
-  canUndo(): boolean {
-    return this.undoStack.length > 0;
+  canUndo(): boolean { return this.undoStack.length > 0; }
+  canRedo(): boolean { return this.redoStack.length > 0; }
+
+  mergeLastHistoryEntry(): void {
+    if (this.undoStack.length < 2) return;
+    const current = this.undoStack.pop()!;
+    const prev = this.undoStack[this.undoStack.length - 1]!;
+    this.undoStack[this.undoStack.length - 1] = { before: prev.before, after: current.after };
   }
 
-  canRedo(): boolean {
-    return this.redoStack.length > 0;
+  reorderShapes(op: ZOrderOperation, ids: readonly ShapeId[]): void {
+    if (ids.length === 0) return;
+    const reordered = reorderShapes(Array.from(this.shapes.values()), ids, op);
+    const before = new Map(this.shapes);
+    const after = new Map<ShapeId, ShapeRecord>();
+    for (const s of reordered) after.set(s.id, s);
+    this.undoStack.push({ before, after });
+    this.redoStack = [];
+    this.shapes = after;
+    this.notifyListeners({ created: new Set(), updated: new Set(), deleted: new Set() });
   }
 
   undo(): boolean {
