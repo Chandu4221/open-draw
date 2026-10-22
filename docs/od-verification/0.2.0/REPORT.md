@@ -28,6 +28,7 @@ Phase 0.2.0 hardens the OpenDraw SDK to make it truly trustworthy across real br
 | `DEF-005` | a11y / axe-core | `label-content-name-mismatch` on text/label shapes | Axe-core flagged text shapes whose visible text (`Sample Text`) was omitted from the accessible name (`aria-label="text Item 20"`), violating WCAG 2.5.3. | Implemented `computeShapeAria`: visible text (`props.text` or `props.label`) is incorporated into the accessible name (e.g. `Sample Text (text Item 20)`). |
 | `DEF-006` | a11y / axe-core | Missing form control label on inline text editor `<textarea>` | The dynamically injected `<textarea>` lacked an accessible label, triggering axe-core form label violation. | Added explicit `aria-label="Edit shape text"` to the `<textarea>` on creation. |
 | `DEF-007` | Leaks / Lifecycle | Incomplete teardown if editor destroyed mid-text-edit | If `editor.destroy()` was called while inline text editing was active, the `<textarea>` event listeners and DOM elements were not cleaned up. | Added `this.textEditing.cancel()` to `CanvasEditor.destroy()`. |
+| `DEF-008` | E2E / WebKit | `live-preview.spec.ts` midpoint assertions sampled before queued RAF fired | In WebKitGTK/Linux WebKit, `pointermove` events enqueue a `requestAnimationFrame` callback, but `page.evaluate()` runs on the next microtask before the frame tick occurs. | Added `flushRAF()` helper (two nested `requestAnimationFrame` calls) after midpoint pointer moves to let the browser frame queue drain before evaluating live DOM transforms. Recorded in `docs/od-spike-notes.md` (`SPK-004`). |
 
 ---
 
@@ -46,6 +47,7 @@ Phase 0.2.0 hardens the OpenDraw SDK to make it truly trustworthy across real br
 3. **PNG Serialization:** `editor.exportPNG` produces valid PNG headers (`\x89PNG\r\n\x1a\n`) across all engines.
 4. **Compositor Timing Skip:** `packages/canvas/e2e/perf-baseline.spec.ts` relies on Chromium's internal compositor scheduling telemetry at 60Hz. It is conditionally skipped on non-Chromium engines with explicit visible annotation: `test.skip(!isChromium, 'Compositor timing telemetry calibrated for Chromium 60Hz compositor')`.
 5. **WebKit Environment Note:** WebKit running on headless Linux requires OS media libraries (`libgstcodecparsers`, `libharfbuzz-icu`, `libmanette`, `libenchant`, `libhyphen`). In CI, `npx playwright install --with-deps` provisions these automatically.
+6. **WebKit RAF Throttling:** In WebKitGTK / headless Linux WebKit, pointer events schedule interaction updates via `requestAnimationFrame` throttled to the display refresh rate. E2E midpoint sampling after `page.mouse.move()` flushes the frame queue with standard `flushRAF()` to ensure pending DOM transforms are applied before assertion evaluation.
 
 ---
 

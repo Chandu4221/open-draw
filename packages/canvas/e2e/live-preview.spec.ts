@@ -1,4 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function flushRAF(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}
 
 test.describe('Phase 2.z §0: Live-Preview Repair & Midpoint Sampling Gate', () => {
   test.beforeEach(async ({ page }) => {
@@ -39,6 +43,7 @@ test.describe('Phase 2.z §0: Live-Preview Repair & Midpoint Sampling Gate', () 
 
     // 1. Move to midpoint: +60px X, +40px Y -> target width: 260, height: 140
     await page.mouse.move(cx + 360, cy + 240);
+    await flushRAF(page);
 
     // Assert shape DOM element reflects in-flight dimensions live
     const midDOM = await page.evaluate((id) => {
@@ -111,6 +116,7 @@ test.describe('Phase 2.z §0: Live-Preview Repair & Midpoint Sampling Gate', () 
 
     // 1. Move to midpoint: +50px X, +30px Y
     await page.mouse.move(cx + 250, cy + 180);
+    await flushRAF(page);
 
     const midMove = await page.evaluate((id) => {
       const editor = (window as any).__od_debug__.editor;
@@ -180,6 +186,7 @@ test.describe('Phase 2.z §0: Live-Preview Repair & Midpoint Sampling Gate', () 
 
     // Rotate 90° clockwise: pointer at right of center (cx + 324, cy + 200)
     await page.mouse.move(cx + 324, cy + 200);
+    await flushRAF(page);
 
     const midRotate = await page.evaluate((id) => {
       const editor = (window as any).__od_debug__.editor;
@@ -231,6 +238,7 @@ test.describe('Phase 2.z §0: Live-Preview Repair & Midpoint Sampling Gate', () 
     await page.mouse.move(cx + 300, cy + 200);
     await page.mouse.down();
     await page.mouse.move(cx + 360, cy + 240);
+    await flushRAF(page);
 
     // Verify it changed in DOM
     const midWidth = await page.evaluate((id) => {
@@ -367,6 +375,7 @@ test.describe('Phase 2.z §0: Live-Preview Repair & Midpoint Sampling Gate', () 
 
     // 1. Move into frame: target at (400, 200) (inside frame bounds 300..600 x 100..400)
     await page.mouse.move(cx + 400, cy + 200);
+    await flushRAF(page);
 
     // Midpoint assertion: frame element MUST have class .od-frame-target
     const hasHighlight = await page.evaluate((fId) => {
