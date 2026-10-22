@@ -53,7 +53,7 @@ The repository enforces seven automated CI checks on every commit:
 2. **Zero Shape-Type Branching** (`scripts/check-no-shape-branching.js`): Forbids hardcoded `shape.type === '...'` outside shape definitions.
 3. **Isolated Zoom Math** (`scripts/check-isolated-zoom.js`): Strictly confines coordinate transform math to `camera.ts` (with single audited counter-scaling exemption in `handlesView.ts`).
 4. **DOM Canvas Bitmap Check** (`scripts/check-no-bitmap.js`): Strictly forbids `getContext` in render paths.
-5. **Import Boundaries Check** (`scripts/check-boundaries.js`): Enforces one-way package dependencies (`schema` $\to$ `canvas` $\to$ `semantics` $\to$ `markdown` $\to$ `studio`).
+5. **Import Boundaries Check** (`scripts/check-boundaries.js`): Enforces one-way dependencies across packages (`studio` $\to$ `markdown` $\to$ `semantics` $\to$ `canvas` $\to$ `schema`) and within canvas (`packages/canvas/src/shapes/` and `capabilities/` import from `registry.ts` and `store/` — NOT vice versa).
 6. **Zero Runtime Dependencies** (`scripts/check-dependencies.js`): Enforces empty dependencies across all workspaces.
 7. **Portable Links Check** (`scripts/check-portable-links.js`): Enforces repo-relative paths in documentation.
 
