@@ -2,6 +2,27 @@
 
 All notable changes to `@open-draw/canvas` are documented in this file in adherence to Semantic Versioning.
 
+## 0.2.0 (2026-10-22)
+
+Hardening release: cross-browser engine verification, accessibility (a11y) audit, and memory/listener leak suites. Zero runtime dependencies preserved.
+
+### Hardening & Improvements
+- **Cross-Browser Multi-Engine Support:**
+  - Extended E2E suite to run continuously across `chromium`, `firefox`, and `webkit`.
+  - Standardized selection handles with `vector-effect="non-scaling-stroke"` for consistent 1.5px visual stroke across zoom levels on all engines.
+  - Resolved SVG bounding box computation differences in Gecko (stroke-box vs fill-box) without user-agent sniffing.
+- **Accessibility (a11y) Architecture:**
+  - Integrated automated `@axe-core/playwright` accessibility audits across key canvas states (empty canvas, multi-shape collections, active selection, in-flight gestures, text editing, frame hierarchies).
+  - Assigned semantic `role="group"` to container shapes (`frame`, `group`) and `role="button"` to atomic interactive shapes to eliminate `nested-interactive` violations.
+  - Implemented WCAG 2.5.3 compliant accessible labeling (`props.text` / `props.label` incorporated into `aria-label`).
+  - Added visible `:focus-visible` styling (`outline: 2px solid #3b82f6`) on `.od-shape` and `.od-canvas-root`.
+  - Added explicit `aria-label` to inline text editing `<textarea>`.
+- **Memory & Listener Leak Elimination:**
+  - 50-cycle editor lifecycle test verifying bounded DOM growth and clean container teardown.
+  - Added text editing cleanup (`this.textEditing.cancel()`) on `editor.destroy()`.
+  - Complete listener teardown symmetry on `editor.destroy()` proven via red/green tests.
+  - Validated 100-cycle non-destructive overlay restoration in `editor.exportPNG()`.
+
 ## 0.1.0 (2026-10-22)
 
 Initial public release of `@open-draw/canvas`.
