@@ -85,6 +85,7 @@ export class CanvasEditor {
 
     this.unsubscribeCamera = this.camera.subscribe((cam) => {
       this.renderer.updateCamera(cam);
+      this.selectionManager.updateVisuals(this.renderer, this.store, this.registry, cam);
     });
 
     this.unsubscribeStore = this.store.listen((diff) => {
@@ -97,12 +98,12 @@ export class CanvasEditor {
       this.renderer.applyDiff(diff, this.store);
       this.renderer.reorderDOM(this.store.listShapes());
       if (diff.updated.size > 0) {
-        this.selectionManager.updateVisuals(this.renderer, this.store, this.registry);
+        this.selectionManager.updateVisuals(this.renderer, this.store, this.registry, this.camera.camera);
       }
     });
 
     this.selectionManager.subscribe(() => {
-      this.selectionManager.updateVisuals(this.renderer, this.store, this.registry);
+      this.selectionManager.updateVisuals(this.renderer, this.store, this.registry, this.camera.camera);
     });
 
     this.interaction.attach(container);

@@ -2,7 +2,10 @@ import type { Bounds, Point, ShapeId, ShapeRecord } from '@open-draw/schema';
 
 import type { CanvasStore } from './store/index.js';
 
-export type ResizeHandle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top' | 'bottom' | 'left' | 'right';
+export type ResizeHandle =
+  | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  | 'top' | 'bottom' | 'left' | 'right'
+  | 'nw' | 'ne' | 'se' | 'sw' | 'n' | 's' | 'e' | 'w' | 'rotate';
 
 export interface RenderContext {
   readonly isSelected?: boolean;
@@ -17,7 +20,7 @@ export interface InteractionContext {
 
 export interface ShapeGeometry<P = Record<string, unknown>> {
   bounds(shape: ShapeRecord<P>): Bounds;
-  resize(shape: ShapeRecord<P>, handle: ResizeHandle, point: Point): Partial<ShapeRecord<P>>;
+  resize(shape: ShapeRecord<P>, handleOrBounds: ResizeHandle | Bounds, point?: Point): Partial<ShapeRecord<P>>;
   hit(shape: ShapeRecord<P>, point: Point): boolean;
 }
 

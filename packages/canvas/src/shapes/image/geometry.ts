@@ -29,31 +29,48 @@ export const imageGeometry = {
     };
   },
 
-  resize(shape: ShapeRecord<ImageProps>, handle: ResizeHandle, point: Point): Partial<ShapeRecord<ImageProps>> {
+  resize(shape: ShapeRecord<ImageProps>, handleOrBounds: ResizeHandle | Bounds, point?: Point): Partial<ShapeRecord<ImageProps>> {
+    if (typeof handleOrBounds === 'object' && 'width' in handleOrBounds && 'height' in handleOrBounds) {
+      return {
+        x: handleOrBounds.x,
+        y: handleOrBounds.y,
+        props: {
+          ...shape.props,
+          width: Math.max(20, handleOrBounds.width),
+          height: Math.max(20, handleOrBounds.height),
+        },
+      };
+    }
+
     let { x, y } = shape;
     let width = shape.props.width;
     let height = shape.props.height;
+    const pt = point ?? { x, y };
 
-    switch (handle) {
+    switch (handleOrBounds) {
       case 'bottom-right':
-        width = Math.max(20, point.x - x);
-        height = Math.max(20, point.y - y);
+      case 'se':
+        width = Math.max(20, pt.x - x);
+        height = Math.max(20, pt.y - y);
         break;
       case 'bottom-left':
-        width = Math.max(20, x + width - point.x);
-        height = Math.max(20, point.y - y);
-        x = point.x;
+      case 'sw':
+        width = Math.max(20, x + width - pt.x);
+        height = Math.max(20, pt.y - y);
+        x = pt.x;
         break;
       case 'top-right':
-        width = Math.max(20, point.x - x);
-        height = Math.max(20, y + height - point.y);
-        y = point.y;
+      case 'ne':
+        width = Math.max(20, pt.x - x);
+        height = Math.max(20, y + height - pt.y);
+        y = pt.y;
         break;
       case 'top-left':
-        width = Math.max(20, x + width - point.x);
-        height = Math.max(20, y + height - point.y);
-        x = point.x;
-        y = point.y;
+      case 'nw':
+        width = Math.max(20, x + width - pt.x);
+        height = Math.max(20, y + height - pt.y);
+        x = pt.x;
+        y = pt.y;
         break;
     }
 

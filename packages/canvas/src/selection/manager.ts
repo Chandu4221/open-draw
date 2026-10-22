@@ -1,8 +1,9 @@
-import type { ShapeId, ShapeRecord } from '@open-draw/schema';
+import type { Camera, ShapeId, ShapeRecord } from '@open-draw/schema';
 import type { ShapeRegistry } from '../registry.js';
 import type { SVGRenderer } from '../renderer.js';
 import type { CanvasStore } from '../store/index.js';
 import type { SelectionListener } from './defs.js';
+import { renderHandles, removeHandles } from './handlesView.js';
 
 export class SelectionManager {
   private selectedIds: ShapeId[] = [];
@@ -84,7 +85,12 @@ export class SelectionManager {
     return () => this.listeners.delete(listener);
   }
 
-  updateVisuals(renderer: SVGRenderer, store: CanvasStore, registry: ShapeRegistry): void {
+  updateVisuals(
+    renderer: SVGRenderer,
+    store: CanvasStore,
+    registry: ShapeRegistry,
+    camera?: Camera
+  ): void {
     const idsToRender = new Set<ShapeId>();
 
     for (const id of this.selectedIds) {
@@ -105,11 +111,39 @@ export class SelectionManager {
       }
     }
 
+    const singleSelectedId = this.selectedIds.length === 1 ? this.selectedIds[0] : null;
+
     for (const id of idsToRender) {
-      this._renderOutline(renderer, store, registry, id);
+      if (id === singleSelectedId) {
+        this._renderSingleSelection(renderer, store, registry, id, camera);
+      } else {
+        this._renderOutline(renderer, store, registry, id);
+      }
     }
 
     this.prevRenderedIds = idsToRender;
+  }
+
+  private _renderSingleSelection(
+    renderer: SVGRenderer,
+    store: CanvasStore,
+    registry: ShapeRegistry,
+    id: ShapeId,
+    camera?: Camera
+  ): void {
+    const slot = renderer.getOverlaySlot(id);
+    const shape = store.getShape(id);
+    if (!slot || !shape) return;
+
+    const legacy = slot.querySelector(':scope > .od-selection-outline');
+    legacy?.remove();
+
+    const bounds = this._computeBounds(shape, store, registry);
+    if (!bounds) return;
+
+    const lx = bounds.x - shape.x;
+    const ly = bounds.y - shape.y;
+    renderHandles(slot, { x: lx, y: ly, width: bounds.width, height: bounds.height }, camera);
   }
 
   private _computeBounds(shape: ShapeRecord, store: CanvasStore, registry: ShapeRegistry) {
@@ -177,8 +211,10 @@ export class SelectionManager {
 
   private _removeOutline(renderer: SVGRenderer, id: ShapeId): void {
     const slot = renderer.getOverlaySlot(id);
-    const outline = slot?.querySelector(':scope > .od-selection-outline');
+    if (!slot) return;
+    const outline = slot.querySelector(':scope > .od-selection-outline');
     outline?.remove();
+    removeHandles(slot);
   }
 
   private _notify(): void {

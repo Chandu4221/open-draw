@@ -16,7 +16,19 @@ export const frameGeometry: ShapeGeometry<FrameProps> = {
     };
   },
 
-  resize(shape: ShapeRecord<FrameProps>, handle: ResizeHandle, point: Point): Partial<ShapeRecord<FrameProps>> {
+  resize(shape: ShapeRecord<FrameProps>, handleOrBounds: ResizeHandle | Bounds, point?: Point): Partial<ShapeRecord<FrameProps>> {
+    if (typeof handleOrBounds === 'object' && 'width' in handleOrBounds && 'height' in handleOrBounds) {
+      return {
+        x: handleOrBounds.x,
+        y: handleOrBounds.y,
+        props: {
+          ...shape.props,
+          width: Math.max(MIN_SIZE, handleOrBounds.width),
+          height: Math.max(MIN_SIZE, handleOrBounds.height),
+        },
+      };
+    }
+
     const currentW = Math.max(MIN_SIZE, shape.props.width ?? DEFAULT_FRAME_PROPS.width);
     const currentH = Math.max(MIN_SIZE, shape.props.height ?? DEFAULT_FRAME_PROPS.height);
 
@@ -24,21 +36,22 @@ export const frameGeometry: ShapeGeometry<FrameProps> = {
     let y = shape.y;
     let width = currentW;
     let height = currentH;
+    const pt = point ?? { x, y };
 
-    if (handle.includes('right')) {
-      width = Math.max(MIN_SIZE, point.x - shape.x);
-    } else if (handle.includes('left')) {
+    if (handleOrBounds.includes('right') || handleOrBounds === 'e' || handleOrBounds === 'ne' || handleOrBounds === 'se') {
+      width = Math.max(MIN_SIZE, pt.x - shape.x);
+    } else if (handleOrBounds.includes('left') || handleOrBounds === 'w' || handleOrBounds === 'nw' || handleOrBounds === 'sw') {
       const right = shape.x + currentW;
-      const newX = Math.min(point.x, right - MIN_SIZE);
+      const newX = Math.min(pt.x, right - MIN_SIZE);
       width = right - newX;
       x = newX;
     }
 
-    if (handle.includes('bottom')) {
-      height = Math.max(MIN_SIZE, point.y - shape.y);
-    } else if (handle.includes('top')) {
+    if (handleOrBounds.includes('bottom') || handleOrBounds === 's' || handleOrBounds === 'se' || handleOrBounds === 'sw') {
+      height = Math.max(MIN_SIZE, pt.y - shape.y);
+    } else if (handleOrBounds.includes('top') || handleOrBounds === 'n' || handleOrBounds === 'ne' || handleOrBounds === 'nw') {
       const bottom = shape.y + currentH;
-      const newY = Math.min(point.y, bottom - MIN_SIZE);
+      const newY = Math.min(pt.y, bottom - MIN_SIZE);
       height = bottom - newY;
       y = newY;
     }

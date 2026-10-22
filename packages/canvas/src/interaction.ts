@@ -5,10 +5,13 @@ import { simplifyRDP } from './shapes/ink/index.js';
 import { isMod } from './input/utils.js';
 import { findGroupForMember, getGroupMembers, isGroupShape } from './selection/group.js';
 import { computeMarqueeBounds, findIntersectingShapes, MarqueeOverlay } from './selection/marquee.js';
+import type { HandleType } from './selection/handles.js';
+import { TransformGestureController } from './selection/transformGesture.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
   private container: HTMLElement | null = null;
+  private transformGesture: TransformGestureController;
 
   private isDragging = false;
   private dragStartPointer: Point | null = null;
@@ -29,6 +32,7 @@ export class PointerInteractionController {
 
   constructor(editor: CanvasEditor) {
     this.editor = editor;
+    this.transformGesture = new TransformGestureController(editor);
   }
 
   attach(container: HTMLElement): void {
@@ -70,6 +74,14 @@ export class PointerInteractionController {
   private onSelectPointerDown(e: PointerEvent, pagePt: Point): void {
     this.lastPointerDownShift = e.shiftKey;
     const target = e.target as Element | null;
+    const handleEl = target?.closest('.od-handle');
+    if (handleEl && this.editor.selection.length === 1) {
+      const handleType = handleEl.getAttribute('data-handle') as HandleType;
+      if (handleType && this.transformGesture.start(handleType, this.editor.selection[0]!, pagePt)) {
+        return;
+      }
+    }
+
     const shapeWrapper = target?.closest('.od-shape');
     const shapeId = shapeWrapper?.getAttribute('data-id');
 
@@ -179,6 +191,11 @@ export class PointerInteractionController {
     const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
     const currentPagePt = this.editor.camera.screenToPage(screenPt);
 
+    if (this.transformGesture.isTransforming) {
+      this.transformGesture.move(currentPagePt, e);
+      return;
+    }
+
     if (this.isDrawing && this.currentInkShapeId) {
       this.currentInkPts.push(currentPagePt.x, currentPagePt.y);
       const shape = this.editor.store.getShape(this.currentInkShapeId);
@@ -215,6 +232,11 @@ export class PointerInteractionController {
   };
 
   private onPointerUp = (): void => {
+    if (this.transformGesture.isTransforming) {
+      this.transformGesture.end();
+      return;
+    }
+
     if (this.isDrawing && this.currentInkShapeId) {
       const simplified = simplifyRDP(this.currentInkPts, 1.5);
       const shape = this.editor.store.getShape(this.currentInkShapeId);

@@ -206,7 +206,46 @@ test.describe('DOM Canvas Overlay Invariant (The Soul Test)', () => {
     await checkInvariant('grouped back to 1x');
   });
 
-  test.skip('rotated shape: overlay slot maintains transform coherence under rotation', async () => {
-    // Placeholder skip-until rotation lands in shape properties
+  test('rotated shape: overlay slot maintains transform coherence under rotation', async ({ page }) => {
+    const initResult = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__?.editor;
+      const shape = editor.createShape({
+        type: 'rect',
+        x: 100,
+        y: 100,
+        rotation: 45,
+        props: { width: 100, height: 100, fill: '#3b82f6' },
+      });
+      const slot = editor.getOverlaySlot(shape.id);
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('class', 'test-overlay-text');
+      text.setAttribute('x', '0');
+      text.setAttribute('y', '0');
+      text.textContent = 'ROTATED';
+      slot?.appendChild(text);
+      return { shapeId: shape.id };
+    });
+
+    const shapeId = initResult.shapeId;
+    const state = await page.evaluate((id) => {
+      const editor = (window as any).__od_debug__.editor;
+      const wrapper = document.querySelector(`.od-shape[data-id="${id}"]`) as SVGGElement | null;
+      const slot = editor.getOverlaySlot(id);
+      if (!wrapper || !slot) return { error: 'Not found' };
+      const isLastChild = wrapper.lastElementChild === slot;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const slotRect = slot.getBoundingClientRect();
+      return {
+        isLastChild,
+        wrapperLeft: wrapperRect.left,
+        slotLeft: slotRect.left,
+        wrapperTop: wrapperRect.top,
+        slotTop: slotRect.top,
+      };
+    }, shapeId);
+
+    expect(state.isLastChild).toBe(true);
+    expect(Math.abs(state.slotLeft - state.wrapperLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(state.slotTop - state.wrapperTop)).toBeLessThanOrEqual(1);
   });
 });

@@ -15,31 +15,48 @@ export const noteGeometry = {
     };
   },
 
-  resize(shape: ShapeRecord<NoteProps>, handle: ResizeHandle, point: Point): Partial<ShapeRecord<NoteProps>> {
+  resize(shape: ShapeRecord<NoteProps>, handleOrBounds: ResizeHandle | Bounds, point?: Point): Partial<ShapeRecord<NoteProps>> {
+    if (typeof handleOrBounds === 'object' && 'width' in handleOrBounds && 'height' in handleOrBounds) {
+      return {
+        x: handleOrBounds.x,
+        y: handleOrBounds.y,
+        props: {
+          ...shape.props,
+          width: Math.max(MIN_NOTE_WIDTH, handleOrBounds.width),
+          height: Math.max(MIN_NOTE_HEIGHT, handleOrBounds.height),
+        },
+      };
+    }
+
     let { x, y } = shape;
     let width = shape.props.width;
     let height = shape.props.height;
+    const pt = point ?? { x, y };
 
-    switch (handle) {
+    switch (handleOrBounds) {
       case 'bottom-right':
-        width = Math.max(MIN_NOTE_WIDTH, point.x - x);
-        height = Math.max(MIN_NOTE_HEIGHT, point.y - y);
+      case 'se':
+        width = Math.max(MIN_NOTE_WIDTH, pt.x - x);
+        height = Math.max(MIN_NOTE_HEIGHT, pt.y - y);
         break;
       case 'bottom-left':
-        width = Math.max(MIN_NOTE_WIDTH, x + width - point.x);
-        height = Math.max(MIN_NOTE_HEIGHT, point.y - y);
-        x = point.x;
+      case 'sw':
+        width = Math.max(MIN_NOTE_WIDTH, x + width - pt.x);
+        height = Math.max(MIN_NOTE_HEIGHT, pt.y - y);
+        x = pt.x;
         break;
       case 'top-right':
-        width = Math.max(MIN_NOTE_WIDTH, point.x - x);
-        height = Math.max(MIN_NOTE_HEIGHT, y + height - point.y);
-        y = point.y;
+      case 'ne':
+        width = Math.max(MIN_NOTE_WIDTH, pt.x - x);
+        height = Math.max(MIN_NOTE_HEIGHT, y + height - pt.y);
+        y = pt.y;
         break;
       case 'top-left':
-        width = Math.max(MIN_NOTE_WIDTH, x + width - point.x);
-        height = Math.max(MIN_NOTE_HEIGHT, y + height - point.y);
-        x = point.x;
-        y = point.y;
+      case 'nw':
+        width = Math.max(MIN_NOTE_WIDTH, x + width - pt.x);
+        height = Math.max(MIN_NOTE_HEIGHT, y + height - pt.y);
+        x = pt.x;
+        y = pt.y;
         break;
     }
 

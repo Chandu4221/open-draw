@@ -169,8 +169,10 @@ export class SVGRenderer {
     wrapper.setAttribute('tabindex', '0');
     wrapper.setAttribute('role', 'button');
     const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
-    wrapper.setAttribute('aria-label', String(label));
-    wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})`);
+    const def = this.registry.get(shape.type);
+    const bounds = def?.geometry.bounds(shape);
+    const rot = shape.rotation && bounds ? ` rotate(${shape.rotation}, ${bounds.width / 2}, ${bounds.height / 2})` : '';
+    wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})${rot}`);
 
     const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     slot.setAttribute('class', 'od-overlay-slot');
@@ -227,10 +229,12 @@ export class SVGRenderer {
       }
     }
 
-    wrapper.setAttribute('transform', `translate(${localX}, ${localY})`);
+    const def = this.registry.get(shape.type);
+    const bounds = def?.geometry.bounds(shape);
+    const rot = shape.rotation && bounds ? ` rotate(${shape.rotation}, ${bounds.width / 2}, ${bounds.height / 2})` : '';
+    wrapper.setAttribute('transform', `translate(${localX}, ${localY})${rot}`);
     const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
     wrapper.setAttribute('aria-label', String(label));
-    const def = this.registry.get(shape.type);
     if (def?.update) {
       def.update(wrapper, shape, prevShape, {
         overlaySlot: slot,
