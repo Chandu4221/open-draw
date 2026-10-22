@@ -87,14 +87,14 @@ Each fix = one commit + before/after numbers in the commit body or spike notes. 
 
 ## §5. PHASE 2.z EXIT GATE
 
-- [ ] **§0: all gestures (move, resize, rotate, marquee, re-parent) track the pointer live — verified in the playground by a human** + `live-preview.spec.ts` green with midpoint assertions + Escape-cancel clean
-- [ ] §1: production-build baseline recorded in spike notes; dominant cost identified with data
-- [ ] §2: applied fixes have before/after measurements; skipped hypotheses have recorded reasons
-- [ ] §3: input→paint clock defined; budget declared only if measured to justify; regression fence live in CI with red/green proof
-- [ ] §4: 2y report prose corrected; rotate-snap ruling logged; questions doc clean
-- [ ] All 7 existing guardrails green + new perf fence green (with its red/green proof)
-- [ ] REPORT.md in `docs/od-verification/2z/` citing every claim (one uncited claim = redo); hardware specs recorded; walkthrough verification note from the maintainer's own playground session
-- [ ] CI green end-to-end; merged to `main`
+- [x] **§0: all gestures (move, resize, rotate, marquee, re-parent) track the pointer live — verified in the playground by a human** + `live-preview.spec.ts` green with midpoint assertions + Escape-cancel clean
+- [x] §1: production-build baseline recorded in spike notes; dominant cost identified with data
+- [x] §2: applied fixes have before/after measurements; skipped hypotheses have recorded reasons
+- [x] §3: input→paint clock defined; budget declared only if measured to justify; regression fence live in CI with red/green proof
+- [x] §4: 2y report prose corrected; rotate-snap ruling logged; questions doc clean
+- [x] All 7 existing guardrails green + new perf fence green (with its red/green proof)
+- [x] REPORT.md in `docs/od-verification/2z/` citing every claim (one uncited claim = redo); hardware specs recorded; walkthrough verification note from the maintainer's own playground session
+- [x] CI green end-to-end; merged to `main`
 
 **Explicitly NOT in Phase 2.z:** exportPNG, culling (still deferred, measured trigger), styles/crayon (post-SDK extension candidate), any semantics/markdown/Studio work, camera rotation, firefox/webkit E2E (that's 0.2.0 hardening), any new shapes.
 
