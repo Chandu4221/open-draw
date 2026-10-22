@@ -5,7 +5,14 @@ const editor = new CanvasEditor();
 editor.mount(container);
 
 // Expose debug handle in dev
-(window as unknown as { __od_debug__: { editor: CanvasEditor } }).__od_debug__ = { editor };
+(window as unknown as { __od_debug__: { editor: CanvasEditor; telemetry: unknown } }).__od_debug__ = {
+  editor,
+  telemetry: editor.telemetry,
+};
+
+if (new URLSearchParams(window.location.search).get('perf') === '1') {
+  editor.telemetry.enable(container);
+}
 
 // Hook toolbar buttons for dev convenience
 document.getElementById('btn-pan')?.addEventListener('click', () => {

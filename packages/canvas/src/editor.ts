@@ -19,6 +19,7 @@ import { ConnectorManager } from './capabilities/connector/index.js';
 import { SelectionManager } from './selection/index.js';
 import { KeyboardDispatcher, type KeyBinding } from './input/index.js';
 import { GestureController } from './gesture/index.js';
+import { FrameTelemetry } from './perf/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
@@ -42,6 +43,7 @@ export class CanvasEditor {
   readonly selectionManager: SelectionManager;
   readonly keyboard: KeyboardDispatcher;
   readonly gesture: GestureController;
+  readonly telemetry: FrameTelemetry;
 
   mode: EditorMode = 'none';
 
@@ -60,6 +62,7 @@ export class CanvasEditor {
     this.registry = new ShapeRegistry();
     this.renderer = new SVGRenderer(this.registry);
     this.gesture = new GestureController(this);
+    this.telemetry = new FrameTelemetry();
     this.interaction = new PointerInteractionController(this);
     this.textEditing = new TextEditingManager();
     this.clipping = new ClippingManager();

@@ -159,6 +159,7 @@ export class PointerInteractionController {
   }
 
   private onPointerMove = (e: PointerEvent): void => {
+    this.editor.telemetry.recordInput(e.timeStamp || performance.now());
     const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
     const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
     const currentPagePt = this.editor.camera.screenToPage(screenPt);
