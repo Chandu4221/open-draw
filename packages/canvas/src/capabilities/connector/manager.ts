@@ -44,12 +44,13 @@ export class ConnectorManager {
       const patchProps: Mutable<ArrowProps> = {};
       const events: TargetUnboundEvent[] = [];
 
-      if (props.startBinding?.shapeId === deletedShapeId) {
+      const startBinding = props.startBinding;
+      if (startBinding && startBinding.shapeId === deletedShapeId) {
         let fallbackPoint: Point = props.startPoint ?? { x: shape.x, y: shape.y };
         if (deletedShapeRecord) {
           const targetDef = registry.get(deletedShapeRecord.type);
           if (targetDef) {
-            fallbackPoint = getAnchorPoint(targetDef.geometry.bounds(deletedShapeRecord), props.startBinding.anchor);
+            fallbackPoint = getAnchorPoint(targetDef.geometry.bounds(deletedShapeRecord), startBinding.anchor);
           }
         }
         patchProps.startBinding = undefined;
@@ -62,12 +63,13 @@ export class ConnectorManager {
         });
       }
 
-      if (props.endBinding?.shapeId === deletedShapeId) {
+      const endBinding = props.endBinding;
+      if (endBinding && endBinding.shapeId === deletedShapeId) {
         let fallbackPoint: Point = props.endPoint ?? { x: shape.x + 100, y: shape.y };
         if (deletedShapeRecord) {
           const targetDef = registry.get(deletedShapeRecord.type);
           if (targetDef) {
-            fallbackPoint = getAnchorPoint(targetDef.geometry.bounds(deletedShapeRecord), props.endBinding.anchor);
+            fallbackPoint = getAnchorPoint(targetDef.geometry.bounds(deletedShapeRecord), endBinding.anchor);
           }
         }
         patchProps.endBinding = undefined;

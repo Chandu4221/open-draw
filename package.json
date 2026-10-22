@@ -9,10 +9,12 @@
     "apps/*"
   ],
   "scripts": {
+    "prebuild": "npm run build -w @open-draw/schema",
+    "build": "npm run build --workspaces --if-present",
+    "pretypecheck": "npm run build -w @open-draw/schema",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "check:boundaries": "node scripts/check-boundaries.js",
     "check:deps": "node scripts/check-dependencies.js",
@@ -23,7 +25,7 @@
     "check:links": "node scripts/check-portable-links.js",
     "check:public-api": "node scripts/check-public-api.js",
     "check:perf": "playwright test packages/canvas/e2e/perf-baseline.spec.ts",
-    "verify": "npm run typecheck && npm test && npm run build && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:zoom && npm run check:shapes && npm run check:filesize && npm run check:links && npm run check:public-api"
+    "verify": "npm run build && npm run typecheck && npm test && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:zoom && npm run check:shapes && npm run check:filesize && npm run check:links && npm run check:public-api"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
