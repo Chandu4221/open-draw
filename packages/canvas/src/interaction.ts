@@ -15,6 +15,9 @@ export class PointerInteractionController {
 
   private clickedShapeId: ShapeId | null = null;
   private lastPointerDownShift = false;
+  private cachedContainerRect: { left: number; top: number } | null = null;
+  private pendingPointerMove: { pagePt: Point; event: PointerEvent } | null = null;
+  private rafMoveId: number | null = null;
 
   private isMarquee = false;
   private marqueeStart: Point | null = null;
@@ -45,6 +48,12 @@ export class PointerInteractionController {
     }
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
+    if (this.rafMoveId !== null && typeof cancelAnimationFrame !== 'undefined') {
+      cancelAnimationFrame(this.rafMoveId);
+      this.rafMoveId = null;
+    }
+    this.pendingPointerMove = null;
+    this.cachedContainerRect = null;
     this.marqueeOverlay.hide();
   }
 
@@ -53,8 +62,9 @@ export class PointerInteractionController {
       this.editor.textEditing.commit();
     }
 
-    const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
-    const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
+    const r = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    this.cachedContainerRect = { left: r.left, top: r.top };
+    const screenPt = { x: e.clientX - r.left, y: e.clientY - r.top };
     const pagePt = this.editor.camera.screenToPage(screenPt);
     const activeTool = this.editor.getTool();
 
@@ -160,12 +170,24 @@ export class PointerInteractionController {
 
   private onPointerMove = (e: PointerEvent): void => {
     this.editor.telemetry.recordInput(e.timeStamp || performance.now());
-    const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
-    const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
+    const r = this.cachedContainerRect ?? (this.container?.getBoundingClientRect() ?? { left: 0, top: 0 });
+    const screenPt = { x: e.clientX - r.left, y: e.clientY - r.top };
     const currentPagePt = this.editor.camera.screenToPage(screenPt);
 
     if (this.editor.gesture.isActive) {
-      this.editor.gesture.move(currentPagePt, e);
+      this.pendingPointerMove = { pagePt: currentPagePt, event: e };
+      if (this.rafMoveId === null && typeof requestAnimationFrame !== 'undefined') {
+        this.rafMoveId = requestAnimationFrame(() => {
+          this.rafMoveId = null;
+          if (this.pendingPointerMove && this.editor.gesture.isActive) {
+            const { pagePt, event } = this.pendingPointerMove;
+            this.pendingPointerMove = null;
+            this.editor.gesture.move(pagePt, event);
+          }
+        });
+      } else if (typeof requestAnimationFrame === 'undefined') {
+        this.editor.gesture.move(currentPagePt, e);
+      }
       return;
     }
 
@@ -198,6 +220,17 @@ export class PointerInteractionController {
   };
 
   private onPointerUp = (): void => {
+    if (this.rafMoveId !== null && typeof cancelAnimationFrame !== 'undefined') {
+      cancelAnimationFrame(this.rafMoveId);
+      this.rafMoveId = null;
+    }
+    if (this.pendingPointerMove && this.editor.gesture.isActive) {
+      const { pagePt, event } = this.pendingPointerMove;
+      this.pendingPointerMove = null;
+      this.editor.gesture.move(pagePt, event);
+    }
+    this.cachedContainerRect = null;
+
     if (this.editor.gesture.isActive) {
       const didMove = this.editor.gesture.didMove;
       this.editor.gesture.commit();

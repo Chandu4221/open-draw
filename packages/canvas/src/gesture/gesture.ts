@@ -72,6 +72,7 @@ export class GestureController {
     this.targetShapeId = clickedShapeId;
     this.startPointer = startPointer;
     this.hasMoved = false;
+    this._applyWillChange();
     return true;
   }
 
@@ -91,6 +92,7 @@ export class GestureController {
     this.startPointer = startPointer;
     this.currentType = 'resize';
     this.hasMoved = false;
+    this._applyWillChange();
     return true;
   }
 
@@ -109,6 +111,7 @@ export class GestureController {
     this.startPointer = startPointer;
     this.currentType = 'rotate';
     this.hasMoved = false;
+    this._applyWillChange();
     return true;
   }
 
@@ -246,7 +249,26 @@ export class GestureController {
     }
   }
 
+  private _applyWillChange(): void {
+    for (const id of this.initialShapes.keys()) {
+      const el = this.editor.renderer.getShapeWrapper(id);
+      if (el) el.style.willChange = 'transform';
+      const slot = this.editor.renderer.getOverlaySlot(id);
+      if (slot) slot.style.willChange = 'transform';
+    }
+  }
+
+  private _clearWillChange(): void {
+    for (const id of this.initialShapes.keys()) {
+      const el = this.editor.renderer.getShapeWrapper(id);
+      if (el) el.style.willChange = '';
+      const slot = this.editor.renderer.getOverlaySlot(id);
+      if (slot) slot.style.willChange = '';
+    }
+  }
+
   private _reset(): void {
+    this._clearWillChange();
     this.currentType = 'none';
     this.targetShapeId = null;
     this.handleType = null;

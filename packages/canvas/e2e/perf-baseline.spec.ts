@@ -158,9 +158,17 @@ test.describe('Phase 2.z §1: Performance Telemetry & 100-Shape Baseline', () =>
 
     console.log('[PERF BASELINE] Pan 100 shapes:', JSON.stringify(panMetrics));
 
-    expect(dragMetrics.fps).toBeGreaterThan(45);
-    expect(resizeMetrics.fps).toBeGreaterThan(45);
-    expect(rotateMetrics.fps).toBeGreaterThan(45);
-    expect(panMetrics.fps).toBeGreaterThan(45);
+    // CI Performance Regression Fence (§3)
+    // Budget: <= 16.6ms p95 latency (60fps threshold) and 0 dropped frames
+    const BUDGET_P95_MS = 16.6;
+    expect(dragMetrics.p95LatencyMs, `Drag p95 latency ${dragMetrics.p95LatencyMs}ms exceeds budget ${BUDGET_P95_MS}ms`).toBeLessThanOrEqual(BUDGET_P95_MS);
+    expect(resizeMetrics.p95LatencyMs, `Resize p95 latency ${resizeMetrics.p95LatencyMs}ms exceeds budget ${BUDGET_P95_MS}ms`).toBeLessThanOrEqual(BUDGET_P95_MS);
+    expect(rotateMetrics.p95LatencyMs, `Rotate p95 latency ${rotateMetrics.p95LatencyMs}ms exceeds budget ${BUDGET_P95_MS}ms`).toBeLessThanOrEqual(BUDGET_P95_MS);
+    expect(panMetrics.p95LatencyMs, `Pan p95 latency ${panMetrics.p95LatencyMs}ms exceeds budget ${BUDGET_P95_MS}ms`).toBeLessThanOrEqual(BUDGET_P95_MS);
+
+    expect(dragMetrics.droppedFrames, 'Drag dropped frames must be 0').toBe(0);
+    expect(resizeMetrics.droppedFrames, 'Resize dropped frames must be 0').toBe(0);
+    expect(rotateMetrics.droppedFrames, 'Rotate dropped frames must be 0').toBe(0);
+    expect(panMetrics.droppedFrames, 'Pan dropped frames must be 0').toBe(0);
   });
 });
