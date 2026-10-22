@@ -26,19 +26,7 @@ export class KeyboardDispatcher {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    // 1. Enter / Space selects focused shape
-    if (e.key === 'Enter' || e.key === ' ') {
-      const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
-      const shapeWrapper = activeEl?.closest('.od-shape');
-      const shapeId = shapeWrapper?.getAttribute('data-id');
-      if (shapeId) {
-        e.preventDefault();
-        this.editor.selectShape(shapeId);
-        return;
-      }
-    }
-
-    // 2. Editing mode suspends all shortcuts except Escape
+    // 1. Editing mode suspends all canvas shortcuts except Escape
     if (this.editor.mode === 'editing') {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -47,7 +35,31 @@ export class KeyboardDispatcher {
       return;
     }
 
-    // 3. Match against keymap
+    // 2. Ignore canvas shortcuts if an input, textarea, or contenteditable element has focus
+    const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
+    if (
+      activeEl &&
+      (activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        (activeEl as HTMLElement).isContentEditable)
+    ) {
+      return;
+    }
+
+    // 3. Enter / Space selects focused shape wrapper (from keyboard navigation)
+    if (e.key === 'Enter' || e.key === ' ') {
+      const shapeWrapper = activeEl?.classList?.contains('od-shape')
+        ? activeEl
+        : (activeEl?.closest('.od-shape') ?? null);
+      const shapeId = shapeWrapper?.getAttribute('data-id');
+      if (shapeId) {
+        e.preventDefault();
+        this.editor.selectShape(shapeId);
+        return;
+      }
+    }
+
+    // 4. Match against keymap
     const eventMod = isMod(e);
     for (const binding of this.keymap) {
       if (this.matches(binding, e, eventMod)) {

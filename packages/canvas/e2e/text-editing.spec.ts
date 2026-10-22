@@ -206,4 +206,40 @@ test.describe('Privileged Capability #1: Text Editing E2E Gate', () => {
     });
     await checkInvariant('after-pan-zoom');
   });
+
+  test('typing text with spaces accepts space between characters', async ({ page }) => {
+    const shapeId = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const shape = editor.createShape({
+        type: 'text',
+        x: 100,
+        y: 100,
+        props: {
+          text: 'Init',
+          fontSize: 16,
+          width: 50,
+          height: 30,
+        },
+      });
+      return shape.id;
+    });
+
+    const shapeElement = page.locator(`.od-shape[data-id="${shapeId}"]`);
+    await shapeElement.dblclick();
+
+    const textarea = page.locator(`.od-shape[data-id="${shapeId}"] textarea.od-text-editor`);
+    await expect(textarea).toBeVisible();
+    await expect(textarea).toBeFocused();
+
+    // Type with spaces using real keyboard keypress events (not fill)
+    await page.keyboard.type('Hello World with spaces');
+    await expect(textarea).toHaveValue('Hello World with spaces');
+
+    // Commit via canvas blur
+    await page.locator('#canvas-container').click({ position: { x: 500, y: 500 } });
+
+    // Verify text shape in store contains all spaces
+    const updatedShape = await page.evaluate((id) => (window as any).__od_debug__.editor.getShape(id), shapeId);
+    expect(updatedShape.props.text).toBe('Hello World with spaces');
+  });
 });

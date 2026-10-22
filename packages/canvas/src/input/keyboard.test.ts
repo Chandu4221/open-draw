@@ -156,4 +156,34 @@ describe('Keyboard Module & Commands', () => {
 
     dispatcher.detach();
   });
+
+  it('does not intercept Space or Enter when editing mode is active', () => {
+    const editor = new CanvasEditor();
+    const target = new EventTarget();
+    const dispatcher = new KeyboardDispatcher(editor);
+    dispatcher.attach(target as any);
+
+    editor.mode = 'editing';
+    let spacePrevented = false;
+    let enterPrevented = false;
+
+    target.dispatchEvent(
+      Object.assign(new Event('keydown'), {
+        key: ' ',
+        preventDefault: () => { spacePrevented = true; },
+      })
+    );
+    target.dispatchEvent(
+      Object.assign(new Event('keydown'), {
+        key: 'Enter',
+        preventDefault: () => { enterPrevented = true; },
+      })
+    );
+
+    expect(spacePrevented).toBe(false);
+    expect(enterPrevented).toBe(false);
+
+    dispatcher.detach();
+  });
 });
+
