@@ -5,9 +5,10 @@ const editor = new CanvasEditor();
 editor.mount(container);
 
 // Expose debug handle in dev
-(window as unknown as { __od_debug__: { editor: CanvasEditor; telemetry: unknown } }).__od_debug__ = {
+(window as unknown as { __od_debug__: { editor: CanvasEditor; telemetry: unknown; CanvasEditor: typeof CanvasEditor } }).__od_debug__ = {
   editor,
   telemetry: editor.telemetry,
+  CanvasEditor,
 };
 
 if (new URLSearchParams(window.location.search).get('perf') === '1') {

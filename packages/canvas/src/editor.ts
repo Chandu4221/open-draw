@@ -137,6 +137,7 @@ export class CanvasEditor {
       this.unsubscribeStore();
       this.unsubscribeStore = null;
     }
+    this.textEditing.cancel();
     this.renderer.destroy();
     this.isMounted = false;
     this.container = null;
