@@ -6,3 +6,4 @@ export * from './handles.js';
 export * from './resize.js';
 export * from './rotate.js';
 export * from './handlesView.js';
+export * from './reparent.js';

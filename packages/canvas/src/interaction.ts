@@ -7,6 +7,7 @@ import { findGroupForMember, getGroupMembers, isGroupShape } from './selection/g
 import { computeMarqueeBounds, findIntersectingShapes, MarqueeOverlay } from './selection/marquee.js';
 import type { HandleType } from './selection/handles.js';
 import { TransformGestureController } from './selection/transformGesture.js';
+import { handleGestureReparent } from './selection/reparent.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
@@ -269,17 +270,7 @@ export class PointerInteractionController {
     }
 
     for (const id of this.editor.selection) {
-      const dragged = this.editor.store.getShape(id);
-      if (dragged && !dragged.meta['parent'] && !dragged.meta['parentId']) {
-        const def = this.editor.registry.get(dragged.type);
-        if (def) {
-          const bounds = def.geometry.bounds(dragged);
-          const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, dragged.id);
-          if (suggested) {
-            this.editor.store.updateShape(dragged.id, { meta: { ...dragged.meta, parent: suggested.id } });
-          }
-        }
-      }
+      handleGestureReparent(id, this.editor.store, this.editor.registry, this.editor.camera);
     }
 
     this.isDragging = false;
