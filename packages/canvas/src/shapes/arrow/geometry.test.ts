@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest';
 import type { ShapeRecord } from '@open-draw/schema';
 import { arrowGeometry, getAnchorPoint, resolveArrowEndpoints } from './geometry.js';
 import type { ArrowProps } from './defs.js';
-import { CanvasStore } from '../../store.js';
+import { CanvasStore } from '../../store/index.js';
 import { ShapeRegistry } from '../../registry.js';
-import { rectDefinition } from '../rect.js';
+import { rectDefinition } from '../rect/index.js';
 
 describe('arrowGeometry', () => {
   test('getAnchorPoint returns correct coordinates for standard anchor positions', () => {

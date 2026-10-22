@@ -24,6 +24,9 @@ canvas ──> schema (types + geometry)
 schema ──> (none)
 ```
 
+## Master Context
+- **Master Context**: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md) and [`OPENDRAW.md`](../OPENDRAW.md).
+
 ## Active Phase
-- **Phase 1: Monorepo Foundation & Guardrails** (Branch: `build/phase-1` $\to$ merge to `main` upon exit checklist completion).
-- Focus: Step 0 (OPENDRAW.md, 4 ADRs, questions/spike logs) $\to$ Root cleanup $\to$ License $\to$ 5 packages scaffolding $\to$ CI guardrails (import-boundary, deps, bitmap check) $\to$ Red/Green boundary proof $\to$ Phase 1 Report.
+- **Phase 2.y: Selection & Handles** (Branch: `build/phase-2y` $\to$ merge to `main` upon exit checklist completion).
+- Focus: §0 Directory cleanup $\to$ §1 Selection Model $\to$ §2 Keyboard Module $\to$ §3 8-Handle Resize System & Rotation $\to$ §4 Z-Order Operations $\to$ §5 Gesture Re-Parenting $\to$ §6 Stroke Eraser $\to$ §7 Phase 2.y Report & Exit Gate.

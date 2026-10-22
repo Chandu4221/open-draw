@@ -1,7 +1,7 @@
 import type { Camera, ShapeId, ShapeRecord } from '@open-draw/schema';
 import { cameraToTransform } from './camera.js';
 import type { ShapeRegistry } from './registry.js';
-import type { CanvasStore, StoreDiff } from './store.js';
+import type { CanvasStore, StoreDiff } from './store/index.js';
 
 interface ShapeDOMEntry {
   readonly wrapper: SVGGElement;

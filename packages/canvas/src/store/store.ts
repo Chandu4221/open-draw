@@ -1,6 +1,6 @@
 import type { ShapeId, ShapeRecord, Snapshot } from '@open-draw/schema';
-import { computeDiff, parseAndValidateSnapshot } from './store/snapshot.js';
-import type { HistoryEntry, MetaValidator, StoreDiff, StoreListener } from './store/types.js';
+import { computeDiff, parseAndValidateSnapshot } from './snapshot.js';
+import type { HistoryEntry, MetaValidator, StoreDiff, StoreListener } from './types.js';
 
 export type { HistoryEntry, MetaValidator, StoreDiff, StoreListener };
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DuplicateShapeTypeError, ShapeRegistry, type ShapeDefinition } from './registry.js';
-import { rectDefinition } from './shapes/rect.js';
-import { groupDefinition } from './shapes/group.js';
+import { rectDefinition } from './shapes/rect/index.js';
+import { groupDefinition } from './shapes/group/index.js';
 
 describe('ShapeRegistry', () => {
   it('registers and retrieves shape definitions', () => {

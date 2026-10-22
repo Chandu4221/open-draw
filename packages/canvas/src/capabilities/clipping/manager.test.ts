@@ -1,9 +1,9 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { Bounds, ShapeRecord } from '@open-draw/schema';
 import { ShapeRegistry } from '../../registry.js';
-import { CanvasStore } from '../../store.js';
+import { CanvasStore } from '../../store/index.js';
 import { frameDefinition } from '../../shapes/frame/index.js';
-import { rectDefinition } from '../../shapes/rect.js';
+import { rectDefinition } from '../../shapes/rect/index.js';
 import { ClippingManager, findSuggestedParent, isContainedWithin } from './manager.js';
 
 describe('ClippingManager & Parenting', () => {

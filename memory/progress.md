@@ -67,8 +67,39 @@ Target Branch: `build/phase-2` $\longrightarrow$ merged to `main` upon exit (`3c
 
 ---
 
+---
+
+## Phase 2.x — Shape Expansion & Privileged Capabilities (Completed)
+Target Branch: `build/phase-2x` $\longrightarrow$ merged to `main` upon exit (`10ad480`).
+- [x] **§0 File & Module Discipline**: Source files $\le 300$ lines, CI check with red/green proofs (`filesize-red.png`, `filesize-green.png`).
+- [x] **§1 Q-001 Culling Stress Spike**: Measured 2k/5k/10k shapes in `docs/od-spike-notes.md` (`SPK-002`); Q-001 resolved with zero culling code.
+- [x] **§2 Simple Shapes**: Ellipse, note, image plugins with full E2E gates, overlay invariant extended.
+- [x] **§3 Privileged Capability #1 (Text Editing)**: Native textarea overlay in foreignObject, blur/escape commit semantics.
+- [x] **§4 Privileged Capability #2 (Frame & Clipping)**: Container clipping via SVG clipPath, geometric parenting, smallest-area tie-break.
+- [x] **§5 Privileged Capability #3 (Arrow Reconciliation)**: Relational connectors with zero absolute bound coordinates, anti-stale dynamic recomputation.
+- [x] **§6 Ink & Highlighter**: Freehand drawing with RDP simplification ($\epsilon=1.5$), highlighter variant, constant width per stroke.
+- [x] **§7 Exit Gate**: `docs/od-verification/2x/REPORT.md` complete, instructions renamed to `opendraw-phase2-x-done.md`, merged to `main`.
+
+---
+
+## Phase 2.y — Selection & Handles (Active)
+Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md) (read it first).
+Target Branch: `build/phase-2y` $\longrightarrow$ merge to `main` upon exit.
+- [ ] **§0 Housekeeping & Directory Cleanup**: Delete duplicate shape stubs, unify `store/` directory, update memory files.
+- [ ] **§1 Selection Model**: Multi-selection, click, Shift-toggle, marquee intersection, group descent, z-order cycling.
+- [ ] **§2 Keyboard Module**: Keymap table, dispatcher, nudge undo-merge, duplicate, zoom shortcuts, keyboard-only golden-path E2E.
+- [ ] **§3 8-Handle Resize & Rotate**: Pure math, unit fixtures, 8 handles + rotate, constant screen-size counter-scaling at 0.5×/2×.
+- [ ] **§4 Z-Order Operations**: `bringForward/sendBackward/bringToFront/sendToBack` store operations and keyboard shortcuts.
+- [ ] **§5 Gesture Re-Parenting**: Drag out of frame past threshold detaches (closes Q-002); drop in frame reparents; inter-frame drag.
+- [ ] **§6 Stroke Eraser**: `E` tool drag path intersection, live highlight, single transaction deletion.
+- [ ] **§7 Exit Gate**: `docs/od-verification/2y/REPORT.md` complete, all guardrails green, merged to `main`.
+
+---
+
 ## Upcoming Phases (Strict Order — No Overlap)
-- **Phase 3**: Semantics Package & Platform Profiles.
+- **SDK Freeze**: `@open-draw/canvas@0.1.0` (README, API docs, exportPNG).
+- **Hardening**: `0.2.0` (firefox/webkit, a11y audit, leak tests).
+- **Phase 3**: Semantics Package & Platform Profiles (ADR-006 first).
 - **Phase 4**: Markdown Compiler (golden fixtures byte-pinned).
 - **Phase 5**: OpenDraw Studio App (React composition shell).
 - **Phase 6**: Suite Publication & Integration.

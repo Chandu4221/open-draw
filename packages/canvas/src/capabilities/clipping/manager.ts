@@ -1,6 +1,6 @@
 import type { Bounds, ShapeId, ShapeRecord } from '@open-draw/schema';
 import type { ShapeRegistry } from '../../registry.js';
-import type { CanvasStore } from '../../store.js';
+import type { CanvasStore } from '../../store/index.js';
 import type { ChildOrphanedEvent, OrphanListener } from './defs.js';
 
 export function isContainedWithin(child: Bounds, container: Bounds): boolean {

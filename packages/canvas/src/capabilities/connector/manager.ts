@@ -1,6 +1,6 @@
 import type { Point, ShapeId, ShapeRecord } from '@open-draw/schema';
 import type { ShapeRegistry } from '../../registry.js';
-import type { CanvasStore } from '../../store.js';
+import type { CanvasStore } from '../../store/index.js';
 import { type AnchorPosition, type ArrowProps, getAnchorPoint } from '../../shapes/arrow/index.js';
 import type { TargetUnboundEvent, UnbindListener } from './defs.js';
 

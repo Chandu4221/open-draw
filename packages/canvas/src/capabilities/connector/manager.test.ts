@@ -1,8 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { ShapeRecord } from '@open-draw/schema';
 import { ShapeRegistry } from '../../registry.js';
-import { CanvasStore } from '../../store.js';
-import { rectDefinition } from '../../shapes/rect.js';
+import { CanvasStore } from '../../store/index.js';
+import { rectDefinition } from '../../shapes/rect/index.js';
 import { arrowDefinition, type ArrowProps } from '../../shapes/arrow/index.js';
 import { ConnectorManager } from './manager.js';
 

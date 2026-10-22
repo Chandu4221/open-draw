@@ -1,6 +1,6 @@
 import type { Bounds, Point, ShapeRecord } from '@open-draw/schema';
 import type { ResizeHandle, ShapeGeometry, ShapeRegistry } from '../../registry.js';
-import type { CanvasStore } from '../../store.js';
+import type { CanvasStore } from '../../store/index.js';
 import { type AnchorPosition, DEFAULT_ARROW_PROPS, type ArrowProps } from './defs.js';
 
 export function getAnchorPoint(bounds: Bounds, anchor: AnchorPosition): Point {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CorruptSnapshotError } from '@open-draw/schema';
-import { CanvasStore, type StoreDiff } from './store.js';
+import { CanvasStore, type StoreDiff } from './index.js';
 
 describe('CanvasStore', () => {
   describe('CRUD operations', () => {
