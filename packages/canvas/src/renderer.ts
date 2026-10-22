@@ -2,6 +2,7 @@ import type { Camera, ShapeId, ShapeRecord } from '@open-draw/schema';
 import { cameraToTransform } from './camera.js';
 import type { ShapeRegistry } from './registry.js';
 import type { CanvasStore, StoreDiff } from './store/index.js';
+import { computeShapeAria, A11Y_FOCUS_STYLES } from './a11y.js';
 
 interface ShapeDOMEntry {
   readonly wrapper: SVGGElement;
@@ -39,6 +40,9 @@ export class SVGRenderer {
     this.container = container;
     const svg = createSVG('svg', { class: 'od-canvas-root', xmlns: 'http://www.w3.org/2000/svg' });
     svg.style.cssText = 'width:100%;height:100%;display:block;overflow:hidden;user-select:none;';
+    const style = createSVG('style');
+    style.textContent = A11Y_FOCUS_STYLES;
+    svg.appendChild(style);
     const viewport = createSVG('g', { class: 'od-viewport', transform: cameraToTransform(initialCamera) });
     const shapes = createSVG('g', { class: 'od-shapes-layer' });
     viewport.appendChild(shapes);
@@ -165,13 +169,13 @@ export class SVGRenderer {
     const def = this.registry.get(shape.type);
     const bounds = def?.geometry.bounds(shape);
     const rot = shape.rotation && bounds ? ` rotate(${shape.rotation}, ${bounds.width / 2}, ${bounds.height / 2})` : '';
-    const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
+    const { role, ariaLabel } = computeShapeAria(shape, def);
     const wrapper = createSVG('g', {
       class: 'od-shape',
       'data-id': shape.id,
       tabindex: '0',
-      role: 'button',
-      'aria-label': String(label),
+      role,
+      'aria-label': ariaLabel,
       transform: `translate(${shape.x}, ${shape.y})${rot}`,
     });
     const slot = createSVG('g', { class: 'od-overlay-slot', 'data-slot': 'overlay' });
@@ -231,8 +235,9 @@ export class SVGRenderer {
     const bounds = def?.geometry.bounds(shape);
     const rot = shape.rotation && bounds ? ` rotate(${shape.rotation}, ${bounds.width / 2}, ${bounds.height / 2})` : '';
     wrapper.setAttribute('transform', `translate(${localX}, ${localY})${rot}`);
-    const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
-    wrapper.setAttribute('aria-label', String(label));
+    const { role, ariaLabel } = computeShapeAria(shape, def);
+    wrapper.setAttribute('role', role);
+    wrapper.setAttribute('aria-label', ariaLabel);
     if (def?.update) {
       def.update(wrapper, shape, prevShape, {
         overlaySlot: slot,

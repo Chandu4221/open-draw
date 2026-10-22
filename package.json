@@ -28,6 +28,7 @@
     "verify": "npm run build && npm run typecheck && npm test && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:zoom && npm run check:shapes && npm run check:filesize && npm run check:links && npm run check:public-api"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.1",
     "esbuild": "^0.28.2",
     "publint": "^0.3.25",

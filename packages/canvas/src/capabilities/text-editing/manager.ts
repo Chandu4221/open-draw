@@ -1,5 +1,6 @@
 import type { ShapeId, ShapeRecord } from '@open-draw/schema';
 import type { CanvasEditor } from '../../editor.js';
+import { computeShapeAria } from '../../a11y.js';
 
 export class TextEditingManager {
   private activeShapeId: ShapeId | null = null;
@@ -37,6 +38,12 @@ export class TextEditingManager {
     this.currentEditor = editor;
     editor.mode = 'editing';
 
+    const wrapper = editor.renderer.getShapeWrapper(shapeId);
+    if (wrapper) {
+      wrapper.setAttribute('role', 'group');
+      wrapper.setAttribute('tabindex', '-1');
+    }
+
     const textCap = def.capabilities.text;
     this.initialText = textCap.getText(shape);
 
@@ -51,6 +58,7 @@ export class TextEditingManager {
 
     const textarea = document.createElement('textarea');
     textarea.className = 'od-text-editor';
+    textarea.setAttribute('aria-label', 'Edit shape text');
     textarea.value = this.initialText;
     textarea.style.width = '100%';
     textarea.style.height = '100%';
@@ -115,14 +123,15 @@ export class TextEditingManager {
       });
     }
 
-    this.resetState(editor);
+    this.resetState(editor, shapeId);
   }
 
   cancel(): void {
     if (!this.activeShapeId || !this.currentEditor) return;
+    const shapeId = this.activeShapeId;
     const editor = this.currentEditor;
     this.cleanupDOM();
-    this.resetState(editor);
+    this.resetState(editor, shapeId);
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -149,7 +158,17 @@ export class TextEditingManager {
     this.textarea = null;
   }
 
-  private resetState(editor: CanvasEditor): void {
+  private resetState(editor: CanvasEditor, shapeId?: ShapeId | null): void {
+    if (shapeId) {
+      const wrapper = editor.renderer.getShapeWrapper(shapeId);
+      const shape = editor.store.getShape(shapeId);
+      if (wrapper && shape) {
+        const def = editor.registry.get(shape.type);
+        const { role } = computeShapeAria(shape, def);
+        wrapper.setAttribute('role', role);
+        wrapper.setAttribute('tabindex', '0');
+      }
+    }
     this.activeShapeId = null;
     this.currentEditor = null;
     this.initialText = '';
