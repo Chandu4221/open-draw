@@ -21,8 +21,9 @@
     "check:shapes": "node scripts/check-no-shape-branching.js",
     "check:filesize": "node scripts/check-file-sizes.js",
     "check:links": "node scripts/check-portable-links.js",
+    "check:public-api": "node scripts/check-public-api.js",
     "check:perf": "playwright test packages/canvas/e2e/perf-baseline.spec.ts",
-    "verify": "npm run typecheck && npm test && npm run build && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:zoom && npm run check:shapes && npm run check:filesize && npm run check:links"
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:boundaries && npm run check:deps && npm run check:bitmap && npm run check:zoom && npm run check:shapes && npm run check:filesize && npm run check:links && npm run check:public-api"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

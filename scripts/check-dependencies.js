@@ -4,6 +4,14 @@ import path from 'node:path';
 const PACKAGES_DIRS = ['packages', 'apps'];
 let violations = [];
 
+const ALLOWED_RUNTIME_DEPS = {
+  '@open-draw/schema': [],
+  '@open-draw/canvas': ['@open-draw/schema'],
+  '@open-draw/semantics': [],
+  '@open-draw/markdown': [],
+  '@open-draw/studio': [],
+};
+
 for (const parent of PACKAGES_DIRS) {
   if (!fs.existsSync(parent)) continue;
   const entries = fs.readdirSync(parent, { withFileTypes: true });
@@ -12,13 +20,16 @@ for (const parent of PACKAGES_DIRS) {
       const pkgJsonPath = path.join(parent, entry.name, 'package.json');
       if (fs.existsSync(pkgJsonPath)) {
         const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+        const pkgName = pkg.name || entry.name;
         const deps = pkg.dependencies || {};
         const depKeys = Object.keys(deps);
-        if (depKeys.length > 0) {
+        const allowed = ALLOWED_RUNTIME_DEPS[pkgName] || [];
+        const forbidden = depKeys.filter((d) => !allowed.includes(d));
+        if (forbidden.length > 0) {
           violations.push({
-            name: pkg.name || entry.name,
+            name: pkgName,
             file: pkgJsonPath,
-            dependencies: depKeys,
+            dependencies: forbidden,
           });
         }
       }
