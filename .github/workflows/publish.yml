@@ -1,0 +1,46 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (must match 0.1.0 in package.json)'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  publish:
+    name: Verify, Dry-run & Publish (@open-draw/schema then @open-draw/canvas)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify All 9 CI Fences & Build
+        run: npm run verify
+
+      - name: Dry-run publish (@open-draw/schema)
+        run: npm publish --dry-run --workspace @open-draw/schema
+
+      - name: Dry-run publish (@open-draw/canvas)
+        run: npm publish --dry-run --workspace @open-draw/canvas
+
+      # Publish in strict topological order: schema first, then canvas
+      - name: Publish @open-draw/schema
+        run: npm publish --workspace @open-draw/schema --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @open-draw/canvas
+        run: npm publish --workspace @open-draw/canvas --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

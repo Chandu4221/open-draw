@@ -12,9 +12,7 @@
     }
   },
   "dependencies": {},
-  "publishConfig": {
-    "access": "public"
-  },
+  "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

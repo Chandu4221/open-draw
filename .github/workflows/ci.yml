@@ -55,3 +55,7 @@ jobs:
 
       - name: Portable Documentation Links Check
         run: node scripts/check-portable-links.js
+
+      - name: Public API Golden Fence Check
+        run: node scripts/check-public-api.js
+
