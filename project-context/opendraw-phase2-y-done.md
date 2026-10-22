@@ -84,17 +84,17 @@ packages/canvas/src/selection/
 
 ## §7. PHASE 2.y EXIT GATE
 
-- [ ] §0 cleanup done; memory files updated to 2.y-next + master context referenced
-- [ ] Selection model green (marquee exact-id fixture, group logic, selection ≠ document state)
-- [ ] Keyboard module live: full shortcut set, nudge undo-merge, editing-mode suspension, keymap injectable; **keyboard-only golden-path E2E green (zero mouse events)**
-- [ ] 8-handle resize + rotate: exact-number fixtures green, per-shape resize via registry only, constant-size handles proven at 0.5×/2×
-- [ ] Z-order ops + shortcuts green
-- [ ] Gesture re-parenting green (Q-002 closed)
-- [ ] Stroke eraser green
-- [ ] Overlay-invariant extended to selection frame + handles — green
-- [ ] All existing guardrails still green (boundaries, deps, bitmap, links, zoom-math, type-branching, file-size); new fences if any new rule added (red/green proof each)
-- [ ] REPORT.md in `docs/od-verification/2y/` citing every claim; screenshots per feature; questions doc reviewed — every entry answered or scheduled, none silently dropped
-- [ ] CI green end-to-end; merged to `main`
+- [x] §0 cleanup done; memory files updated to 2.y-next + master context referenced
+- [x] Selection model green (marquee exact-id fixture, group logic, selection ≠ document state)
+- [x] Keyboard module live: full shortcut set, nudge undo-merge, editing-mode suspension, keymap injectable; **keyboard-only golden-path E2E green (zero mouse events)**
+- [x] 8-handle resize + rotate: exact-number fixtures green, per-shape resize via registry only, constant-size handles proven at 0.5×/2×
+- [x] Z-order ops + shortcuts green
+- [x] Gesture re-parenting green (Q-002 closed)
+- [x] Stroke eraser green
+- [x] Overlay-invariant extended to selection frame + handles — green
+- [x] All existing guardrails still green (boundaries, deps, bitmap, links, zoom-math, type-branching, file-size); new fences if any new rule added (red/green proof each)
+- [x] REPORT.md in `docs/od-verification/2y/` citing every claim; screenshots per feature; questions doc reviewed — every entry answered or scheduled, none silently dropped
+- [x] CI green end-to-end; merged to `main`
 
 **Explicitly NOT in Phase 2.y:** styles/theme UI, crayon/sketch style (recorded as post-SDK extension candidate — style layer over the registry render seam), exportPNG, culling, rotation of camera, any semantics/markdown/Studio work, any perf-budget claim.
 
