@@ -16,9 +16,12 @@ import { PointerInteractionController } from './interaction.js';
 import { TextEditingManager, type EditorMode } from './capabilities/text-editing/index.js';
 import { ClippingManager } from './capabilities/clipping/index.js';
 import { ConnectorManager } from './capabilities/connector/index.js';
+import { SelectionManager } from './selection/index.js';
+import { KeyboardDispatcher, type KeyBinding } from './input/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
+  readonly keymap?: readonly KeyBinding[];
 }
 
 /**
@@ -35,6 +38,8 @@ export class CanvasEditor {
   readonly textEditing: TextEditingManager;
   readonly clipping: ClippingManager;
   readonly connector: ConnectorManager;
+  readonly selectionManager: SelectionManager;
+  readonly keyboard: KeyboardDispatcher;
 
   mode: EditorMode = 'none';
 
@@ -45,7 +50,6 @@ export class CanvasEditor {
   private detachImageTransfer: (() => void) | null = null;
 
   private activeTool: string = 'select';
-  private selectedShapeId: ShapeId | null = null;
 
   constructor(options: CanvasEditorOptions = {}) {
     this.options = options;
@@ -57,18 +61,15 @@ export class CanvasEditor {
     this.textEditing = new TextEditingManager();
     this.clipping = new ClippingManager();
     this.connector = new ConnectorManager();
+    this.selectionManager = new SelectionManager();
+    this.keyboard = new KeyboardDispatcher(this, options.keymap);
 
-    // Register built-in shapes through public plugin contract
-    this.registerShape(rectDefinition);
-    this.registerShape(ellipseDefinition);
-    this.registerShape(noteDefinition);
-    this.registerShape(imageDefinition);
-    this.registerShape(textDefinition);
-    this.registerShape(frameDefinition);
-    this.registerShape(arrowDefinition);
-    this.registerShape(inkDefinition);
-    this.registerShape(highlighterDefinition);
-    this.registerShape(groupDefinition);
+    const builtins: readonly ShapeDefinition<any>[] = [
+      rectDefinition, ellipseDefinition, noteDefinition, imageDefinition,
+      textDefinition, frameDefinition, arrowDefinition, inkDefinition,
+      highlighterDefinition, groupDefinition,
+    ];
+    for (const def of builtins) this.registerShape(def);
   }
 
   registerShape<P = Record<string, unknown>>(definition: ShapeDefinition<P>): void {
@@ -87,15 +88,25 @@ export class CanvasEditor {
     });
 
     this.unsubscribeStore = this.store.listen((diff) => {
+      if (diff.deleted.size > 0) this.selectionManager.remove(Array.from(diff.deleted));
       for (const deletedId of diff.deleted) {
         const lastRecord = this.renderer.getShapeRecord(deletedId);
         this.clipping.handleParentDeletion(deletedId, this.store);
         this.connector.handleTargetDeletion(deletedId, lastRecord, this.store, this.registry);
       }
       this.renderer.applyDiff(diff, this.store);
+      this.renderer.reorderDOM(this.store.listShapes());
+      if (diff.updated.size > 0) {
+        this.selectionManager.updateVisuals(this.renderer, this.store, this.registry);
+      }
+    });
+
+    this.selectionManager.subscribe(() => {
+      this.selectionManager.updateVisuals(this.renderer, this.store, this.registry);
     });
 
     this.interaction.attach(container);
+    this.keyboard.attach(window);
     container.addEventListener('dblclick', this.onDblClick);
     this.detachImageTransfer = attachImageTransferHandlers(container, this);
   }
@@ -105,6 +116,7 @@ export class CanvasEditor {
       this.container.removeEventListener('dblclick', this.onDblClick);
     }
     this.interaction.detach();
+    this.keyboard.detach();
     if (this.detachImageTransfer) {
       this.detachImageTransfer();
       this.detachImageTransfer = null;
@@ -130,13 +142,27 @@ export class CanvasEditor {
     return this.activeTool;
   }
 
-  selectShape(shapeId: ShapeId | null): void {
-    this.selectedShapeId = shapeId;
+  get selection(): readonly ShapeId[] { return this.selectionManager.selection; }
+  getSelection(): readonly ShapeId[] { return this.selectionManager.selection; }
+  setSelection(ids: readonly ShapeId[]): void { this.selectionManager.setSelection(ids); }
+  selectShape(shapeId: ShapeId | null): void { shapeId ? this.setSelection([shapeId]) : this.clearSelection(); }
+  getSelectedShapeId(): ShapeId | null {
+    const sel = this.selection;
+    return sel.length > 0 ? sel[sel.length - 1]! : null;
+  }
+  toggleSelection(shapeId: ShapeId): void { this.selectionManager.toggle(shapeId); }
+  addToSelection(ids: readonly ShapeId[]): void { this.selectionManager.add(ids); }
+  clearSelection(): void { this.selectionManager.clear(); }
+  selectAll(): void { this.selectionManager.selectAll(this.store.listShapes()); }
+  isSelected(id: ShapeId): boolean { return this.selectionManager.isSelected(id); }
+  cycleSelection(direction: 'forward' | 'backward' = 'forward'): void {
+    this.selectionManager.cycleZOrder(this.store.listShapes(), direction);
   }
 
-  getSelectedShapeId(): ShapeId | null {
-    return this.selectedShapeId;
-  }
+  bringToFront(ids?: readonly ShapeId[]): void { this.store.reorderShapes('front', ids ?? this.selection); }
+  sendToBack(ids?: readonly ShapeId[]): void { this.store.reorderShapes('back', ids ?? this.selection); }
+  bringForward(ids?: readonly ShapeId[]): void { this.store.reorderShapes('forward', ids ?? this.selection); }
+  sendBackward(ids?: readonly ShapeId[]): void { this.store.reorderShapes('backward', ids ?? this.selection); }
 
   createShape(record: {
     readonly id?: ShapeId;
@@ -163,9 +189,7 @@ export class CanvasEditor {
   }
 
   deleteShape(id: ShapeId): boolean {
-    if (this.selectedShapeId === id) {
-      this.selectedShapeId = null;
-    }
+    this.selectionManager.remove([id]);
     const lastRecord = this.store.getShape(id);
     if (!lastRecord) return false;
 

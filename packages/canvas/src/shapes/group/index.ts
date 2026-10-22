@@ -15,4 +15,12 @@ export const groupDefinition: ShapeDefinition<GroupProps> = {
   geometry: groupGeometry,
   render: renderGroup,
   update: updateGroup,
+  capabilities: {
+    group: {
+      isGroup: true,
+      getMembers(shape) {
+        return (shape.props?.memberIds as readonly string[]) ?? [];
+      },
+    },
+  },
 };

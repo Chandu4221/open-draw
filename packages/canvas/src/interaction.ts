@@ -2,16 +2,26 @@ import type { Point, ShapeId } from '@open-draw/schema';
 import type { CanvasEditor } from './editor.js';
 import { findSuggestedParent } from './capabilities/clipping/index.js';
 import { simplifyRDP } from './shapes/ink/index.js';
+import { isMod } from './input/utils.js';
+import { findGroupForMember, getGroupMembers, isGroupShape } from './selection/group.js';
+import { computeMarqueeBounds, findIntersectingShapes, MarqueeOverlay } from './selection/marquee.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
   private container: HTMLElement | null = null;
 
   private isDragging = false;
-  private dragShapeId: ShapeId | null = null;
   private dragStartPointer: Point | null = null;
-  private dragStartShapePos: Point | null = null;
-  private dragChildInitialPositions: Map<ShapeId, Point> = new Map();
+  private dragPositions: Map<ShapeId, Point> = new Map();
+  private clickedShapeId: ShapeId | null = null;
+  private hasMovedAfterDown = false;
+  private lastPointerDownShift = false;
+
+  private isMarquee = false;
+  private marqueeStart: Point | null = null;
+  private isShiftMarquee = false;
+  private initialSelectionBeforeMarquee: readonly ShapeId[] = [];
+  private marqueeOverlay = new MarqueeOverlay();
 
   private isDrawing = false;
   private currentInkShapeId: ShapeId | null = null;
@@ -35,6 +45,7 @@ export class PointerInteractionController {
     }
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
+    this.marqueeOverlay.hide();
   }
 
   private onPointerDown = (e: PointerEvent): void => {
@@ -45,85 +56,128 @@ export class PointerInteractionController {
     const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
     const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
     const pagePt = this.editor.camera.screenToPage(screenPt);
-
     const activeTool = this.editor.getTool();
 
     if (activeTool === 'select') {
-      const target = e.target as Element | null;
-      const shapeWrapper = target?.closest('.od-shape');
-      const shapeId = shapeWrapper?.getAttribute('data-id');
-
-      if (shapeId) {
-        this.editor.selectShape(shapeId);
-        const shape = this.editor.store.getShape(shapeId);
-        if (shape) {
-          this.isDragging = true;
-          this.dragShapeId = shapeId;
-          this.dragStartPointer = pagePt;
-          this.dragStartShapePos = { x: shape.x, y: shape.y };
-          this.dragChildInitialPositions.clear();
-          for (const s of this.editor.store.listShapes()) {
-            if (s.meta['parent'] === shapeId || s.meta['parentId'] === shapeId) {
-              this.dragChildInitialPositions.set(s.id, { x: s.x, y: s.y });
-            }
-          }
-          this.editor.store.beginTransaction();
-        }
-      } else {
-        this.editor.selectShape(null);
-      }
+      this.onSelectPointerDown(e, pagePt);
     } else if (activeTool === 'ink' || activeTool === 'draw' || activeTool === 'highlighter') {
-      const shapeType = activeTool === 'highlighter' ? 'highlighter' : 'ink';
-      const def = this.editor.registry.get(shapeType);
-      if (def) {
-        this.isDrawing = true;
-        this.currentInkPts = [pagePt.x, pagePt.y];
-        this.editor.store.beginTransaction();
-        const shape = this.editor.createShape({
-          type: shapeType,
-          x: pagePt.x,
-          y: pagePt.y,
-          props: {
-            ...def.defaultProps(),
-            pts: [pagePt.x, pagePt.y],
-          },
-        });
-        this.currentInkShapeId = shape.id;
-        this.editor.selectShape(shape.id);
-      }
+      this.onInkPointerDown(activeTool, pagePt);
     } else if (this.editor.registry.has(activeTool)) {
-      const def = this.editor.registry.get(activeTool);
-      if (def) {
-        this.editor.store.transact(() => {
-          const shape = this.editor.createShape({
-            type: activeTool,
-            x: pagePt.x,
-            y: pagePt.y,
-            props: def.defaultProps(),
-          });
-          const bounds = def.geometry.bounds(shape);
-          const suggested = findSuggestedParent(
-            bounds,
-            this.editor.store.listShapes(),
-            this.editor.registry,
-            shape.id
-          );
-          if (suggested) {
-            this.editor.store.updateShape(shape.id, {
-              meta: { ...shape.meta, parent: suggested.id },
-            });
-          }
-          this.editor.selectShape(shape.id);
-        });
-      }
-      this.editor.setTool('select');
+      this.onShapeCreatePointerDown(activeTool, pagePt);
     }
   };
 
+  private onSelectPointerDown(e: PointerEvent, pagePt: Point): void {
+    this.lastPointerDownShift = e.shiftKey;
+    const target = e.target as Element | null;
+    const shapeWrapper = target?.closest('.od-shape');
+    const shapeId = shapeWrapper?.getAttribute('data-id');
+
+    if (!shapeId) {
+      if (!e.shiftKey) {
+        this.editor.clearSelection();
+      }
+      this.isMarquee = true;
+      this.marqueeStart = pagePt;
+      this.isShiftMarquee = e.shiftKey;
+      this.initialSelectionBeforeMarquee = e.shiftKey ? [...this.editor.selection] : [];
+      return;
+    }
+
+    let targetId = shapeId;
+    if (!isMod(e)) {
+      const group = findGroupForMember(shapeId, this.editor.store, this.editor.registry);
+      if (group && !e.shiftKey) {
+        targetId = group.id;
+      }
+    }
+
+    this.clickedShapeId = targetId;
+    this.hasMovedAfterDown = false;
+
+    if (e.shiftKey) {
+      this.editor.toggleSelection(targetId);
+    } else if (!this.editor.isSelected(targetId)) {
+      this.editor.selectShape(targetId);
+    }
+
+    if (this.editor.isSelected(targetId)) {
+      this.startDraggingSelection(pagePt);
+    }
+  }
+
+  private startDraggingSelection(pagePt: Point): void {
+    const shapesToDrag = new Set<ShapeId>();
+    for (const selId of this.editor.selection) {
+      shapesToDrag.add(selId);
+      const shape = this.editor.store.getShape(selId);
+      if (shape && isGroupShape(shape, this.editor.registry)) {
+        for (const m of getGroupMembers(shape, this.editor.registry)) {
+          shapesToDrag.add(m);
+        }
+      }
+      for (const candidate of this.editor.store.listShapes()) {
+        if (candidate.meta['parent'] === selId || candidate.meta['parentId'] === selId) {
+          shapesToDrag.add(candidate.id);
+        }
+      }
+    }
+
+    this.isDragging = true;
+    this.dragStartPointer = pagePt;
+    this.dragPositions.clear();
+    for (const id of shapesToDrag) {
+      const s = this.editor.store.getShape(id);
+      if (s) {
+        this.dragPositions.set(id, { x: s.x, y: s.y });
+      }
+    }
+    this.editor.store.beginTransaction();
+  }
+
+  private onInkPointerDown(tool: string, pagePt: Point): void {
+    const shapeType = tool === 'highlighter' ? 'highlighter' : 'ink';
+    const def = this.editor.registry.get(shapeType);
+    if (!def) return;
+
+    this.isDrawing = true;
+    this.currentInkPts = [pagePt.x, pagePt.y];
+    this.editor.store.beginTransaction();
+    const shape = this.editor.createShape({
+      type: shapeType,
+      x: pagePt.x,
+      y: pagePt.y,
+      props: { ...def.defaultProps(), pts: [pagePt.x, pagePt.y] },
+    });
+    this.currentInkShapeId = shape.id;
+    this.editor.selectShape(shape.id);
+  }
+
+  private onShapeCreatePointerDown(tool: string, pagePt: Point): void {
+    const def = this.editor.registry.get(tool);
+    if (!def) return;
+
+    this.editor.store.transact(() => {
+      const shape = this.editor.createShape({
+        type: tool,
+        x: pagePt.x,
+        y: pagePt.y,
+        props: def.defaultProps(),
+      });
+      const bounds = def.geometry.bounds(shape);
+      const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, shape.id);
+      if (suggested) {
+        this.editor.store.updateShape(shape.id, { meta: { ...shape.meta, parent: suggested.id } });
+      }
+      this.editor.selectShape(shape.id);
+    });
+    this.editor.setTool('select');
+  }
+
   private onPointerMove = (e: PointerEvent): void => {
     const containerRect = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
-    const currentScreenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
-    const currentPagePt = this.editor.camera.screenToPage(currentScreenPt);
+    const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
+    const currentPagePt = this.editor.camera.screenToPage(screenPt);
 
     if (this.isDrawing && this.currentInkShapeId) {
       this.currentInkPts.push(currentPagePt.x, currentPagePt.y);
@@ -136,22 +190,27 @@ export class PointerInteractionController {
       return;
     }
 
-    if (!this.isDragging || !this.dragShapeId || !this.dragStartPointer || !this.dragStartShapePos) {
+    if (this.isMarquee && this.marqueeStart && this.container) {
+      const box = computeMarqueeBounds(this.marqueeStart, currentPagePt);
+      this.marqueeOverlay.show(this.container, box);
+      const hitIds = findIntersectingShapes(box, this.editor.store, this.editor.registry);
+      if (this.isShiftMarquee) {
+        this.editor.setSelection(Array.from(new Set([...this.initialSelectionBeforeMarquee, ...hitIds])));
+      } else {
+        this.editor.setSelection(hitIds);
+      }
       return;
     }
 
-    const dx = currentPagePt.x - this.dragStartPointer.x;
-    const dy = currentPagePt.y - this.dragStartPointer.y;
-
-    this.editor.store.updateShape(this.dragShapeId, {
-      x: this.dragStartShapePos.x + dx,
-      y: this.dragStartShapePos.y + dy,
-    });
-    for (const [childId, initPos] of this.dragChildInitialPositions) {
-      this.editor.store.updateShape(childId, {
-        x: initPos.x + dx,
-        y: initPos.y + dy,
-      });
+    if (this.isDragging && this.dragStartPointer) {
+      const dx = currentPagePt.x - this.dragStartPointer.x;
+      const dy = currentPagePt.y - this.dragStartPointer.y;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        this.hasMovedAfterDown = true;
+      }
+      for (const [id, initialPos] of this.dragPositions) {
+        this.editor.store.updateShape(id, { x: initialPos.x + dx, y: initialPos.y + dy });
+      }
     }
   };
 
@@ -160,9 +219,7 @@ export class PointerInteractionController {
       const simplified = simplifyRDP(this.currentInkPts, 1.5);
       const shape = this.editor.store.getShape(this.currentInkShapeId);
       if (shape) {
-        this.editor.store.updateShape(this.currentInkShapeId, {
-          props: { ...shape.props, pts: simplified },
-        });
+        this.editor.store.updateShape(this.currentInkShapeId, { props: { ...shape.props, pts: simplified } });
       }
       this.isDrawing = false;
       this.currentInkShapeId = null;
@@ -172,33 +229,41 @@ export class PointerInteractionController {
       return;
     }
 
+    if (this.isMarquee) {
+      this.marqueeOverlay.hide();
+      this.isMarquee = false;
+      this.marqueeStart = null;
+      return;
+    }
+
     if (this.isDragging) {
-      if (this.dragShapeId) {
-        const dragged = this.editor.store.getShape(this.dragShapeId);
-        if (dragged && !dragged.meta['parent'] && !dragged.meta['parentId']) {
-          const def = this.editor.registry.get(dragged.type);
-          if (def) {
-            const bounds = def.geometry.bounds(dragged);
-            const suggested = findSuggestedParent(
-              bounds,
-              this.editor.store.listShapes(),
-              this.editor.registry,
-              dragged.id
-            );
-            if (suggested) {
-              this.editor.store.updateShape(dragged.id, {
-                meta: { ...dragged.meta, parent: suggested.id },
-              });
-            }
+      this.finishDragging();
+    }
+  };
+
+  private finishDragging(): void {
+    if (!this.hasMovedAfterDown && this.clickedShapeId && !this.lastPointerDownShift) {
+      this.editor.selectShape(this.clickedShapeId);
+    }
+
+    for (const id of this.editor.selection) {
+      const dragged = this.editor.store.getShape(id);
+      if (dragged && !dragged.meta['parent'] && !dragged.meta['parentId']) {
+        const def = this.editor.registry.get(dragged.type);
+        if (def) {
+          const bounds = def.geometry.bounds(dragged);
+          const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, dragged.id);
+          if (suggested) {
+            this.editor.store.updateShape(dragged.id, { meta: { ...dragged.meta, parent: suggested.id } });
           }
         }
       }
-      this.isDragging = false;
-      this.dragShapeId = null;
-      this.dragStartPointer = null;
-      this.dragStartShapePos = null;
-      this.dragChildInitialPositions.clear();
-      this.editor.store.commitTransaction();
     }
-  };
+
+    this.isDragging = false;
+    this.dragStartPointer = null;
+    this.dragPositions.clear();
+    this.clickedShapeId = null;
+    this.editor.store.commitTransaction();
+  }
 }

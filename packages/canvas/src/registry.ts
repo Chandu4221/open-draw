@@ -38,10 +38,16 @@ export interface ClippingCapability<P = Record<string, unknown>> {
   isMask(shape: ShapeRecord<P>): boolean;
 }
 
+export interface GroupCapability<P = Record<string, unknown>> {
+  readonly isGroup?: boolean;
+  getMembers?(shape: ShapeRecord<P>): readonly string[];
+}
+
 export interface ShapeCapabilities<P = Record<string, unknown>> {
   readonly text?: TextCapability<P>;
   readonly connector?: ConnectorCapability<P>;
   readonly clipping?: ClippingCapability<P>;
+  readonly group?: GroupCapability<P>;
 }
 
 export interface ShapeDefinition<P = Record<string, unknown>> {

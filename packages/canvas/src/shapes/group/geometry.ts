@@ -6,8 +6,8 @@ export const groupGeometry = {
     return {
       x: shape.x,
       y: shape.y,
-      width: 0,
-      height: 0,
+      width: Number(shape.props?.width ?? 0),
+      height: Number(shape.props?.height ?? 0),
     };
   },
 
@@ -15,7 +15,9 @@ export const groupGeometry = {
     return shape;
   },
 
-  hit(_shape: ShapeRecord<GroupProps>, _point: Point): boolean {
-    return false;
+  hit(shape: ShapeRecord<GroupProps>, point: Point): boolean {
+    const w = Number(shape.props?.width ?? 0);
+    const h = Number(shape.props?.height ?? 0);
+    return point.x >= shape.x && point.x <= shape.x + w && point.y >= shape.y && point.y <= shape.y + h;
   },
 };

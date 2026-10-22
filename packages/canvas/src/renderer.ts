@@ -35,11 +35,7 @@ export class SVGRenderer {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'od-canvas-root');
     svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    svg.style.width = '100%';
-    svg.style.height = '100%';
-    svg.style.display = 'block';
-    svg.style.overflow = 'hidden';
-    svg.style.userSelect = 'none';
+    svg.style.cssText = 'width:100%;height:100%;display:block;overflow:hidden;user-select:none;';
 
     const viewport = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     viewport.setAttribute('class', 'od-viewport');
@@ -58,14 +54,9 @@ export class SVGRenderer {
   }
 
   destroy(): void {
-    if (this.svgElement && this.container) {
-      this.container.removeChild(this.svgElement);
-    }
+    if (this.svgElement && this.container) this.container.removeChild(this.svgElement);
     this.shapeElements.clear();
-    this.container = null;
-    this.svgElement = null;
-    this.viewportGroup = null;
-    this.shapesLayer = null;
+    this.container = this.svgElement = this.viewportGroup = this.shapesLayer = null;
   }
 
   updateCamera(camera: Camera): void {
@@ -74,18 +65,18 @@ export class SVGRenderer {
     }
   }
 
-  getOverlaySlot(id: ShapeId): SVGGElement | null {
-    const entry = this.shapeElements.get(id);
-    return entry ? entry.slot : null;
-  }
+  getOverlaySlot(id: ShapeId): SVGGElement | null { return this.shapeElements.get(id)?.slot ?? null; }
+  getShapeWrapper(id: ShapeId): SVGGElement | null { return this.shapeElements.get(id)?.wrapper ?? null; }
+  getShapeRecord(id: ShapeId): ShapeRecord | undefined { return this.shapeElements.get(id)?.shape; }
 
-  getShapeWrapper(id: ShapeId): SVGGElement | null {
-    const entry = this.shapeElements.get(id);
-    return entry ? entry.wrapper : null;
-  }
-
-  getShapeRecord(id: ShapeId): ShapeRecord | undefined {
-    return this.shapeElements.get(id)?.shape;
+  reorderDOM(shapes: Iterable<ShapeRecord>): void {
+    if (!this.shapesLayer) return;
+    for (const shape of shapes) {
+      const entry = this.shapeElements.get(shape.id);
+      if (entry && entry.wrapper.parentNode === this.shapesLayer) {
+        this.shapesLayer.appendChild(entry.wrapper);
+      }
+    }
   }
 
   renderAll(shapes: Iterable<ShapeRecord>): void {
@@ -175,6 +166,10 @@ export class SVGRenderer {
     const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     wrapper.setAttribute('class', 'od-shape');
     wrapper.setAttribute('data-id', shape.id);
+    wrapper.setAttribute('tabindex', '0');
+    wrapper.setAttribute('role', 'button');
+    const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
+    wrapper.setAttribute('aria-label', String(label));
     wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})`);
 
     const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -184,12 +179,8 @@ export class SVGRenderer {
 
     entry = { wrapper, slot, shape };
     this.shapeElements.set(shape.id, entry);
-
     this._renderShapeContent(entry);
-
-    // Contract: overlay slot is wrapper's last child
     wrapper.appendChild(slot);
-
     return entry;
   }
 
@@ -237,7 +228,8 @@ export class SVGRenderer {
     }
 
     wrapper.setAttribute('transform', `translate(${localX}, ${localY})`);
-
+    const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
+    wrapper.setAttribute('aria-label', String(label));
     const def = this.registry.get(shape.type);
     if (def?.update) {
       def.update(wrapper, shape, prevShape, {
