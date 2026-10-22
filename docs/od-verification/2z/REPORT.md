@@ -121,7 +121,7 @@ Empirical measurements on 100 mixed shapes (`rect`, `ellipse`, `note`, `frame`, 
 | 4. Isolated Zoom Math | `scripts/check-isolated-zoom.js` | **PASS** (All zoom math confined to `camera.ts` + handlesView exemption) |
 | 5. Zero Shape-Type Branching | `scripts/check-no-shape-branching.js` | **PASS** (Zero branching outside shape definitions) |
 | 6. File Size Discipline | `scripts/check-file-sizes.js` | **PASS** (All source files strictly $\le 300$ lines) |
-| 7. Portable Markdown Links | `scripts/check-portable-links.js` | **PASS** (Zero `file://` links in docs and root markdown) |
+| 7. Portable Markdown Links | `scripts/check-portable-links.js` | **PASS** (Zero non-portable absolute links in docs and root markdown) |
 | 8. CI Performance Regression Fence | `npm run check:perf` | **PASS** (Latency $\le 16.6\text{ms}$ p95, 0 dropped frames) |
 
 ---
