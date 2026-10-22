@@ -18,6 +18,7 @@ import { ClippingManager } from './capabilities/clipping/index.js';
 import { ConnectorManager } from './capabilities/connector/index.js';
 import { SelectionManager } from './selection/index.js';
 import { KeyboardDispatcher, type KeyBinding } from './input/index.js';
+import { GestureController } from './gesture/index.js';
 
 export interface CanvasEditorOptions {
   readonly readonly?: boolean;
@@ -40,6 +41,7 @@ export class CanvasEditor {
   readonly connector: ConnectorManager;
   readonly selectionManager: SelectionManager;
   readonly keyboard: KeyboardDispatcher;
+  readonly gesture: GestureController;
 
   mode: EditorMode = 'none';
 
@@ -57,6 +59,7 @@ export class CanvasEditor {
     this.camera = new CameraController();
     this.registry = new ShapeRegistry();
     this.renderer = new SVGRenderer(this.registry);
+    this.gesture = new GestureController(this);
     this.interaction = new PointerInteractionController(this);
     this.textEditing = new TextEditingManager();
     this.clipping = new ClippingManager();
@@ -213,6 +216,10 @@ export class CanvasEditor {
 
   canRedo(): boolean {
     return this.store.canRedo();
+  }
+
+  clearHistory(): void {
+    this.store.clearHistory();
   }
 
   undo(): boolean {

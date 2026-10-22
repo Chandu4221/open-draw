@@ -152,7 +152,13 @@ export function zoomSelection(editor: CanvasEditor): void {
 
 export function executeCommand(command: CommandId, editor: CanvasEditor): void {
   if (command === 'select-all') return editor.selectAll();
-  if (command === 'clear-selection') return editor.clearSelection();
+  if (command === 'clear-selection') {
+    if (editor.gesture.isActive) {
+      editor.gesture.cancel();
+      return;
+    }
+    return editor.clearSelection();
+  }
   if (command === 'cycle-forward') return editor.cycleSelection('forward');
   if (command === 'cycle-backward') return editor.cycleSelection('backward');
   if (command === 'nudge-up') return nudge(editor, 'up', 1);

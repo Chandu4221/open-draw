@@ -3,24 +3,17 @@ import type { CanvasEditor } from './editor.js';
 import { findSuggestedParent } from './capabilities/clipping/index.js';
 import { simplifyRDP } from './shapes/ink/index.js';
 import { isMod } from './input/utils.js';
-import { findGroupForMember, getGroupMembers, isGroupShape } from './selection/group.js';
+import { findGroupForMember } from './selection/group.js';
 import { computeMarqueeBounds, findIntersectingShapes, MarqueeOverlay } from './selection/marquee.js';
 import type { HandleType } from './selection/handles.js';
-import { TransformGestureController } from './selection/transformGesture.js';
-import { handleGestureReparent } from './selection/reparent.js';
 import { StrokeEraserController } from './eraser/index.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
   private container: HTMLElement | null = null;
-  private transformGesture: TransformGestureController;
   private eraser: StrokeEraserController;
 
-  private isDragging = false;
-  private dragStartPointer: Point | null = null;
-  private dragPositions: Map<ShapeId, Point> = new Map();
   private clickedShapeId: ShapeId | null = null;
-  private hasMovedAfterDown = false;
   private lastPointerDownShift = false;
 
   private isMarquee = false;
@@ -35,7 +28,6 @@ export class PointerInteractionController {
 
   constructor(editor: CanvasEditor) {
     this.editor = editor;
-    this.transformGesture = new TransformGestureController(editor);
     this.eraser = new StrokeEraserController(editor);
   }
 
@@ -83,8 +75,12 @@ export class PointerInteractionController {
     const handleEl = target?.closest('.od-handle');
     if (handleEl && this.editor.selection.length === 1) {
       const handleType = handleEl.getAttribute('data-handle') as HandleType;
-      if (handleType && this.transformGesture.start(handleType, this.editor.selection[0]!, pagePt)) {
-        return;
+      if (handleType) {
+        if (handleType === 'rotate') {
+          if (this.editor.gesture.startRotate(this.editor.selection[0]!, pagePt)) return;
+        } else {
+          if (this.editor.gesture.startResize(handleType, this.editor.selection[0]!, pagePt)) return;
+        }
       }
     }
 
@@ -111,7 +107,6 @@ export class PointerInteractionController {
     }
 
     this.clickedShapeId = targetId;
-    this.hasMovedAfterDown = false;
 
     if (e.shiftKey) {
       this.editor.toggleSelection(targetId);
@@ -120,37 +115,8 @@ export class PointerInteractionController {
     }
 
     if (this.editor.isSelected(targetId)) {
-      this.startDraggingSelection(pagePt);
+      this.editor.gesture.startMove(targetId, pagePt);
     }
-  }
-
-  private startDraggingSelection(pagePt: Point): void {
-    const shapesToDrag = new Set<ShapeId>();
-    for (const selId of this.editor.selection) {
-      shapesToDrag.add(selId);
-      const shape = this.editor.store.getShape(selId);
-      if (shape && isGroupShape(shape, this.editor.registry)) {
-        for (const m of getGroupMembers(shape, this.editor.registry)) {
-          shapesToDrag.add(m);
-        }
-      }
-      for (const candidate of this.editor.store.listShapes()) {
-        if (candidate.meta['parent'] === selId || candidate.meta['parentId'] === selId) {
-          shapesToDrag.add(candidate.id);
-        }
-      }
-    }
-
-    this.isDragging = true;
-    this.dragStartPointer = pagePt;
-    this.dragPositions.clear();
-    for (const id of shapesToDrag) {
-      const s = this.editor.store.getShape(id);
-      if (s) {
-        this.dragPositions.set(id, { x: s.x, y: s.y });
-      }
-    }
-    this.editor.store.beginTransaction();
   }
 
   private onInkPointerDown(tool: string, pagePt: Point): void {
@@ -197,8 +163,8 @@ export class PointerInteractionController {
     const screenPt = { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
     const currentPagePt = this.editor.camera.screenToPage(screenPt);
 
-    if (this.transformGesture.isTransforming) {
-      this.transformGesture.move(currentPagePt, e);
+    if (this.editor.gesture.isActive) {
+      this.editor.gesture.move(currentPagePt, e);
       return;
     }
 
@@ -227,24 +193,17 @@ export class PointerInteractionController {
       } else {
         this.editor.setSelection(hitIds);
       }
-      return;
-    }
-
-    if (this.isDragging && this.dragStartPointer) {
-      const dx = currentPagePt.x - this.dragStartPointer.x;
-      const dy = currentPagePt.y - this.dragStartPointer.y;
-      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-        this.hasMovedAfterDown = true;
-      }
-      for (const [id, initialPos] of this.dragPositions) {
-        this.editor.store.updateShape(id, { x: initialPos.x + dx, y: initialPos.y + dy });
-      }
     }
   };
 
   private onPointerUp = (): void => {
-    if (this.transformGesture.isTransforming) {
-      this.transformGesture.end();
+    if (this.editor.gesture.isActive) {
+      const didMove = this.editor.gesture.didMove;
+      this.editor.gesture.commit();
+      if (!didMove && this.clickedShapeId && !this.lastPointerDownShift) {
+        this.editor.selectShape(this.clickedShapeId);
+      }
+      this.clickedShapeId = null;
       return;
     }
 
@@ -273,25 +232,5 @@ export class PointerInteractionController {
       this.marqueeStart = null;
       return;
     }
-
-    if (this.isDragging) {
-      this.finishDragging();
-    }
   };
-
-  private finishDragging(): void {
-    if (!this.hasMovedAfterDown && this.clickedShapeId && !this.lastPointerDownShift) {
-      this.editor.selectShape(this.clickedShapeId);
-    }
-
-    for (const id of this.editor.selection) {
-      handleGestureReparent(id, this.editor.store, this.editor.registry, this.editor.camera);
-    }
-
-    this.isDragging = false;
-    this.dragStartPointer = null;
-    this.dragPositions.clear();
-    this.clickedShapeId = null;
-    this.editor.store.commitTransaction();
-  }
 }

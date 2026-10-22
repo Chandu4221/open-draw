@@ -132,13 +132,13 @@ export class SelectionManager {
     camera?: Camera
   ): void {
     const slot = renderer.getOverlaySlot(id);
-    const shape = store.getShape(id);
+    const shape = renderer.getShapeRecord(id) ?? store.getShape(id);
     if (!slot || !shape) return;
 
     const legacy = slot.querySelector(':scope > .od-selection-outline');
     legacy?.remove();
 
-    const bounds = this._computeBounds(shape, store, registry);
+    const bounds = this._computeBounds(shape, store, registry, renderer);
     if (!bounds) return;
 
     const lx = bounds.x - shape.x;
@@ -146,14 +146,16 @@ export class SelectionManager {
     renderHandles(slot, { x: lx, y: ly, width: bounds.width, height: bounds.height }, camera);
   }
 
-  private _computeBounds(shape: ShapeRecord, store: CanvasStore, registry: ShapeRegistry) {
+  private _computeBounds(shape: ShapeRecord, store: CanvasStore, registry: ShapeRegistry, renderer?: SVGRenderer) {
     const def = registry.get(shape.type);
     if (!def) return null;
 
     let bounds = def.geometry.bounds(shape);
     if (def.capabilities?.group?.isGroup) {
       const members = def.capabilities.group.getMembers ? def.capabilities.group.getMembers(shape) : [];
-      const memberShapes = members.map((mid) => store.getShape(mid)).filter(Boolean) as ShapeRecord[];
+      const memberShapes = members
+        .map((mid) => (renderer ? renderer.getShapeRecord(mid) : null) ?? store.getShape(mid))
+        .filter(Boolean) as ShapeRecord[];
       if (memberShapes.length > 0) {
         let minX = Infinity;
         let minY = Infinity;
@@ -183,10 +185,10 @@ export class SelectionManager {
     id: ShapeId
   ): void {
     const slot = renderer.getOverlaySlot(id);
-    const shape = store.getShape(id);
+    const shape = renderer.getShapeRecord(id) ?? store.getShape(id);
     if (!slot || !shape) return;
 
-    const bounds = this._computeBounds(shape, store, registry);
+    const bounds = this._computeBounds(shape, store, registry, renderer);
     if (!bounds) return;
 
     const lx = bounds.x - shape.x;

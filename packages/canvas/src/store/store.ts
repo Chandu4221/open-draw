@@ -189,6 +189,7 @@ export class CanvasStore {
 
   canUndo(): boolean { return this.undoStack.length > 0; }
   canRedo(): boolean { return this.redoStack.length > 0; }
+  clearHistory(): void { this.undoStack = []; this.redoStack = []; }
 
   mergeLastHistoryEntry(): void {
     if (this.undoStack.length < 2) return;

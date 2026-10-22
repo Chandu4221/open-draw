@@ -14,6 +14,12 @@ interface ShapeDOMEntry {
  * Completely polymorphic — delegates shape inner rendering to registered ShapeDefinition plugins.
  * Maintains the overlay slot structural contract: wrapper's last child with identity transform.
  */
+function createSVG<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string> = {}): SVGElementTagNameMap[K] {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
 export class SVGRenderer {
   readonly registry: ShapeRegistry;
 
@@ -31,23 +37,13 @@ export class SVGRenderer {
 
   mount(container: HTMLElement, initialCamera: Camera): void {
     this.container = container;
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'od-canvas-root');
-    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const svg = createSVG('svg', { class: 'od-canvas-root', xmlns: 'http://www.w3.org/2000/svg' });
     svg.style.cssText = 'width:100%;height:100%;display:block;overflow:hidden;user-select:none;';
-
-    const viewport = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    viewport.setAttribute('class', 'od-viewport');
-    viewport.setAttribute('transform', cameraToTransform(initialCamera));
-
-    const shapes = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    shapes.setAttribute('class', 'od-shapes-layer');
-
+    const viewport = createSVG('g', { class: 'od-viewport', transform: cameraToTransform(initialCamera) });
+    const shapes = createSVG('g', { class: 'od-shapes-layer' });
     viewport.appendChild(shapes);
     svg.appendChild(viewport);
     container.appendChild(svg);
-
     this.svgElement = svg;
     this.viewportGroup = viewport;
     this.shapesLayer = shapes;
@@ -80,24 +76,13 @@ export class SVGRenderer {
   }
 
   renderAll(shapes: Iterable<ShapeRecord>): void {
-    if (this.shapesLayer) {
-      this.shapesLayer.innerHTML = '';
-    }
+    if (this.shapesLayer) this.shapesLayer.innerHTML = '';
     this.shapeElements.clear();
-
-    const shapeList = Array.from(shapes);
-
-    // Pass 1: create entries
-    for (const shape of shapeList) {
-      this._createOrReuseEntry(shape);
-    }
-
-    // Pass 2: attach to parents or root layer
-    for (const shape of shapeList) {
-      const entry = this.shapeElements.get(shape.id);
-      if (entry) {
-        this._attachWrapper(entry.shape, entry.wrapper);
-      }
+    const list = Array.from(shapes);
+    for (const s of list) this._createOrReuseEntry(s);
+    for (const s of list) {
+      const e = this.shapeElements.get(s.id);
+      if (e) this._attachWrapper(e.shape, e.wrapper);
     }
   }
 
@@ -141,14 +126,28 @@ export class SVGRenderer {
 
     // 4. Connector reconciliation for bound arrows
     for (const updatedId of diff.updated) {
-      for (const s of store.listShapes()) {
-        const def = this.registry.get(s.type);
-        if (def?.capabilities?.connector) {
-          const props = s.props as { startBinding?: { shapeId: string }; endBinding?: { shapeId: string } };
-          if (props.startBinding?.shapeId === updatedId || props.endBinding?.shapeId === updatedId) {
-            const entry = this.shapeElements.get(s.id);
-            if (entry) this._patchShapeDOM(entry, entry.shape);
-          }
+      this._updateBoundConnectors(updatedId);
+    }
+  }
+
+  updatePreview(shape: ShapeRecord): void {
+    const entry = this.shapeElements.get(shape.id);
+    if (!entry) return;
+    const prev = entry.shape;
+    entry.shape = shape;
+    this._patchShapeDOM(entry, prev);
+    this._updateBoundConnectors(shape.id);
+  }
+
+  private _updateBoundConnectors(updatedId: ShapeId): void {
+    if (!this.store) return;
+    for (const s of this.store.listShapes()) {
+      const def = this.registry.get(s.type);
+      if (def?.capabilities?.connector) {
+        const props = s.props as { startBinding?: { shapeId: string }; endBinding?: { shapeId: string } };
+        if (props.startBinding?.shapeId === updatedId || props.endBinding?.shapeId === updatedId) {
+          const entry = this.shapeElements.get(s.id);
+          if (entry) this._patchShapeDOM(entry, entry.shape);
         }
       }
     }
@@ -163,21 +162,19 @@ export class SVGRenderer {
       return entry;
     }
 
-    const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    wrapper.setAttribute('class', 'od-shape');
-    wrapper.setAttribute('data-id', shape.id);
-    wrapper.setAttribute('tabindex', '0');
-    wrapper.setAttribute('role', 'button');
-    const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
-    wrapper.setAttribute('aria-label', String(label));
     const def = this.registry.get(shape.type);
     const bounds = def?.geometry.bounds(shape);
     const rot = shape.rotation && bounds ? ` rotate(${shape.rotation}, ${bounds.width / 2}, ${bounds.height / 2})` : '';
-    wrapper.setAttribute('transform', `translate(${shape.x}, ${shape.y})${rot}`);
-
-    const slot = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    slot.setAttribute('class', 'od-overlay-slot');
-    slot.setAttribute('data-slot', 'overlay');
+    const label = shape.meta['name'] ? `${shape.type} ${shape.meta['name']}` : shape.type;
+    const wrapper = createSVG('g', {
+      class: 'od-shape',
+      'data-id': shape.id,
+      tabindex: '0',
+      role: 'button',
+      'aria-label': String(label),
+      transform: `translate(${shape.x}, ${shape.y})${rot}`,
+    });
+    const slot = createSVG('g', { class: 'od-overlay-slot', 'data-slot': 'overlay' });
     slot.style.pointerEvents = 'none';
 
     entry = { wrapper, slot, shape };
