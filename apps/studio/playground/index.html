@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenDraw — Interactive Playground</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <style>
     :root {
       --bg-canvas: #f8fafc;
@@ -52,12 +53,13 @@
     }
     .logo {
       font-weight: 700;
-      font-size: 17px;
+      font-size: 16px;
       letter-spacing: -0.5px;
       color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 6px;
+      user-select: none;
     }
     .badge {
       font-size: 11px;
@@ -66,6 +68,7 @@
       border-radius: 999px;
       background: #e0f2fe;
       color: #0369a1;
+      user-select: none;
     }
     .tool-group {
       display: flex;
@@ -77,7 +80,7 @@
     }
     .btn {
       height: 34px;
-      padding: 0 10px;
+      padding: 0 8px;
       font-size: 13px;
       font-weight: 500;
       background: transparent;
@@ -87,9 +90,11 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       transition: all 0.15s ease;
       white-space: nowrap;
+      user-select: none;
     }
     .btn:hover {
       background: #e2e8f0;
@@ -100,13 +105,25 @@
       border-color: #cbd5e1;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
-    .btn-kbd {
-      font-size: 10px;
-      color: var(--text-muted);
-      background: rgba(0, 0, 0, 0.05);
-      padding: 1px 4px;
-      border-radius: 3px;
-      font-family: ui-monospace, monospace;
+    .btn-icon {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+    }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
     }
     .divider {
       width: 1px;
@@ -128,12 +145,13 @@
       transition: transform 0.1s;
     }
     .swatch:hover {
-      transform: scale(1.15);
+      transform: scale(1.18);
     }
     .btn-primary {
       background: var(--accent);
       color: #ffffff;
       font-weight: 600;
+      padding: 0 12px;
     }
     .btn-primary:hover {
       background: var(--accent-hover);
@@ -141,7 +159,7 @@
     .meta-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
     #canvas-container {
       flex: 1;
@@ -160,7 +178,7 @@
       display: flex;
       align-items: center;
       padding: 4px 8px;
-      gap: 6px;
+      gap: 4px;
       z-index: 20;
     }
     #zoom-label {
@@ -169,13 +187,15 @@
       color: var(--text-muted);
       min-width: 44px;
       text-align: center;
+      user-select: none;
     }
     #shape-count {
       font-size: 12px;
       color: var(--text-muted);
-      margin-right: 8px;
+      margin-right: 6px;
       padding-right: 8px;
       border-right: 1px solid var(--border-color);
+      user-select: none;
     }
     .od-erase-target {
       opacity: 0.35 !important;
@@ -199,51 +219,91 @@
         <span class="badge">Playground</span>
       </div>
 
-      <!-- Main Tools -->
+      <!-- Main Tools with Material Symbols -->
       <div class="tool-group">
-        <button class="btn active" data-tool="select" title="Select & Transform">Select <span class="btn-kbd">V</span></button>
-        <button class="btn" data-tool="rect" title="Rectangle Box">Rect <span class="btn-kbd">R</span></button>
-        <button class="btn" data-tool="ellipse" title="Ellipse / Circle">Ellipse <span class="btn-kbd">O</span></button>
-        <button class="btn" data-tool="text" title="Text Element">Text <span class="btn-kbd">T</span></button>
-        <button class="btn" data-tool="frame" title="Artboard / Screen Frame">Frame <span class="btn-kbd">F</span></button>
-        <button class="btn" data-tool="note" title="Sticky Note">Note <span class="btn-kbd">N</span></button>
-        <button class="btn" data-tool="arrow" title="Connector Arrow">Arrow <span class="btn-kbd">A</span></button>
-        <button class="btn" data-tool="ink" title="Freehand Pen">Pen <span class="btn-kbd">P</span></button>
-        <button class="btn" data-tool="eraser" title="Stroke Eraser">Eraser <span class="btn-kbd">E</span></button>
+        <button class="btn btn-icon active" data-tool="select" title="Select & Transform (V)">
+          <span class="material-symbols-outlined">near_me</span>
+        </button>
+        <button class="btn btn-icon" data-tool="rect" title="Rectangle Box (R)">
+          <span class="material-symbols-outlined">crop_square</span>
+        </button>
+        <button class="btn btn-icon" data-tool="ellipse" title="Ellipse / Circle (O)">
+          <span class="material-symbols-outlined">circle</span>
+        </button>
+        <button class="btn btn-icon" data-tool="text" title="Text Element (T)">
+          <span class="material-symbols-outlined">title</span>
+        </button>
+        <button class="btn btn-icon" data-tool="frame" title="Artboard / Screen Frame (F)">
+          <span class="material-symbols-outlined">crop_free</span>
+        </button>
+        <button class="btn btn-icon" data-tool="note" title="Sticky Note (N)">
+          <span class="material-symbols-outlined">sticky_note_2</span>
+        </button>
+        <button class="btn btn-icon" data-tool="arrow" title="Connector Arrow (A)">
+          <span class="material-symbols-outlined">arrow_right_alt</span>
+        </button>
+        <button class="btn btn-icon" data-tool="ink" title="Freehand Pen (P)">
+          <span class="material-symbols-outlined">draw</span>
+        </button>
+        <button class="btn btn-icon" data-tool="eraser" title="Stroke Eraser (E)">
+          <span class="material-symbols-outlined">ink_eraser</span>
+        </button>
       </div>
 
       <!-- Color Palette -->
       <div class="colors">
-        <button class="swatch" style="background: #ffffff;" data-color="#ffffff" title="White"></button>
-        <button class="swatch" style="background: #f1f5f9;" data-color="#f1f5f9" title="Slate Gray"></button>
-        <button class="swatch" style="background: #3b82f6;" data-color="#3b82f6" title="Blue"></button>
-        <button class="swatch" style="background: #10b981;" data-color="#10b981" title="Emerald"></button>
-        <button class="swatch" style="background: #8b5cf6;" data-color="#8b5cf6" title="Violet"></button>
-        <button class="swatch" style="background: #f59e0b;" data-color="#f59e0b" title="Amber"></button>
+        <button class="swatch" style="background: #ffffff;" data-color="#ffffff" title="White Fill"></button>
+        <button class="swatch" style="background: #f1f5f9;" data-color="#f1f5f9" title="Slate Gray Fill"></button>
+        <button class="swatch" style="background: #3b82f6;" data-color="#3b82f6" title="Blue Fill"></button>
+        <button class="swatch" style="background: #10b981;" data-color="#10b981" title="Emerald Fill"></button>
+        <button class="swatch" style="background: #8b5cf6;" data-color="#8b5cf6" title="Violet Fill"></button>
+        <button class="swatch" style="background: #f59e0b;" data-color="#f59e0b" title="Amber Fill"></button>
       </div>
 
-      <!-- Actions -->
+      <!-- Actions with Material Symbols -->
       <div class="meta-actions">
-        <button class="btn" id="btn-undo" title="Undo (Ctrl+Z)">↩ Undo</button>
-        <button class="btn" id="btn-redo" title="Redo (Ctrl+Y)">↪ Redo</button>
-        <button class="btn" id="btn-delete" title="Delete Selected">🗑️</button>
+        <button class="btn btn-icon" id="btn-undo" title="Undo (Ctrl+Z)">
+          <span class="material-symbols-outlined">undo</span>
+        </button>
+        <button class="btn btn-icon" id="btn-redo" title="Redo (Ctrl+Y)">
+          <span class="material-symbols-outlined">redo</span>
+        </button>
+        <button class="btn btn-icon" id="btn-delete" title="Delete Selected (Backspace / Delete)">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
         <div class="divider"></div>
-        <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">Export PNG</button>
-        <button class="btn" id="btn-export-json" title="Save .opendraw.json snapshot">Save JSON</button>
-        <button class="btn" id="btn-import-json" title="Open .opendraw.json snapshot">Open JSON</button>
+        <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">
+          <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
+          <span>Export PNG</span>
+        </button>
+        <button class="btn btn-icon" id="btn-export-json" title="Save .opendraw.json Snapshot">
+          <span class="material-symbols-outlined">save</span>
+        </button>
+        <button class="btn btn-icon" id="btn-import-json" title="Open .opendraw.json Snapshot">
+          <span class="material-symbols-outlined">folder_open</span>
+        </button>
         <input type="file" id="file-import-json" accept=".json" style="display: none;">
-        <button class="btn" id="btn-clear" title="Clear Canvas">Clear</button>
+        <button class="btn btn-icon" id="btn-clear" title="Clear Canvas">
+          <span class="material-symbols-outlined">delete_sweep</span>
+        </button>
       </div>
     </header>
 
     <div id="canvas-container"></div>
 
+    <!-- Zoom & Stats Bar -->
     <div id="bottom-bar">
       <span id="shape-count">0 shapes</span>
-      <button class="btn" id="btn-zoom-out" style="padding: 0 6px;">−</button>
+      <button class="btn btn-icon" id="btn-zoom-out" title="Zoom Out" style="width: 28px; height: 28px;">
+        <span class="material-symbols-outlined" style="font-size: 18px;">remove</span>
+      </button>
       <span id="zoom-label">100%</span>
-      <button class="btn" id="btn-zoom-in" style="padding: 0 6px;">+</button>
-      <button class="btn" id="btn-zoom-reset" style="padding: 0 8px; font-size: 11px;">Reset</button>
+      <button class="btn btn-icon" id="btn-zoom-in" title="Zoom In" style="width: 28px; height: 28px;">
+        <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+      </button>
+      <button class="btn btn-icon" id="btn-zoom-reset" title="Reset Zoom (100%)" style="width: 28px; height: 28px;">
+        <span class="material-symbols-outlined" style="font-size: 18px;">restart_alt</span>
+      </button>
     </div>
   </div>
 
