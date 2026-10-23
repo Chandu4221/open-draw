@@ -442,7 +442,15 @@
 
     <!-- Floating Bottom Dock Toolbar -->
     <nav id="toolbar-dock" aria-label="Canvas Toolbar">
-      <!-- Main Tools with Material Symbols -->
+      <!-- 2. Export Button at Extreme Left -->
+      <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">
+        <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
+        <span>Export</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <!-- 1. Main Tools: Select & Active Shape (with Popup Expander - zero duplicates) -->
       <div class="tool-group">
         <button class="btn btn-icon active" data-tool="select" title="Select &amp; Transform (V)">
           <span class="material-symbols-outlined">near_me</span>
@@ -457,19 +465,6 @@
             <span class="material-symbols-outlined">expand_less</span>
           </button>
         </div>
-
-        <button class="btn btn-icon" data-tool="ink" title="Freehand Pen (P)">
-          <span class="material-symbols-outlined">draw</span>
-        </button>
-        <button class="btn btn-icon" data-tool="text" title="Text Element (T)">
-          <span class="material-symbols-outlined">title</span>
-        </button>
-        <button class="btn btn-icon" data-tool="eraser" title="Stroke Eraser (E)">
-          <span class="material-symbols-outlined">ink_eraser</span>
-        </button>
-        <button class="btn btn-icon" data-tool="frame" title="Artboard / Screen Frame (F)">
-          <span class="material-symbols-outlined">crop_free</span>
-        </button>
       </div>
 
       <div class="divider"></div>
@@ -484,7 +479,7 @@
 
       <div class="divider"></div>
 
-      <!-- Actions with Material Symbols -->
+      <!-- 3. Canvas & History Actions (Clear Canvas next to Delete Selected) -->
       <div class="meta-actions">
         <button class="btn btn-icon" id="btn-undo" title="Undo (Ctrl+Z)">
           <span class="material-symbols-outlined">undo</span>
@@ -495,11 +490,12 @@
         <button class="btn btn-icon" id="btn-delete" title="Delete Selected (Backspace / Delete)">
           <span class="material-symbols-outlined">delete</span>
         </button>
-        <div class="divider"></div>
-        <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">
-          <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
-          <span>Export</span>
+        <button class="btn btn-icon" id="btn-clear" title="Clear Canvas">
+          <span class="material-symbols-outlined">delete_sweep</span>
         </button>
+
+        <div class="divider"></div>
+
         <button class="btn btn-icon" id="btn-export-json" title="Save .opendraw.json Snapshot">
           <span class="material-symbols-outlined">save</span>
         </button>
@@ -507,9 +503,6 @@
           <span class="material-symbols-outlined">folder_open</span>
         </button>
         <input type="file" id="file-import-json" accept=".json" style="display: none;">
-        <button class="btn btn-icon" id="btn-clear" title="Clear Canvas">
-          <span class="material-symbols-outlined">delete_sweep</span>
-        </button>
       </div>
     </nav>
 

@@ -51,11 +51,32 @@ editor.selectionManager.subscribe(() => {
   }
 });
 
+const TOOL_ICONS: Record<string, string> = {
+  rect: 'crop_square',
+  ellipse: 'circle',
+  arrow: 'arrow_right_alt',
+  frame: 'crop_free',
+  note: 'sticky_note_2',
+  text: 'title',
+  ink: 'draw',
+  eraser: 'ink_eraser',
+};
+
 // Sync active tool UI
 function setActiveTool(toolId: string): void {
   editor.setTool(toolId);
+  const toolActiveShape = document.getElementById('tool-active-shape');
+  const activeShapeIcon = document.getElementById('active-shape-icon');
+  if (toolId !== 'select' && TOOL_ICONS[toolId] && toolActiveShape && activeShapeIcon) {
+    toolActiveShape.setAttribute('data-tool', toolId);
+    activeShapeIcon.textContent = TOOL_ICONS[toolId]!;
+    toolActiveShape.title = `${toolId.charAt(0).toUpperCase() + toolId.slice(1)} (${toolId.charAt(0).toUpperCase()})`;
+  }
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-tool') === toolId);
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-popup-tool]').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-popup-tool') === toolId);
   });
 }
 
@@ -143,6 +164,9 @@ function updateUIState(): void {
   const tool = editor.getTool();
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-tool') === tool);
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-popup-tool]').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-popup-tool') === tool);
   });
   const shapeCount = document.getElementById('shape-count');
   if (shapeCount) {
