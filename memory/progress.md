@@ -103,19 +103,19 @@ Target Branch: `build/phase-2y` $\longrightarrow$ merged to `main` upon exit.
 
 ---
 
-## Phase 3 — Semantics: The Meaning Layer (In Progress)
+## Phase 3 — Semantics: The Meaning Layer (Completed)
 Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md).
 Target Branch: `build/phase-3` $\longrightarrow$ merge to `main` upon exit.
 - [x] **§6 Housekeeping**: Split `interaction.ts` (293 $\to$ 209 lines) into `interaction/creation.ts` and `interaction/ink.ts`.
-- [ ] **§0 ADRs**: Author `ADR-006-identity-naming.md`; amend `ADR-002` (parenting cycle check) and `ADR-003` (group semantics).
-- [ ] **§0 Schema ID & Validators**: Implement 29-char alphabet ID generator and validators in `@open-draw/schema`.
-- [ ] **§0b Store Cycle Prevention**: Mandatory `CycleDetectedError` on `setParent()` and group deletion/ungroup semantics.
-- [ ] **Boundary Fence**: Extend boundary rules to verify `@open-draw/semantics` isolation and ban `breakpoint` in canvas.
-- [ ] **§1 Type Vocabulary**: Semantic type definitions data table and pure `validateSemantics()`.
-- [ ] **§2 Smart Defaults**: Pure `inferType()` rule table and trust-gate E2E Soul Test (`retag-then-resize never re-types`).
-- [ ] **§3 Responsive Derivation**: Pure `derive(scene, breakpoint)` for content width reflow.
-- [ ] **§4 Platform & Style Profiles**: `web`, `android`, `flutter` profiles and `styles/neubrutalism.ts` design tokens.
-- [ ] **§7 Exit Gate**: `docs/od-verification/3/REPORT.md`, all 10 fences green, merge to `main`.
+- [x] **§0 ADRs**: Author `ADR-006-identity-naming.md`; amend `ADR-002` (parenting cycle check) and `ADR-003` (group semantics).
+- [x] **§0 Schema ID & Validators**: Implement 29-char alphabet ID generator and validators in `@open-draw/schema`.
+- [x] **§0b Store Cycle Prevention**: Mandatory `CycleDetectedError` on `setParent()` and group deletion/ungroup semantics.
+- [x] **Boundary Fence**: Extend boundary rules to verify `@open-draw/semantics` isolation and ban `breakpoint` in canvas.
+- [x] **§1 Type Vocabulary**: Semantic type definitions data table and pure `validateSemantics()`.
+- [x] **§2 Smart Defaults**: Pure `inferType()` rule table and trust-gate E2E Soul Test (`retag-then-resize never re-types`).
+- [x] **§3 Responsive Derivation**: Pure `derive(scene, breakpoint)` for content width reflow.
+- [x] **§4 Platform & Style Profiles**: `web`, `android`, `flutter` profiles and `styles/neubrutalism.ts` design tokens.
+- [x] **§7 Exit Gate**: `docs/od-verification/3/REPORT.md`, all 10 fences green, merge to `main`.
 
 ---
 
