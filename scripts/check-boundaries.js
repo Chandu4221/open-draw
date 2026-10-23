@@ -104,6 +104,22 @@ for (const pkg of PACKAGE_DIRS) {
   }
 }
 
+// Fence: Canvas never knows breakpoints exist per Phase 3 §3.3
+const canvasSrcFiles = getFiles('packages/canvas/src', ['.ts', '.tsx', '.js']);
+for (const file of canvasSrcFiles) {
+  const content = fs.readFileSync(file, 'utf-8');
+  if (/\bbreakpoint\b/i.test(content)) {
+    violations.push({
+      package: '@open-draw/canvas',
+      file,
+      import: 'breakpoint (keyword leak)',
+      allowed: [],
+      reason: 'Boundary violation: canvas must never know breakpoints exist per Phase 3 §3.3',
+    });
+  }
+}
+
+
 if (violations.length > 0) {
   console.error('\n❌ IMPORT BOUNDARY VIOLATIONS DETECTED:\n');
   for (const v of violations) {
