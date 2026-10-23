@@ -4,6 +4,8 @@ import { CanvasStore } from '../store/index.js';
 import { ShapeRegistry } from '../registry.js';
 import { rectDefinition } from '../shapes/rect/index.js';
 import { groupDefinition } from '../shapes/group/index.js';
+import { textDefinition } from '../shapes/text/index.js';
+import { noteDefinition } from '../shapes/note/index.js';
 import { computeMarqueeBounds, findIntersectingShapes } from './marquee.js';
 import { findGroupForMember, getGroupMembers, isGroupShape } from './group.js';
 
@@ -73,4 +75,67 @@ describe('Selection Marquee & Group helpers', () => {
     const noGroup = findGroupForMember('unknown-shape', store, registry);
     expect(noGroup).toBeNull();
   });
+
+  it('safely finds intersecting shapes when text and note shapes omit width/height', () => {
+    const store = new CanvasStore();
+    const registry = new ShapeRegistry();
+    registry.register(rectDefinition);
+    registry.register(textDefinition);
+    registry.register(noteDefinition);
+
+    const t1 = store.createShape({
+      id: 't1',
+      type: 'text',
+      x: 100,
+      y: 100,
+      props: { text: 'Hello World' },
+    });
+    const n1 = store.createShape({
+      id: 'n1',
+      type: 'note',
+      x: 200,
+      y: 200,
+      props: { text: 'Note without dimensions' },
+    });
+
+    expect(() => {
+      const hits = findIntersectingShapes(
+        { x: 50, y: 50, width: 300, height: 300 },
+        store,
+        registry
+      );
+      expect(hits).toContain(t1.id);
+      expect(hits).toContain(n1.id);
+    }).not.toThrow();
+  });
+
+  it('gracefully skips shapes with non-finite bounds instead of throwing InvalidBoundsError', () => {
+    const store = new CanvasStore();
+    const registry = new ShapeRegistry();
+    registry.register({
+      type: 'malformed',
+      defaultProps: () => ({}),
+      geometry: {
+        bounds: () => ({ x: NaN, y: 100, width: 50, height: 50 }),
+        resize: () => ({}),
+        hit: () => false,
+      },
+      render: () => ({} as any),
+      update: () => {},
+    });
+    registry.register(rectDefinition);
+
+    store.createShape({ id: 'bad', type: 'malformed', x: 0, y: 0 });
+    const good = store.createShape({ id: 'good', type: 'rect', x: 50, y: 50, props: { width: 50, height: 50 } });
+
+    expect(() => {
+      const hits = findIntersectingShapes(
+        { x: 0, y: 0, width: 200, height: 200 },
+        store,
+        registry
+      );
+      expect(hits).toEqual([good.id]);
+    }).not.toThrow();
+  });
 });
+

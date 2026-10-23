@@ -268,4 +268,62 @@ test.describe('Phase 2.y §1: Selection Model E2E Gate', () => {
     historyLength = await page.evaluate(() => (window as any).__od_debug__.editor.store.undoStack.length);
     expect(historyLength).toBe(initialHistoryLength);
   });
+
+  test('drag-to-select marquee successfully selects multiple shapes including text and note without errors', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (err) => errors.push(err.message));
+
+    const { tId, nId } = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const t = editor.createShape({
+        type: 'text',
+        x: 100,
+        y: 100,
+        props: { text: 'Starter Text' },
+      });
+      const n = editor.createShape({
+        type: 'note',
+        x: 250,
+        y: 100,
+        props: { text: 'Starter Note' },
+      });
+      return { tId: t.id, nId: n.id };
+    });
+
+    const box = await page.locator('#canvas-container').boundingBox();
+    expect(box).not.toBeNull();
+    const cx = box?.x ?? 0;
+    const cy = box?.y ?? 0;
+
+    // Drag marquee covering both text and note
+    await page.mouse.move(cx + 50, cy + 50);
+    await page.mouse.down();
+    await page.mouse.move(cx + 450, cy + 300, { steps: 5 });
+    await page.mouse.up();
+
+    expect(errors).toHaveLength(0);
+
+    const selection = await page.evaluate(() => (window as any).__od_debug__.editor.selection);
+    expect(selection).toContain(tId);
+    expect(selection).toContain(nId);
+    expect(selection.length).toBe(2);
+
+    // Verify handles were removed and outlines are shown for multi-selection
+    const outlines = await page.evaluate(({ id1, id2 }) => {
+      const editor = (window as any).__od_debug__.editor;
+      const slot1 = editor.getOverlaySlot(id1);
+      const slot2 = editor.getOverlaySlot(id2);
+      return {
+        slot1Handles: slot1?.querySelectorAll('.od-handle').length ?? 0,
+        slot2Handles: slot2?.querySelectorAll('.od-handle').length ?? 0,
+        slot1Outline: slot1?.querySelector('.od-selection-outline') !== null,
+        slot2Outline: slot2?.querySelector('.od-selection-outline') !== null,
+      };
+    }, { id1: tId, id2: nId });
+
+    expect(outlines.slot1Handles).toBe(0);
+    expect(outlines.slot2Handles).toBe(0);
+    expect(outlines.slot1Outline).toBe(true);
+    expect(outlines.slot2Outline).toBe(true);
+  });
 });

@@ -10,8 +10,8 @@ export const noteGeometry = {
     return {
       x: shape.x,
       y: shape.y,
-      width: shape.props.width,
-      height: shape.props.height,
+      width: Number.isFinite(shape.props.width) ? shape.props.width : MIN_NOTE_WIDTH,
+      height: Number.isFinite(shape.props.height) ? shape.props.height : MIN_NOTE_HEIGHT,
     };
   },
 
@@ -29,8 +29,9 @@ export const noteGeometry = {
     }
 
     let { x, y } = shape;
-    let width = shape.props.width;
-    let height = shape.props.height;
+    const b = this.bounds(shape);
+    let width = b.width;
+    let height = b.height;
     const pt = point ?? { x, y };
 
     switch (handleOrBounds) {
@@ -72,8 +73,9 @@ export const noteGeometry = {
   },
 
   hit(shape: ShapeRecord<NoteProps>, point: Point): boolean {
+    const b = this.bounds(shape);
     const localX = point.x - shape.x;
     const localY = point.y - shape.y;
-    return localX >= 0 && localX <= shape.props.width && localY >= 0 && localY <= shape.props.height;
+    return localX >= 0 && localX <= b.width && localY >= 0 && localY <= b.height;
   },
 };

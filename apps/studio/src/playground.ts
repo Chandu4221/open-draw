@@ -207,14 +207,14 @@ function seedStarterWireframe(ed: CanvasEditor): void {
       type: 'text',
       x: 130,
       y: 130,
-      props: { text: 'OpenDraw Canvas Engine', fontSize: 22, fontWeight: 'bold' },
+      props: { text: 'OpenDraw Canvas Engine', width: 280, height: 30, fontSize: 22, fontWeight: 'bold' },
       meta: { parent: frame.id },
     });
     ed.createShape({
       type: 'text',
       x: 130,
       y: 170,
-      props: { text: 'Infinite DOM/SVG canvas for wireframing with AI.', fontSize: 14, fill: '#475569' },
+      props: { text: 'Infinite DOM/SVG canvas for wireframing with AI.', width: 340, height: 24, fontSize: 14, fill: '#475569' },
       meta: { parent: frame.id },
     });
     ed.createShape({
@@ -228,14 +228,14 @@ function seedStarterWireframe(ed: CanvasEditor): void {
       type: 'text',
       x: 155,
       y: 232,
-      props: { text: 'Get Started', fontSize: 14, fontWeight: 'bold', fill: '#ffffff' },
+      props: { text: 'Get Started', width: 90, height: 20, fontSize: 14, fontWeight: 'bold', fill: '#ffffff' },
       meta: { parent: frame.id },
     });
     ed.createShape({
       type: 'note',
       x: 600,
       y: 100,
-      props: { text: 'POC Note:\nUse this canvas to sketch out the landing page layout!' },
+      props: { width: 180, height: 140, text: 'POC Note:\nUse this canvas to sketch out the landing page layout!' },
     });
   });
 }

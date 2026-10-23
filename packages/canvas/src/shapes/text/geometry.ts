@@ -4,11 +4,15 @@ import type { TextProps } from './defs.js';
 
 export const textGeometry = {
   bounds(shape: ShapeRecord<TextProps>): Bounds {
+    const fontSize = shape.props.fontSize ?? 16;
+    const textLen = (shape.props.text ?? '').length || 1;
+    const fallbackWidth = Math.max(30, Math.round(textLen * fontSize * 0.6));
+    const fallbackHeight = Math.max(20, Math.round(fontSize * 1.4));
     return {
       x: shape.x,
       y: shape.y,
-      width: shape.props.width,
-      height: shape.props.height,
+      width: Number.isFinite(shape.props.width) ? shape.props.width : fallbackWidth,
+      height: Number.isFinite(shape.props.height) ? shape.props.height : fallbackHeight,
     };
   },
 
@@ -26,8 +30,9 @@ export const textGeometry = {
     }
 
     let { x, y } = shape;
-    let width = shape.props.width;
-    let height = shape.props.height;
+    const b = this.bounds(shape);
+    let width = b.width;
+    let height = b.height;
     const pt = point ?? { x, y };
 
     switch (handleOrBounds) {
@@ -69,8 +74,9 @@ export const textGeometry = {
   },
 
   hit(shape: ShapeRecord<TextProps>, point: Point): boolean {
+    const b = this.bounds(shape);
     const localX = point.x - shape.x;
     const localY = point.y - shape.y;
-    return localX >= 0 && localX <= shape.props.width && localY >= 0 && localY <= shape.props.height;
+    return localX >= 0 && localX <= b.width && localY >= 0 && localY <= b.height;
   },
 };

@@ -22,6 +22,14 @@ export function findIntersectingShapes(
     const def = registry.get(shape.type);
     if (!def) continue;
     const shapeBounds = def.geometry.bounds(shape);
+    if (
+      !Number.isFinite(shapeBounds.x) ||
+      !Number.isFinite(shapeBounds.y) ||
+      !Number.isFinite(shapeBounds.width) ||
+      !Number.isFinite(shapeBounds.height)
+    ) {
+      continue;
+    }
     if (boundsIntersect(box, shapeBounds)) {
       hitIds.push(shape.id);
     }

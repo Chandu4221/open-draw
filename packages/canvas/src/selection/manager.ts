@@ -190,6 +190,7 @@ export class SelectionManager {
     const shape = renderer.getShapeRecord(id) ?? store.getShape(id);
     if (!slot || !shape) return;
 
+    removeHandles(slot);
     const bounds = this._computeBounds(shape, store, registry, renderer);
     if (!bounds) return;
 

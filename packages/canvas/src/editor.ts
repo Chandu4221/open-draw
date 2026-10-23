@@ -188,10 +188,8 @@ export class CanvasEditor {
     readonly props?: Record<string, unknown>;
   }): ShapeRecord {
     const id = record.id ?? `shape-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    return this.store.createShape({
-      ...record,
-      id,
-    });
+    const defaults = this.registry.get(record.type)?.defaultProps() ?? {};
+    return this.store.createShape({ ...record, id, props: { ...defaults, ...record.props } });
   }
 
   updateShape(
