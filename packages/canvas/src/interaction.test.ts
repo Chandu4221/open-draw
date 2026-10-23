@@ -179,4 +179,34 @@ describe('Drag-to-Draw Shape Creation', () => {
 
     controller.detach();
   });
+
+  it('undo after drag-to-draw completely removes the shape in a single step', () => {
+    const editor = new CanvasEditor();
+    const controller = new PointerInteractionController(editor);
+    const container = new MockElement() as any;
+    controller.attach(container);
+
+    editor.setTool('rect');
+    dispatchPointerDown(container, 50, 50);
+    dispatchPointerMove(150, 150);
+    dispatchPointerMove(250, 200);
+    dispatchPointerUp(250, 200);
+
+    expect(editor.store.listShapes()).toHaveLength(1);
+    expect(editor.canUndo()).toBe(true);
+
+    // Single undo must remove the created shape
+    editor.undo();
+    expect(editor.store.listShapes()).toHaveLength(0);
+
+    // Redo restores the shape at its final dragged size
+    expect(editor.canRedo()).toBe(true);
+    editor.redo();
+    expect(editor.store.listShapes()).toHaveLength(1);
+    const restored = editor.store.listShapes()[0]!;
+    expect(restored.props.width).toBe(200);
+    expect(restored.props.height).toBe(150);
+
+    controller.detach();
+  });
 });

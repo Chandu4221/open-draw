@@ -124,7 +124,6 @@ export class PointerInteractionController {
 
     this.isDrawing = true;
     this.currentInkPts = [pagePt.x, pagePt.y];
-    this.editor.store.beginTransaction();
     const shape = this.editor.createShape({
       type: shapeType,
       x: pagePt.x,
@@ -143,7 +142,6 @@ export class PointerInteractionController {
     this.shapeCreateStart = pagePt;
     this.shapeCreateTool = tool;
     this.didDragCreate = false;
-    this.editor.store.beginTransaction();
     const shape = this.editor.createShape({
       type: tool,
       x: pagePt.x,
@@ -186,9 +184,8 @@ export class PointerInteractionController {
       this.currentInkPts.push(currentPagePt.x, currentPagePt.y);
       const shape = this.editor.store.getShape(this.currentInkShapeId);
       if (shape) {
-        this.editor.store.updateShape(this.currentInkShapeId, {
-          props: { ...shape.props, pts: [...this.currentInkPts] },
-        });
+        this.editor.store.updateShape(this.currentInkShapeId, { props: { ...shape.props, pts: [...this.currentInkPts] } });
+        this.editor.store.mergeLastHistoryEntry();
       }
       return;
     }
@@ -209,6 +206,7 @@ export class PointerInteractionController {
         if (shape && def) {
           const patch = def.geometry.resize(shape, box, currentPagePt);
           this.editor.store.updateShape(this.shapeCreateId, patch);
+          this.editor.store.mergeLastHistoryEntry();
         }
       }
       return;
@@ -254,11 +252,13 @@ export class PointerInteractionController {
     if (this.isDrawing && this.currentInkShapeId) {
       const simplified = simplifyRDP(this.currentInkPts, 1.5);
       const shape = this.editor.store.getShape(this.currentInkShapeId);
-      if (shape) this.editor.store.updateShape(this.currentInkShapeId, { props: { ...shape.props, pts: simplified } });
+      if (shape) {
+        this.editor.store.updateShape(this.currentInkShapeId, { props: { ...shape.props, pts: simplified } });
+        this.editor.store.mergeLastHistoryEntry();
+      }
       this.isDrawing = false;
       this.currentInkShapeId = null;
       this.currentInkPts = [];
-      this.editor.store.commitTransaction();
       this.editor.setTool('select');
       return;
     }
@@ -269,9 +269,11 @@ export class PointerInteractionController {
       if (shape && def) {
         const bounds = def.geometry.bounds(shape);
         const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, shape.id);
-        if (suggested) this.editor.store.updateShape(shape.id, { meta: { ...shape.meta, parent: suggested.id } });
+        if (suggested) {
+          this.editor.store.updateShape(shape.id, { meta: { ...shape.meta, parent: suggested.id } });
+          this.editor.store.mergeLastHistoryEntry();
+        }
       }
-      this.editor.store.commitTransaction();
       this.isCreatingShape = false;
       this.shapeCreateStart = null;
       this.shapeCreateTool = null;
