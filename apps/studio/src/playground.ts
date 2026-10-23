@@ -10,6 +10,7 @@ import {
 } from './storage.js';
 import { initPopups } from './popups.js';
 import { PlaygroundTagPanel } from './playground-tag-panel.js';
+import { PlaygroundCompileModal } from './playground-compile-modal.js';
 
 const container = document.getElementById('canvas-container') as HTMLElement;
 const editor = new CanvasEditor();
@@ -17,6 +18,9 @@ editor.mount(container);
 
 // Initialize tag panel popover (§0.2)
 const tagPanel = new PlaygroundTagPanel(editor, container);
+
+// Initialize compile specification modal (§2)
+const compileModal = new PlaygroundCompileModal(editor);
 
 // Initialize popups for shapes and color palette
 const popups = initPopups(editor, (color: string) => {
@@ -45,7 +49,8 @@ editor.store.listen((diff) => {
   if (diff && diff.created && diff.created.size > 0) {
     for (const id of diff.created) {
       const shape = editor.store.getShape(id);
-      if (shape && !shape.meta?.semantic?.type) {
+      const sem = shape?.meta?.semantic as Record<string, unknown> | undefined;
+      if (shape && !sem?.['type']) {
         const inferred = inferType(shape, editor.getSnapshot());
         if (inferred && inferred.tier === 'strong') {
           editor.store.updateShape(id, {
@@ -145,7 +150,11 @@ function updateZoomLabel(): void {
   }
 }
 
-// Export / Import
+// Export / Import / Compile
+document.getElementById('btn-compile-spec')?.addEventListener('click', () => {
+  compileModal.open();
+});
+
 document.getElementById('btn-export-png')?.addEventListener('click', async () => {
   const btn = document.getElementById('btn-export-png') as HTMLButtonElement | null;
   if (btn) btn.disabled = true;
