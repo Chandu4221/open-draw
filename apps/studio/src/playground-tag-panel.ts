@@ -73,11 +73,13 @@ export class PlaygroundTagPanel {
     const nameGroup = document.createElement('div');
     nameGroup.style.cssText = 'margin-bottom: 8px;';
     const nameLabel = document.createElement('label');
+    nameLabel.htmlFor = 'tag-panel-name';
     nameLabel.textContent = 'Name';
     nameLabel.style.cssText = 'display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;';
     
     this.nameInput = document.createElement('input');
     this.nameInput.id = 'tag-panel-name';
+    this.nameInput.setAttribute('aria-label', 'Shape Name');
     this.nameInput.type = 'text';
     this.nameInput.maxLength = 64;
     this.nameInput.placeholder = 'Optional label';
@@ -93,11 +95,13 @@ export class PlaygroundTagPanel {
     const typeGroup = document.createElement('div');
     typeGroup.style.cssText = 'margin-bottom: 8px;';
     const typeLabel = document.createElement('label');
+    typeLabel.htmlFor = 'tag-panel-type';
     typeLabel.textContent = 'Type';
     typeLabel.style.cssText = 'display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 3px;';
 
     this.typeSelect = document.createElement('select');
     this.typeSelect.id = 'tag-panel-type';
+    this.typeSelect.setAttribute('aria-label', 'Semantic Type');
     this.typeSelect.style.cssText = 'width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; background: #ffffff; cursor: pointer;';
     
     for (const [key, def] of Object.entries(SEMANTIC_TYPES)) {

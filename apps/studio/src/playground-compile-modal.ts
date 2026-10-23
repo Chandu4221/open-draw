@@ -49,7 +49,7 @@ export class PlaygroundCompileModal {
         </h3>
         <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">Deterministic, byte-stable specification for AI prompts &amp; developers</p>
       </div>
-      <button id="od-compile-close-x" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 20px; padding: 4px 8px; border-radius: 6px;">✕</button>
+      <button id="od-compile-close-x" aria-label="Close" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 20px; padding: 4px 8px; border-radius: 6px;">✕</button>
     `;
 
     // Options Bar
@@ -64,6 +64,7 @@ export class PlaygroundCompileModal {
     this.legendCheckbox = document.createElement('input');
     this.legendCheckbox.type = 'checkbox';
     this.legendCheckbox.checked = true;
+    this.legendCheckbox.setAttribute('aria-label', 'Include Element Legend');
     legendLabel.appendChild(this.legendCheckbox);
     legendLabel.appendChild(document.createTextNode('Include Element Legend'));
 
@@ -72,6 +73,7 @@ export class PlaygroundCompileModal {
     this.designDirCheckbox = document.createElement('input');
     this.designDirCheckbox.type = 'checkbox';
     this.designDirCheckbox.checked = true;
+    this.designDirCheckbox.setAttribute('aria-label', 'Include Design Direction');
     designDirLabel.appendChild(this.designDirCheckbox);
     designDirLabel.appendChild(document.createTextNode('Include Design Direction'));
 
@@ -84,6 +86,7 @@ export class PlaygroundCompileModal {
 
     this.textareaEl = document.createElement('textarea');
     this.textareaEl.id = 'od-compile-output';
+    this.textareaEl.setAttribute('aria-label', 'Compiled Markdown Output');
     this.textareaEl.readOnly = true;
     this.textareaEl.style.cssText = `
       width: 100%; height: 100%; box-sizing: border-box; resize: none;
