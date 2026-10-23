@@ -1,17 +1,22 @@
-import { boundsOf, type Point, type ShapeId } from '@open-draw/schema';
+import type { Point, ShapeId } from '@open-draw/schema';
 import type { CanvasEditor } from './editor.js';
-import { findSuggestedParent } from './capabilities/clipping/index.js';
-import { simplifyRDP } from './shapes/ink/index.js';
 import { isMod } from './input/utils.js';
 import { findGroupForMember } from './selection/group.js';
 import { computeMarqueeBounds, findIntersectingShapes, MarqueeOverlay } from './selection/marquee.js';
 import type { HandleType } from './selection/handles.js';
 import { StrokeEraserController } from './eraser/index.js';
+import { ShapeCreationController } from './interaction/creation.js';
+import { FreehandDrawController } from './interaction/ink.js';
+
+export { ShapeCreationController } from './interaction/creation.js';
+export { FreehandDrawController } from './interaction/ink.js';
 
 export class PointerInteractionController {
   private editor: CanvasEditor;
   private container: HTMLElement | null = null;
   private eraser: StrokeEraserController;
+  private creation: ShapeCreationController;
+  private freehand: FreehandDrawController;
 
   private clickedShapeId: ShapeId | null = null;
   private lastPointerDownShift = false;
@@ -25,19 +30,11 @@ export class PointerInteractionController {
   private initialSelectionBeforeMarquee: readonly ShapeId[] = [];
   private marqueeOverlay = new MarqueeOverlay();
 
-  private isDrawing = false;
-  private currentInkShapeId: ShapeId | null = null;
-  private currentInkPts: number[] = [];
-
-  private isCreatingShape = false;
-  private shapeCreateStart: Point | null = null;
-  private shapeCreateTool: string | null = null;
-  private shapeCreateId: ShapeId | null = null;
-  private didDragCreate = false;
-
   constructor(editor: CanvasEditor) {
     this.editor = editor;
     this.eraser = new StrokeEraserController(editor);
+    this.creation = new ShapeCreationController(editor);
+    this.freehand = new FreehandDrawController(editor);
   }
 
   attach(container: HTMLElement): void {
@@ -74,8 +71,8 @@ export class PointerInteractionController {
 
     if (activeTool === 'select') this.onSelectPointerDown(e, pagePt);
     else if (activeTool === 'eraser') this.eraser.start(pagePt);
-    else if (activeTool === 'ink' || activeTool === 'draw' || activeTool === 'highlighter') this.onInkPointerDown(activeTool, pagePt);
-    else if (this.editor.registry.has(activeTool)) this.onShapeCreatePointerDown(activeTool, pagePt);
+    else if (activeTool === 'ink' || activeTool === 'draw' || activeTool === 'highlighter') this.freehand.start(activeTool, pagePt);
+    else if (this.editor.registry.has(activeTool)) this.creation.start(activeTool, pagePt);
   };
 
   private onSelectPointerDown(e: PointerEvent, pagePt: Point): void {
@@ -117,32 +114,6 @@ export class PointerInteractionController {
     if (this.editor.isSelected(targetId)) this.editor.gesture.startMove(targetId, pagePt);
   }
 
-  private onInkPointerDown(tool: string, pagePt: Point): void {
-    const shapeType = tool === 'highlighter' ? 'highlighter' : 'ink';
-    const def = this.editor.registry.get(shapeType);
-    if (!def) return;
-
-    this.isDrawing = true;
-    this.currentInkPts = [pagePt.x, pagePt.y];
-    const shape = this.editor.createShape({
-      type: shapeType,
-      x: pagePt.x,
-      y: pagePt.y,
-      props: { ...def.defaultProps(), pts: [pagePt.x, pagePt.y] },
-    });
-    this.currentInkShapeId = shape.id;
-    this.editor.selectShape(shape.id);
-  }
-
-  private onShapeCreatePointerDown(tool: string, pagePt: Point): void {
-    if (!this.editor.registry.has(tool)) return;
-    this.isCreatingShape = true;
-    this.shapeCreateStart = pagePt;
-    this.shapeCreateTool = tool;
-    this.shapeCreateId = null;
-    this.didDragCreate = false;
-  }
-
   private onPointerMove = (e: PointerEvent): void => {
     this.editor.telemetry.recordInput(e.timeStamp || performance.now());
     const r = this.cachedContainerRect ?? (this.container?.getBoundingClientRect() ?? { left: 0, top: 0 });
@@ -171,41 +142,13 @@ export class PointerInteractionController {
       return;
     }
 
-    if (this.isDrawing && this.currentInkShapeId) {
-      this.currentInkPts.push(currentPagePt.x, currentPagePt.y);
-      const shape = this.editor.store.getShape(this.currentInkShapeId);
-      if (shape) {
-        this.editor.store.updateShape(this.currentInkShapeId, { props: { ...shape.props, pts: [...this.currentInkPts] } });
-        this.editor.store.mergeLastHistoryEntry();
-      }
+    if (this.freehand.isActive) {
+      this.freehand.move(currentPagePt);
       return;
     }
 
-    if (this.isCreatingShape && this.shapeCreateStart && this.shapeCreateTool) {
-      const dist = Math.hypot(currentPagePt.x - this.shapeCreateStart.x, currentPagePt.y - this.shapeCreateStart.y);
-      if (dist > 3) {
-        const def = this.editor.registry.get(this.shapeCreateTool);
-        if (!def) return;
-        if (!this.shapeCreateId) {
-          const s = this.editor.createShape({ type: this.shapeCreateTool, x: this.shapeCreateStart.x, y: this.shapeCreateStart.y, props: def.defaultProps() });
-          this.shapeCreateId = s.id;
-          this.editor.selectShape(s.id);
-        }
-        this.didDragCreate = true;
-        let box = computeMarqueeBounds(this.shapeCreateStart, currentPagePt);
-        if (e.shiftKey) {
-          const size = Math.max(box.width, box.height);
-          const x = currentPagePt.x < this.shapeCreateStart.x ? this.shapeCreateStart.x - size : this.shapeCreateStart.x;
-          const y = currentPagePt.y < this.shapeCreateStart.y ? this.shapeCreateStart.y - size : this.shapeCreateStart.y;
-          box = boundsOf(x, y, size, size);
-        }
-        const shape = this.editor.store.getShape(this.shapeCreateId);
-        if (shape) {
-          const patch = def.geometry.resize(shape, box, currentPagePt);
-          this.editor.store.updateShape(this.shapeCreateId, patch);
-          this.editor.store.mergeLastHistoryEntry();
-        }
-      }
+    if (this.creation.isActive) {
+      this.creation.move(currentPagePt, e.shiftKey);
       return;
     }
 
@@ -246,39 +189,13 @@ export class PointerInteractionController {
       return;
     }
 
-    if (this.isDrawing && this.currentInkShapeId) {
-      const simplified = simplifyRDP(this.currentInkPts, 1.5);
-      const shape = this.editor.store.getShape(this.currentInkShapeId);
-      if (shape) {
-        this.editor.store.updateShape(this.currentInkShapeId, { props: { ...shape.props, pts: simplified } });
-        this.editor.store.mergeLastHistoryEntry();
-      }
-      this.isDrawing = false;
-      this.currentInkShapeId = null;
-      this.currentInkPts = [];
-      this.editor.setTool('select');
+    if (this.freehand.isActive) {
+      this.freehand.end();
       return;
     }
 
-    if (this.isCreatingShape) {
-      if (this.shapeCreateId && this.shapeCreateTool && this.didDragCreate) {
-        const shape = this.editor.store.getShape(this.shapeCreateId);
-        const def = this.editor.registry.get(this.shapeCreateTool);
-        if (shape && def) {
-          const bounds = def.geometry.bounds(shape);
-          const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, shape.id);
-          if (suggested) {
-            this.editor.store.updateShape(shape.id, { meta: { ...shape.meta, parent: suggested.id } });
-            this.editor.store.mergeLastHistoryEntry();
-          }
-        }
-      }
-      this.isCreatingShape = false;
-      this.shapeCreateStart = null;
-      this.shapeCreateTool = null;
-      this.shapeCreateId = null;
-      this.didDragCreate = false;
-      this.editor.setTool('select');
+    if (this.creation.isActive) {
+      this.creation.end();
       return;
     }
 

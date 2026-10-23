@@ -83,7 +83,7 @@ Target Branch: `build/phase-2x` $\longrightarrow$ merged to `main` upon exit (`1
 ---
 
 ## Phase 2.y — Selection & Handles (Completed)
-Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md) (read it first).
+Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md).
 Target Branch: `build/phase-2y` $\longrightarrow$ merged to `main` upon exit.
 - [x] **§0 Housekeeping & Directory Cleanup**: Delete duplicate shape stubs, unify `store/` directory, update memory files.
 - [x] **§1 Selection Model**: Multi-selection, click, Shift-toggle, marquee intersection, group descent, z-order cycling.
@@ -96,10 +96,31 @@ Target Branch: `build/phase-2y` $\longrightarrow$ merged to `main` upon exit.
 
 ---
 
-## Upcoming Phases (Strict Order — No Overlap)
-- **SDK Freeze**: `@open-draw/canvas@0.1.0` (README, API docs, exportPNG).
-- **Hardening**: `0.2.0` (firefox/webkit, a11y audit, leak tests).
-- **Phase 3**: Semantics Package & Platform Profiles (ADR-006 first).
-- **Phase 4**: Markdown Compiler (golden fixtures byte-pinned).
-- **Phase 5**: OpenDraw Studio App (React composition shell).
+## Phase 2.z & Releases (Completed)
+- [x] `@open-draw/canvas@0.1.0` SDK Freeze (`docs/od-verification/0.1.0/REPORT.md`).
+- [x] `@open-draw/canvas@0.2.0` Hardening & a11y (`docs/od-verification/0.2.0/REPORT.md`).
+- [x] `@open-draw/canvas@0.3.0` Drag-to-Draw, Floating Dock, Marquee multi-selection, Clean Hero Welcome (`docs/od-verification/0.3.0/REPORT.md`).
+
+---
+
+## Phase 3 — Semantics: The Meaning Layer (In Progress)
+Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md).
+Target Branch: `build/phase-3` $\longrightarrow$ merge to `main` upon exit.
+- [x] **§6 Housekeeping**: Split `interaction.ts` (293 $\to$ 209 lines) into `interaction/creation.ts` and `interaction/ink.ts`.
+- [ ] **§0 ADRs**: Author `ADR-006-identity-naming.md`; amend `ADR-002` (parenting cycle check) and `ADR-003` (group semantics).
+- [ ] **§0 Schema ID & Validators**: Implement 29-char alphabet ID generator and validators in `@open-draw/schema`.
+- [ ] **§0b Store Cycle Prevention**: Mandatory `CycleDetectedError` on `setParent()` and group deletion/ungroup semantics.
+- [ ] **Boundary Fence**: Extend boundary rules to verify `@open-draw/semantics` isolation and ban `breakpoint` in canvas.
+- [ ] **§1 Type Vocabulary**: Semantic type definitions data table and pure `validateSemantics()`.
+- [ ] **§2 Smart Defaults**: Pure `inferType()` rule table and trust-gate E2E Soul Test (`retag-then-resize never re-types`).
+- [ ] **§3 Responsive Derivation**: Pure `derive(scene, breakpoint)` for content width reflow.
+- [ ] **§4 Platform & Style Profiles**: `web`, `android`, `flutter` profiles and `styles/neubrutalism.ts` design tokens.
+- [ ] **§7 Exit Gate**: `docs/od-verification/3/REPORT.md`, all 10 fences green, merge to `main`.
+
+---
+
+## Upcoming Phases
+- **Phase 4**: Markdown Compiler (golden fixtures byte-pinned, legend compile option, design direction).
+- **Phase 5**: OpenDraw Studio App (inspector, chips UI, pipeline, persistence).
 - **Phase 6**: Suite Publication & Integration.
+
