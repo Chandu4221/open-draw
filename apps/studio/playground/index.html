@@ -31,25 +31,25 @@
     #app {
       width: 100vw;
       height: 100vh;
-      display: flex;
-      flex-direction: column;
+      position: relative;
+      overflow: hidden;
     }
-    header {
-      height: 52px;
-      background: var(--bg-bar);
-      border-bottom: 1px solid var(--border-color);
+    .brand-pill {
+      position: fixed;
+      top: 16px;
+      left: 16px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      gap: 12px;
-      z-index: 20;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-    .brand-section {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      padding: 6px 14px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+      z-index: 50;
+      user-select: none;
     }
     .logo {
       font-weight: 700;
@@ -69,6 +69,24 @@
       background: #e0f2fe;
       color: #0369a1;
       user-select: none;
+    }
+    #toolbar-dock {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 6px 10px;
+      box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+      max-width: calc(100vw - 32px);
     }
     .tool-group {
       display: flex;
@@ -162,24 +180,34 @@
       gap: 4px;
     }
     #canvas-container {
-      flex: 1;
-      width: 100%;
-      height: calc(100vh - 52px);
-      position: relative;
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
     }
     #bottom-bar {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      background: var(--bg-bar);
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
       padding: 4px 8px;
       gap: 4px;
-      z-index: 20;
+      z-index: 50;
+    }
+    @media (max-width: 960px) {
+      #bottom-bar {
+        top: 16px;
+        bottom: auto;
+        right: 16px;
+      }
     }
     #zoom-label {
       font-size: 12px;
@@ -213,15 +241,20 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <div class="brand-section">
-        <div class="logo">
-          <span class="material-symbols-outlined" style="font-size: 22px; color: var(--accent);">draw</span>
-          <span>OpenDraw</span>
-        </div>
-        <span class="badge">Playground</span>
+    <!-- Brand Pill at Top-Left -->
+    <div class="brand-pill">
+      <div class="logo">
+        <span class="material-symbols-outlined" style="font-size: 22px; color: var(--accent);">draw</span>
+        <span>OpenDraw</span>
       </div>
+      <span class="badge">Playground</span>
+    </div>
 
+    <!-- Full-screen Canvas Viewport -->
+    <div id="canvas-container"></div>
+
+    <!-- Floating Bottom Dock Toolbar -->
+    <nav id="toolbar-dock" aria-label="Canvas Toolbar">
       <!-- Main Tools with Material Symbols -->
       <div class="tool-group">
         <button class="btn btn-icon active" data-tool="select" title="Select & Transform (V)">
@@ -253,6 +286,8 @@
         </button>
       </div>
 
+      <div class="divider"></div>
+
       <!-- Color Palette -->
       <div class="colors">
         <button class="swatch" style="background: #ffffff;" data-color="#ffffff" title="White Fill"></button>
@@ -262,6 +297,8 @@
         <button class="swatch" style="background: #8b5cf6;" data-color="#8b5cf6" title="Violet Fill"></button>
         <button class="swatch" style="background: #f59e0b;" data-color="#f59e0b" title="Amber Fill"></button>
       </div>
+
+      <div class="divider"></div>
 
       <!-- Actions with Material Symbols -->
       <div class="meta-actions">
@@ -277,7 +314,7 @@
         <div class="divider"></div>
         <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">
           <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
-          <span>Export PNG</span>
+          <span>Export</span>
         </button>
         <button class="btn btn-icon" id="btn-export-json" title="Save .opendraw.json Snapshot">
           <span class="material-symbols-outlined">save</span>
@@ -290,11 +327,9 @@
           <span class="material-symbols-outlined">delete_sweep</span>
         </button>
       </div>
-    </header>
+    </nav>
 
-    <div id="canvas-container"></div>
-
-    <!-- Zoom & Stats Bar -->
+    <!-- Zoom & Stats Floating Panel -->
     <div id="bottom-bar">
       <span id="shape-count">0 shapes</span>
       <button class="btn btn-icon" id="btn-zoom-out" title="Zoom Out" style="width: 28px; height: 28px;">

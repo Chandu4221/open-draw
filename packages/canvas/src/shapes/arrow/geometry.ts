@@ -65,11 +65,15 @@ export const arrowGeometry: ShapeGeometry<ArrowProps> = {
     };
   },
 
-  resize(shape: ShapeRecord<ArrowProps>, _handle: ResizeHandle, point: Point): Partial<ShapeRecord<ArrowProps>> {
+  resize(shape: ShapeRecord<ArrowProps>, handleOrBounds: ResizeHandle | Bounds, point?: Point): Partial<ShapeRecord<ArrowProps>> {
+    const end = point ?? (typeof handleOrBounds === 'object' && 'width' in handleOrBounds
+      ? { x: handleOrBounds.x + handleOrBounds.width, y: handleOrBounds.y + handleOrBounds.height }
+      : { x: shape.x + 100, y: shape.y });
     return {
       props: {
         ...shape.props,
-        endPoint: point,
+        startPoint: shape.props.startPoint ?? { x: shape.x, y: shape.y },
+        endPoint: end,
       },
     };
   },

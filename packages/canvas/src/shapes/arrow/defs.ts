@@ -18,8 +18,7 @@ export interface ArrowProps {
 }
 
 export const DEFAULT_ARROW_PROPS: ArrowProps = {
-  startPoint: { x: 0, y: 0 },
-  endPoint: { x: 100, y: 0 },
   stroke: '#1e293b',
   strokeWidth: 2,
 };
+
