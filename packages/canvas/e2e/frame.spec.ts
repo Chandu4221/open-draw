@@ -25,7 +25,10 @@ test.describe('Privileged Capability #2: Frame & Clipping E2E Gate', () => {
     expect(containerBox).not.toBeNull();
     const frameClickX = (containerBox?.x ?? 0) + 100;
     const frameClickY = (containerBox?.y ?? 0) + 100;
-    await page.mouse.click(frameClickX, frameClickY);
+    await page.mouse.move(frameClickX, frameClickY);
+    await page.mouse.down();
+    await page.mouse.move(frameClickX + 400, frameClickY + 300);
+    await page.mouse.up();
 
     const frameShape = await page.evaluate(() => {
       const editor = (window as any).__od_debug__.editor;
@@ -44,7 +47,10 @@ test.describe('Privileged Capability #2: Frame & Clipping E2E Gate', () => {
 
     const rectClickX = (containerBox?.x ?? 0) + 150;
     const rectClickY = (containerBox?.y ?? 0) + 150;
-    await page.mouse.click(rectClickX, rectClickY);
+    await page.mouse.move(rectClickX, rectClickY);
+    await page.mouse.down();
+    await page.mouse.move(rectClickX + 100, rectClickY + 100);
+    await page.mouse.up();
 
     const childRect = await page.evaluate((frameId) => {
       const editor = (window as any).__od_debug__.editor;
@@ -269,7 +275,10 @@ test.describe('Privileged Capability #2: Frame & Clipping E2E Gate', () => {
     expect(containerBox).not.toBeNull();
     const clickX = (containerBox?.x ?? 0) + 150;
     const clickY = (containerBox?.y ?? 0) + 150;
-    await page.mouse.click(clickX, clickY);
+    await page.mouse.move(clickX, clickY);
+    await page.mouse.down();
+    await page.mouse.move(clickX + 50, clickY + 50);
+    await page.mouse.up();
 
     const childParent = await page.evaluate(({ largeId, smallId }) => {
       const editor = (window as any).__od_debug__.editor;

@@ -16,13 +16,16 @@ test.describe('Rect Plugin & Tool E2E', () => {
     const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
     expect(tool).toBe('rect');
 
-    // 2. Click on canvas to create rect
+    // 2. Drag-to-draw on canvas to create rect
     const containerBox = await page.locator('#canvas-container').boundingBox();
     expect(containerBox).not.toBeNull();
     const clickX = (containerBox?.x ?? 0) + 200;
     const clickY = (containerBox?.y ?? 0) + 150;
 
-    await page.mouse.click(clickX, clickY);
+    await page.mouse.move(clickX, clickY);
+    await page.mouse.down();
+    await page.mouse.move(clickX + 100, clickY + 100);
+    await page.mouse.up();
 
     // 3. Verify shape created in store and DOM
     const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());

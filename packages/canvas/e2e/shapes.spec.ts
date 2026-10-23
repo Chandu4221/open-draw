@@ -17,13 +17,16 @@ test.describe('Simple Shapes E2E Suite', () => {
       const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
       expect(tool).toBe('ellipse');
 
-      // 2. Click on canvas to create ellipse
+      // 2. Drag-to-draw on canvas to create ellipse
       const containerBox = await page.locator('#canvas-container').boundingBox();
       expect(containerBox).not.toBeNull();
       const clickX = (containerBox?.x ?? 0) + 200;
       const clickY = (containerBox?.y ?? 0) + 150;
 
-      await page.mouse.click(clickX, clickY);
+      await page.mouse.move(clickX, clickY);
+      await page.mouse.down();
+      await page.mouse.move(clickX + 100, clickY + 100);
+      await page.mouse.up();
 
       // 3. Verify shape created in store and DOM
       const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
@@ -155,13 +158,16 @@ test.describe('Simple Shapes E2E Suite', () => {
       const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
       expect(tool).toBe('note');
 
-      // 2. Click on canvas to create note
+      // 2. Drag-to-draw on canvas to create note
       const containerBox = await page.locator('#canvas-container').boundingBox();
       expect(containerBox).not.toBeNull();
       const clickX = (containerBox?.x ?? 0) + 250;
       const clickY = (containerBox?.y ?? 0) + 180;
 
-      await page.mouse.click(clickX, clickY);
+      await page.mouse.move(clickX, clickY);
+      await page.mouse.down();
+      await page.mouse.move(clickX + 200, clickY + 160);
+      await page.mouse.up();
 
       // 3. Verify shape created in store and DOM
       const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
@@ -292,13 +298,16 @@ test.describe('Simple Shapes E2E Suite', () => {
       const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
       expect(tool).toBe('image');
 
-      // 2. Click on canvas to create image
+      // 2. Drag-to-draw on canvas to create image
       const containerBox = await page.locator('#canvas-container').boundingBox();
       expect(containerBox).not.toBeNull();
       const clickX = (containerBox?.x ?? 0) + 150;
       const clickY = (containerBox?.y ?? 0) + 120;
 
-      await page.mouse.click(clickX, clickY);
+      await page.mouse.move(clickX, clickY);
+      await page.mouse.down();
+      await page.mouse.move(clickX + 200, clickY + 200);
+      await page.mouse.up();
 
       // 3. Verify shape created in store and DOM
       const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
