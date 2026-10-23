@@ -28,4 +28,24 @@ describe('check-boundaries script unit tests', () => {
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
     }
   });
+
+  it('fails with exit code 1 when canvas leaks compile keyword', () => {
+    const tempFile = path.join('packages/canvas/src', '__test_boundary_compile_violation__.ts');
+    try {
+      fs.writeFileSync(tempFile, 'export const leak = "compile";\n');
+      let failed = false;
+      let errorOutput = '';
+      try {
+        execSync('node scripts/check-boundaries.js', { encoding: 'utf-8', stdio: 'pipe' });
+      } catch (err: any) {
+        failed = true;
+        errorOutput = err.stderr || err.stdout;
+      }
+      expect(failed).toBe(true);
+      expect(errorOutput).toContain('IMPORT BOUNDARY VIOLATIONS DETECTED');
+      expect(errorOutput).toContain('compile');
+    } finally {
+      if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+    }
+  });
 });

@@ -117,6 +117,15 @@ for (const file of canvasSrcFiles) {
       reason: 'Boundary violation: canvas must never know breakpoints exist per Phase 3 §3.3',
     });
   }
+  if (/\bcompile\b/i.test(content)) {
+    violations.push({
+      package: '@open-draw/canvas',
+      file,
+      import: 'compile (keyword leak)',
+      allowed: [],
+      reason: 'Boundary violation: canvas must never know markdown compilation exists per Phase 4 §1.5',
+    });
+  }
 }
 
 
