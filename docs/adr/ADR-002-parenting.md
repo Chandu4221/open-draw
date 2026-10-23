@@ -27,3 +27,11 @@ We decide that:
 
 ### Negative / Trade-offs
 - If a user moves a shape completely outside its parent frame without using a container-aware drop action, the explicit relationship persists until the user or host explicitly updates it.
+
+---
+
+## Phase 3 Amendment — Inspector Path & Mandatory Cycle Validation
+- **Inspector-Set Parent:** Setting a parent explicitly via inspector or API uses the exact same store transaction as the gesture path (`meta.parent` is the single source of truth). This explicitly supports logical parenting without physical spatial containment (e.g., an off-canvas modal or floating dialog belonging logically to a frame).
+- **Mandatory Cycle Prevention:** `setParent(id, parentId)` must enforce cycle prevention in store validation. Any operation attempting to set a shape's parent to itself or to any of its existing descendants must throw a typed `CycleDetectedError` and roll back the transaction. While gesture-based containment cannot physically create cycles, programmatic or dropdown-based assignment can; this validation is strictly load-bearing.
+- **No Containment Auto-Re-Suggestion:** Inspector dropdowns only reflect explicit stored parents; containment geometry suggests parentage strictly at drop time and never auto-re-suggests later.
+

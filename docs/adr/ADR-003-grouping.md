@@ -29,3 +29,15 @@ We decide that:
 
 ### Negative / Trade-offs
 - Group transformations require recalculating and committing absolute positions for each individual member in a batch transaction rather than updating a single parent transform matrix.
+
+---
+
+## Phase 3 Amendment — Group Semantics Unified with Parenting
+- **Unified Hierarchy Mechanism:** A group IS a real shape whose member shapes' `meta.parent` points directly to the group shape ID. This unifies grouping with the parenting machinery—avoiding dual disjoint hierarchy systems (`memberIds` vs `meta.parent`). All parenting validation rules (including cycle detection) apply unchanged.
+- **Frame vs Group Differentiation:**
+  - **Frame (Spatial Container):** Clips children geometrically; children orphan on frame deletion; resizing a frame changes the container boundary without scaling children.
+  - **Group (Logical Unit):** NEVER clips; transforms as a unit; proportional scaling from union anchor; rotate transforms members around group center; deleting a group deletes all members with it in a single atomic transaction.
+- **Ungroup ≠ Delete (`Ctrl/Cmd+Shift+G`):** Ungrouping reparents all direct members to the group's own parent, deletes the group shell, committed in a single atomic transaction. Deleting a group deletes both shell and members.
+- **Relational Connectors (Q-007 Resolution):** Arrows connected to group members retain their endpoint bindings. Because members store absolute coordinates, moving or scaling group members triggers existing connector reconciliation without special grouping logic.
+- **Warning Discipline:** No modal confirms for anything the undo stack covers. Destructive-but-undoable actions (delete group, delete frame) surface a lightweight toast notification with inline Undo. Modals are reserved exclusively for unrecoverable actions (clear canvas, external file overwrite).
+
