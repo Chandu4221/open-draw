@@ -4,7 +4,7 @@ All notable changes to `@open-draw/canvas` are documented in this file in adhere
 
 ## 0.3.0 (2026-10-23)
 
-Feature & usability release: strict drag-to-draw shape creation, real-time live drag rendering with clean single-step history merging, and selection focus outline glitch elimination. Zero runtime dependencies preserved.
+Feature & stability release: strict drag-to-draw shape creation, real-time live drag rendering with clean single-step history merging, selection focus outline glitch elimination, and marquee multi-selection crash resolution with handle teardown. Zero runtime dependencies preserved.
 
 ### Features & Improvements
 - **Strict Drag-to-Draw Shape Creation:**
@@ -16,6 +16,12 @@ Feature & usability release: strict drag-to-draw shape creation, real-time live 
   - Transparently collapses intermediate gesture updates via `mergeLastHistoryEntry()`, allowing `Ctrl+Z` to remove newly drawn shapes in a single undo step.
 - **Selection Focus Outline Glitch Elimination:**
   - Marked active selected shapes with `.od-selected` in the selection manager and suppressed native browser `:focus-visible` outlines on selected shapes (`.od-shape.od-selected { outline: none !important; }`), preventing an unrotated secondary bounding outline when shapes are rotated.
+- **Marquee Multi-Selection Crash Fix & Handle Teardown:**
+  - Added robust fallback bounds calculation in `textGeometry` and `noteGeometry` when dimensions are omitted.
+  - Added non-finite bounds skipping in `findIntersectingShapes` so geometry anomalies cannot crash drag interactions.
+  - Automatically merged `def.defaultProps()` in `CanvasEditor.createShape()`.
+  - Cleaned up single-selection handles (`removeHandles(slot)`) on multi-selection outline render.
+  - Added SVG `font-weight` support to text shapes.
 
 ## 0.2.0 (2026-10-22)
 
