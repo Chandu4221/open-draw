@@ -149,21 +149,145 @@
       background: var(--border-color);
       margin: 0 4px;
     }
-    .colors {
+    .split-btn-group {
       display: flex;
       align-items: center;
-      gap: 4px;
+      background: transparent;
+      border-radius: 6px;
+      position: relative;
     }
-    .swatch {
-      width: 22px;
-      height: 22px;
+    .split-btn-group .btn:first-child {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    .split-btn-group .btn-chevron {
+      width: 20px;
+      height: 34px;
+      padding: 0;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      margin-left: -1px;
+    }
+    .split-btn-group .btn-chevron span {
+      font-size: 18px;
+    }
+    .color-trigger-group {
+      display: flex;
+      align-items: center;
+    }
+    .color-btn {
+      padding: 0 6px 0 8px;
+      gap: 5px;
+      height: 34px;
+    }
+    .active-color-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid #cbd5e1;
+      display: inline-block;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.1s ease;
+    }
+    .color-btn:hover .active-color-dot {
+      transform: scale(1.12);
+    }
+    /* Floating Popovers */
+    .popover-panel {
+      position: fixed;
+      z-index: 60;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06);
+      padding: 10px;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      opacity: 1;
+      transform: translateY(0);
+      user-select: none;
+    }
+    .popover-panel.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      display: none;
+    }
+    .popover-header {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      padding: 2px 4px 6px 4px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 8px;
+    }
+    .shapes-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .shape-grid-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-main);
+      transition: all 0.12s ease;
+    }
+    .shape-grid-item:hover {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+    }
+    .shape-grid-item.active {
+      background: #eff6ff;
+      color: var(--accent);
+      border-color: #bfdbfe;
+    }
+    .shape-grid-label {
+      font-size: 10px;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .colors-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding: 2px;
+    }
+    .color-swatch-item {
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       border: 2px solid #cbd5e1;
       cursor: pointer;
-      transition: transform 0.1s;
+      background: var(--swatch-color);
+      position: relative;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      padding: 0;
     }
-    .swatch:hover {
+    .color-swatch-item:hover {
       transform: scale(1.18);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .color-swatch-item.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px #bfdbfe;
+    }
+    .color-swatch-item.active::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
     }
     .btn-primary {
       background: var(--accent);
@@ -253,49 +377,109 @@
     <!-- Full-screen Canvas Viewport -->
     <div id="canvas-container"></div>
 
+    <!-- Floating Shapes Popup Panel -->
+    <div id="popup-shapes" class="popover-panel hidden" role="dialog" aria-label="Shape Selection">
+      <div class="popover-header">Shapes &amp; Tools</div>
+      <div class="shapes-grid">
+        <button class="shape-grid-item active" data-popup-tool="rect" data-icon="crop_square" title="Rectangle (R)">
+          <span class="material-symbols-outlined">crop_square</span>
+          <span class="shape-grid-label">Rect</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="ellipse" data-icon="circle" title="Circle / Ellipse (O)">
+          <span class="material-symbols-outlined">circle</span>
+          <span class="shape-grid-label">Circle</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="arrow" data-icon="arrow_right_alt" title="Arrow Connector (A)">
+          <span class="material-symbols-outlined">arrow_right_alt</span>
+          <span class="shape-grid-label">Arrow</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="frame" data-icon="crop_free" title="Frame / Artboard (F)">
+          <span class="material-symbols-outlined">crop_free</span>
+          <span class="shape-grid-label">Frame</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="note" data-icon="sticky_note_2" title="Sticky Note (N)">
+          <span class="material-symbols-outlined">sticky_note_2</span>
+          <span class="shape-grid-label">Note</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="text" data-icon="title" title="Text (T)">
+          <span class="material-symbols-outlined">title</span>
+          <span class="shape-grid-label">Text</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="ink" data-icon="draw" title="Freehand Pen (P)">
+          <span class="material-symbols-outlined">draw</span>
+          <span class="shape-grid-label">Pen</span>
+        </button>
+        <button class="shape-grid-item" data-popup-tool="eraser" data-icon="ink_eraser" title="Stroke Eraser (E)">
+          <span class="material-symbols-outlined">ink_eraser</span>
+          <span class="shape-grid-label">Eraser</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Color Palette Popup Panel -->
+    <div id="popup-colors" class="popover-panel hidden" role="dialog" aria-label="Color Palette">
+      <div class="popover-header">Color Palette</div>
+      <div class="colors-grid">
+        <button class="color-swatch-item" data-popup-color="#ffffff" style="--swatch-color: #ffffff;" title="White"></button>
+        <button class="color-swatch-item" data-popup-color="#f8fafc" style="--swatch-color: #f8fafc;" title="Light Slate"></button>
+        <button class="color-swatch-item" data-popup-color="#94a3b8" style="--swatch-color: #94a3b8;" title="Slate"></button>
+        <button class="color-swatch-item" data-popup-color="#475569" style="--swatch-color: #475569;" title="Dark Slate"></button>
+        <button class="color-swatch-item" data-popup-color="#0f172a" style="--swatch-color: #0f172a;" title="Black"></button>
+
+        <button class="color-swatch-item" data-popup-color="#ef4444" style="--swatch-color: #ef4444;" title="Red"></button>
+        <button class="color-swatch-item" data-popup-color="#f97316" style="--swatch-color: #f97316;" title="Orange"></button>
+        <button class="color-swatch-item" data-popup-color="#f59e0b" style="--swatch-color: #f59e0b;" title="Amber"></button>
+        <button class="color-swatch-item" data-popup-color="#10b981" style="--swatch-color: #10b981;" title="Emerald"></button>
+        <button class="color-swatch-item" data-popup-color="#06b6d4" style="--swatch-color: #06b6d4;" title="Cyan"></button>
+
+        <button class="color-swatch-item active" data-popup-color="#3b82f6" style="--swatch-color: #3b82f6;" title="Blue"></button>
+        <button class="color-swatch-item" data-popup-color="#6366f1" style="--swatch-color: #6366f1;" title="Indigo"></button>
+        <button class="color-swatch-item" data-popup-color="#8b5cf6" style="--swatch-color: #8b5cf6;" title="Purple"></button>
+        <button class="color-swatch-item" data-popup-color="#ec4899" style="--swatch-color: #ec4899;" title="Pink"></button>
+        <button class="color-swatch-item" data-popup-color="#e2e8f0" style="--swatch-color: #e2e8f0;" title="Border Slate"></button>
+      </div>
+    </div>
+
     <!-- Floating Bottom Dock Toolbar -->
     <nav id="toolbar-dock" aria-label="Canvas Toolbar">
       <!-- Main Tools with Material Symbols -->
       <div class="tool-group">
-        <button class="btn btn-icon active" data-tool="select" title="Select & Transform (V)">
+        <button class="btn btn-icon active" data-tool="select" title="Select &amp; Transform (V)">
           <span class="material-symbols-outlined">near_me</span>
         </button>
-        <button class="btn btn-icon" data-tool="rect" title="Rectangle Box (R)">
-          <span class="material-symbols-outlined">crop_square</span>
-        </button>
-        <button class="btn btn-icon" data-tool="ellipse" title="Ellipse / Circle (O)">
-          <span class="material-symbols-outlined">circle</span>
+
+        <!-- Active Shape Tool + Popup Expander -->
+        <div class="split-btn-group" id="shapes-trigger-group">
+          <button class="btn btn-icon" data-tool="rect" id="tool-active-shape" title="Rectangle Box (R)">
+            <span class="material-symbols-outlined" id="active-shape-icon">crop_square</span>
+          </button>
+          <button class="btn btn-icon btn-chevron" id="btn-toggle-shapes" title="All Shapes &amp; Tools">
+            <span class="material-symbols-outlined">expand_less</span>
+          </button>
+        </div>
+
+        <button class="btn btn-icon" data-tool="ink" title="Freehand Pen (P)">
+          <span class="material-symbols-outlined">draw</span>
         </button>
         <button class="btn btn-icon" data-tool="text" title="Text Element (T)">
           <span class="material-symbols-outlined">title</span>
         </button>
-        <button class="btn btn-icon" data-tool="frame" title="Artboard / Screen Frame (F)">
-          <span class="material-symbols-outlined">crop_free</span>
-        </button>
-        <button class="btn btn-icon" data-tool="note" title="Sticky Note (N)">
-          <span class="material-symbols-outlined">sticky_note_2</span>
-        </button>
-        <button class="btn btn-icon" data-tool="arrow" title="Connector Arrow (A)">
-          <span class="material-symbols-outlined">arrow_right_alt</span>
-        </button>
-        <button class="btn btn-icon" data-tool="ink" title="Freehand Pen (P)">
-          <span class="material-symbols-outlined">draw</span>
-        </button>
         <button class="btn btn-icon" data-tool="eraser" title="Stroke Eraser (E)">
           <span class="material-symbols-outlined">ink_eraser</span>
+        </button>
+        <button class="btn btn-icon" data-tool="frame" title="Artboard / Screen Frame (F)">
+          <span class="material-symbols-outlined">crop_free</span>
         </button>
       </div>
 
       <div class="divider"></div>
 
-      <!-- Color Palette -->
-      <div class="colors">
-        <button class="swatch" style="background: #ffffff;" data-color="#ffffff" title="White Fill"></button>
-        <button class="swatch" style="background: #f1f5f9;" data-color="#f1f5f9" title="Slate Gray Fill"></button>
-        <button class="swatch" style="background: #3b82f6;" data-color="#3b82f6" title="Blue Fill"></button>
-        <button class="swatch" style="background: #10b981;" data-color="#10b981" title="Emerald Fill"></button>
-        <button class="swatch" style="background: #8b5cf6;" data-color="#8b5cf6" title="Violet Fill"></button>
-        <button class="swatch" style="background: #f59e0b;" data-color="#f59e0b" title="Amber Fill"></button>
+      <!-- Single Compact Color Palette Trigger -->
+      <div class="color-trigger-group" id="color-trigger-group">
+        <button class="btn color-btn" id="btn-toggle-colors" title="Fill Color Palette">
+          <span class="active-color-dot" id="active-color-dot" style="background: #3b82f6;"></span>
+          <span class="material-symbols-outlined" style="font-size: 16px; margin-left: -2px;">expand_less</span>
+        </button>
       </div>
 
       <div class="divider"></div>

@@ -43,5 +43,7 @@ export function computeShapeAria(
 
 export const A11Y_FOCUS_STYLES = `
   .od-canvas-root:focus-visible { outline: 2px solid #3b82f6; outline-offset: -2px; }
-  .od-shape:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+  .od-shape:focus-visible:not(:has(.od-selection-frame)) { outline: 2px solid #3b82f6; outline-offset: 2px; }
+  .od-shape:has(.od-selection-frame) { outline: none !important; }
 `;
+

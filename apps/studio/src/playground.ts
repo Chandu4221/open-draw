@@ -7,10 +7,25 @@ import {
   exportSnapshotJSON,
   importSnapshotJSON,
 } from './storage.js';
+import { initPopups } from './popups.js';
 
 const container = document.getElementById('canvas-container') as HTMLElement;
 const editor = new CanvasEditor();
 editor.mount(container);
+
+// Initialize popups for shapes and color palette
+const popups = initPopups(editor, (color: string) => {
+  const selected = editor.selection;
+  if (selected.length === 0) return;
+  editor.store.transact(() => {
+    for (const id of selected) {
+      const s = editor.store.getShape(id);
+      if (s) {
+        editor.updateShape(id, { props: { ...s.props, fill: color } });
+      }
+    }
+  });
+});
 
 // Auto-load snapshot from localStorage or seed initial wireframe demo
 const saved = loadFromLocalStorage();
@@ -27,6 +42,13 @@ editor.store.listen(() => {
 });
 editor.selectionManager.subscribe(() => {
   updateUIState();
+  const selected = editor.selection;
+  if (selected.length === 1) {
+    const s = editor.store.getShape(selected[0]!);
+    if (s && typeof s.props['fill'] === 'string') {
+      popups.setCurrentColor(s.props['fill']);
+    }
+  }
 });
 
 // Sync active tool UI
@@ -41,24 +63,6 @@ document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const tool = btn.getAttribute('data-tool');
     if (tool) setActiveTool(tool);
-  });
-});
-
-// Color picker buttons
-document.querySelectorAll<HTMLButtonElement>('[data-color]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const color = btn.getAttribute('data-color');
-    if (!color) return;
-    const selected = editor.selection;
-    if (selected.length === 0) return;
-    editor.store.transact(() => {
-      for (const id of selected) {
-        const s = editor.store.getShape(id);
-        if (s) {
-          editor.updateShape(id, { props: { ...s.props, fill: color } });
-        }
-      }
-    });
   });
 });
 
