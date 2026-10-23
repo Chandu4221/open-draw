@@ -2,6 +2,18 @@
 
 All notable changes to `@open-draw/canvas` are documented in this file in adherence to Semantic Versioning.
 
+## 0.5.0 (2026-10-23)
+
+Feature & input repair release: native wheel zoom at cursor, scroll pan, horizontal pan, and middle-mouse grab-panning. Zero runtime dependencies preserved.
+
+### Features & Improvements
+- **Native Wheel Zoom & Pan Interaction (§0.1):**
+  - Attached `{ passive: false }` wheel listener on container in `PointerInteractionController.attach()` with clean removal in `detach()`.
+  - `Ctrl/Cmd + wheel` prevents browser zoom (`defaultPrevented: true`) and performs smooth exponential zoom ($1.0015^{-\Delta y}$) anchored directly at cursor coordinates.
+  - Plain mouse wheel / two-finger trackpad gestures translate the camera (`pan(-deltaX, -deltaY)`).
+  - `Shift + wheel` performs horizontal camera panning (`pan(-deltaY, 0)`).
+  - Middle-mouse drag (`button === 1`) performs grab-panning with dynamic `grabbing` cursor feedback.
+
 ## 0.4.0 (2026-10-23)
 
 Feature release adding store parenting hierarchy integrity, group semantics, and backward-compatible history access. Zero runtime dependencies outside `@open-draw/schema`.

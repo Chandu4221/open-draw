@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (must match 0.4.0 in packages/canvas/package.json)'
+        description: 'Version to publish (must match 0.5.0 in packages/canvas/package.json)'
         required: true
-        default: '0.4.0'
+        default: '0.5.0'
 
 jobs:
   publish:
