@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       '@open-draw/schema': path.resolve(__dirname, '../../../schema/src/index.ts'),
       '@open-draw/canvas': path.resolve(__dirname, '../../src/index.ts'),
+      '@open-draw/semantics': path.resolve(__dirname, '../../../semantics/src/index.ts'),
     },
   },
   server: {
