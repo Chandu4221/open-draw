@@ -1,4 +1,4 @@
-import type { Camera, Point, ShapeId, ShapeRecord, Snapshot } from '@open-draw/schema';
+import { generateShapeId, type Camera, type Point, type ShapeId, type ShapeRecord, type Snapshot } from '@open-draw/schema';
 import { CameraController, type ZoomOptions } from './camera.js';
 import { ShapeRegistry, type ShapeDefinition } from './registry.js';
 import { SVGRenderer } from './renderer.js';
@@ -187,7 +187,7 @@ export class CanvasEditor {
     readonly meta?: Record<string, unknown>;
     readonly props?: Record<string, unknown>;
   }): ShapeRecord {
-    const id = record.id ?? `shape-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const id = record.id ?? generateShapeId(this.store.listShapes().map((s) => s.id));
     const defaults = this.registry.get(record.type)?.defaultProps() ?? {};
     return this.store.createShape({ ...record, id, props: { ...defaults, ...record.props } });
   }
