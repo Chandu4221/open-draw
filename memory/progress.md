@@ -100,6 +100,7 @@ Target Branch: `build/phase-2y` $\longrightarrow$ merged to `main` upon exit.
 - [x] `@open-draw/canvas@0.1.0` SDK Freeze (`docs/od-verification/0.1.0/REPORT.md`).
 - [x] `@open-draw/canvas@0.2.0` Hardening & a11y (`docs/od-verification/0.2.0/REPORT.md`).
 - [x] `@open-draw/canvas@0.3.0` Drag-to-Draw, Floating Dock, Marquee multi-selection, Clean Hero Welcome (`docs/od-verification/0.3.0/REPORT.md`).
+- [x] `@open-draw/schema@0.2.0` & `@open-draw/canvas@0.4.0` Identity, Parenting & Group Semantics (`docs/od-verification/0.4.0/REPORT.md`).
 
 ---
 

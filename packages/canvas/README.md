@@ -1,7 +1,7 @@
 # @open-draw/canvas
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/badge/npm-0.1.0-green.svg)](https://www.npmjs.com/package/@open-draw/canvas)
+[![npm version](https://img.shields.io/badge/npm-0.4.0-green.svg)](https://www.npmjs.com/package/@open-draw/canvas)
 
 > DOM Canvas engine — an infinite canvas where every shape is a real SVG element.
 

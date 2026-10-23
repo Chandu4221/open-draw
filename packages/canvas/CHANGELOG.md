@@ -2,6 +2,22 @@
 
 All notable changes to `@open-draw/canvas` are documented in this file in adherence to Semantic Versioning.
 
+## 0.4.0 (2026-10-23)
+
+Feature release adding store parenting hierarchy integrity, group semantics, and backward-compatible history access. Zero runtime dependencies outside `@open-draw/schema`.
+
+### Features & Improvements
+- **Mandatory Parenting Cycle Validation:**
+  - `store.setParent(childId, parentId)` strictly validates hierarchy and throws typed `CycleDetectedError` on cyclical attachments or self-parenting attempts.
+- **Group Semantics (ADR-003 Amendment):**
+  - Group shapes unified with frame parenting mechanism (`meta.parent`).
+  - Added `store.ungroup(groupId)` to reparent children to group parent and delete shell in a single atomic transaction.
+  - Added transactional cascade deletion on `deleteShape(id, cascade)` for container shapes with children.
+- **History Inspection Accessors:**
+  - Added `store.undoStack` and `store.redoStack` readonly accessors for deterministic test and debug inspection.
+- **Accessibility & Test Overlay Hardening:**
+  - Semantic chip overlays isolated with `aria-hidden="true"` and `pointer-events="none"` to eliminate button name mismatch (`label-content-name-mismatch`).
+
 ## 0.3.0 (2026-10-23)
 
 Feature & stability release: strict drag-to-draw shape creation, real-time live drag rendering with clean single-step history merging, selection focus outline glitch elimination, and marquee multi-selection crash resolution with handle teardown. Zero runtime dependencies preserved.

@@ -1,7 +1,7 @@
 # @open-draw/schema
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/badge/npm-0.1.0-green.svg)](https://www.npmjs.com/package/@open-draw/schema)
+[![npm version](https://img.shields.io/badge/npm-0.2.0-green.svg)](https://www.npmjs.com/package/@open-draw/schema)
 
 > Shared structural types and pure geometric primitives for the OpenDraw canvas engine.
 
