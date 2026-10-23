@@ -30,6 +30,9 @@ export class PointerInteractionController {
   private initialSelectionBeforeMarquee: readonly ShapeId[] = [];
   private marqueeOverlay = new MarqueeOverlay();
 
+  private isMiddlePanning = false;
+  private middlePanStart: Point | null = null;
+
   constructor(editor: CanvasEditor) {
     this.editor = editor;
     this.eraser = new StrokeEraserController(editor);
@@ -40,6 +43,7 @@ export class PointerInteractionController {
   attach(container: HTMLElement): void {
     this.container = container;
     container.addEventListener('pointerdown', this.onPointerDown);
+    container.addEventListener('wheel', this.onWheel, { passive: false });
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
   }
@@ -47,6 +51,12 @@ export class PointerInteractionController {
   detach(): void {
     if (this.container) {
       this.container.removeEventListener('pointerdown', this.onPointerDown);
+      this.container.removeEventListener('wheel', this.onWheel);
+      if (this.isMiddlePanning) {
+        this.container.style.cursor = '';
+        this.isMiddlePanning = false;
+        this.middlePanStart = null;
+      }
       this.container = null;
     }
     window.removeEventListener('pointermove', this.onPointerMove);
@@ -60,7 +70,31 @@ export class PointerInteractionController {
     this.marqueeOverlay.hide();
   }
 
+  private onWheel = (e: WheelEvent): void => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const r = this.cachedContainerRect ?? (this.container?.getBoundingClientRect() ?? { left: 0, top: 0 });
+      const screenPt = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const factor = Math.pow(1.0015, -e.deltaY);
+      this.editor.camera.zoomAroundPoint(screenPt, factor);
+    } else if (e.shiftKey) {
+      e.preventDefault();
+      this.editor.camera.pan(-e.deltaY, 0);
+    } else {
+      e.preventDefault();
+      this.editor.camera.pan(-e.deltaX, -e.deltaY);
+    }
+  };
+
   private onPointerDown = (e: PointerEvent): void => {
+    if (e.button === 1) {
+      e.preventDefault();
+      this.isMiddlePanning = true;
+      this.middlePanStart = { x: e.clientX, y: e.clientY };
+      if (this.container) this.container.style.cursor = 'grabbing';
+      return;
+    }
+
     if (this.editor.mode === 'editing') this.editor.textEditing.commit();
 
     const r = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
@@ -115,6 +149,14 @@ export class PointerInteractionController {
   }
 
   private onPointerMove = (e: PointerEvent): void => {
+    if (this.isMiddlePanning && this.middlePanStart) {
+      const dx = e.clientX - this.middlePanStart.x;
+      const dy = e.clientY - this.middlePanStart.y;
+      this.middlePanStart = { x: e.clientX, y: e.clientY };
+      this.editor.camera.pan(dx, dy);
+      return;
+    }
+
     this.editor.telemetry.recordInput(e.timeStamp || performance.now());
     const r = this.cachedContainerRect ?? (this.container?.getBoundingClientRect() ?? { left: 0, top: 0 });
     const screenPt = { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -165,6 +207,13 @@ export class PointerInteractionController {
   };
 
   private onPointerUp = (): void => {
+    if (this.isMiddlePanning) {
+      this.isMiddlePanning = false;
+      this.middlePanStart = null;
+      if (this.container) this.container.style.cursor = '';
+      return;
+    }
+
     if (this.rafMoveId !== null && typeof cancelAnimationFrame !== 'undefined') {
       cancelAnimationFrame(this.rafMoveId);
       this.rafMoveId = null;

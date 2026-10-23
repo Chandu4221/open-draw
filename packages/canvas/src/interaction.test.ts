@@ -17,13 +17,27 @@ class MockElement extends EventTarget {
   }
 }
 
-function dispatchPointerDown(target: EventTarget, clientX: number, clientY: number, shiftKey = false): void {
+function dispatchPointerDown(target: EventTarget, clientX: number, clientY: number, shiftKey = false, button = 0): void {
   const ev = Object.assign(new Event('pointerdown'), {
     clientX,
     clientY,
     shiftKey,
+    button,
   });
   target.dispatchEvent(ev);
+}
+
+function dispatchWheel(target: EventTarget, deltaX: number, deltaY: number, ctrlKey = false, shiftKey = false): Event {
+  const ev = Object.assign(new Event('wheel', { cancelable: true }), {
+    deltaX,
+    deltaY,
+    clientX: 200,
+    clientY: 150,
+    ctrlKey,
+    shiftKey,
+  });
+  target.dispatchEvent(ev);
+  return ev;
 }
 
 function dispatchPointerMove(clientX: number, clientY: number, shiftKey = false): void {
