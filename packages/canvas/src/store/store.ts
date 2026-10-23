@@ -2,13 +2,14 @@ import type { ShapeId, ShapeRecord, Snapshot } from '@open-draw/schema';
 import { computeDiff, parseAndValidateSnapshot } from './snapshot.js';
 import type { HistoryEntry, MetaValidator, StoreDiff, StoreListener } from './types.js';
 import { reorderShapes, type ZOrderOperation } from './zorder.js';
+import { HistoryStack } from './history.js';
+import { setShapeParent, ungroup as ungroupHelper, deleteShapeWithCascade } from './parenting.js';
 
 export type { HistoryEntry, MetaValidator, StoreDiff, StoreListener };
 
 export class CanvasStore {
   private shapes: Map<ShapeId, ShapeRecord> = new Map();
-  private undoStack: HistoryEntry[] = [];
-  private redoStack: HistoryEntry[] = [];
+  private history = new HistoryStack();
   private listeners: Set<StoreListener> = new Set();
   private metaValidators: Map<string, MetaValidator> = new Map();
 
@@ -71,11 +72,12 @@ export class CanvasStore {
 
     let meta = existing.meta;
     if (patch.meta) {
-      const merged: Record<string, unknown> = { ...existing.meta, ...patch.meta };
-      for (const k of Object.keys(merged)) {
-        if (merged[k] === undefined) delete merged[k];
+      meta = Object.freeze({ ...existing.meta, ...patch.meta });
+      for (const [namespace, validator] of this.metaValidators) {
+        if (namespace in meta && !validator(meta[namespace])) {
+          throw new Error(`Invalid metadata for namespace "${namespace}" on shape "${id}"`);
+        }
       }
-      meta = Object.freeze(merged);
     }
 
     const updated: ShapeRecord = Object.freeze({
@@ -96,10 +98,12 @@ export class CanvasStore {
     return updated;
   }
 
-  deleteShape(id: ShapeId): boolean {
-    if (!this.shapes.has(id)) {
-      return false;
-    }
+  setParent(shapeId: ShapeId, parentId: ShapeId | null): void { setShapeParent(this, shapeId, parentId); }
+  ungroup(groupId: ShapeId): void { ungroupHelper(this, groupId); }
+
+  deleteShape(id: ShapeId, cascade = false): boolean {
+    if (cascade) return deleteShapeWithCascade(this, id);
+    if (!this.shapes.has(id)) return false;
 
     if (!this.isTransacting) {
       this.transact(() => {
@@ -126,13 +130,9 @@ export class CanvasStore {
   }
 
   commitTransaction(): void {
-    if (!this.isTransacting) {
-      return;
-    }
+    if (!this.isTransacting) return;
     this.transactionDepth--;
-    if (this.transactionDepth > 0) {
-      return;
-    }
+    if (this.transactionDepth > 0) return;
 
     const hasChanges =
       this.pendingCreated.size > 0 ||
@@ -142,8 +142,7 @@ export class CanvasStore {
     if (hasChanges) {
       const before = this.transactionInitialShapes ?? new Map();
       const after = new Map(this.shapes);
-      this.undoStack.push({ before, after });
-      this.redoStack = [];
+      this.history.push({ before, after });
     }
 
     const diff: StoreDiff = {
@@ -162,9 +161,7 @@ export class CanvasStore {
   }
 
   rollbackTransaction(): void {
-    if (!this.isTransacting) {
-      return;
-    }
+    if (!this.isTransacting) return;
     if (this.transactionInitialShapes) {
       this.shapes = new Map(this.transactionInitialShapes);
     }
@@ -187,15 +184,17 @@ export class CanvasStore {
     }
   }
 
-  canUndo(): boolean { return this.undoStack.length > 0; }
-  canRedo(): boolean { return this.redoStack.length > 0; }
-  clearHistory(): void { this.undoStack = []; this.redoStack = []; }
-
+  canUndo(): boolean {
+    return this.history.canUndo();
+  }
+  canRedo(): boolean {
+    return this.history.canRedo();
+  }
+  clearHistory(): void {
+    this.history.clear();
+  }
   mergeLastHistoryEntry(): void {
-    if (this.undoStack.length < 2) return;
-    const current = this.undoStack.pop()!;
-    const prev = this.undoStack[this.undoStack.length - 1]!;
-    this.undoStack[this.undoStack.length - 1] = { before: prev.before, after: current.after };
+    this.history.mergeLast();
   }
 
   reorderShapes(op: ZOrderOperation, ids: readonly ShapeId[]): void {
@@ -204,37 +203,26 @@ export class CanvasStore {
     const before = new Map(this.shapes);
     const after = new Map<ShapeId, ShapeRecord>();
     for (const s of reordered) after.set(s.id, s);
-    this.undoStack.push({ before, after });
-    this.redoStack = [];
+    this.history.push({ before, after });
     this.shapes = after;
     this.notifyListeners({ created: new Set(), updated: new Set(), deleted: new Set() });
   }
 
   undo(): boolean {
-    if (!this.canUndo()) return false;
-
-    const entry = this.undoStack.pop();
-    if (!entry) return false;
-
+    const prev = this.history.undo(this.shapes);
+    if (!prev) return false;
     const currentShapes = new Map(this.shapes);
-    this.redoStack.push({ before: entry.before, after: currentShapes });
-    this.shapes = new Map(entry.before);
-
+    this.shapes = prev;
     const diff = computeDiff(currentShapes, this.shapes);
     this.notifyListeners(diff);
     return true;
   }
 
   redo(): boolean {
-    if (!this.canRedo()) return false;
-
-    const entry = this.redoStack.pop();
-    if (!entry) return false;
-
+    const next = this.history.redo(this.shapes);
+    if (!next) return false;
     const currentShapes = new Map(this.shapes);
-    this.undoStack.push({ before: currentShapes, after: entry.after });
-    this.shapes = new Map(entry.after);
-
+    this.shapes = next;
     const diff = computeDiff(currentShapes, this.shapes);
     this.notifyListeners(diff);
     return true;
@@ -293,4 +281,3 @@ export class CanvasStore {
     }
   }
 }
-

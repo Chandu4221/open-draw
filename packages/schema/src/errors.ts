@@ -11,3 +11,16 @@ export class CorruptSnapshotError extends Error {
     this.name = 'CorruptSnapshotError';
   }
 }
+
+export class CycleDetectedError extends Error {
+  readonly shapeId: string;
+  readonly targetParentId: string;
+
+  constructor(shapeId: string, targetParentId: string) {
+    super(`Cannot set parent "${targetParentId}" for shape "${shapeId}": cycle detected`);
+    this.name = 'CycleDetectedError';
+    this.shapeId = shapeId;
+    this.targetParentId = targetParentId;
+  }
+}
+
