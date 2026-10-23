@@ -99,18 +99,18 @@ Rules (closed in discussion; iterate rule CONTENT, not the mechanism):
 
 ## §7. PHASE 3 EXIT GATE
 
-- [ ] ADR-006 committed verbatim from §0; ADR-002/003 amendments committed; maintainer reviewed before merge
-- [ ] ID generator live (alphabet/collision/growth rules proven by unit tests); name validation in meta validator
-- [ ] Type vocabulary ported with predecessor tests green; validateSemantics pure + tested
-- [ ] Smart defaults: inferType pure + rule table data + confidence tiers + **trust-gate E2E green (retag-then-resize never re-types — soul test)**
-- [ ] derive() ported, tests byte-behavior-identical, canvas-clean (no breakpoint knowledge)
-- [ ] Platform profiles (web/android/flutter data) + style profiles (neubrutalism proof style) validated, data-only proven
-- [ ] Cycle validation live in store with typed error + test; group semantics per ADR-003 amendment (interaction math — proportional resize, group rotate — may be Phase 3.5 if it needs canvas gesture work: then it's scheduled explicitly, not silently dropped)
-- [ ] Boundary fence extended (semantics↔canvas) with red/green proof; all 10 fences green
-- [ ] Housekeeping: progress.md current, interaction.ts split, playground intact
-- [ ] REPORT.md in `docs/od-verification/3/` citing every claim; port-divergence table (every place our ruling overrode predecessor behavior); questions doc reviewed, none silently dropped
-- [ ] Maintainer hand-test: playground session — draw, see chips on hover, see smart-default chip appear at creation, retag, resize (no re-type), undo
-- [ ] CI green end-to-end; merged to `main`
+- [x] ADR-006 committed verbatim from §0; ADR-002/003 amendments committed; maintainer reviewed before merge
+- [x] ID generator live (alphabet/collision/growth rules proven by unit tests); name validation in meta validator
+- [x] Type vocabulary ported with predecessor tests green; validateSemantics pure + tested
+- [x] Smart defaults: inferType pure + rule table data + confidence tiers + **trust-gate E2E green (retag-then-resize never re-types — soul test)**
+- [x] derive() ported, tests byte-behavior-identical, canvas-clean (no breakpoint knowledge)
+- [x] Platform profiles (web/android/flutter data) + style profiles (neubrutalism proof style) validated, data-only proven
+- [x] Cycle validation live in store with typed error + test; group semantics per ADR-003 amendment (interaction math — proportional resize, group rotate — may be Phase 3.5 if it needs canvas gesture work: then it's scheduled explicitly, not silently dropped)
+- [x] Boundary fence extended (semantics↔canvas) with red/green proof; all 10 fences green
+- [x] Housekeeping: progress.md current, interaction.ts split, playground intact
+- [x] REPORT.md in `docs/od-verification/3/` citing every claim; port-divergence table (every place our ruling overrode predecessor behavior); questions doc reviewed, none silently dropped
+- [x] Maintainer hand-test: playground session — draw, see chips on hover, see smart-default chip appear at creation, retag, resize (no re-type), undo
+- [x] CI green end-to-end; merged to `main`
 
 ## §8. EXPLICITLY NOT IN PHASE 3
 

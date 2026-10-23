@@ -106,7 +106,7 @@ Target Branch: `build/phase-2y` $\longrightarrow$ merged to `main` upon exit.
 
 ## Phase 3 — Semantics: The Meaning Layer (Completed)
 Master Context: [`project-context/OPENDRAW-CONTEXT.md`](../project-context/OPENDRAW-CONTEXT.md).
-Target Branch: `build/phase-3` $\longrightarrow$ merge to `main` upon exit.
+Target Branch: `build/phase-3` $\longrightarrow$ merged to `main` upon exit (`bd1c407`).
 - [x] **§6 Housekeeping**: Split `interaction.ts` (293 $\to$ 209 lines) into `interaction/creation.ts` and `interaction/ink.ts`.
 - [x] **§0 ADRs**: Author `ADR-006-identity-naming.md`; amend `ADR-002` (parenting cycle check) and `ADR-003` (group semantics).
 - [x] **§0 Schema ID & Validators**: Implement 29-char alphabet ID generator and validators in `@open-draw/schema`.
@@ -116,12 +116,20 @@ Target Branch: `build/phase-3` $\longrightarrow$ merge to `main` upon exit.
 - [x] **§2 Smart Defaults**: Pure `inferType()` rule table and trust-gate E2E Soul Test (`retag-then-resize never re-types`).
 - [x] **§3 Responsive Derivation**: Pure `derive(scene, breakpoint)` for content width reflow.
 - [x] **§4 Platform & Style Profiles**: `web`, `android`, `flutter` profiles and `styles/neubrutalism.ts` design tokens.
-- [x] **§7 Exit Gate**: `docs/od-verification/3/REPORT.md`, all 10 fences green, merge to `main`.
+- [x] **§7 Exit Gate**: `docs/od-verification/3/REPORT.md`, instructions renamed to `opendraw-phase3-done.md`, merged to `main`, published `@open-draw/schema@0.2.0` and `@open-draw/canvas@0.4.0`.
+
+---
+
+## Active Phase
+- **Phase 4 — Input Repair & The Markdown Compiler**: Target Branch `build/phase-4`.
+  - **§0.1 Engine Fix**: Wheel zoom & pan input repair (`{ passive: false }`, zoom at cursor, pan on wheel, middle-click drag-pan, `e2e/wheel.spec.ts`).
+  - **§0.2 Tag Affordance**: Minimal human tagging popover in playground (shape ID, name input, type dropdown, provenance hint).
+  - **§1 The Compiler**: `@open-draw/markdown` pure deterministic compiler (`compile()`, byte-pinned golden fixtures, legend, design direction).
+  - **§2 Integration**: Playground compile action with copyable spec modal.
 
 ---
 
 ## Upcoming Phases
-- **Phase 4**: Markdown Compiler (golden fixtures byte-pinned, legend compile option, design direction).
 - **Phase 5**: OpenDraw Studio App (inspector, chips UI, pipeline, persistence).
 - **Phase 6**: Suite Publication & Integration.
 

@@ -12,7 +12,7 @@
 Phase 3 introduces the Meaning Layer of OpenDraw: pure data definitions and pure functions that endow geometric canvas shapes with semantic meaning, responsive layout derivations, and platform-native component mappings.
 
 1. **§0 Architecture & ADRs:**
-   - Authored and committed `ADR-006-identity-naming.md` establishing the 29-character alphabet ID generation standard (Crockford base32 minus ambiguous characters `I, L, O, U`, fixed length 12) and 1..64 char trimmed shape naming validation.
+   - Authored and committed `ADR-006-identity-naming.md` establishing the 29-character alphabet ID generation standard (digits `2–9` and lowercase consonants excluding vowels, 4-char default growing to 5 at density threshold) and 1..64 char trimmed shape naming validation.
    - Amended `ADR-002-containment.md` making cycle prevention mandatory store-level validation throwing typed `CycleDetectedError`.
    - Amended `ADR-003-grouping.md` unifying group semantics with frames (members point to group via `meta.parent`, group deletion cascades to members in a single transaction, ungroup reparents members to group parent and removes group shell).
 2. **§0b Store Cycle Prevention & Schema Primitives:**
@@ -60,7 +60,7 @@ Phase 3 introduces the Meaning Layer of OpenDraw: pure data definitions and pure
 
 | Dimension | Predecessor Behavior | OpenDraw Phase 3 Ruling | Rationale / Architectural Principle |
 |---|---|---|---|
-| **Shape ID Alphabet** | Unstructured random base64/hex strings. | 29-char Crockford base32 alphabet (omits `I, L, O, U`), fixed length 12 (`ADR-006`). | Avoids visually ambiguous characters in URLs, code generation, and human inspection; deterministic length. |
+| **Shape ID Alphabet** | Unstructured random base64/hex strings. | 29-char alphabet (`2–9` + consonants without vowels), 4-char default (~707k space) growing to 5 at 10k threshold (`ADR-006`). | Avoids visually ambiguous characters (0, 1) and accidental words; human-readable and collision-resistant. |
 | **Parent Cycle Validation** | Defensive UI checks in drag handlers; raw store permitted cycles. | Mandatory store-level cycle check throwing `CycleDetectedError` on `setParent()` (`ADR-002` amendment). | Gestures cannot easily create cycles, but dropdowns, multi-user sync, and scripts can. Store integrity must be load-bearing. |
 | **Group Representation** | Distinct composite entity with nested child arrays. | Unified shape record with child `meta.parent` references (`ADR-003` amendment). | Single unified parenting engine for frames and groups; zero duplicated traversal logic. |
 | **Smart Defaults Trigger** | Re-computed dynamically during resize and modification gestures. | Fired strictly ONCE upon creation gesture commit; explicit user retagging permanently locks type. | Deterministic trust: user-assigned semantics must never be unexpectedly overwritten by automatic heuristics. |
