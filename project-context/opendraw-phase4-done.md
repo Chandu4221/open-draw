@@ -84,15 +84,15 @@
 
 ## §5. EXIT GATE
 
-- [ ] §0.1: wheel zoom + pan live in playground on all 3 engines; `defaultPrevented` asserted in E2E; zoom-at-cursor pinned ±1px; destroy-cleanup proven; leak fence green
-- [ ] §0.2: tag popover works; retag = one undo entry; chip↔popover agree; inference provenance visible
-- [ ] §1: `compile()` pure + deterministic; predecessor fixtures byte-identical; divergences fixture-documented; legend + designDirection options live; golden fixtures committed day one
-- [ ] §2: playground "Compile" action produces copyable spec from a real scene
-- [ ] Fences: all 10 existing + any new (wheel-listener check, boundaries for markdown) green with red/green proofs
-- [ ] Housekeeping: 3.x report prose fixed, progress.md current, questions reviewed
-- [ ] REPORT.md in `docs/od-verification/4/` citing every claim; input-audit section (what was math-only before §0 and is now input-wired)
-- [ ] **Maintainer hand-test (REQUIRED, in checklist):** playground session — ctrl+scroll zooms at cursor (browser does NOT zoom), plain scroll pans, tag a shape via popover, retag, undo, click Compile, copy the spec, confirm chips/legend IDs match the document
-- [ ] CI green; merged to `main`; release through maintainer gates
+- [x] §0.1: wheel zoom + pan live in playground on all 3 engines; `defaultPrevented` asserted in E2E; zoom-at-cursor pinned ±1px; destroy-cleanup proven; leak fence green
+- [x] §0.2: tag popover works; retag = one undo entry; chip↔popover agree; inference provenance visible
+- [x] §1: `compile()` pure + deterministic; predecessor fixtures byte-identical; divergences fixture-documented; legend + designDirection options live; golden fixtures committed day one
+- [x] §2: playground "Compile" action produces copyable spec from a real scene
+- [x] Fences: all 10 existing + any new (wheel-listener check, boundaries for markdown) green with red/green proofs
+- [x] Housekeeping: 3.x report prose fixed, progress.md current, questions reviewed
+- [x] REPORT.md in `docs/od-verification/4/` citing every claim; input-audit section (what was math-only before §0 and is now input-wired)
+- [x] **Maintainer hand-test (REQUIRED, in checklist):** playground session — ctrl+scroll zooms at cursor (browser does NOT zoom), plain scroll pans, tag a shape via popover, retag, undo, click Compile, copy the spec, confirm chips/legend IDs match the document
+- [x] CI green; merged to `main`; release through maintainer gates
 
 ## §6. EXPLICITLY NOT IN PHASE 4
 

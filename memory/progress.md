@@ -120,16 +120,17 @@ Target Branch: `build/phase-3` $\longrightarrow$ merged to `main` upon exit (`bd
 
 ---
 
-## Active Phase
-- **Phase 4 — Input Repair & The Markdown Compiler**: Target Branch `build/phase-4`.
-  - **§0.1 Engine Fix**: Wheel zoom & pan input repair (`{ passive: false }`, zoom at cursor, pan on wheel, middle-click drag-pan, `e2e/wheel.spec.ts`).
-  - **§0.2 Tag Affordance**: Minimal human tagging popover in playground (shape ID, name input, type dropdown, provenance hint).
-  - **§1 The Compiler**: `@open-draw/markdown` pure deterministic compiler (`compile()`, byte-pinned golden fixtures, legend, design direction).
-  - **§2 Integration**: Playground compile action with copyable spec modal.
+## Phase 4 — Input Repair & The Markdown Compiler (Completed)
+Target Branch: `build/phase-4` $\longrightarrow$ merged to `main` upon exit.
+- [x] **§0.1 Engine Fix**: Wheel zoom & pan input repair (`{ passive: false }`, zoom at cursor, pan on wheel, Shift+wheel horizontal pan, middle-click drag-pan, `e2e/wheel.spec.ts`).
+- [x] **§0.2 Tag Affordance**: Minimal human tagging popover in playground (`PlaygroundTagPanel`, read-only `#x7q` ID, name input, type dropdown, provenance hint).
+- [x] **§1 The Compiler**: `@open-draw/markdown` pure deterministic compiler (`compile()`, byte-pinned golden fixtures, legend, design direction).
+- [x] **§2 Integration**: Playground compile action with copyable spec modal (`PlaygroundCompileModal`).
+- [x] **§3 Housekeeping & Fences**: Q-008 documented, boundary fence bans `compile` in canvas, all 10 guardrails green, `docs/od-verification/4/REPORT.md`.
 
 ---
 
-## Upcoming Phases
-- **Phase 5**: OpenDraw Studio App (inspector, chips UI, pipeline, persistence).
+## Active / Upcoming Phase
+- **Phase 5**: OpenDraw Studio App (full inspector: parent field w/ cycle-safe dropdown, member lists, platform + style pickers with hover-confirm; chips `always|hover|off` UI; persistence + migrations; the full app).
 - **Phase 6**: Suite Publication & Integration.
 
