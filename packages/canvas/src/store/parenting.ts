@@ -98,17 +98,18 @@ export function deleteShapeWithCascade(
   const shape = store.getShape(shapeId);
   if (!shape) return false;
 
-  if (shape.type === 'group') {
+  const children = findChildren(store, shapeId);
+  if (children.length > 0) {
     let result = false;
     store.transact(() => {
       const descendants: ShapeId[] = [];
-      const queue: ShapeId[] = [shapeId];
+      const queue: ShapeId[] = [...children.map((c) => c.id)];
 
       while (queue.length > 0) {
         const curr = queue.shift()!;
-        const children = findChildren(store, curr);
-        for (const child of children) {
-          descendants.push(child.id);
+        descendants.push(curr);
+        const subChildren = findChildren(store, curr);
+        for (const child of subChildren) {
           queue.push(child.id);
         }
       }

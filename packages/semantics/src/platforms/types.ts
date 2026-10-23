@@ -1,7 +1,7 @@
 export interface PlatformComponentMapping {
   readonly componentName: string;
   readonly importSource?: string;
-  readonly containerType?: 'flex' | 'column' | 'row' | 'stack' | 'grid';
+  readonly containerType?: 'flex' | 'column' | 'row' | 'stack' | 'grid' | string;
   readonly notes?: string;
 }
 

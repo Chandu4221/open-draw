@@ -3,7 +3,9 @@
   "packages": {
     "@open-draw/schema": [
       "CorruptSnapshotError",
+      "CycleDetectedError",
       "InvalidBoundsError",
+      "SHAPE_ID_ALPHABET",
       "boundsCenter",
       "boundsContain",
       "boundsFromPoints",
@@ -11,7 +13,10 @@
       "boundsOf",
       "boundsUnion",
       "frameContains",
+      "generateShapeId",
       "inflate",
+      "isValidShapeId",
+      "isValidShapeName",
       "pointInBounds",
       "translateBounds",
       "validateBounds"

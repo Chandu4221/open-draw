@@ -9,13 +9,13 @@ describe('Platform & Style Profiles (Data Modules)', () => {
     const flutter = getPlatformProfile('flutter');
 
     expect(web?.id).toBe('web');
-    expect(web?.mappings.button.componentName).toBe('button');
+    expect(web?.mappings['button']?.componentName).toBe('button');
 
     expect(android?.id).toBe('android');
-    expect(android?.mappings.button.componentName).toBe('Button');
+    expect(android?.mappings['button']?.componentName).toBe('Button');
 
     expect(flutter?.id).toBe('flutter');
-    expect(flutter?.mappings.button.componentName).toBe('ElevatedButton');
+    expect(flutter?.mappings['button']?.componentName).toBe('ElevatedButton');
 
     const all = listPlatformProfiles();
     expect(all).toHaveLength(3);

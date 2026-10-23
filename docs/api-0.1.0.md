@@ -21,10 +21,15 @@ Zero runtime dependencies (`dependencies: {}`). Core geometric primitives, docum
 | `Snapshot` | Interface | **Frozen** | Serialized canvas document with schema version, shape list, camera, and document metadata. |
 | `InvalidBoundsError` | Class | **Frozen** | Error thrown when bounds have negative dimensions or non-finite coordinates. |
 | `CorruptSnapshotError` | Class | **Frozen** | Error thrown when snapshot payload fails schema validation. |
+| `CycleDetectedError` | Class | **Frozen** | Error thrown when parenting operation attempts to create a cyclical hierarchy (ADR-002 amendment). |
+| `SHAPE_ID_ALPHABET` | Constant | **Frozen** | 29-character alphabet for Crockford base32 IDs without ambiguous letters (`0123456789ABCDEFGHJKMNPQRSTVWXYZ`). |
 
-### Geometry Functions
+### Geometry & Identity Functions
 | Export | Signature | Status | Purpose |
 |---|---|---|---|
+| `generateShapeId` | `() => ShapeId` | **Frozen** | Generates collision-resistant 12-char Crockford base32 shape ID (ADR-006). |
+| `isValidShapeId` | `(id: string) => boolean` | **Frozen** | Validates shape ID format (ADR-006). |
+| `isValidShapeName` | `(name: string) => boolean` | **Frozen** | Validates user-facing shape name (1..64 chars, trimmed, no controls) (ADR-006). |
 | `validateBounds` | `(bounds: Bounds) => void` | **Frozen** | Asserts bounds coordinates and dimensions are finite and non-negative. |
 | `boundsOf` | `(x: number, y: number, width: number, height: number) => Bounds` | **Frozen** | Factory function creating and validating an immutable `Bounds` object. |
 | `boundsFromPoints` | `(points: ReadonlyArray<Point>) => Bounds` | **Frozen** | Calculates the minimum bounding box enclosing an array of points. |

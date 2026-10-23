@@ -21,6 +21,10 @@ function isExemptFile(filePath) {
   if (normalized.endsWith('.test.ts') || normalized.endsWith('.spec.ts') || normalized.includes('/e2e/')) {
     return true;
   }
+  // Semantics layer maps shape geometry to semantic roles
+  if (normalized.startsWith('packages/semantics/') || normalized.includes('/packages/semantics/')) {
+    return true;
+  }
   return false;
 }
 
