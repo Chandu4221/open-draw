@@ -2,6 +2,21 @@
 
 All notable changes to `@open-draw/canvas` are documented in this file in adherence to Semantic Versioning.
 
+## 0.3.0 (2026-10-23)
+
+Feature & usability release: strict drag-to-draw shape creation, real-time live drag rendering with clean single-step history merging, and selection focus outline glitch elimination. Zero runtime dependencies preserved.
+
+### Features & Improvements
+- **Strict Drag-to-Draw Shape Creation:**
+  - Defer shape creation and DOM mounting to pointer movement exceeding $3\text{px}$ (`dist > 3`).
+  - Single clicks or small pointer jitter ($\le 3\text{px}$) no longer insert default shapes or pollute the store/history stack, cleanly reverting the active tool to `select`.
+  - Polymorphic sizing via `def.geometry.resize(shape, box, point)` supporting bidirectional dragging (including top/left normalization) and 1:1 aspect ratio constraint via <kbd>Shift</kbd>.
+- **60 FPS Live Rendering & Single-Step Undo:**
+  - Shape and freehand inking updates render in real-time on `pointermove` at 60 FPS without waiting for mouse release.
+  - Transparently collapses intermediate gesture updates via `mergeLastHistoryEntry()`, allowing `Ctrl+Z` to remove newly drawn shapes in a single undo step.
+- **Selection Focus Outline Glitch Elimination:**
+  - Marked active selected shapes with `.od-selected` in the selection manager and suppressed native browser `:focus-visible` outlines on selected shapes (`.od-shape.od-selected { outline: none !important; }`), preventing an unrotated secondary bounding outline when shapes are rotated.
+
 ## 0.2.0 (2026-10-22)
 
 Hardening release: cross-browser engine verification, accessibility (a11y) audit, and memory/listener leak suites. Zero runtime dependencies preserved.
