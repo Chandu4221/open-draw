@@ -1,10 +1,12 @@
 import { CanvasEditor } from '@open-draw/canvas';
 import { inferType, validateSemantics } from '@open-draw/semantics';
 import type { ShapeRecord } from '@open-draw/schema';
+import { PlaygroundTagPanel } from '../../../../apps/studio/src/playground-tag-panel.js';
 
 const container = document.getElementById('canvas-container') as HTMLElement;
 const editor = new CanvasEditor();
 editor.mount(container);
+const tagPanel = new PlaygroundTagPanel(editor, container);
 
 // Expose debug handle in dev
 (window as unknown as {
@@ -107,6 +109,7 @@ editor.store.listen((diff) => {
               semantic: {
                 ...((shape.meta.semantic as Record<string, unknown>) ?? {}),
                 type: inferred.type,
+                inferredType: inferred.type,
               },
             },
           });

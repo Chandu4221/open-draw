@@ -1,4 +1,5 @@
 import { CanvasEditor } from '@open-draw/canvas';
+import { inferType } from '@open-draw/semantics';
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
@@ -8,10 +9,14 @@ import {
   importSnapshotJSON,
 } from './storage.js';
 import { initPopups } from './popups.js';
+import { PlaygroundTagPanel } from './playground-tag-panel.js';
 
 const container = document.getElementById('canvas-container') as HTMLElement;
 const editor = new CanvasEditor();
 editor.mount(container);
+
+// Initialize tag panel popover (§0.2)
+const tagPanel = new PlaygroundTagPanel(editor, container);
 
 // Initialize popups for shapes and color palette
 const popups = initPopups(editor, (color: string) => {
@@ -35,8 +40,29 @@ if (saved && saved.shapes && saved.shapes.length > 0) {
   seedStarterWireframe(editor);
 }
 
-// Auto-save on every store change
-editor.store.listen(() => {
+// Auto-save on every store change and infer smart defaults on creation
+editor.store.listen((diff) => {
+  if (diff && diff.created && diff.created.size > 0) {
+    for (const id of diff.created) {
+      const shape = editor.store.getShape(id);
+      if (shape && !shape.meta?.semantic?.type) {
+        const inferred = inferType(shape, editor.getSnapshot());
+        if (inferred && inferred.tier === 'strong') {
+          editor.store.updateShape(id, {
+            meta: {
+              ...shape.meta,
+              semantic: {
+                ...((shape.meta?.semantic as Record<string, unknown>) ?? {}),
+                type: inferred.type,
+                inferredType: inferred.type,
+              },
+            },
+          });
+          editor.store.mergeLastHistoryEntry();
+        }
+      }
+    }
+  }
   saveToLocalStorage(editor.getSnapshot());
   updateUIState();
 });
