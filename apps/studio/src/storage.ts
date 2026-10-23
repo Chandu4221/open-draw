@@ -1,6 +1,6 @@
 import type { Snapshot } from '@open-draw/schema';
 
-const STORAGE_KEY = 'opendraw_playground_v1';
+const STORAGE_KEY = 'opendraw_playground_v2';
 
 /**
  * Save current canvas snapshot to browser localStorage.

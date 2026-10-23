@@ -10,6 +10,9 @@ export function renderText(shape: ShapeRecord<TextProps>, _ctx: RenderContext): 
   text.setAttribute('font-size', String(shape.props.fontSize ?? 16));
   text.setAttribute('font-family', shape.props.fontFamily ?? 'system-ui, sans-serif');
   text.setAttribute('fill', shape.props.fill ?? '#1e293b');
+  if (shape.props.fontWeight) {
+    text.setAttribute('font-weight', shape.props.fontWeight);
+  }
   text.textContent = shape.props.text;
   return text;
 }
@@ -27,6 +30,11 @@ export function updateText(
     text.setAttribute('y', String(shape.props.fontSize ?? 16));
     text.setAttribute('font-size', String(shape.props.fontSize ?? 16));
     text.setAttribute('fill', shape.props.fill ?? '#1e293b');
+    if (shape.props.fontWeight) {
+      text.setAttribute('font-weight', shape.props.fontWeight);
+    } else {
+      text.removeAttribute('font-weight');
+    }
     text.textContent = shape.props.text;
   }
 }

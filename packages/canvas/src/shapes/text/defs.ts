@@ -4,5 +4,6 @@ export interface TextProps {
   height: number;
   fontSize?: number;
   fontFamily?: string;
+  fontWeight?: string;
   fill?: string;
 }

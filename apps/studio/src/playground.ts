@@ -199,43 +199,30 @@ function seedStarterWireframe(ed: CanvasEditor): void {
   ed.store.transact(() => {
     const frame = ed.createShape({
       type: 'frame',
-      x: 100,
-      y: 80,
-      props: { width: 440, height: 320, label: 'Hero Section Wireframe' },
+      x: 140,
+      y: 90,
+      props: { width: 620, height: 320, label: 'Hero Frame' },
     });
     ed.createShape({
       type: 'text',
-      x: 130,
-      y: 130,
-      props: { text: 'OpenDraw Canvas Engine', width: 280, height: 30, fontSize: 22, fontWeight: 'bold' },
-      meta: { parent: frame.id },
-    });
-    ed.createShape({
-      type: 'text',
-      x: 130,
+      x: 180,
       y: 170,
-      props: { text: 'Infinite DOM/SVG canvas for wireframing with AI.', width: 340, height: 24, fontSize: 14, fill: '#475569' },
-      meta: { parent: frame.id },
-    });
-    ed.createShape({
-      type: 'rect',
-      x: 130,
-      y: 220,
-      props: { width: 140, height: 42, fill: '#3b82f6', stroke: '#2563eb' },
+      props: { text: 'Welcome to OpenDraw', width: 420, height: 44, fontSize: 32, fontWeight: 'bold', fill: '#0f172a' },
       meta: { parent: frame.id },
     });
     ed.createShape({
       type: 'text',
-      x: 155,
-      y: 232,
-      props: { text: 'Get Started', width: 90, height: 20, fontSize: 14, fontWeight: 'bold', fill: '#ffffff' },
+      x: 180,
+      y: 230,
+      props: { text: 'Infinite SVG canvas engine for wireframing, diagrams, and sketches.', width: 520, height: 26, fontSize: 16, fill: '#64748b' },
       meta: { parent: frame.id },
     });
     ed.createShape({
-      type: 'note',
-      x: 600,
-      y: 100,
-      props: { width: 180, height: 140, text: 'POC Note:\nUse this canvas to sketch out the landing page layout!' },
+      type: 'text',
+      x: 180,
+      y: 280,
+      props: { text: 'Pick a tool from the dock below and drag across the canvas to draw.', width: 500, height: 22, fontSize: 13, fill: '#94a3b8' },
+      meta: { parent: frame.id },
     });
   });
 }
