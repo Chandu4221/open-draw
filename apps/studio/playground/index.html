@@ -442,15 +442,7 @@
 
     <!-- Floating Bottom Dock Toolbar -->
     <nav id="toolbar-dock" aria-label="Canvas Toolbar">
-      <!-- 2. Export Button at Extreme Left -->
-      <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">
-        <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
-        <span>Export</span>
-      </button>
-
-      <div class="divider"></div>
-
-      <!-- 1. Main Tools: Select & Active Shape (with Popup Expander - zero duplicates) -->
+      <!-- Main Tools: Select & Active Shape (with Popup Expander - zero duplicates) -->
       <div class="tool-group">
         <button class="btn btn-icon active" data-tool="select" title="Select &amp; Transform (V)">
           <span class="material-symbols-outlined">near_me</span>
@@ -479,7 +471,7 @@
 
       <div class="divider"></div>
 
-      <!-- 3. Canvas & History Actions (Clear Canvas next to Delete Selected) -->
+      <!-- Canvas & History Actions -->
       <div class="meta-actions">
         <button class="btn btn-icon" id="btn-undo" title="Undo (Ctrl+Z)">
           <span class="material-symbols-outlined">undo</span>
@@ -503,6 +495,14 @@
           <span class="material-symbols-outlined">folder_open</span>
         </button>
         <input type="file" id="file-import-json" accept=".json" style="display: none;">
+
+        <div class="divider"></div>
+
+        <!-- Export Button at Extreme Right -->
+        <button class="btn btn-primary" id="btn-export-png" title="Download Wireframe as PNG">
+          <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
+          <span>Export</span>
+        </button>
       </div>
     </nav>
 
