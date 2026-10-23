@@ -29,7 +29,7 @@ editor.mount(container);
   },
 };
 
-let chipMode: 'always' | 'hover' | 'off' = 'hover';
+let chipMode: 'always' | 'hover' | 'off' = 'off';
 
 function renderChip(shape: ShapeRecord): void {
   const slot = editor.getOverlaySlot(shape.id);
@@ -53,12 +53,14 @@ function renderChip(shape: ShapeRecord): void {
   }) : false;
 
   const shouldShow = chipMode === 'always' || isSelected || isParentOfSelected;
+  if (!shouldShow) return;
 
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  g.setAttribute('class', `od-semantic-chip ${shouldShow ? 'od-chip-visible' : 'od-chip-hidden'}`);
+  g.setAttribute('class', 'od-semantic-chip od-chip-visible');
   g.setAttribute('data-shape-id', shape.id);
   g.setAttribute('data-semantic-type', type);
-  g.setAttribute('style', `pointer-events: none; opacity: ${shouldShow ? '1' : '0'}; transition: opacity 0.15s ease;`);
+  g.setAttribute('aria-hidden', 'true');
+  g.setAttribute('style', 'pointer-events: none; opacity: 1;');
 
   const textWidth = Math.max(50, labelText.length * 7 + 8);
   const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -69,6 +71,7 @@ function renderChip(shape: ShapeRecord): void {
   rect.setAttribute('rx', '3');
   rect.setAttribute('ry', '3');
   rect.setAttribute('fill', '#0f172a');
+  rect.setAttribute('pointer-events', 'none');
 
   const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   text.setAttribute('x', '4');
@@ -76,6 +79,7 @@ function renderChip(shape: ShapeRecord): void {
   text.setAttribute('fill', '#f8fafc');
   text.setAttribute('font-size', '10');
   text.setAttribute('font-family', 'monospace');
+  text.setAttribute('pointer-events', 'none');
   text.textContent = labelText;
 
   g.appendChild(rect);

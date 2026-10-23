@@ -218,6 +218,14 @@ export class CanvasStore {
     return true;
   }
 
+  get undoStack(): ReadonlyArray<HistoryEntry> {
+    return this.history.undoStack;
+  }
+
+  get redoStack(): ReadonlyArray<HistoryEntry> {
+    return this.history.redoStack;
+  }
+
   redo(): boolean {
     const next = this.history.redo(this.shapes);
     if (!next) return false;

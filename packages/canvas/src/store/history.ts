@@ -2,8 +2,8 @@ import type { ShapeId, ShapeRecord } from '@open-draw/schema';
 import type { HistoryEntry } from './types.js';
 
 export class HistoryStack {
-  private undoStack: HistoryEntry[] = [];
-  private redoStack: HistoryEntry[] = [];
+  readonly undoStack: HistoryEntry[] = [];
+  readonly redoStack: HistoryEntry[] = [];
 
   canUndo(): boolean {
     return this.undoStack.length > 0;
@@ -14,13 +14,13 @@ export class HistoryStack {
   }
 
   clear(): void {
-    this.undoStack = [];
-    this.redoStack = [];
+    this.undoStack.length = 0;
+    this.redoStack.length = 0;
   }
 
   push(entry: HistoryEntry): void {
     this.undoStack.push(entry);
-    this.redoStack = [];
+    this.redoStack.length = 0;
   }
 
   mergeLast(): void {
