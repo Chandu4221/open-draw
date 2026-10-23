@@ -135,6 +135,8 @@ export class SelectionManager {
     const shape = renderer.getShapeRecord(id) ?? store.getShape(id);
     if (!slot || !shape) return;
 
+    renderer.getShapeWrapper(id)?.classList.add('od-selected');
+
     const legacy = slot.querySelector(':scope > .od-selection-outline');
     legacy?.remove();
 
@@ -191,6 +193,8 @@ export class SelectionManager {
     const bounds = this._computeBounds(shape, store, registry, renderer);
     if (!bounds) return;
 
+    renderer.getShapeWrapper(id)?.classList.add('od-selected');
+
     const lx = bounds.x - shape.x;
     const ly = bounds.y - shape.y;
 
@@ -212,6 +216,7 @@ export class SelectionManager {
   }
 
   private _removeOutline(renderer: SVGRenderer, id: ShapeId): void {
+    renderer.getShapeWrapper(id)?.classList.remove('od-selected');
     const slot = renderer.getOverlaySlot(id);
     if (!slot) return;
     const outline = slot.querySelector(':scope > .od-selection-outline');
