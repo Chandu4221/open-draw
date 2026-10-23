@@ -44,7 +44,7 @@ function dispatchPointerUp(clientX: number, clientY: number): void {
 }
 
 describe('Drag-to-Draw Shape Creation', () => {
-  it('single click creates shape with default dimensions and reverts to select tool', () => {
+  it('single click without drag does not create shape and reverts to select tool', () => {
     const editor = new CanvasEditor();
     const controller = new PointerInteractionController(editor);
     const container = new MockElement() as any;
@@ -55,15 +55,26 @@ describe('Drag-to-Draw Shape Creation', () => {
     dispatchPointerUp(100, 100);
 
     const shapes = editor.store.listShapes();
-    expect(shapes).toHaveLength(1);
-    const rect = shapes[0]!;
-    expect(rect.type).toBe('rect');
-    expect(rect.x).toBe(100);
-    expect(rect.y).toBe(100);
-    expect(rect.props.width).toBe(100);
-    expect(rect.props.height).toBe(100);
+    expect(shapes).toHaveLength(0);
     expect(editor.getTool()).toBe('select');
-    expect(editor.isSelected(rect.id)).toBe(true);
+    expect(editor.selection).toHaveLength(0);
+
+    controller.detach();
+  });
+
+  it('pointer movement <= 3px is treated as click and does not create shape', () => {
+    const editor = new CanvasEditor();
+    const controller = new PointerInteractionController(editor);
+    const container = new MockElement() as any;
+    controller.attach(container);
+
+    editor.setTool('rect');
+    dispatchPointerDown(container, 100, 100);
+    dispatchPointerMove(102, 101); // hypot = sqrt(4 + 1) = 2.23 <= 3
+    dispatchPointerUp(102, 101);
+
+    expect(editor.store.listShapes()).toHaveLength(0);
+    expect(editor.getTool()).toBe('select');
 
     controller.detach();
   });

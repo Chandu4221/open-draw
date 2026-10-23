@@ -135,21 +135,12 @@ export class PointerInteractionController {
   }
 
   private onShapeCreatePointerDown(tool: string, pagePt: Point): void {
-    const def = this.editor.registry.get(tool);
-    if (!def) return;
-
+    if (!this.editor.registry.has(tool)) return;
     this.isCreatingShape = true;
     this.shapeCreateStart = pagePt;
     this.shapeCreateTool = tool;
+    this.shapeCreateId = null;
     this.didDragCreate = false;
-    const shape = this.editor.createShape({
-      type: tool,
-      x: pagePt.x,
-      y: pagePt.y,
-      props: def.defaultProps(),
-    });
-    this.shapeCreateId = shape.id;
-    this.editor.selectShape(shape.id);
   }
 
   private onPointerMove = (e: PointerEvent): void => {
@@ -190,9 +181,16 @@ export class PointerInteractionController {
       return;
     }
 
-    if (this.isCreatingShape && this.shapeCreateId && this.shapeCreateStart && this.shapeCreateTool) {
+    if (this.isCreatingShape && this.shapeCreateStart && this.shapeCreateTool) {
       const dist = Math.hypot(currentPagePt.x - this.shapeCreateStart.x, currentPagePt.y - this.shapeCreateStart.y);
       if (dist > 3) {
+        const def = this.editor.registry.get(this.shapeCreateTool);
+        if (!def) return;
+        if (!this.shapeCreateId) {
+          const s = this.editor.createShape({ type: this.shapeCreateTool, x: this.shapeCreateStart.x, y: this.shapeCreateStart.y, props: def.defaultProps() });
+          this.shapeCreateId = s.id;
+          this.editor.selectShape(s.id);
+        }
         this.didDragCreate = true;
         let box = computeMarqueeBounds(this.shapeCreateStart, currentPagePt);
         if (e.shiftKey) {
@@ -202,8 +200,7 @@ export class PointerInteractionController {
           box = boundsOf(x, y, size, size);
         }
         const shape = this.editor.store.getShape(this.shapeCreateId);
-        const def = this.editor.registry.get(this.shapeCreateTool);
-        if (shape && def) {
+        if (shape) {
           const patch = def.geometry.resize(shape, box, currentPagePt);
           this.editor.store.updateShape(this.shapeCreateId, patch);
           this.editor.store.mergeLastHistoryEntry();
@@ -263,15 +260,17 @@ export class PointerInteractionController {
       return;
     }
 
-    if (this.isCreatingShape && this.shapeCreateId && this.shapeCreateTool) {
-      const shape = this.editor.store.getShape(this.shapeCreateId);
-      const def = this.editor.registry.get(this.shapeCreateTool);
-      if (shape && def) {
-        const bounds = def.geometry.bounds(shape);
-        const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, shape.id);
-        if (suggested) {
-          this.editor.store.updateShape(shape.id, { meta: { ...shape.meta, parent: suggested.id } });
-          this.editor.store.mergeLastHistoryEntry();
+    if (this.isCreatingShape) {
+      if (this.shapeCreateId && this.shapeCreateTool && this.didDragCreate) {
+        const shape = this.editor.store.getShape(this.shapeCreateId);
+        const def = this.editor.registry.get(this.shapeCreateTool);
+        if (shape && def) {
+          const bounds = def.geometry.bounds(shape);
+          const suggested = findSuggestedParent(bounds, this.editor.store.listShapes(), this.editor.registry, shape.id);
+          if (suggested) {
+            this.editor.store.updateShape(shape.id, { meta: { ...shape.meta, parent: suggested.id } });
+            this.editor.store.mergeLastHistoryEntry();
+          }
         }
       }
       this.isCreatingShape = false;
