@@ -43,6 +43,7 @@ if (saved && saved.shapes && saved.shapes.length > 0) {
 } else {
   seedStarterWireframe(editor);
 }
+updateUIState();
 
 // Auto-save on every store change and infer smart defaults on creation
 editor.store.listen((diff) => {
@@ -132,15 +133,12 @@ document.getElementById('btn-delete')?.addEventListener('click', () => {
 // Zoom Controls
 document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
   editor.zoomAroundPoint({ x: window.innerWidth / 2, y: window.innerHeight / 2 }, 1.25);
-  updateZoomLabel();
 });
 document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
   editor.zoomAroundPoint({ x: window.innerWidth / 2, y: window.innerHeight / 2 }, 0.8);
-  updateZoomLabel();
 });
 document.getElementById('btn-zoom-reset')?.addEventListener('click', () => {
   editor.setCamera({ x: 0, y: 0, zoom: 1 });
-  updateZoomLabel();
 });
 
 function updateZoomLabel(): void {
@@ -149,6 +147,11 @@ function updateZoomLabel(): void {
     label.textContent = `${Math.round(editor.camera.camera.zoom * 100)}%`; // EXEMPTION: UI display percentage formatting only
   }
 }
+
+// Keep zoom label in sync with mouse wheel zoom, pan, and programmatic camera changes
+editor.camera.subscribe(() => {
+  updateZoomLabel();
+});
 
 // Export / Import / Compile
 document.getElementById('btn-compile-spec')?.addEventListener('click', () => {
