@@ -16,7 +16,7 @@ test.describe('DOM Canvas Overlay Invariant (The Soul Test)', () => {
         type: 'rect',
         x: 100,
         y: 100,
-        props: { width: 200, height: 120, fill: '#3b82f6' },
+        props: { width: 200, height: 120, fill: '#3b82f6', stroke: '' },
       });
 
       const slot = editor.getOverlaySlot(shape.id);
@@ -214,7 +214,7 @@ test.describe('DOM Canvas Overlay Invariant (The Soul Test)', () => {
         x: 100,
         y: 100,
         rotation: 45,
-        props: { width: 100, height: 100, fill: '#3b82f6' },
+        props: { width: 100, height: 100, fill: '#3b82f6', stroke: '' },
       });
       const slot = editor.getOverlaySlot(shape.id);
       const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
