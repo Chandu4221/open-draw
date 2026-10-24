@@ -29,7 +29,13 @@ jobs:
         run: npm run verify
 
       - name: Dry-run publish (@open-draw/schema)
-        run: npm publish --dry-run --workspace @open-draw/schema
+        run: |
+          SCHEMA_VER=$(node -p "require('./packages/schema/package.json').version")
+          if npm view "@open-draw/schema@${SCHEMA_VER}" version >/dev/null 2>&1; then
+            echo "@open-draw/schema@${SCHEMA_VER} already published on npm; skipping dry-run."
+          else
+            npm publish --dry-run --workspace @open-draw/schema
+          fi
 
       - name: Dry-run publish (@open-draw/canvas)
         run: npm publish --dry-run --workspace @open-draw/canvas
