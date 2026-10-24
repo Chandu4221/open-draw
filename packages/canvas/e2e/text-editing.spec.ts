@@ -310,5 +310,86 @@ test.describe('Privileged Capability #1: Text Editing E2E Gate', () => {
     const resetTool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
     expect(resetTool).toBe('select');
   });
+
+  test('double click on rect inserts text shape inside and typing commits it', async ({ page }) => {
+    const rectId = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const rect = editor.createShape({
+        type: 'rect',
+        x: 100,
+        y: 100,
+        props: { width: 200, height: 100, fill: '#3b82f6' },
+      });
+      return rect.id;
+    });
+
+    const rectElement = page.locator(`.od-shape[data-id="${rectId}"]`);
+    await expect(rectElement).toBeVisible();
+
+    // Double-click the rect
+    await rectElement.dblclick({ position: { x: 50, y: 50 } });
+
+    // Verify mode is editing
+    const mode = await page.evaluate(() => (window as any).__od_debug__.editor.mode);
+    expect(mode).toBe('editing');
+
+    // Textarea is visible and focused
+    const textarea = page.locator('textarea.od-text-editor');
+    await expect(textarea).toBeVisible();
+    await expect(textarea).toBeFocused();
+
+    // Type text
+    await textarea.fill('Button Label');
+
+    // Blur to commit
+    await page.locator('#canvas-container').click({ position: { x: 500, y: 500 } });
+
+    const modeAfter = await page.evaluate(() => (window as any).__od_debug__.editor.mode);
+    expect(modeAfter).toBe('none');
+
+    // Verify new text shape exists inside the rect bounds
+    const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+    const textShape = shapes.find((s: any) => s.type === 'text');
+    expect(textShape).toBeDefined();
+    expect(textShape.props.text).toBe('Button Label');
+    expect(textShape.x).toBeGreaterThanOrEqual(100);
+    expect(textShape.x).toBeLessThan(300);
+    expect(textShape.y).toBeGreaterThanOrEqual(100);
+    expect(textShape.y).toBeLessThan(200);
+
+    // Verify single undo removes the text shape
+    await page.evaluate(() => (window as any).__od_debug__.editor.undo());
+    const shapesAfterUndo = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+    expect(shapesAfterUndo.some((s: any) => s.type === 'text')).toBe(false);
+    expect(shapesAfterUndo.some((s: any) => s.id === rectId)).toBe(true);
+  });
+
+  test('double click on frame inserts text shape parented to the frame', async ({ page }) => {
+    const frameId = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const frame = editor.createShape({
+        type: 'frame',
+        x: 100,
+        y: 100,
+        props: { width: 300, height: 300 },
+      });
+      return frame.id;
+    });
+
+    const frameElement = page.locator(`.od-shape[data-id="${frameId}"]`);
+    await frameElement.dblclick({ position: { x: 80, y: 80 } });
+
+    const textarea = page.locator('textarea.od-text-editor');
+    await expect(textarea).toBeVisible();
+    await textarea.fill('Frame Content');
+
+    await page.locator('#canvas-container').click({ position: { x: 500, y: 500 } });
+
+    const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+    const textShape = shapes.find((s: any) => s.type === 'text');
+    expect(textShape).toBeDefined();
+    expect(textShape.props.text).toBe('Frame Content');
+    expect(textShape.meta.parent).toBe(frameId);
+  });
 });
 

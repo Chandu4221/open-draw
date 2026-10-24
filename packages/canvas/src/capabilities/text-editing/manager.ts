@@ -59,6 +59,7 @@ export class TextEditingManager {
     const textarea = document.createElement('textarea');
     textarea.className = 'od-text-editor';
     textarea.setAttribute('aria-label', 'Edit shape text');
+    textarea.placeholder = 'Type text...';
     textarea.value = this.initialText;
     textarea.style.width = '100%';
     textarea.style.height = '100%';
@@ -121,6 +122,9 @@ export class TextEditingManager {
       editor.store.transact(() => {
         editor.store.updateShape(shapeId, patch);
       });
+      if (initialText === '') {
+        editor.store.mergeLastHistoryEntry();
+      }
     }
 
     this.resetState(editor, shapeId);
@@ -130,8 +134,70 @@ export class TextEditingManager {
     if (!this.activeShapeId || !this.currentEditor) return;
     const shapeId = this.activeShapeId;
     const editor = this.currentEditor;
+    const shape = editor.store.getShape(shapeId);
     this.cleanupDOM();
+    if (shape && (!this.initialText || this.initialText.trim() === '')) {
+      editor.store.transact(() => {
+        editor.deleteShape(shapeId);
+      });
+    }
     this.resetState(editor, shapeId);
+  }
+
+  handleShapeDoubleClick(shapeId: ShapeId, e: MouseEvent, editor: CanvasEditor): void {
+    if (this.startEditing(shapeId, editor)) {
+      return;
+    }
+
+    const targetShape = editor.store.getShape(shapeId);
+    if (!targetShape) return;
+
+    const textDef = editor.registry.get('text');
+    if (!textDef) return;
+
+    const container = editor.getContainer();
+    const r = container?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    const screenPt = { x: e.clientX - r.left, y: e.clientY - r.top };
+    const pagePt = editor.camera.screenToPage(screenPt);
+
+    const targetDef = editor.registry.get(targetShape.type);
+    const targetBounds = targetDef
+      ? targetDef.geometry.bounds(targetShape)
+      : { x: targetShape.x, y: targetShape.y, width: 100, height: 100 };
+
+    const defaultProps = textDef.defaultProps() as Record<string, unknown>;
+    const textWidth = Number(defaultProps['width']) || 100;
+    const textHeight = Number(defaultProps['height']) || 30;
+
+    const minX = targetBounds.x;
+    const maxX = Math.max(targetBounds.x, targetBounds.x + targetBounds.width - textWidth);
+    const minY = targetBounds.y;
+    const maxY = Math.max(targetBounds.y, targetBounds.y + targetBounds.height - textHeight);
+
+    const posX = Math.max(minX, Math.min(pagePt.x, maxX));
+    const posY = Math.max(minY, Math.min(pagePt.y - 12, maxY));
+
+    let parentId: ShapeId | undefined = undefined;
+    if (targetDef?.capabilities?.clipping?.isMask(targetShape)) {
+      parentId = targetShape.id;
+    } else {
+      const p = (targetShape.meta['parent'] ?? targetShape.meta['parentId']) as ShapeId | undefined;
+      if (p) parentId = p;
+    }
+
+    const textShape = editor.createShape({
+      type: 'text',
+      x: posX,
+      y: posY,
+      props: {
+        ...defaultProps,
+        text: '',
+      },
+      meta: parentId ? { parent: parentId } : {},
+    });
+
+    editor.selectShape(textShape.id);
+    this.startEditing(textShape.id, editor);
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {

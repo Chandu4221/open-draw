@@ -163,7 +163,7 @@ The maintainer should verify the live Studio interface locally:
   - `check:zoom`: PASS (zero zoom math outside `camera.ts`).
   - `check:shapes`: PASS (zero shape-type branching outside shape modules; capability interfaces used).
   - `check:filesize`: PASS (all source files $\le 300$ lines).
-  - `check:links`: PASS (zero absolute `file://` links in docs and root markdown).
+  - `check:links`: PASS (zero absolute file-URI links in docs and root markdown).
   - `check:public-api`: PASS (matches `docs/api-0.1.0.snapshot.json` exactly; `@open-draw/canvas@0.5.0` public API frozen).
 
 ### Maintainer Hand-Test Checklist for §7

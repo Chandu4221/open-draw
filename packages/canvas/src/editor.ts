@@ -284,6 +284,6 @@ export class CanvasEditor {
     const shapeId = shapeWrapper?.getAttribute('data-id');
     if (!shapeId) return;
 
-    this.textEditing.startEditing(shapeId, this);
+    this.textEditing.handleShapeDoubleClick(shapeId, e, this);
   };
 }
