@@ -25,7 +25,7 @@ export class ClearCanvasModal {
     this.modalEl.style.cssText = `
       width: 90vw; max-width: 440px; background: #ffffff;
       border-radius: 12px; padding: 20px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25);
-      border: 1px solid #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      border: 1px solid #e2e8f0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     `;
 
     // Stop bubbling

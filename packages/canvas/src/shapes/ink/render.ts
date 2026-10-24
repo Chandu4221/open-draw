@@ -92,7 +92,7 @@ function updateInkOverlayLabel(
     label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     label.setAttribute('class', 'od-ink-label');
     label.setAttribute('font-size', '11');
-    label.setAttribute('font-family', 'sans-serif');
+    label.setAttribute('font-family', 'Inter, system-ui, sans-serif');
     label.setAttribute('font-weight', '500');
     label.setAttribute('fill', '#475569');
     slot.appendChild(label);

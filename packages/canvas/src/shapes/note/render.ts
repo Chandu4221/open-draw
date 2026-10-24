@@ -23,7 +23,7 @@ export function renderNote(shape: ShapeRecord<NoteProps>, _ctx: RenderContext): 
   text.setAttribute('x', '12');
   text.setAttribute('y', '24');
   text.setAttribute('fill', '#713f12');
-  text.setAttribute('font-family', 'system-ui, sans-serif');
+  text.setAttribute('font-family', 'Inter, system-ui, sans-serif');
   text.setAttribute('font-size', '14');
   text.textContent = shape.props.text ?? '';
   group.appendChild(text);

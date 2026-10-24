@@ -167,7 +167,8 @@ export class ChipController {
     text.setAttribute('y', '-7');
     text.setAttribute('fill', '#f8fafc');
     text.setAttribute('font-size', '10');
-    text.setAttribute('font-family', 'monospace');
+    text.setAttribute('font-family', 'Inter, system-ui, sans-serif');
+    text.setAttribute('font-weight', '500');
     text.setAttribute('pointer-events', 'none');
     text.textContent = displayedText;
 

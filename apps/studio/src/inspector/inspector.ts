@@ -40,7 +40,7 @@ export class StudioInspector {
       background: #ffffff;
       border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 55;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 13px; color: #0f172a;
     `;
 

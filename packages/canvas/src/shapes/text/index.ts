@@ -13,7 +13,7 @@ export const textDefinition: ShapeDefinition<TextProps> = {
     return {
       text: 'Text',
       fontSize: 16,
-      fontFamily: 'system-ui, sans-serif',
+      fontFamily: 'Inter, system-ui, sans-serif',
       fill: '#1e293b',
       width: 100,
       height: 30,

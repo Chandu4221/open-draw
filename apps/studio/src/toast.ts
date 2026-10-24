@@ -47,7 +47,7 @@ export class ToastManager {
       color: #f8fafc;
       padding: 10px 16px;
       border-radius: 10px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 13px;
       font-weight: 500;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);

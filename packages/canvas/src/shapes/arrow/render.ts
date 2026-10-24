@@ -99,7 +99,7 @@ function updateArrowOverlayLabel(
     label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     label.setAttribute('class', 'od-arrow-label');
     label.setAttribute('font-size', '11');
-    label.setAttribute('font-family', 'sans-serif');
+    label.setAttribute('font-family', 'Inter, system-ui, sans-serif');
     label.setAttribute('font-weight', '500');
     label.setAttribute('fill', '#334155');
     label.setAttribute('text-anchor', 'middle');
