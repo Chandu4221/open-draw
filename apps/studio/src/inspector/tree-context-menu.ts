@@ -23,8 +23,8 @@ export class TreeContextMenu {
 
     const revealItem = document.createElement('div');
     revealItem.id = 'od-tree-menu-reveal';
-    revealItem.textContent = 'Reveal on canvas';
-    revealItem.style.cssText = 'padding: 6px 12px; cursor: pointer; color: #0f172a;';
+    revealItem.innerHTML = '<span class="material-symbols-outlined" style="font-size: 15px; margin-right: 8px; color: #64748b;">center_focus_strong</span>Reveal on canvas';
+    revealItem.style.cssText = 'padding: 6px 12px; cursor: pointer; color: #0f172a; display: flex; align-items: center;';
     revealItem.addEventListener('mouseenter', () => revealItem.style.background = '#f1f5f9');
     revealItem.addEventListener('mouseleave', () => revealItem.style.background = 'transparent');
     revealItem.addEventListener('click', () => {
@@ -34,8 +34,8 @@ export class TreeContextMenu {
 
     const copyItem = document.createElement('div');
     copyItem.id = 'od-tree-menu-copy';
-    copyItem.textContent = 'Copy ID';
-    copyItem.style.cssText = 'padding: 6px 12px; cursor: pointer; color: #0f172a;';
+    copyItem.innerHTML = '<span class="material-symbols-outlined" style="font-size: 15px; margin-right: 8px; color: #64748b;">content_copy</span>Copy ID';
+    copyItem.style.cssText = 'padding: 6px 12px; cursor: pointer; color: #0f172a; display: flex; align-items: center;';
     copyItem.addEventListener('mouseenter', () => copyItem.style.background = '#f1f5f9');
     copyItem.addEventListener('mouseleave', () => copyItem.style.background = 'transparent');
     copyItem.addEventListener('click', () => {

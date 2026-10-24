@@ -153,21 +153,21 @@ test.describe('Phase 5 §7.3: Structure Tree Tab Suite', () => {
     await expect(parentNode).toBeVisible();
     await expect(childNode).toBeVisible();
 
-    // Check twisty is expanded (▾)
+    // Check twisty is expanded (expand_more)
     const twisty = parentNode.locator('.od-tree-twisty');
-    await expect(twisty).toHaveText('▾');
+    await expect(twisty).toHaveText('expand_more');
 
     // Click twisty to collapse
     await twisty.click();
 
     // Child should now be hidden
     await expect(childNode).toBeHidden();
-    await expect(twisty).toHaveText('▸');
+    await expect(twisty).toHaveText('chevron_right');
 
     // Click twisty again to expand
     await twisty.click();
     await expect(childNode).toBeVisible();
-    await expect(twisty).toHaveText('▾');
+    await expect(twisty).toHaveText('expand_more');
   });
 
   test('quick action reveal button centers and selects shape', async ({ page }) => {

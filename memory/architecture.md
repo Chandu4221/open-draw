@@ -34,3 +34,5 @@
 - **Zero Runtime Dependencies:** `dependencies: {}` enforced in CI across all packages.
 - **No Invention:** Unspecified requirements are logged in `docs/od-questions.md` and marked `// OD-QUESTION:`.
 - **File & Class Limits:** TS strict (no `any`/`@ts-ignore`), max 500 lines per file, max 300 lines per class.
+- **Professional UI Aesthetics (Zero Emojis):** Strictly no unicode emojis in the UI. Always use Google Material Symbols with appropriate semantic glyphs for professional, developer-grade appearance.
+

@@ -2,6 +2,20 @@ import type { CanvasEditor } from '@open-draw/canvas';
 import type { ShapeRecord } from '@open-draw/schema';
 import { TreeContextMenu } from './tree-context-menu.js';
 
+const SEMANTIC_ICONS: Record<string, string> = {
+  button: 'smart_button', input: 'edit', card: 'space_dashboard', section: 'splitscreen',
+  navbar: 'menu', nav: 'menu', footer: 'view_agenda', list: 'format_list_bulleted',
+  table: 'table_chart', tabs: 'tab', modal: 'wysiwyg', alert: 'warning',
+  badge: 'label', avatar: 'account_circle', select: 'arrow_drop_down_circle',
+  checkbox: 'check_box', toggle: 'toggle_on', divider: 'horizontal_rule', tooltip: 'chat_bubble',
+};
+
+const SHAPE_ICONS: Record<string, string> = {
+  frame: 'crop_free', group: 'layers', text: 'title', image: 'image',
+  circle: 'circle', diamond: 'diamond', arrow: 'arrow_forward',
+  line: 'horizontal_rule', star: 'star', rect: 'crop_square',
+};
+
 export class StructureTreeTab {
   private editor: CanvasEditor;
   readonly element: HTMLElement;
@@ -117,12 +131,12 @@ export class StructureTreeTab {
         nodeEl.classList.add('selected');
       }
 
-      // Chevron Twisty vs Spacer
+      // Chevron Twisty vs Spacer (Material Symbols)
       if (hasChildren) {
         const twisty = document.createElement('span');
         twisty.className = 'od-tree-twisty';
         twisty.setAttribute('data-action', 'toggle-collapse');
-        twisty.textContent = isCollapsed ? '▸' : '▾';
+        twisty.innerHTML = `<span class="material-symbols-outlined" style="font-size: 14px; user-select: none;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>`;
         twisty.title = isCollapsed ? 'Expand' : 'Collapse';
         twisty.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -140,34 +154,26 @@ export class StructureTreeTab {
         nodeEl.appendChild(spacer);
       }
 
-      // Icon (folder vs leaf type icon)
+      // Icon (Material Symbols - professional folder & shape icons)
       const iconEl = document.createElement('span');
-      iconEl.className = 'od-tree-icon';
-      if (hasChildren) {
-        iconEl.textContent = isCollapsed ? '📁' : '📂';
-      } else {
-        const TYPE_ICONS: Record<string, string> = {
-          frame: '⛶',
-          group: '⧉',
-          text: 'T',
-          image: '🖼',
-          circle: '◯',
-          diamond: '◇',
-          arrow: '➔',
-          line: '―',
-          star: '★',
-        };
-        iconEl.textContent = TYPE_ICONS[s.type] ?? '▢';
-      }
-      nodeEl.appendChild(iconEl);
+      iconEl.className = 'od-tree-icon material-symbols-outlined';
+      iconEl.style.fontSize = '15px';
+      iconEl.style.color = '#64748b';
 
-      // Label (Primary name + #id)
       const sem = (s.meta['semantic'] ?? {}) as Record<string, unknown>;
       const semType = sem['type'] as string | undefined;
       const name = (sem['name'] as string) || '';
       const isUntagged = !semType;
       const displayLabel = name ? `${name} (${semType || s.type})` : (semType || s.type);
 
+      if (hasChildren) {
+        iconEl.textContent = isCollapsed ? 'folder' : 'folder_open';
+      } else {
+        iconEl.textContent = (semType && SEMANTIC_ICONS[semType]) ?? SHAPE_ICONS[s.type] ?? 'crop_square';
+      }
+      nodeEl.appendChild(iconEl);
+
+      // Label (Primary name + #id)
       const labelEl = document.createElement('span');
       labelEl.className = 'od-tree-label';
 
@@ -191,14 +197,14 @@ export class StructureTreeTab {
         nodeEl.appendChild(badgeEl);
       }
 
-      // Hover actions (🎯 Reveal, 📋 Copy ID)
+      // Hover actions (Material Symbols: Reveal, Copy ID)
       const actionsEl = document.createElement('span');
       actionsEl.className = 'od-tree-actions';
 
       const revealBtn = document.createElement('button');
       revealBtn.className = 'od-tree-action-btn';
       revealBtn.title = 'Reveal on canvas';
-      revealBtn.textContent = '🎯';
+      revealBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 13px;">center_focus_strong</span>';
       revealBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.revealShape(s.id);
@@ -207,7 +213,7 @@ export class StructureTreeTab {
       const copyBtn = document.createElement('button');
       copyBtn.className = 'od-tree-action-btn';
       copyBtn.title = 'Copy ID';
-      copyBtn.textContent = '📋';
+      copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 13px;">content_copy</span>';
       copyBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (navigator.clipboard?.writeText) {

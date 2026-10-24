@@ -37,3 +37,10 @@
 - **Context**: Hardcoding shapes in canvas core limits extensibility and couples tools with shape implementations.
 - **Decision**: Canvas core contains zero hardcoded shapes. All shapes (built-in and custom) register via `registerShape(def: ShapeDefinition)`.
 - **Consequences**: Modular shape plugins; CI enforces zero shape-type switching outside shape modules.
+
+### ADR-007: Professional UI Aesthetics — Zero Emojis, Google Material Symbols Only
+- **Status**: Accepted
+- **Context**: Unicode emojis render as brightly colored, OS-dependent toy icons (e.g. yellow cartoon folders, targets, clipboards) which undermine the professional, polished developer-tool appearance of OpenDraw.
+- **Decision**: Strictly zero emojis anywhere in the user interface. Use Google Material Symbols (`<span class="material-symbols-outlined">...</span>`) with appropriate, professional glyphs (`folder`, `folder_open`, `crop_square`, `title`, `center_focus_strong`, `content_copy`, `chevron_right`, `expand_more`, etc.).
+- **Consequences**: Consistent, clean, monochrome enterprise-grade UI styling across all browsers, operating systems, and inspector tabs.
+
