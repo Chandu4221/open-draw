@@ -1,32 +1,32 @@
 [
   {
     "shapeCount": 100,
-    "domNodeCount": 302,
-    "ttffMs": 9.199999999953434,
-    "avgDragBlockMs": 0.0066666666651144625,
-    "maxDragBlockMs": 0.10000000009313226,
-    "pan02xMs": 16.654999999993017,
-    "pan10xMs": 16.659999999997673,
-    "pan50xMs": 16.669999999995344
+    "domNodeCount": 303,
+    "ttffMs": 32,
+    "avgDragBlockMs": 0.016666666666666666,
+    "maxDragBlockMs": 0.2999999988824129,
+    "pan02xMs": 16.654999999981374,
+    "pan10xMs": 16.694999999925493,
+    "pan50xMs": 16.720000000018626
   },
   {
     "shapeCount": 500,
-    "domNodeCount": 1502,
-    "ttffMs": 29.699999999953434,
-    "avgDragBlockMs": 0.0033333333364377418,
-    "maxDragBlockMs": 0.10000000009313226,
-    "pan02xMs": 16.675,
-    "pan10xMs": 16.654999999993017,
-    "pan50xMs": 16.69000000000233
+    "domNodeCount": 1503,
+    "ttffMs": 28.199999999254942,
+    "avgDragBlockMs": 0.003333333320915699,
+    "maxDragBlockMs": 0.09999999962747097,
+    "pan02xMs": 16.359999999962746,
+    "pan10xMs": 16.66000000005588,
+    "pan50xMs": 16.665000000037253
   },
   {
     "shapeCount": 1000,
-    "domNodeCount": 3002,
-    "ttffMs": 38.300000000046566,
-    "avgDragBlockMs": 0.0033333333364377418,
-    "maxDragBlockMs": 0.10000000009313226,
-    "pan02xMs": 16.35,
-    "pan10xMs": 16.654999999993017,
-    "pan50xMs": 16.639999999990685
+    "domNodeCount": 3003,
+    "ttffMs": 57.29999999888241,
+    "avgDragBlockMs": 0.003333333320915699,
+    "maxDragBlockMs": 0.09999999962747097,
+    "pan02xMs": 16.1,
+    "pan10xMs": 16.640000000037254,
+    "pan50xMs": 16.65
   }
 ]
