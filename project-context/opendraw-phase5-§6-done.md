@@ -70,12 +70,12 @@ For every semantic type × platform, verify the mapping against the platform's C
 
 ## §6.5 — EXIT CHECKLIST (amendment, not phase exit)
 
-- [ ] v1.1 format live with all 7 changes; ALL fixtures regenerated; version marker v1.1; changelog ties each change to its test
-- [ ] 5 style modules validated, data-only, picker shows all 5 (registry-driven, no UI code change needed)
-- [ ] `row` semantic type + 3 platform rows + fixtures; mappings verified ×3 platforms, fixes logged
-- [ ] Bounds-semantics + regenerate-don't-edit documentation committed; spec-integrity spike note recorded
-- [ ] Real-input E2E for picker + directive toggle; untagged + responsive + empty-state edge cases green
-- [ ] Questions doc: every wording decision (directives text, bounds line) confirmed or logged; nothing silently invented
-- [ ] Local full matrix certified green before push; REPORT §6 amendment section citing this doc and the four originating tests
+- [x] v1.1 format live with all 7 changes; ALL fixtures regenerated; version marker v1.1; changelog ties each change to its test
+- [x] 5 style modules validated, data-only, picker shows all 5 (registry-driven, no UI code change needed)
+- [x] `row` semantic type + 3 platform rows + fixtures; mappings verified ×3 platforms, fixes logged
+- [x] Bounds-semantics + regenerate-don't-edit documentation committed; spec-integrity spike note recorded
+- [x] Real-input E2E for picker + directive toggle; untagged + responsive + empty-state edge cases green
+- [x] Questions doc: every wording decision (directives text, bounds line) confirmed or logged; nothing silently invented
+- [x] Local full matrix certified green before push; REPORT §6 amendment section citing this doc and the four originating tests
 
 **Explicitly NOT here:** AI/LLM integration in-app (post-Studio), spec re-import (spike note only), drag-reparent in tree, more styles beyond the 5 (content later, forever cheap), publishing `@open-draw/markdown` (publish decision is Phase 5 exit, AFTER v1.1 fixtures are frozen).

@@ -82,15 +82,15 @@ Compile panel upgrades: legend + design direction toggles visible (ADR-006/Phase
 
 ## §4. EXIT GATE
 
-- [ ] §0: all four defect fixes verified by REAL-INPUT E2E; a11y green on 3 engines incl. new states; §0.1/§0.2 rules committed to OPENDRAW.md; local matrix green before first push of this phase
-- [ ] §1.1 Inspector: full fields incl. parent + member list; cycle-safe dropdown; hover-confirm; provenance visible; edge-case suite green (esp. the anti-suggestion assertion + cycle rejection)
-- [ ] §1.2 Chips modes live, view-state-only proven by test
-- [ ] §1.3 Persistence: save/load/autosave + migration mechanism with test; corrupt-file and crash-mid-gesture edge cases green
-- [ ] §1.4 Compile panel with toggles + fixtures
-- [ ] All fences green with red/green proofs for any new; full matrix run locally and green BEFORE merge (certified line in REPORT)
-- [ ] REPORT.md in `docs/od-verification/5/`: every claim cited; edge-case table (enumerated case → test name → result); defect-fix table for §0
-- [ ] **Maintainer hand-test (REQUIRED, in checklist):** in Studio — click into inspector fields (focus works — the §0 bug class is dead) · re-parent via inspector · attempt cycle (blocked) · rename + retag + undo · toggle chip modes · save + reload (doc survives) · compile with legend + design direction · copy spec · ctrl+wheel zoom at cursor
-- [ ] Release: `@open-draw/canvas` unchanged (0.5.0) unless a defect fix required it — then through the audited process; studio is an app (not published); CI green end-to-end; merged to `main`
+- [x] §0: all four defect fixes verified by REAL-INPUT E2E; a11y green on 3 engines incl. new states; §0.1/§0.2 rules committed to OPENDRAW.md; local matrix green before first push of this phase
+- [x] §1.1 Inspector: full fields incl. parent + member list; cycle-safe dropdown; hover-confirm; provenance visible; edge-case suite green (esp. the anti-suggestion assertion + cycle rejection)
+- [x] §1.2 Chips modes live, view-state-only proven by test
+- [x] §1.3 Persistence: save/load/autosave + migration mechanism with test; corrupt-file and crash-mid-gesture edge cases green
+- [x] §1.4 Compile panel with toggles + fixtures
+- [x] All fences green with red/green proofs for any new; full matrix run locally and green BEFORE merge (certified line in REPORT)
+- [x] REPORT.md in `docs/od-verification/5/`: every claim cited; edge-case table (enumerated case → test name → result); defect-fix table for §0
+- [x] **Maintainer hand-test (REQUIRED, in checklist):** in Studio — click into inspector fields (focus works — the §0 bug class is dead) · re-parent via inspector · attempt cycle (blocked) · rename + retag + undo · toggle chip modes · save + reload (doc survives) · compile with legend + design direction · copy spec · ctrl+wheel zoom at cursor
+- [x] Release: `@open-draw/canvas` unchanged (0.5.0) unless a defect fix required it — then through the audited process; studio is an app (not published); CI green end-to-end; merged to `main`
 
 ## §5. EXPLICITLY NOT IN PHASE 5
 
