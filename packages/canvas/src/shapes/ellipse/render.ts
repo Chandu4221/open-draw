@@ -12,9 +12,8 @@ export function renderEllipse(shape: ShapeRecord<EllipseProps>, _ctx: RenderCont
   ellipse.setAttribute('rx', String(rx));
   ellipse.setAttribute('ry', String(ry));
   ellipse.setAttribute('fill', shape.props.fill ?? 'transparent');
-  const stroke = shape.props.stroke ?? '#0f172a';
-  if (stroke) {
-    ellipse.setAttribute('stroke', stroke);
+  if (shape.props.stroke) {
+    ellipse.setAttribute('stroke', shape.props.stroke);
     ellipse.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 2));
   }
   return ellipse;
@@ -39,9 +38,6 @@ export function updateEllipse(
     ellipse.setAttribute('fill', shape.props.fill ?? 'transparent');
     if (shape.props.stroke) {
       ellipse.setAttribute('stroke', shape.props.stroke);
-      ellipse.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 2));
-    } else if (shape.props.stroke === undefined) {
-      ellipse.setAttribute('stroke', '#0f172a');
       ellipse.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 2));
     } else {
       ellipse.removeAttribute('stroke');
