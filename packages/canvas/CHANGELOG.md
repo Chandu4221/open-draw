@@ -2,6 +2,17 @@
 
 All notable changes to `@open-draw/canvas` are documented in this file in adherence to Semantic Versioning.
 
+## 0.5.1 (2026-10-24)
+
+Feature and cross-browser precision release: single-click text shape insertion, subpixel stroke-drift fixes under extreme zoom in Firefox, and CI/CD workflow hardening. Zero runtime dependencies preserved.
+
+### Features & Improvements
+- **Single-Click Text Shape Insertion:**
+  - Added `insertOnClick?: boolean` capability flag to `ShapeDefinition`.
+  - Configured `insertOnClick: true` on `textDefinition` so activating the text tool and clicking the canvas directly creates a text shape at cursor coordinates, auto-resolves parent hierarchy, and enters inline text editing mode immediately. All other shapes maintain strict drag-to-draw.
+- **Cross-Browser Bounding Box Drift Resolution:**
+  - In `rect` and `ellipse` renderers, apply SVG stroke attribute only when explicitly configured to eliminate subpixel bounding box drift under extreme ($5\times$) zoom in Firefox.
+
 ## 0.5.0 (2026-10-23)
 
 Feature & input repair release: native wheel zoom at cursor, scroll pan, horizontal pan, and middle-mouse grab-panning. Zero runtime dependencies preserved.
