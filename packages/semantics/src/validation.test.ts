@@ -111,4 +111,32 @@ describe('Semantic Type Vocabulary & validateSemantics', () => {
     const issues = validateSemantics(scene);
     expect(issues.some((i) => i.code === 'unknown-semantic-type')).toBe(true);
   });
+
+  it('warns when input is contained directly inside footer', () => {
+    const scene: Snapshot = {
+      version: 1,
+      shapes: [
+        {
+          id: 'foot-1',
+          type: 'frame',
+          x: 0,
+          y: 800,
+          meta: { semantic: { type: 'footer' } },
+          props: { width: 1440, height: 100 },
+        },
+        {
+          id: 'inp-1',
+          type: 'rect',
+          x: 50,
+          y: 820,
+          meta: { parent: 'foot-1', semantic: { type: 'input' } },
+          props: { width: 200, height: 40 },
+        },
+      ],
+    };
+
+    const issues = validateSemantics(scene);
+    expect(issues.some((i) => i.code === 'invalid-parent' && i.shapeId === 'inp-1')).toBe(true);
+  });
 });
+

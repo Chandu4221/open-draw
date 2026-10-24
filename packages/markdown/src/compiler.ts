@@ -1,6 +1,8 @@
 import type { ShapeRecord, Snapshot } from '@open-draw/schema';
-import { getPlatformProfile, getStyleProfile, SEMANTIC_TYPES } from '@open-draw/semantics';
+import { getPlatformProfile } from '@open-draw/semantics';
 import { renderResponsiveSection } from './responsive-section.js';
+import { renderDesignDirectionSection } from './design-direction-section.js';
+import { renderLegendSection } from './legend-section.js';
 
 export interface CompileOptions {
   readonly title?: string;
@@ -10,14 +12,7 @@ export interface CompileOptions {
   readonly directive?: 'strict-fidelity' | 'creative-allowed';
   readonly scope?: 'auto' | 'component' | 'page';
   readonly platform?: string;
-}
-
-function getShapeBounds(shape: ShapeRecord): { x: number; y: number; width: number; height: number } {
-  const x = Math.round(shape.x);
-  const y = Math.round(shape.y);
-  const width = Math.round(Number(shape.props['width']) || 0);
-  const height = Math.round(Number(shape.props['height']) || 0);
-  return { x, y, width, height };
+  readonly shapeIds?: readonly string[];
 }
 
 interface SemanticMeta {
@@ -40,11 +35,16 @@ function getSemanticMeta(shape: ShapeRecord): SemanticMeta {
  * Compiles an OpenDraw scene into a byte-stable, deterministic markdown specification (Format v1.1).
  */
 export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, options: CompileOptions = {}): string {
-  const shapes: readonly ShapeRecord[] = Array.isArray(scene)
+  const allShapes: readonly ShapeRecord[] = Array.isArray(scene)
     ? (scene as readonly ShapeRecord[])
     : scene && typeof scene === 'object' && Array.isArray((scene as Snapshot).shapes)
       ? (scene as Snapshot).shapes
       : [];
+
+  const shapeIdSet = options.shapeIds ? new Set(options.shapeIds) : null;
+  const shapes: readonly ShapeRecord[] = shapeIdSet
+    ? allShapes.filter((s) => shapeIdSet.has(s.id))
+    : allShapes;
 
   const title = options.title || 'OpenDraw Specification';
   const lines: string[] = [];
@@ -67,13 +67,19 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
   lines.push('');
 
   // Scope Declaration (Scope: component vs Scope: page)
-  const hasPageRoot = shapes.some(s => {
-    const meta = getSemanticMeta(s);
-    return meta.type === 'page' && !(s.meta?.parent || s.meta?.parentId);
-  });
-  const resolvedScope = options.scope && options.scope !== 'auto'
-    ? options.scope
-    : (hasPageRoot ? 'page' : 'component');
+  let resolvedScope = options.scope;
+  if (!resolvedScope || resolvedScope === 'auto') {
+    if (shapeIdSet) {
+      const containsPage = shapes.some((s) => getSemanticMeta(s).type === 'page');
+      resolvedScope = containsPage ? 'page' : 'component';
+    } else {
+      const hasPageRoot = shapes.some((s) => {
+        const meta = getSemanticMeta(s);
+        return meta.type === 'page' && !(s.meta?.parent || s.meta?.parentId);
+      });
+      resolvedScope = hasPageRoot ? 'page' : 'component';
+    }
+  }
 
   if (resolvedScope === 'page') {
     lines.push('> **Scope: page** — this scene contains a `page`-typed root; build a complete page.');
@@ -89,11 +95,11 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
   lines.push('');
 
   // Untagged Elements Warning per Phase 5 §6.1.5 (Q-008)
-  const untaggedShapes = shapes.filter(s => getSemanticMeta(s).isUntagged);
+  const untaggedShapes = shapes.filter((s) => getSemanticMeta(s).isUntagged);
   if (untaggedShapes.length > 0) {
     const untaggedList = [...untaggedShapes]
       .sort((a, b) => a.id.localeCompare(b.id))
-      .map(s => `f(${s.id})`)
+      .map((s) => `f(${s.id})`)
       .join(', ');
     lines.push(`> ⚠ **Untagged Elements:** Shapes ${untaggedList} have no semantic type. Assign semantic types in OpenDraw Studio before final handoff.`);
     lines.push('');
@@ -189,100 +195,14 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
 
   // Section 3: Design Direction (if requested)
   if (options.designDirection) {
-    lines.push('## Design Direction');
-    lines.push('');
-    lines.push(`- **Target Platform:** \`${platformKey}\``);
-    lines.push(`- **Visual Style:** \`${styleKey}\``);
-    lines.push('');
-
-    const style = getStyleProfile(styleKey);
-    if (style) {
-      if (style.notes) {
-        lines.push(`> **Style Guidance:** ${style.notes}`);
-        lines.push('');
-      }
-
-      lines.push('### Style Tokens');
-      lines.push('');
-      lines.push('| Category | Token | Value |');
-      lines.push('| :--- | :--- | :--- |');
-
-      if (style.palette) {
-        for (const [k, v] of Object.entries(style.palette).sort(([a], [b]) => a.localeCompare(b))) {
-          lines.push(`| Palette | \`${k}\` | \`${v}\` |`);
-        }
-      }
-
-      if (style.borders) {
-        lines.push(`| Borders | \`width\` | \`${style.borders.width}px\` |`);
-        lines.push(`| Borders | \`radius\` | \`${style.borders.radius}px\` |`);
-        lines.push(`| Borders | \`style\` | \`${style.borders.style}\` |`);
-      }
-
-      if (style.shadows) {
-        lines.push(`| Shadows | \`offset\` | \`${style.shadows.x}px ${style.shadows.y}px\` |`);
-        lines.push(`| Shadows | \`blur\` | \`${style.shadows.blur}px\` |`);
-        lines.push(`| Shadows | \`color\` | \`${style.shadows.color}\` |`);
-      }
-
-      if (style.typography) {
-        lines.push(`| Typography | \`headingFont\` | \`${style.typography.headingFont}\` |`);
-        lines.push(`| Typography | \`bodyFont\` | \`${style.typography.bodyFont}\` |`);
-        lines.push(`| Typography | \`baseSize\` | \`${style.typography.baseSize}px\` |`);
-      }
-      lines.push('');
-    }
-
-    const platform = getPlatformProfile(platformKey);
-    if (platform && platform.mappings) {
-      lines.push('### Platform Component Mappings');
-      lines.push('');
-
-      // Filter mappings strictly to semantic types present in scene per Phase 5 §6.1.1
-      const sceneSemanticTypes = new Set<string>();
-      for (const s of shapes) {
-        const { rawType } = getSemanticMeta(s);
-        if (rawType && platform.mappings[rawType]) {
-          sceneSemanticTypes.add(rawType);
-        }
-      }
-
-      if (sceneSemanticTypes.size > 0) {
-        lines.push('| Semantic Type | Platform Component | Container | Default Role | Notes |');
-        lines.push('| :--- | :--- | :--- | :--- | :--- |');
-        for (const typeId of [...sceneSemanticTypes].sort((a, b) => a.localeCompare(b))) {
-          const comp = platform.mappings[typeId];
-          if (!comp) continue;
-          const def = SEMANTIC_TYPES[typeId];
-          const container = comp.containerType ? `\`${comp.containerType}\`` : '—';
-          const notes = comp.notes ? comp.notes : '—';
-          lines.push(`| \`${typeId}\` | \`<${comp.componentName} />\` | ${container} | \`${def?.defaultRole || 'none'}\` | ${notes} |`);
-        }
-      } else {
-        lines.push('*No mapped semantic components present in scene.*');
-      }
-      lines.push('');
-    }
+    const dirLines = renderDesignDirectionSection(platformKey, styleKey, shapes);
+    for (const l of dirLines) lines.push(l);
   }
 
   // Section 4: Element Legend (Single canonical home for Bounds & Name per Phase 5 §6.1.2)
   if (options.legend && shapes.length > 0) {
-    lines.push('## Element Legend');
-    lines.push('');
-    lines.push('| ID | Type | Name | Parent | Bounds |');
-    lines.push('| :--- | :--- | :--- | :--- | :--- |');
-
-    const sortedById = [...shapes].sort((a, b) => a.id.localeCompare(b.id));
-    for (const s of sortedById) {
-      const { type, name, isUntagged } = getSemanticMeta(s);
-      const bounds = getShapeBounds(s);
-      const parentId = (s.meta?.parent ?? s.meta?.parentId) as string | undefined;
-      const parentRef = parentId ? `f(${parentId})` : '—';
-      const nameCell = name ? `\`${name}\`` : '—';
-      const typeCell = isUntagged ? `${s.type} *untagged*` : `\`${type}\``;
-      lines.push(`| f(${s.id}) | ${typeCell} | ${nameCell} | ${parentRef} | ${bounds.width}×${bounds.height} at ${bounds.x},${bounds.y} |`);
-    }
-    lines.push('');
+    const legLines = renderLegendSection(shapes);
+    for (const l of legLines) lines.push(l);
   }
 
   return lines.join('\n');

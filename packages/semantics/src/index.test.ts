@@ -63,4 +63,20 @@ describe('semantics smoke & unit tests', () => {
     expect(flutter?.mappings['row']?.componentName).toBe('Row');
     expect(flutter?.mappings['row']?.containerType).toBe('row');
   });
+
+  it('registers all 25 canonical semantic types with mappings across all 3 platforms', () => {
+    const allTypes = listSemanticTypes();
+    expect(allTypes.length).toBe(25);
+
+    const web = getPlatformProfile('web');
+    const android = getPlatformProfile('android');
+    const flutter = getPlatformProfile('flutter');
+
+    for (const t of allTypes) {
+      expect(web?.mappings[t.id], `web mapping missing for ${t.id}`).toBeDefined();
+      expect(android?.mappings[t.id], `android mapping missing for ${t.id}`).toBeDefined();
+      expect(flutter?.mappings[t.id], `flutter mapping missing for ${t.id}`).toBeDefined();
+    }
+  });
 });
+

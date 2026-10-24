@@ -145,6 +145,45 @@ Target Branch: `build/phase-5` $\longrightarrow$ merged to `main` upon exit.
 
 ---
 
+## Phase 5 §7 Amendment — Content Depth + Repair Batch (Completed)
+Target Branch: `build/phase-5.7` $\longrightarrow$ merged to `main` upon exit.
+- [x] **§7.1 Semantic Vocabulary Research Pass**:
+  - [x] Cross-framework survey (Tailwind, MUI, Chakra, Ant Design, HTML5) documented in `docs/od-spike-notes.md` (`SPK-005`).
+  - [x] Added 14 convergent semantic types (`footer`, `input`, `select`, `checkbox`, `toggle`, `badge`, `avatar`, `list`, `table`, `tabs`, `divider`, `modal`, `tooltip`, `alert`) to `SEMANTIC_TYPES`.
+  - [x] Added $3\times$ platform mappings (Web semantic HTML, Android Compose, Flutter Material 3).
+  - [x] Smart default rules (`thin-rect-divider`, `bottom-rect-footer`).
+  - [x] Kitchen-sink fixture (`kitchen-sink-v1.1.md`) verified across all 3 platforms.
+- [x] **§7.2 Selection-Scoped Compile**:
+  - [x] `CompileOptions.shapeIds` compiling named sub-scene only.
+  - [x] Unselected children omitted without warning (`Q-012`).
+  - [x] Sub-tree shapes with unselected parents root cleanly in structure.
+  - [x] Scope auto-deduction: `page` if contains `page`-typed shape, else `component` (`Q-013`).
+  - [x] Studio modal "Selection only" toggle with selection sensitivity.
+  - [x] Byte-stable golden fixture (`selection-compile-v1.1.md`).
+- [x] **§7.3 Structure Tree Tab**:
+  - [x] Stored `meta.parent` hierarchy rendered in Inspector "Structure" tab with `#id`, names, and untagged badges.
+  - [x] Bidirectional sync: tree click $\to$ canvas select + camera smooth pan; canvas select $\to$ tree node highlight.
+  - [x] Context menu: "Reveal on canvas" and "Copy ID".
+- [x] **§7.4 Responsive Readout in Inspector**:
+  - [x] Live `derive()` projection for container shapes only (`Q-015`).
+  - [x] Empty container notice: "no children — nothing to reflow".
+  - [x] Hidden for leaf shapes.
+- [x] **§7.5 Grow-On-Assign Repair**:
+  - [x] Auto-grow parent frame bounds to union bounds on explicit assign with ancestor frame cascade in single atomic store transaction (`Q-014`).
+  - [x] Reversible: single undo reverts both growth and parent assignment.
+  - [x] Moving child within existing parent does not grow frame.
+  - [x] Inspector parent select hover-confirm highlight (`.od-parent-hover-highlight`).
+- [x] **§7.6 Scope Pass-Through Verification**:
+  - [x] Studio compile modal preview confirms Scope block in auto mode and manual selection.
+- [x] **§7.7 Housekeeping & Gates**:
+  - [x] All 8 architectural fences pass (`npm run verify`).
+  - [x] 47 test files / 258 unit tests passing (100%).
+  - [x] 26 Playwright E2E spec files / 106 tests passing in Chromium, 34/34 passing in Firefox.
+  - [x] All source files strictly $\le 300$ lines. Zero runtime dependencies.
+  - [x] `docs/od-questions.md` (`Q-012`, `Q-013`, `Q-014`, `Q-015`), `docs/od-spike-notes.md` (`SPK-005`), `docs/od-verification/5/REPORT.md` Section 7 updated.
+
+---
+
 ## Active / Upcoming Phase
 - **Phase 6**: Suite Publication & Integration.
 

@@ -120,4 +120,40 @@ export const INFERENCE_RULES: readonly InferenceRule[] = [
       return shape.type === 'ink' || shape.type === 'highlighter';
     },
   },
+
+  // 6. Thin rect => divider (strong)
+  {
+    id: 'thin-rect-divider',
+    targetType: 'divider',
+    confidence: 0.90,
+    tier: 'strong',
+    explanation: 'Thin rectangle (h <= 3 or w <= 3) treated as a visual divider/separator',
+    evaluate: (shape) => {
+      if (shape.type !== 'rect') return false;
+      const w = getWidth(shape);
+      const h = getHeight(shape);
+      return (h > 0 && h <= 3 && w >= 20) || (w > 0 && w <= 3 && h >= 20);
+    },
+  },
+
+  // 7. Full-width rect at bottom of page => footer (strong)
+  {
+    id: 'bottom-rect-footer',
+    targetType: 'footer',
+    confidence: 0.88,
+    tier: 'strong',
+    explanation: 'Rectangle spanning >= 75% of page width at the bottom of a page container',
+    evaluate: (shape, _scene, parent) => {
+      if (shape.type !== 'rect' || !parent) return false;
+      const parentSem = (parent.meta.semantic ?? {}) as Record<string, unknown>;
+      if (parentSem.type !== 'page' && parent.type !== 'frame') return false;
+      const parentW = getWidth(parent);
+      const parentH = getHeight(parent);
+      const shapeW = getWidth(shape);
+      const shapeH = getHeight(shape);
+      const relY = shape.y - parent.y;
+      return parentW > 0 && parentH > 0 && shapeW >= parentW * 0.75 && (relY + shapeH) >= parentH * 0.75;
+    },
+  },
 ];
+

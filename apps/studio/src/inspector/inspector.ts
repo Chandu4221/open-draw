@@ -4,6 +4,8 @@ import { SingleFieldsController } from './single-fields.js';
 import { ParentSelectController } from './parent-select.js';
 import { MemberListController } from './member-list.js';
 import { DocSettingsController, type DocSettingsState } from './doc-settings.js';
+import { ResponsiveReadoutController } from './responsive-readout.js';
+import { StructureTreeTab } from './tree-tab.js';
 
 export class StudioInspector {
   private editor: CanvasEditor;
@@ -11,16 +13,23 @@ export class StudioInspector {
   private headerEl: HTMLElement;
   private headerTitleEl: HTMLElement;
   private idBadgeEl: HTMLElement;
+  private tabBarEl: HTMLElement;
+  private propsTabBtn: HTMLButtonElement;
+  private treeTabBtn: HTMLButtonElement;
+  private propsViewContainer: HTMLElement;
   private emptyStateEl: HTMLElement;
   private singleContainer: HTMLElement;
   private singleFields: SingleFieldsController;
   private parentGroup: HTMLElement;
   private parentController: ParentSelectController;
   private memberController: MemberListController;
+  private responsiveReadout: ResponsiveReadoutController;
   private multiGroup: HTMLElement;
   private multiCountEl: HTMLElement;
   private multiTypeSelect: HTMLSelectElement;
   readonly docSettings: DocSettingsController;
+  readonly treeTab: StructureTreeTab;
+  private activeTab: 'props' | 'tree' = 'props';
 
   constructor(
     editor: CanvasEditor,
@@ -34,26 +43,15 @@ export class StudioInspector {
     this.rootEl.className = 'od-studio-inspector';
     this.rootEl.setAttribute('role', 'region');
     this.rootEl.setAttribute('aria-label', 'Shape Inspector');
-    this.rootEl.style.cssText = `
-      position: fixed; top: 72px; right: 20px; width: 260px;
-      max-height: calc(100vh - 100px); overflow-y: auto;
-      background: #ffffff;
-      border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 55;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 13px; color: #0f172a;
-    `;
-
-    // Defense-in-depth: stop bubbling to canvas container or document
-    this.rootEl.addEventListener('pointerdown', (e) => e.stopPropagation());
-    this.rootEl.addEventListener('mousedown', (e) => e.stopPropagation());
-    this.rootEl.addEventListener('wheel', (e) => e.stopPropagation());
-    this.rootEl.addEventListener('keydown', (e) => e.stopPropagation());
+    this.rootEl.style.cssText = 'position: fixed; top: 72px; right: 20px; width: 260px; max-height: calc(100vh - 100px); overflow-y: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 55; font-family: Inter, sans-serif; font-size: 13px; color: #0f172a;';
+    for (const evt of ['pointerdown', 'mousedown', 'wheel', 'keydown']) {
+      this.rootEl.addEventListener(evt, (e) => e.stopPropagation());
+    }
 
     // Permanent Inspector Header
     this.headerEl = document.createElement('div');
     this.headerEl.id = 'inspector-header';
-    this.headerEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;';
+    this.headerEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;';
     this.headerTitleEl = document.createElement('span');
     this.headerTitleEl.textContent = 'INSPECTOR PANEL';
     this.headerTitleEl.style.cssText = 'font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;';
@@ -68,16 +66,37 @@ export class StudioInspector {
     this.headerEl.appendChild(this.headerTitleEl);
     this.headerEl.appendChild(this.idBadgeEl);
 
-    // Document Settings Controller (at top)
+    // Tab Bar: Properties vs Structure (§7.3)
+    this.tabBarEl = document.createElement('div');
+    this.tabBarEl.id = 'inspector-tab-bar';
+    this.tabBarEl.style.cssText = 'display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px;';
+
+    this.propsTabBtn = document.createElement('button');
+    this.propsTabBtn.id = 'inspector-tab-props';
+    this.propsTabBtn.textContent = 'Properties';
+    this.propsTabBtn.style.cssText = 'flex: 1; padding: 5px 8px; font-size: 11px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; background: #f1f5f9; color: #0f172a;';
+    this.propsTabBtn.addEventListener('click', () => this.switchTab('props'));
+
+    this.treeTabBtn = document.createElement('button');
+    this.treeTabBtn.id = 'inspector-tab-tree';
+    this.treeTabBtn.textContent = 'Structure';
+    this.treeTabBtn.style.cssText = 'flex: 1; padding: 5px 8px; font-size: 11px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; background: transparent; color: #64748b;';
+    this.treeTabBtn.addEventListener('click', () => this.switchTab('tree'));
+
+    this.tabBarEl.appendChild(this.propsTabBtn);
+    this.tabBarEl.appendChild(this.treeTabBtn);
+
+    // Props View Container
+    this.propsViewContainer = document.createElement('div');
+    this.propsViewContainer.id = 'inspector-props-view';
+
     this.docSettings = new DocSettingsController(onDocSettingsChange);
 
-    // Empty state note
     this.emptyStateEl = document.createElement('div');
     this.emptyStateEl.id = 'inspector-empty-state';
     this.emptyStateEl.textContent = 'No shape selected';
     this.emptyStateEl.style.cssText = 'font-size: 11px; color: #94a3b8; font-style: italic; text-align: center; padding: 10px 0;';
 
-    // Single item container
     this.singleContainer = document.createElement('div');
     this.singleContainer.id = 'inspector-single-group';
     this.singleFields = new SingleFieldsController(editor, this.idBadgeEl);
@@ -98,6 +117,10 @@ export class StudioInspector {
     // Member list
     this.memberController = new MemberListController(editor);
     this.singleContainer.appendChild(this.memberController.containerEl);
+
+    // Responsive Readout (§7.4)
+    this.responsiveReadout = new ResponsiveReadoutController(editor);
+    this.singleContainer.appendChild(this.responsiveReadout.containerEl);
 
     // Multi-Select Group
     this.multiGroup = document.createElement('div');
@@ -139,18 +162,44 @@ export class StudioInspector {
     this.multiGroup.appendChild(batchTypeGroup);
     this.multiGroup.appendChild(parentDisabledNote);
 
-    // Root DOM mounting order: Header -> Doc Settings -> Empty State / Single / Multi
+    this.propsViewContainer.appendChild(this.docSettings.element);
+    this.propsViewContainer.appendChild(this.emptyStateEl);
+    this.propsViewContainer.appendChild(this.singleContainer);
+    this.propsViewContainer.appendChild(this.multiGroup);
+
+    // Structure Tree Tab (§7.3)
+    this.treeTab = new StructureTreeTab(editor);
+
+    // Root DOM mounting order
     this.rootEl.appendChild(this.headerEl);
-    this.rootEl.appendChild(this.docSettings.element);
-    this.rootEl.appendChild(this.emptyStateEl);
-    this.rootEl.appendChild(this.singleContainer);
-    this.rootEl.appendChild(this.multiGroup);
+    this.rootEl.appendChild(this.tabBarEl);
+    this.rootEl.appendChild(this.propsViewContainer);
+    this.rootEl.appendChild(this.treeTab.element);
     mountTarget.appendChild(this.rootEl);
 
     // Subscriptions
     this.editor.selectionManager.subscribe(() => this.update());
     this.editor.store.listen(() => this.update());
     this.update();
+  }
+
+  switchTab(tab: 'props' | 'tree'): void {
+    this.activeTab = tab;
+    if (tab === 'props') {
+      this.propsTabBtn.style.background = '#f1f5f9';
+      this.propsTabBtn.style.color = '#0f172a';
+      this.treeTabBtn.style.background = 'transparent';
+      this.treeTabBtn.style.color = '#64748b';
+      this.propsViewContainer.style.display = 'block';
+      this.treeTab.hide();
+    } else {
+      this.treeTabBtn.style.background = '#f1f5f9';
+      this.treeTabBtn.style.color = '#0f172a';
+      this.propsTabBtn.style.background = 'transparent';
+      this.propsTabBtn.style.color = '#64748b';
+      this.propsViewContainer.style.display = 'none';
+      this.treeTab.show();
+    }
   }
 
   update(): void {
@@ -164,6 +213,7 @@ export class StudioInspector {
       this.emptyStateEl.style.display = 'block';
       this.idBadgeEl.style.display = 'none';
       this.singleFields.clear();
+      this.responsiveReadout.update(null);
       return;
     }
 
@@ -176,6 +226,7 @@ export class StudioInspector {
       this.singleFields.clear();
       this.multiCountEl.textContent = `${sel.length} shapes selected`;
       this.multiTypeSelect.value = '';
+      this.responsiveReadout.update(null);
       return;
     }
 
@@ -191,12 +242,14 @@ export class StudioInspector {
       this.emptyStateEl.style.display = 'block';
       this.idBadgeEl.style.display = 'none';
       this.singleFields.clear();
+      this.responsiveReadout.update(null);
       return;
     }
 
     this.singleFields.update(shape);
     this.parentController.update(shapeId);
     this.memberController.update(shape);
+    this.responsiveReadout.update(shape, this.docSettings.getState().platform);
   }
 
   private onBatchTypeChange(): void {
@@ -225,6 +278,7 @@ export class StudioInspector {
 
   destroy(): void {
     this.parentController.destroy();
+    this.treeTab.destroy();
     this.rootEl.remove();
   }
 }

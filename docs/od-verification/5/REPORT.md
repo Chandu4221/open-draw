@@ -136,3 +136,55 @@ The maintainer should verify the live Studio interface locally:
    - Confirm canvas resets upon clicking "Clear Canvas" and autosave storage resets.
 8. **Compile Modal:**
    - Click "Compile". Confirm markdown output includes the Target Platform (`flutter`) and Design Direction.
+
+---
+
+## 7. Phase 5 §7 Amendment: Content Depth + Repair Batch Verification
+
+- **Originating Context:** [`project-context/opendraw-phase5-§7-done.md`](../../project-context/opendraw-phase5-§7-done.md)
+- **Maintainer Findings Addressed:**
+  1. *Semantic Vocabulary Gap:* Layout-only primitives lacked standard UI component types. Fixed via cross-framework survey (SPK-005) adding 14 convergent semantic types (`footer`, `input`, `select`, `checkbox`, `toggle`, `badge`, `avatar`, `list`, `table`, `tabs`, `divider`, `modal`, `tooltip`, `alert`) with $3\times$ platform mappings (Web, Android Compose, Flutter Material 3), smart defaults (`thin-rect-divider`, `bottom-rect-footer`), and kitchen-sink fixture.
+  2. *Selection-Scoped Compilation:* Compiling large multi-artboard canvas produced monolith markdown. Fixed via `CompileOptions.shapeIds` enabling sub-scene compilation, unselected children omission (Q-012), sub-tree rooting, and selection scope deduction (Q-013).
+  3. *Structure Visibility:* Stored parenting hierarchy was invisible in Studio. Fixed via Inspector "Structure" tree tab with untagged badges, bidirectional selection/pan sync, and context menu ("Reveal on canvas", "Copy ID").
+  4. *Responsive Inspector Feedback:* Layout derivation was compile-only. Fixed via Inspector live `derive()` Responsive Readout for container shapes (Q-015).
+  5. *Assigned Child Clipped Bug:* Assigning out-of-bounds child clipped child invisible. Fixed via Grow-On-Assign repair auto-growing parent frame bounds to union bounds (+ cascading up ancestor frames) in a single atomic store transaction (Q-014), plus hover-confirm frame highlight (`.od-parent-hover-highlight`).
+
+### Verification & Test Results
+- **Unit Tests (`npm test`):** 47 test files / 258 unit tests passing (100%).
+- **Playwright E2E Matrix:**
+  - `grow-on-assign.spec.ts`: 3 tests passing in Chromium and Firefox.
+  - `structure-tree.spec.ts`: 3 tests passing in Chromium and Firefox.
+  - `compile-modal.spec.ts`: 11 tests passing in Chromium and Firefox (including Selection only toggle and Scope preview).
+  - Full Chromium suite: 26 spec files / 106 tests passing (100%).
+- **All 8 Architectural Fences (`npm run verify`):**
+  - `check:boundaries`: PASS (strict one-way hierarchy maintained).
+  - `check:deps`: PASS (zero runtime dependencies across all workspaces).
+  - `check:bitmap`: PASS (zero `getContext` in `packages/canvas/src`).
+  - `check:zoom`: PASS (zero zoom math outside `camera.ts`).
+  - `check:shapes`: PASS (zero shape-type branching outside shape modules; capability interfaces used).
+  - `check:filesize`: PASS (all source files $\le 300$ lines).
+  - `check:links`: PASS (zero absolute `file://` links in docs and root markdown).
+  - `check:public-api`: PASS (matches `docs/api-0.1.0.snapshot.json` exactly; `@open-draw/canvas@0.5.0` public API frozen).
+
+### Maintainer Hand-Test Checklist for §7
+1. **Grow-on-Assign:**
+   - Create a Frame at (100, 100, 200x200) and a Rect at (250, 250, 100x100).
+   - In Inspector, hover the Parent Frame option: confirm the frame glows with outline (`.od-parent-hover-highlight`).
+   - Select the Frame as Parent: confirm the Frame auto-grows to 250x250 (union bounds) and child remains fully visible.
+   - Press `Ctrl+Z` (or click Undo): confirm Frame restores to 200x200 AND child's parent is cleared in a single undo step.
+2. **Structure Tree Tab:**
+   - Click the "Structure" tab in Inspector. Confirm hierarchy displays with `#id`, names, and untagged badges.
+   - Click a node in the tree: confirm canvas selects the shape and smoothly pans camera to center it.
+   - Click a shape on the canvas: confirm the tree node highlights and scrolls into view.
+   - Right-click a tree node: confirm context menu offers "Reveal on canvas" and "Copy ID".
+3. **Responsive Readout:**
+   - Select a container shape (e.g. Card, Section, Frame). Confirm the Inspector shows live responsive behavior for configured breakpoints (e.g. "Mobile (< 768px): stacks vertically").
+   - Select an empty container: confirm readout displays "no children — nothing to reflow".
+   - Select a leaf shape (e.g. Button, Text): confirm responsive readout is hidden.
+4. **Selection-Scoped Compile:**
+   - Select 1 shape on canvas and click "Compile".
+   - Toggle "Selection only": confirm the modal preview updates to include only the selected shape and Scope reflects `component`.
+   - Select multiple shapes across frames: confirm unselected shapes are omitted without warnings and cross-frame siblings root cleanly.
+   - Open compile modal with no selection: confirm "Selection only" is disabled with informative tooltip.
+5. **Kitchen-Sink Fixture:**
+   - Run `npm test packages/markdown`: confirm `kitchen-sink-v1.1.md` and `selection-compile-v1.1.md` pass byte-stable assertions across all 3 platforms (Web, Android Compose, Flutter M3).

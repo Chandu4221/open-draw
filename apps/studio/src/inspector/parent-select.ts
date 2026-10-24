@@ -1,5 +1,6 @@
 import type { CanvasEditor } from '@open-draw/canvas';
 import type { ShapeRecord } from '@open-draw/schema';
+import { assignParentWithGrowth } from './grow-on-assign.js';
 
 /**
  * Traverses the scene graph to find all descendant IDs of a given shape.
@@ -128,15 +129,7 @@ export class ParentSelectController {
       }
     }
 
-    this.editor.store.transact(() => {
-      this.editor.store.updateShape(this.activeShapeId!, {
-        meta: {
-          ...shape.meta,
-          parent: nextParentId || undefined,
-          parentId: nextParentId || undefined,
-        },
-      });
-    });
+    assignParentWithGrowth(this.editor, this.activeShapeId, nextParentId);
   }
 
   private onHoverOption(): void {

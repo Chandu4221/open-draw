@@ -300,6 +300,55 @@ test.describe('Phase 5 §0.4: Compile Modal Real-Input & Edge Cases Suite', () =
 
     await page.evaluate(() => (window as any).__od_debug__.compileModal.close());
   });
+
+  test('selection only toggle compiles only selected shapes and reflects in preview', async ({ page }) => {
+    const { shape1Id, shape2Id } = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const s1 = editor.createShape({
+        type: 'rect',
+        x: 0,
+        y: 0,
+        props: { width: 200, height: 100 },
+        meta: { semantic: { type: 'header', name: 'Header Shape' } },
+      });
+      const s2 = editor.createShape({
+        type: 'rect',
+        x: 0,
+        y: 200,
+        props: { width: 200, height: 100 },
+        meta: { semantic: { type: 'card', name: 'Card Shape' } },
+      });
+      // Select only s1
+      editor.selectShape(s1.id);
+      (window as any).__od_debug__.compileModal.open();
+      return { shape1Id: s1.id, shape2Id: s2.id };
+    });
+
+    await expect(page.locator('#od-compile-modal')).toBeVisible();
+
+    // Checkbox is enabled because 1 shape is selected
+    const checkbox = page.locator('#od-compile-selection-only');
+    await expect(checkbox).toBeEnabled();
+
+    // Initially unchecked: preview contains both shapes
+    let text = await page.inputValue('#od-compile-output');
+    expect(text).toContain('Header Shape');
+    expect(text).toContain('Card Shape');
+
+    // Check Selection only
+    await checkbox.check();
+    text = await page.inputValue('#od-compile-output');
+    expect(text).toContain('Header Shape');
+    expect(text).not.toContain('Card Shape');
+
+    // Uncheck Selection only: both shapes appear again
+    await checkbox.uncheck();
+    text = await page.inputValue('#od-compile-output');
+    expect(text).toContain('Header Shape');
+    expect(text).toContain('Card Shape');
+
+    await page.evaluate(() => (window as any).__od_debug__.compileModal.close());
+  });
 });
 
 

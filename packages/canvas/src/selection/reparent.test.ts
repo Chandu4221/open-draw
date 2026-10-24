@@ -151,4 +151,48 @@ describe('handleGestureReparent', () => {
     expect(current?.meta['parent']).toBe(smallFrame.id);
     expect(largeFrame.id).not.toBe(smallFrame.id);
   });
+
+  it('auto-grows frame bounds when dropped partially outside and reverts both on undo (§7.5)', () => {
+    const { store, registry, camera } = setup();
+
+    const frame = store.createShape({
+      id: 'f1',
+      type: 'frame',
+      x: 0,
+      y: 0,
+      meta: {},
+      props: { width: 200, height: 200 },
+    });
+
+    const rect = store.createShape({
+      id: 'r1',
+      type: 'rect',
+      x: 150,
+      y: 150,
+      meta: {},
+      props: { width: 100, height: 100 },
+    });
+
+    handleGestureReparent(rect.id, store, registry, camera);
+
+    const updatedRect = store.getShape(rect.id);
+    expect(updatedRect?.meta['parent']).toBe(frame.id);
+
+    const updatedFrame = store.getShape(frame.id);
+    expect(updatedFrame?.x).toBe(0);
+    expect(updatedFrame?.y).toBe(0);
+    expect(updatedFrame?.props['width']).toBe(250);
+    expect(updatedFrame?.props['height']).toBe(250);
+
+    // Single undo reverts BOTH the growth and reparenting
+    store.undo();
+
+    const revertedRect = store.getShape(rect.id);
+    expect(revertedRect?.meta['parent']).toBeUndefined();
+
+    const revertedFrame = store.getShape(frame.id);
+    expect(revertedFrame?.props['width']).toBe(200);
+    expect(revertedFrame?.props['height']).toBe(200);
+  });
 });
+
