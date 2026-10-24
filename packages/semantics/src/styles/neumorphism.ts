@@ -10,6 +10,7 @@ export const neumorphismStyle: StyleTokens = Object.freeze({
   label: 'Neumorphism',
   description: 'Soft embossed UI, dual cast shadows, low-contrast monochrome surfaces, 16-24px radii',
   notes: 'Soft embossed UI with dual light and dark cast shadows on low-contrast surfaces.',
+  platforms: Object.freeze(['web', 'flutter', 'android'] as const),
   palette: Object.freeze({
     background: '#e0e5ec',
     surface: '#e0e5ec',

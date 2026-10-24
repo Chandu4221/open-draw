@@ -53,6 +53,7 @@ export class DocSettingsController {
     this.platformSelect.value = this.state.platform;
     this.platformSelect.addEventListener('change', () => {
       this.state.platform = this.platformSelect.value;
+      this.populateStyles(this.state.platform);
       this.onChangeCallback?.(this.state);
     });
     platformGroup.appendChild(platformLabel);
@@ -72,13 +73,6 @@ export class DocSettingsController {
     this.styleSelect.setAttribute('aria-label', 'Document Style');
     this.styleSelect.style.cssText = 'width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; background: #ffffff; cursor: pointer;';
 
-    for (const s of listStyleProfiles()) {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = `${s.label} (${s.id})`;
-      this.styleSelect.appendChild(opt);
-    }
-    this.styleSelect.value = this.state.style;
     this.styleSelect.addEventListener('change', () => {
       this.state.style = this.styleSelect.value;
       this.updateSwatches();
@@ -93,6 +87,28 @@ export class DocSettingsController {
     this.swatchesContainer.id = 'inspector-style-swatches';
     this.swatchesContainer.style.cssText = 'display: flex; gap: 6px; margin-top: 6px; align-items: center;';
     this.element.appendChild(this.swatchesContainer);
+
+    this.populateStyles(this.state.platform);
+  }
+
+  populateStyles(platformId: string): void {
+    const available = listStyleProfiles(platformId);
+    this.styleSelect.innerHTML = '';
+    for (const s of available) {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.label} (${s.id})`;
+      this.styleSelect.appendChild(opt);
+    }
+
+    const isAvailable = available.some((s) => s.id === this.state.style);
+    if (!isAvailable) {
+      const fallback = platformId === 'android' || platformId === 'flutter'
+        ? (available.find((s) => s.id === 'material3')?.id ?? available[0]?.id ?? 'material3')
+        : (available[0]?.id ?? 'neubrutalism');
+      this.state.style = fallback;
+    }
+    this.styleSelect.value = this.state.style;
     this.updateSwatches();
   }
 
@@ -101,9 +117,14 @@ export class DocSettingsController {
   }
 
   setState(state: Partial<DocSettingsState>): void {
-    if (state.platform) {
+    let platformChanged = false;
+    if (state.platform && state.platform !== this.state.platform) {
       this.state.platform = state.platform;
       this.platformSelect.value = state.platform;
+      platformChanged = true;
+    }
+    if (platformChanged) {
+      this.populateStyles(this.state.platform);
     }
     if (state.style) {
       this.state.style = state.style;
@@ -113,6 +134,7 @@ export class DocSettingsController {
   }
 
   private updateSwatches(): void {
+    if (!this.swatchesContainer) return;
     this.swatchesContainer.innerHTML = '';
     const profile = getStyleProfile(this.state.style);
     if (!profile) return;

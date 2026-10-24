@@ -240,4 +240,51 @@ test.describe('Phase 5 §1: Studio Inspector & Real App Suite', () => {
     const countAfter = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes().length);
     expect(countAfter).toBe(0);
   });
+
+  test('dynamically filters design styles when changing target platform', async ({ page }) => {
+    await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      editor.createShape({
+        type: 'rect',
+        x: 100,
+        y: 100,
+        props: { width: 100, height: 100 },
+        meta: {},
+      });
+    });
+
+    const platformSelect = page.locator('#inspector-platform-select');
+    const styleSelect = page.locator('#inspector-style-select');
+
+    await expect(platformSelect).toBeVisible();
+    await expect(styleSelect).toBeVisible();
+
+    // Web platform default: all 19 styles available
+    let optionCount = await styleSelect.locator('option').count();
+    expect(optionCount).toBe(19);
+
+    // Switch to Android: filters to 9 styles
+    await platformSelect.selectOption('android');
+    optionCount = await styleSelect.locator('option').count();
+    expect(optionCount).toBe(9);
+    await expect(styleSelect.locator('option[value="material3"]')).toBeAttached();
+    await expect(styleSelect.locator('option[value="win95-retro"]')).not.toBeAttached();
+
+    // Switch to Flutter: filters to 10 styles (including apple-cupertino)
+    await platformSelect.selectOption('flutter');
+    optionCount = await styleSelect.locator('option').count();
+    expect(optionCount).toBe(10);
+    await expect(styleSelect.locator('option[value="apple-cupertino"]')).toBeAttached();
+    await expect(styleSelect.locator('option[value="bento-grid"]')).not.toBeAttached();
+
+    // Switch to Web, select Web-only style win95-retro, then switch to Android
+    await platformSelect.selectOption('web');
+    await styleSelect.selectOption('win95-retro');
+    await expect(styleSelect).toHaveValue('win95-retro');
+
+    // Switch to Android -> auto fallbacks to material3
+    await platformSelect.selectOption('android');
+    await expect(styleSelect).toHaveValue('material3');
+  });
 });
+

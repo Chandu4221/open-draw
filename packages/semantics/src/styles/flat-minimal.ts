@@ -10,6 +10,7 @@ export const flatMinimalStyle: StyleTokens = Object.freeze({
   label: 'Flat Minimal',
   description: 'Neutral grayscale, single accent, 0-4px radii, zero shadows, clean typography',
   notes: 'Clean typography-first styling with high whitespace ratio and zero decorative elevation.',
+  platforms: Object.freeze(['web', 'android', 'flutter'] as const),
   palette: Object.freeze({
     background: '#ffffff',
     surface: '#f9fafb',

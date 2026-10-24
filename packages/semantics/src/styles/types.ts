@@ -3,6 +3,7 @@ export interface StyleTokens {
   readonly label: string;
   readonly description: string;
   readonly notes?: string;
+  readonly platforms?: readonly ('web' | 'android' | 'flutter' | string)[];
   readonly palette: {
     readonly background: string;
     readonly surface: string;

@@ -10,6 +10,7 @@ export const glassmorphismStyle: StyleTokens = Object.freeze({
   label: 'Glassmorphism',
   description: 'Translucent surfaces, backdrop blur, soft ambient shadows, thin specular borders',
   notes: 'Translucent surfaces with backdrop blur; maps to Web backdrop-filter, Android RenderEffect, Flutter BackdropFilter.',
+  platforms: Object.freeze(['web', 'flutter', 'android'] as const),
   palette: Object.freeze({
     background: '#0f172a',
     surface: 'rgba(255, 255, 255, 0.12)',

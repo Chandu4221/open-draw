@@ -9,6 +9,7 @@ export const neubrutalismStyle: StyleTokens = Object.freeze({
   id: 'neubrutalism',
   label: 'Neubrutalism',
   description: 'High-contrast black borders, hard drop shadows, zero radii, vibrant accents',
+  platforms: Object.freeze(['web', 'android', 'flutter'] as const),
   palette: Object.freeze({
     background: '#fffbeb',
     surface: '#ffffff',

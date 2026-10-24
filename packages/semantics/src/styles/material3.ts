@@ -10,6 +10,7 @@ export const material3Style: StyleTokens = Object.freeze({
   label: 'Material 3',
   description: 'Tonal elevation, dynamic tonal palette, rounded radii, Material Design 3 tokens',
   notes: 'M3 themes map via Material Theme Builder; Compose MaterialTheme, Flutter ThemeData, Web material-web.',
+  platforms: Object.freeze(['android', 'flutter', 'web'] as const),
   palette: Object.freeze({
     background: '#fef7ff',
     surface: '#f3edf7',
