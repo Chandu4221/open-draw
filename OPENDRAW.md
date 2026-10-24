@@ -67,6 +67,9 @@ All consequences flow from this:
 - **Small commits:** one unit each; `tsc` + tests green before every commit. TS strict; no `any`, no `@ts-ignore`; no file > 500 lines, no class > 300.
 - **E2E gates every phase.** A phase exits only when: all tests green · E2E green · walkthrough screenshots in `docs/od-verification/<phase>/` · REPORT.md citing test paths for every claim (one uncited claim = redo) · CI green.
 - **The maintainer's hand test is the final gate** of app-level milestones: they draw, tag, drag, zoom — unassisted — and the result must work.
+- **Real-Input Rule (the "third-strike" rule, permanent):** Every user-facing interaction's happy path gets at least ONE E2E test using real Playwright input (`page.click`, `page.fill`, `page.selectOption`, `page.press`, `keyboard.*`) — **never** `page.evaluate`-dispatched synthetic events. Synthetic dispatch remains legitimate ONLY for engine-level unit checks (store ops, camera math) where no user path exists.
+- **CI-Green-Before-Push Rule (permanent):** Before ANY push to any branch, the agent runs locally the FULL verification stack: `npm run verify` (all fences) + the complete Playwright matrix `--project=chromium --project=firefox --project=webkit` + typecheck + unit tests. A push that fails CI is a PROCESS FAILURE and must be recorded in the questions log.
+- **Strict Edge-Case Enumeration:** For every feature, edge cases must be enumerated explicitly; each edge case gets its own assertion or test.
 - **Question-first culture:** when blocked, ask. The questions doc is a feature, not a failure.
 
 ## 6. BUILD ORDER (strict — no phase overlap)
