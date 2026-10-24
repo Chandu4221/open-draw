@@ -13,8 +13,8 @@ export const rectDefinition: ShapeDefinition<RectProps> = {
     return {
       width: 100,
       height: 100,
-      fill: '#3b82f6',
-      stroke: '#1d4ed8',
+      fill: 'transparent',
+      stroke: '#0f172a',
       strokeWidth: 2,
       rx: 0,
     };

@@ -10,7 +10,7 @@ export function initPopups(
   editor: CanvasEditor,
   onColorChange: (color: string) => void
 ): PopupController {
-  let currentColor = '#3b82f6';
+  let currentColor = 'transparent';
   let activeShape = 'rect';
 
   const popupShapes = document.getElementById('popup-shapes') as HTMLElement | null;
@@ -83,6 +83,16 @@ export function initPopups(
     });
   });
 
+  function updateColorDot(dot: HTMLElement, color: string): void {
+    if (color === 'transparent') {
+      dot.style.background = 'transparent';
+      dot.style.border = '1.5px dashed #94a3b8';
+    } else {
+      dot.style.background = color;
+      dot.style.border = 'none';
+    }
+  }
+
   document.querySelectorAll<HTMLButtonElement>('[data-popup-color]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -90,9 +100,7 @@ export function initPopups(
       if (!color) return;
 
       currentColor = color;
-      if (activeColorDot) {
-        activeColorDot.style.background = color;
-      }
+      if (activeColorDot) updateColorDot(activeColorDot, color);
 
       document.querySelectorAll('[data-popup-color]').forEach((item) => {
         item.classList.toggle('active', item.getAttribute('data-popup-color') === color);
@@ -132,7 +140,7 @@ export function initPopups(
     getCurrentColor: () => currentColor,
     setCurrentColor: (color: string) => {
       currentColor = color;
-      if (activeColorDot) activeColorDot.style.background = color;
+      if (activeColorDot) updateColorDot(activeColorDot, color);
       document.querySelectorAll('[data-popup-color]').forEach((item) => {
         item.classList.toggle('active', item.getAttribute('data-popup-color') === color);
       });

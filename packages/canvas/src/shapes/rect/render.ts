@@ -9,10 +9,11 @@ export function renderRect(shape: ShapeRecord<RectProps>, _ctx: RenderContext): 
   rect.setAttribute('y', '0');
   rect.setAttribute('width', String(shape.props.width));
   rect.setAttribute('height', String(shape.props.height));
-  rect.setAttribute('fill', shape.props.fill ?? '#3b82f6');
-  if (shape.props.stroke) {
-    rect.setAttribute('stroke', shape.props.stroke);
-    rect.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 1));
+  rect.setAttribute('fill', shape.props.fill ?? 'transparent');
+  const stroke = shape.props.stroke ?? '#0f172a';
+  if (stroke) {
+    rect.setAttribute('stroke', stroke);
+    rect.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 2));
   }
   if (shape.props.rx) {
     rect.setAttribute('rx', String(shape.props.rx));
@@ -32,10 +33,13 @@ export function updateRect(
   if (rect) {
     rect.setAttribute('width', String(shape.props.width));
     rect.setAttribute('height', String(shape.props.height));
-    rect.setAttribute('fill', shape.props.fill ?? '#3b82f6');
+    rect.setAttribute('fill', shape.props.fill ?? 'transparent');
     if (shape.props.stroke) {
       rect.setAttribute('stroke', shape.props.stroke);
-      rect.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 1));
+      rect.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 2));
+    } else if (shape.props.stroke === undefined) {
+      rect.setAttribute('stroke', '#0f172a');
+      rect.setAttribute('stroke-width', String(shape.props.strokeWidth ?? 2));
     } else {
       rect.removeAttribute('stroke');
       rect.removeAttribute('stroke-width');

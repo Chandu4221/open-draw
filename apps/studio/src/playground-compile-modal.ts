@@ -84,14 +84,18 @@ export class PlaygroundCompileModal {
 
     // Textarea Body
     const bodyContainer = document.createElement('div');
-    bodyContainer.style.cssText = 'flex: 1; min-height: 320px; max-height: 55vh; padding: 14px 20px; background: #f8fafc; overflow: hidden;';
+    bodyContainer.style.cssText = `
+      flex: 1; display: flex; flex-direction: column;
+      min-height: 400px; height: 50vh; padding: 14px 20px;
+      background: #f8fafc; overflow: hidden;
+    `;
 
     this.textareaEl = document.createElement('textarea');
     this.textareaEl.id = 'od-compile-output';
     this.textareaEl.setAttribute('aria-label', 'Compiled Markdown Output');
     this.textareaEl.readOnly = true;
     this.textareaEl.style.cssText = `
-      width: 100%; height: 100%; box-sizing: border-box; resize: none;
+      flex: 1; width: 100%; min-height: 380px; box-sizing: border-box; resize: none;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px; line-height: 1.5; padding: 12px;
       border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;

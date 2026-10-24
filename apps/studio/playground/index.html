@@ -368,6 +368,10 @@
       stroke-dasharray: 4 2 !important;
       stroke-width: 2 !important;
     }
+    .od-shape:hover:not(.od-selected):not(:has(.od-selection-frame)):not(:has(.od-selection-outline)):not(.od-frame-target) {
+      outline: 1.5px solid rgba(59, 130, 246, 0.45);
+      outline-offset: 1px;
+    }
   </style>
 </head>
 <body>
@@ -427,6 +431,7 @@
     <div id="popup-colors" class="popover-panel hidden" role="dialog" aria-label="Color Palette">
       <div class="popover-header">Color Palette</div>
       <div class="colors-grid">
+        <button class="color-swatch-item active" data-popup-color="transparent" style="--swatch-color: transparent; border: 1.5px dashed #94a3b8;" title="Transparent"></button>
         <button class="color-swatch-item" data-popup-color="#ffffff" style="--swatch-color: #ffffff;" title="White"></button>
         <button class="color-swatch-item" data-popup-color="#f8fafc" style="--swatch-color: #f8fafc;" title="Light Slate"></button>
         <button class="color-swatch-item" data-popup-color="#94a3b8" style="--swatch-color: #94a3b8;" title="Slate"></button>
@@ -439,7 +444,7 @@
         <button class="color-swatch-item" data-popup-color="#10b981" style="--swatch-color: #10b981;" title="Emerald"></button>
         <button class="color-swatch-item" data-popup-color="#06b6d4" style="--swatch-color: #06b6d4;" title="Cyan"></button>
 
-        <button class="color-swatch-item active" data-popup-color="#3b82f6" style="--swatch-color: #3b82f6;" title="Blue"></button>
+        <button class="color-swatch-item" data-popup-color="#3b82f6" style="--swatch-color: #3b82f6;" title="Blue"></button>
         <button class="color-swatch-item" data-popup-color="#6366f1" style="--swatch-color: #6366f1;" title="Indigo"></button>
         <button class="color-swatch-item" data-popup-color="#8b5cf6" style="--swatch-color: #8b5cf6;" title="Purple"></button>
         <button class="color-swatch-item" data-popup-color="#ec4899" style="--swatch-color: #ec4899;" title="Pink"></button>
@@ -471,7 +476,7 @@
       <!-- Single Compact Color Palette Trigger -->
       <div class="color-trigger-group" id="color-trigger-group">
         <button class="btn color-btn" id="btn-toggle-colors" title="Fill Color Palette">
-          <span class="active-color-dot" id="active-color-dot" style="background: #3b82f6;"></span>
+          <span class="active-color-dot" id="active-color-dot" style="background: transparent; border: 1.5px dashed #94a3b8;"></span>
           <span class="material-symbols-outlined" style="font-size: 16px; margin-left: -2px;">expand_less</span>
         </button>
       </div>

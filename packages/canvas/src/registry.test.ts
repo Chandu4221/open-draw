@@ -32,7 +32,7 @@ describe('rectDefinition plugin', () => {
     const props = rectDefinition.defaultProps();
     expect(props.width).toBe(100);
     expect(props.height).toBe(100);
-    expect(props.fill).toBe('#3b82f6');
+    expect(props.fill).toBe('transparent');
   });
 
   it('computes geometry bounds and hit tests', () => {

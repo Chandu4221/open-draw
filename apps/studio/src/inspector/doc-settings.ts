@@ -24,7 +24,7 @@ export class DocSettingsController {
     this.onChangeCallback = onChange;
     this.element = document.createElement('div');
     this.element.id = 'inspector-doc-group';
-    this.element.style.cssText = 'margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e8f0;';
+    this.element.style.cssText = 'margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;';
 
     const header = document.createElement('div');
     header.textContent = 'DOCUMENT SETTINGS';

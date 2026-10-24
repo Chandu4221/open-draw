@@ -13,8 +13,8 @@ export const ellipseDefinition: ShapeDefinition<EllipseProps> = {
     return {
       width: 100,
       height: 100,
-      fill: '#10b981',
-      stroke: '#059669',
+      fill: 'transparent',
+      stroke: '#0f172a',
       strokeWidth: 2,
     };
   },

@@ -12,28 +12,32 @@ export class SingleFieldsController {
   private activeShapeId: string | null = null;
   private isUpdating = false;
 
-  constructor(editor: CanvasEditor) {
+  constructor(editor: CanvasEditor, externalIdEl?: HTMLElement) {
     this.editor = editor;
     this.containerEl = document.createElement('div');
 
-    // Header (ID + Copy)
-    const header = document.createElement('div');
-    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;';
-    const title = document.createElement('span');
-    title.textContent = 'INSPECTOR';
-    title.style.cssText = 'font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;';
-    
-    this.idEl = document.createElement('span');
-    this.idEl.id = 'inspector-id';
-    this.idEl.title = 'Shape ID (click to copy)';
-    this.idEl.style.cssText = 'font-family: monospace; font-size: 11px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #334155; cursor: pointer; user-select: all;';
-    this.idEl.addEventListener('click', () => {
-      const id = this.idEl.textContent?.replace('#', '') || '';
-      if (id && navigator.clipboard?.writeText) navigator.clipboard.writeText(id).catch(() => {});
-    });
-    header.appendChild(title);
-    header.appendChild(this.idEl);
-    this.containerEl.appendChild(header);
+    if (externalIdEl) {
+      this.idEl = externalIdEl;
+    } else {
+      // Fallback Header (ID + Copy)
+      const header = document.createElement('div');
+      header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;';
+      const title = document.createElement('span');
+      title.textContent = 'INSPECTOR';
+      title.style.cssText = 'font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;';
+
+      this.idEl = document.createElement('span');
+      this.idEl.id = 'inspector-id';
+      this.idEl.title = 'Shape ID (click to copy)';
+      this.idEl.style.cssText = 'font-family: monospace; font-size: 11px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #334155; cursor: pointer; user-select: all;';
+      this.idEl.addEventListener('click', () => {
+        const id = this.idEl.textContent?.replace('#', '') || '';
+        if (id && navigator.clipboard?.writeText) navigator.clipboard.writeText(id).catch(() => {});
+      });
+      header.appendChild(title);
+      header.appendChild(this.idEl);
+      this.containerEl.appendChild(header);
+    }
 
     // Name Field
     const nameGroup = document.createElement('div');
@@ -93,6 +97,11 @@ export class SingleFieldsController {
     this.hintEl.id = 'inspector-hint';
     this.hintEl.style.cssText = 'font-size: 10px; color: #64748b; font-style: italic; margin-bottom: 10px; min-height: 14px;';
     this.containerEl.appendChild(this.hintEl);
+
+    // Horizontal divider between Semantic Type and Parent Frame
+    const typeDivider = document.createElement('div');
+    typeDivider.style.cssText = 'border-bottom: 1px solid #e2e8f0; margin: 12px 0 10px 0;';
+    this.containerEl.appendChild(typeDivider);
   }
 
   private lastShapeId: string | null = null;
@@ -123,6 +132,7 @@ export class SingleFieldsController {
     this.isUpdating = true;
     this.activeShapeId = shape.id;
     this.idEl.textContent = `#${shape.id}`;
+    this.idEl.style.display = 'inline-block';
     
     if (document.activeElement !== this.nameInput) {
       this.nameInput.value = name;
@@ -191,5 +201,7 @@ export class SingleFieldsController {
     this.lastName = null;
     this.lastType = null;
     this.lastInferredType = null;
+    this.idEl.textContent = '';
+    this.idEl.style.display = 'none';
   }
 }
