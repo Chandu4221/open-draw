@@ -31,9 +31,7 @@ export class PlaygroundTagPanel {
       top: 72px;
       right: 20px;
       width: 220px;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       padding: 12px;
@@ -197,10 +195,17 @@ export class PlaygroundTagPanel {
     });
   }
 
+  private lastShapeId: string | null = null;
+  private lastName: string | null = null;
+  private lastType: string | null = null;
+  private lastInferredType: string | null = null;
+
   update(): void {
+    if (this.editor.gesture?.isActive) return;
     const sel = this.editor.selection;
     if (sel.length !== 1) {
       this.activeShapeId = null;
+      this.lastShapeId = null;
       this.rootEl.style.display = 'none';
       return;
     }
@@ -209,9 +214,29 @@ export class PlaygroundTagPanel {
     const shape = this.editor.store.getShape(shapeId);
     if (!shape) {
       this.activeShapeId = null;
+      this.lastShapeId = null;
       this.rootEl.style.display = 'none';
       return;
     }
+
+    const semantic = (shape.meta?.semantic ?? {}) as Record<string, unknown>;
+    const name = (semantic.name as string) || '';
+    const currentType = (semantic.type as string) || shape.type;
+    const inferredType = (semantic.inferredType as string | undefined) || '';
+
+    if (
+      this.lastShapeId === shapeId &&
+      this.lastName === name &&
+      this.lastType === currentType &&
+      this.lastInferredType === inferredType
+    ) {
+      return;
+    }
+
+    this.lastShapeId = shapeId;
+    this.lastName = name;
+    this.lastType = currentType;
+    this.lastInferredType = inferredType;
 
     this.activeShapeId = shapeId;
     this.isUpdating = true;
@@ -219,17 +244,13 @@ export class PlaygroundTagPanel {
 
     this.idEl.textContent = `#${shape.id}`;
     
-    const semantic = (shape.meta?.semantic ?? {}) as Record<string, unknown>;
-    const name = (semantic.name as string) || '';
     if (document.activeElement !== this.nameInput) {
       this.nameInput.value = name;
     }
     this.nameInput.style.borderColor = '#cbd5e1';
 
-    const currentType = (semantic.type as string) || shape.type;
     this.typeSelect.value = currentType in SEMANTIC_TYPES ? currentType : 'section';
 
-    const inferredType = semantic.inferredType as string | undefined;
     if (inferredType) {
       if (currentType === inferredType) {
         this.hintEl.textContent = `Inferred: ${inferredType}`;

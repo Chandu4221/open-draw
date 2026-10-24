@@ -9,9 +9,11 @@ export class PlaygroundCompileModal {
   private readonly designDirCheckbox: HTMLInputElement;
   private readonly copyBtn: HTMLButtonElement;
   private readonly editor: CanvasEditor;
+  private readonly getMetaProvider?: () => Record<string, unknown>;
 
-  constructor(editor: CanvasEditor) {
+  constructor(editor: CanvasEditor, getMetaProvider?: () => Record<string, unknown>) {
     this.editor = editor;
+    this.getMetaProvider = getMetaProvider;
 
     // Overlay backdrop
     this.overlayEl = document.createElement('div');
@@ -220,10 +222,16 @@ export class PlaygroundCompileModal {
   }
 
   private refreshContent(): void {
-    const snapshot = this.editor.getSnapshot();
+    const baseSnap = this.editor.getSnapshot();
+    const meta = this.getMetaProvider ? this.getMetaProvider() : (baseSnap.meta ?? {});
+    const snapshot = {
+      ...baseSnap,
+      meta: { ...(baseSnap.meta ?? {}), ...meta },
+    };
     const markdown = compile(snapshot, {
       legend: this.legendCheckbox.checked,
       designDirection: this.designDirCheckbox.checked,
+      platform: (meta['platform'] as string) || undefined,
     });
     this.textareaEl.value = markdown;
 

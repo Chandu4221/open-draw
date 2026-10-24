@@ -1,59 +1,68 @@
 import { CanvasEditor } from '@open-draw/canvas';
 import { inferType } from '@open-draw/semantics';
-import {
-  saveToLocalStorage,
-  loadFromLocalStorage,
-  clearLocalStorage,
-  downloadBlob,
-  exportSnapshotJSON,
-  importSnapshotJSON,
-} from './storage.js';
-import { initPopups } from './popups.js';
-import { PlaygroundTagPanel } from './playground-tag-panel.js';
+import { AutosaveManager } from './persistence.js';
+import { ToastManager } from './toast.js';
+import { ClearCanvasModal } from './clear-modal.js';
+import { ChipController, type ChipMode } from './chips.js';
+import { StudioInspector } from './inspector/inspector.js';
 import { PlaygroundCompileModal } from './playground-compile-modal.js';
+import { initPopups } from './popups.js';
+import { downloadBlob, exportSnapshotJSON, importSnapshotJSON } from './storage.js';
 
 const container = document.getElementById('canvas-container') as HTMLElement;
 const editor = new CanvasEditor();
 editor.mount(container);
 
-// Initialize tag panel popover (§0.2)
-const tagPanel = new PlaygroundTagPanel(editor, document.body);
+const autosave = new AutosaveManager(300);
+const toast = new ToastManager(document.body);
+const chips = new ChipController(editor);
+const clearModal = new ClearCanvasModal(editor, () => {
+  editor.loadSnapshot({ version: 1, shapes: [], camera: { x: 0, y: 0, zoom: 1 } });
+  autosave.clear();
+  updateUIState();
+});
 
-// Initialize compile specification modal (§2)
-const compileModal = new PlaygroundCompileModal(editor);
+const inspector = new StudioInspector(editor, document.body, () => {
+  autosave.schedule(() => ({ ...editor.getSnapshot(), meta: inspector.docSettings.getState() }));
+});
 
-// Initialize popups for shapes and color palette
+const compileModal = new PlaygroundCompileModal(editor, () => inspector.docSettings.getState());
+
 const popups = initPopups(editor, (color: string) => {
   const selected = editor.selection;
   if (selected.length === 0) return;
   editor.store.transact(() => {
     for (const id of selected) {
       const s = editor.store.getShape(id);
-      if (s) {
-        editor.updateShape(id, { props: { ...s.props, fill: color } });
-      }
+      if (s) editor.updateShape(id, { props: { ...s.props, fill: color } });
     }
   });
 });
 
-// Auto-load snapshot from localStorage or seed initial wireframe demo
-const saved = loadFromLocalStorage();
+// Load document
+const saved = autosave.load();
 if (saved && saved.shapes && saved.shapes.length > 0) {
   editor.loadSnapshot(saved);
+  if (saved.meta) {
+    inspector.docSettings.setState({
+      platform: (saved.meta['platform'] as string) || 'web',
+      style: (saved.meta['style'] as string) || 'neubrutalism',
+    });
+  }
 } else {
   seedStarterWireframe(editor);
 }
 updateUIState();
 
-// Auto-save on every store change and infer smart defaults on creation
+// Auto-save on store change + smart defaults
 editor.store.listen((diff) => {
-  if (diff && diff.created && diff.created.size > 0) {
+  if (diff?.created && diff.created.size > 0) {
     for (const id of diff.created) {
       const shape = editor.store.getShape(id);
       const sem = shape?.meta?.semantic as Record<string, unknown> | undefined;
       if (shape && !sem?.['type']) {
         const inferred = inferType(shape, editor.getSnapshot());
-        if (inferred && inferred.tier === 'strong') {
+        if (inferred?.tier === 'strong') {
           editor.store.updateShape(id, {
             meta: {
               ...shape.meta,
@@ -69,32 +78,24 @@ editor.store.listen((diff) => {
       }
     }
   }
-  saveToLocalStorage(editor.getSnapshot());
+  autosave.schedule(() => ({ ...editor.getSnapshot(), meta: inspector.docSettings.getState() }));
   updateUIState();
 });
+
 editor.selectionManager.subscribe(() => {
   updateUIState();
   const selected = editor.selection;
   if (selected.length === 1) {
     const s = editor.store.getShape(selected[0]!);
-    if (s && typeof s.props['fill'] === 'string') {
-      popups.setCurrentColor(s.props['fill']);
-    }
+    if (s && typeof s.props['fill'] === 'string') popups.setCurrentColor(s.props['fill']);
   }
 });
 
 const TOOL_ICONS: Record<string, string> = {
-  rect: 'crop_square',
-  ellipse: 'circle',
-  arrow: 'arrow_right_alt',
-  frame: 'crop_free',
-  note: 'sticky_note_2',
-  text: 'title',
-  ink: 'draw',
-  eraser: 'ink_eraser',
+  rect: 'crop_square', ellipse: 'circle', arrow: 'arrow_right_alt',
+  frame: 'crop_free', note: 'sticky_note_2', text: 'title', ink: 'draw', eraser: 'ink_eraser',
 };
 
-// Sync active tool UI
 function setActiveTool(toolId: string): void {
   editor.setTool(toolId);
   const toolActiveShape = document.getElementById('tool-active-shape');
@@ -119,15 +120,39 @@ document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((btn) => {
   });
 });
 
+// Chips mode toggle
+document.querySelectorAll<HTMLButtonElement>('[data-chip-mode]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const mode = btn.getAttribute('data-chip-mode') as ChipMode;
+    if (mode) {
+      chips.setMode(mode);
+      document.querySelectorAll<HTMLButtonElement>('[data-chip-mode]').forEach((b) => {
+        b.classList.toggle('active', b.getAttribute('data-chip-mode') === mode);
+      });
+    }
+  });
+});
+
 // Action buttons
 document.getElementById('btn-undo')?.addEventListener('click', () => editor.undo());
 document.getElementById('btn-redo')?.addEventListener('click', () => editor.redo());
 document.getElementById('btn-delete')?.addEventListener('click', () => {
   const sel = [...editor.selection];
   if (sel.length === 0) return;
+  const framesOrGroups = sel.filter((id) => {
+    const s = editor.store.getShape(id);
+    return s && (s.type === 'frame' || s.type === 'group'); // EXEMPTION: UI cascade deletion warning check for frame/group container shapes
+  });
   editor.store.transact(() => {
     for (const id of sel) editor.deleteShape(id);
   });
+  if (framesOrGroups.length > 0) {
+    const label = framesOrGroups[0] ? (editor.store.getShape(framesOrGroups[0])?.props['label'] as string || 'Frame') : 'Frame';
+    toast.show(`${label} deleted (${sel.length} shapes) — Undo`, {
+      actionText: 'Undo',
+      onAction: () => editor.undo(),
+    });
+  }
 });
 
 // Zoom Controls
@@ -143,20 +168,13 @@ document.getElementById('btn-zoom-reset')?.addEventListener('click', () => {
 
 function updateZoomLabel(): void {
   const label = document.getElementById('zoom-label');
-  if (label) {
-    label.textContent = `${Math.round(editor.camera.camera.zoom * 100)}%`; // EXEMPTION: UI display percentage formatting only
-  }
+  if (label) label.textContent = `${Math.round(editor.camera.camera.zoom * 100)}%`; // EXEMPTION: UI display percentage formatting only
 }
+editor.camera.subscribe(() => updateZoomLabel());
 
-// Keep zoom label in sync with mouse wheel zoom, pan, and programmatic camera changes
-editor.camera.subscribe(() => {
-  updateZoomLabel();
-});
-
-// Export / Import / Compile
-document.getElementById('btn-compile-spec')?.addEventListener('click', () => {
-  compileModal.open();
-});
+// Export / Import / Compile / Clear
+document.getElementById('btn-compile-spec')?.addEventListener('click', () => compileModal.open());
+document.getElementById('btn-clear')?.addEventListener('click', () => clearModal.open());
 
 document.getElementById('btn-export-png')?.addEventListener('click', async () => {
   const btn = document.getElementById('btn-export-png') as HTMLButtonElement | null;
@@ -166,14 +184,14 @@ document.getElementById('btn-export-png')?.addEventListener('click', async () =>
     downloadBlob(blob, `opendraw-${Date.now()}.png`);
   } catch (err) {
     console.error('PNG export failed:', err);
-    alert('Failed to export PNG');
   } finally {
     if (btn) btn.disabled = false;
   }
 });
 
 document.getElementById('btn-export-json')?.addEventListener('click', () => {
-  exportSnapshotJSON(editor.getSnapshot(), `opendraw-${Date.now()}.json`);
+  const snapshot = { ...editor.getSnapshot(), meta: inspector.docSettings.getState() };
+  exportSnapshotJSON(snapshot, `opendraw-${Date.now()}.json`);
 });
 
 const fileInput = document.getElementById('file-import-json') as HTMLInputElement | null;
@@ -184,20 +202,18 @@ fileInput?.addEventListener('change', async () => {
   try {
     const snap = await importSnapshotJSON(file);
     editor.loadSnapshot(snap);
+    if (snap.meta) {
+      inspector.docSettings.setState({
+        platform: (snap.meta['platform'] as string) || 'web',
+        style: (snap.meta['style'] as string) || 'neubrutalism',
+      });
+    }
     fileInput.value = '';
   } catch (err) {
     alert(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 });
 
-document.getElementById('btn-clear')?.addEventListener('click', () => {
-  if (confirm('Clear all shapes from canvas?')) {
-    editor.loadSnapshot({ version: 1, shapes: [], camera: { x: 0, y: 0, zoom: 1 } });
-    clearLocalStorage();
-  }
-});
-
-// Update stats / state
 function updateUIState(): void {
   const tool = editor.getTool();
   document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((btn) => {
@@ -207,60 +223,41 @@ function updateUIState(): void {
     btn.classList.toggle('active', btn.getAttribute('data-popup-tool') === tool);
   });
   const shapeCount = document.getElementById('shape-count');
-  if (shapeCount) {
-    shapeCount.textContent = `${editor.store.listShapes().length} shapes`;
-  }
+  if (shapeCount) shapeCount.textContent = `${editor.store.listShapes().length} shapes`;
   updateZoomLabel();
 }
 
-// Global hotkeys (when not in text editing mode)
 window.addEventListener('keydown', (e) => {
-  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
   const key = e.key.toLowerCase();
   const toolMap: Record<string, string> = {
-    v: 'select',
-    r: 'rect',
-    o: 'ellipse',
-    t: 'text',
-    f: 'frame',
-    n: 'note',
-    a: 'arrow',
-    p: 'ink',
-    e: 'eraser',
+    v: 'select', r: 'rect', o: 'ellipse', t: 'text',
+    f: 'frame', n: 'note', a: 'arrow', p: 'ink', e: 'eraser',
   };
-  if (toolMap[key] && !e.ctrlKey && !e.metaKey && !e.altKey) {
-    setActiveTool(toolMap[key]!);
-  }
+  if (toolMap[key] && !e.ctrlKey && !e.metaKey && !e.altKey) setActiveTool(toolMap[key]!);
 });
 
 function seedStarterWireframe(ed: CanvasEditor): void {
   ed.store.transact(() => {
     const frame = ed.createShape({
-      type: 'frame',
-      x: 140,
-      y: 90,
+      type: 'frame', x: 140, y: 90,
       props: { width: 620, height: 320, label: 'Hero Frame' },
     });
     ed.createShape({
-      type: 'text',
-      x: 180,
-      y: 170,
-      props: { text: 'Welcome to OpenDraw', width: 420, height: 44, fontSize: 32, fontWeight: 'bold', fill: '#0f172a' },
+      type: 'text', x: 180, y: 170,
+      props: { text: 'Welcome to OpenDraw Studio', width: 420, height: 44, fontSize: 32, fontWeight: 'bold', fill: '#0f172a' },
       meta: { parent: frame.id },
     });
     ed.createShape({
-      type: 'text',
-      x: 180,
-      y: 230,
-      props: { text: 'Infinite SVG canvas engine for wireframing, diagrams, and sketches.', width: 520, height: 26, fontSize: 16, fill: '#64748b' },
-      meta: { parent: frame.id },
-    });
-    ed.createShape({
-      type: 'text',
-      x: 180,
-      y: 280,
-      props: { text: 'Pick a tool from the dock below and drag across the canvas to draw.', width: 500, height: 22, fontSize: 13, fill: '#94a3b8' },
+      type: 'text', x: 180, y: 230,
+      props: { text: 'Infinite SVG canvas engine with full semantic metadata and real-time inspector.', width: 520, height: 26, fontSize: 16, fill: '#64748b' },
       meta: { parent: frame.id },
     });
   });
 }
+
+// Dev handles
+(window as unknown as { __od_debug__: Record<string, unknown> }).__od_debug__ = {
+  editor, inspector, chips, autosave, toast, clearModal, compileModal,
+  setChipMode: (mode: ChipMode) => chips.setMode(mode),
+};

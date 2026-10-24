@@ -128,6 +128,13 @@
       height: 34px;
       padding: 0;
     }
+    .btn-chip-mode {
+      height: 28px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+    }
     .material-symbols-outlined {
       font-family: 'Material Symbols Outlined';
       font-weight: normal;
@@ -467,6 +474,15 @@
           <span class="active-color-dot" id="active-color-dot" style="background: #3b82f6;"></span>
           <span class="material-symbols-outlined" style="font-size: 16px; margin-left: -2px;">expand_less</span>
         </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Chips Mode Toggle (Phase 5 §1.2) -->
+      <div class="tool-group" id="chip-mode-group" role="radiogroup" aria-label="Semantic Chips Mode">
+        <button class="btn btn-chip-mode" data-chip-mode="always" title="Always show semantic chips">Always</button>
+        <button class="btn btn-chip-mode active" data-chip-mode="hover" title="Show semantic chips on hover or selection">Hover</button>
+        <button class="btn btn-chip-mode" data-chip-mode="off" title="Show semantic chips on selection only">Off</button>
       </div>
 
       <div class="divider"></div>

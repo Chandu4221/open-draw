@@ -130,7 +130,22 @@ Target Branch: `build/phase-4` $\longrightarrow$ merged to `main` upon exit.
 
 ---
 
+## Phase 5 — Input/A11y Patch Batch (§0) + Studio The App (§1) (Completed)
+Target Branch: `build/phase-5` $\longrightarrow$ merged to `main` upon exit.
+- [x] **§0 Patch Batch**: Tag panel & compile modal focus/bubbling repair, a11y `label-content-name-mismatch` / `select-name` resolution across 8 states, `OPENDRAW.md` rules §0.1 (Real-Input Rule) and §0.2 (CI-Green-Before-Push Rule), Q-009 logged.
+- [x] **§1 Studio Application**:
+  - [x] Full Inspector panel (`#studio-inspector`) supporting single shape and multi-select batch typing.
+  - [x] Cycle-safe Parent dropdown with anti-suggestion ruling (no default to geometric overlap).
+  - [x] Container member list with direct selection jump.
+  - [x] Document settings (Web / Android / Flutter, Neubrutalism design style with swatches) persisted into `Snapshot.meta` and integrated into compiler.
+  - [x] View-state Chips (`always | hover | off`), label truncation to ~12 chars (`#id ${truncatedLabel}`), full tooltip title.
+  - [x] Schema `version: 1` pure `MIGRATION_TABLE` and `AutosaveManager` debounced at 300ms.
+  - [x] Accessible `ClearCanvasModal` and `ToastManager` with inline Undo action.
+- [x] **§4 Exit Gate**: Full verification suite green (230 unit tests, 92 Chromium E2E, 91 Firefox E2E, all 9 architectural fences), `docs/od-verification/5/REPORT.md`.
+
+---
+
 ## Active / Upcoming Phase
-- **Phase 5**: OpenDraw Studio App (full inspector: parent field w/ cycle-safe dropdown, member lists, platform + style pickers with hover-confirm; chips `always|hover|off` UI; persistence + migrations; the full app).
 - **Phase 6**: Suite Publication & Integration.
+
 
