@@ -218,5 +218,49 @@ describe('@open-draw/markdown compiler', () => {
     expect(spec).toContain('| Palette | `primary` | `#6750a4` |');
     expect(spec).toContain('| Borders | `radius` | `16px` |');
   });
+
+  it('emits scope declaration: component by default and page when page-typed root is present', () => {
+    // 1. Scene without page root -> Scope: component
+    const componentSpec = compile(canonicalScene);
+    expect(componentSpec).toContain('> **Scope: component** — This spec describes a standalone component, not a page.');
+    expect(componentSpec).toContain('Deliver only the component itself.');
+
+    // 2. Scene with root shape typed as 'page' -> Scope: page
+    const pageScene: Snapshot = {
+      version: 1,
+      shapes: [
+        {
+          id: 'pg1',
+          type: 'frame',
+          x: 0,
+          y: 0,
+          props: { width: 1440, height: 900 },
+          meta: { semantic: { type: 'page', name: 'Homepage' } },
+        },
+      ],
+    };
+    const pageSpec = compile(pageScene);
+    expect(pageSpec).toContain('> **Scope: page** — this scene contains a `page`-typed root; build a complete page.');
+
+    // 3. Child shape typed as 'page' inside another container does NOT trigger page root scope
+    const nestedPageScene: Snapshot = {
+      version: 1,
+      shapes: [
+        { id: 'f1', type: 'frame', x: 0, y: 0, props: { width: 500, height: 500 }, meta: { semantic: { type: 'section' } } },
+        { id: 'p1', type: 'frame', x: 10, y: 10, props: { width: 400, height: 400 }, meta: { parent: 'f1', semantic: { type: 'page' } } },
+      ],
+    };
+    const nestedSpec = compile(nestedPageScene);
+    expect(nestedSpec).toContain('> **Scope: component**');
+
+    // 4. Explicit override: force component on page scene
+    const forcedComponent = compile(pageScene, { scope: 'component' });
+    expect(forcedComponent).toContain('> **Scope: component**');
+
+    // 5. Explicit override: force page on component scene
+    const forcedPage = compile(canonicalScene, { scope: 'page' });
+    expect(forcedPage).toContain('> **Scope: page**');
+  });
 });
+
 

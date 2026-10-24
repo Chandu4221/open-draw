@@ -268,5 +268,38 @@ test.describe('Phase 5 §0.4: Compile Modal Real-Input & Edge Cases Suite', () =
 
     await page.evaluate(() => (window as any).__od_debug__.compileModal.close());
   });
+
+  test('scope dropdown in modal controls scope declaration and defaults to auto-inference', async ({ page }) => {
+    await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      editor.createShape({
+        type: 'rect',
+        x: 0,
+        y: 0,
+        props: { width: 300, height: 200 },
+        meta: { semantic: { type: 'card', name: 'Profile Card' } },
+      });
+      (window as any).__od_debug__.compileModal.open();
+    });
+
+    await expect(page.locator('#od-compile-modal')).toBeVisible();
+
+    // 1. By default, auto detects no page root -> Scope: component
+    let output = await page.inputValue('#od-compile-output');
+    expect(output).toContain('> **Scope: component** — This spec describes a standalone component, not a page.');
+
+    // 2. Select Page in Scope dropdown
+    await page.selectOption('#od-compile-scope', 'page');
+    output = await page.inputValue('#od-compile-output');
+    expect(output).toContain('> **Scope: page** — this scene contains a `page`-typed root; build a complete page.');
+
+    // 3. Select Component in Scope dropdown
+    await page.selectOption('#od-compile-scope', 'component');
+    output = await page.inputValue('#od-compile-output');
+    expect(output).toContain('> **Scope: component** — This spec describes a standalone component, not a page.');
+
+    await page.evaluate(() => (window as any).__od_debug__.compileModal.close());
+  });
 });
+
 

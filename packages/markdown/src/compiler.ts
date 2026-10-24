@@ -8,6 +8,7 @@ export interface CompileOptions {
   readonly designDirection?: boolean;
   readonly responsive?: boolean;
   readonly directive?: 'strict-fidelity' | 'creative-allowed';
+  readonly scope?: 'auto' | 'component' | 'page';
   readonly platform?: string;
 }
 
@@ -62,6 +63,24 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
   } else {
     lines.push('> **Consumption Directive: strict-fidelity**');
     lines.push('> Build EXACTLY the elements specified. Do not add, remove, or restyle beyond the Design Direction. Do not invent unspecified content.');
+  }
+  lines.push('');
+
+  // Scope Declaration (Scope: component vs Scope: page)
+  const hasPageRoot = shapes.some(s => {
+    const meta = getSemanticMeta(s);
+    return meta.type === 'page' && !(s.meta?.parent || s.meta?.parentId);
+  });
+  const resolvedScope = options.scope && options.scope !== 'auto'
+    ? options.scope
+    : (hasPageRoot ? 'page' : 'component');
+
+  if (resolvedScope === 'page') {
+    lines.push('> **Scope: page** — this scene contains a `page`-typed root; build a complete page.');
+  } else {
+    lines.push('> **Scope: component** — This spec describes a standalone component, not a page.');
+    lines.push('> Deliver only the component itself. No page chrome, no header/navigation,');
+    lines.push("> no document-level styling beyond this component's tokens.");
   }
   lines.push('');
 

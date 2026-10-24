@@ -9,6 +9,7 @@ export class PlaygroundCompileModal {
   private readonly designDirCheckbox: HTMLInputElement;
   private readonly responsiveCheckbox: HTMLInputElement;
   private readonly directiveSelect: HTMLSelectElement;
+  private readonly scopeSelect: HTMLSelectElement;
   private readonly copyBtn: HTMLButtonElement;
   private readonly editor: CanvasEditor;
   private readonly getMetaProvider?: () => Record<string, unknown>;
@@ -84,31 +85,46 @@ export class PlaygroundCompileModal {
     const responsiveItem = makeCheckbox('Responsive');
     this.responsiveCheckbox = responsiveItem.input;
 
-    const dirBox = document.createElement('div');
-    dirBox.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-left: auto;';
-    const dirLbl = document.createElement('label');
-    dirLbl.htmlFor = 'od-compile-directive';
-    dirLbl.textContent = 'Directive:';
-    dirLbl.style.cssText = 'font-size: 12px; font-weight: 600; color: #64748b;';
+    const controlsBox = document.createElement('div');
+    controlsBox.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-left: auto;';
 
-    this.directiveSelect = document.createElement('select');
-    this.directiveSelect.id = 'od-compile-directive';
-    this.directiveSelect.setAttribute('aria-label', 'Consumption Directive');
-    this.directiveSelect.style.cssText = `
-      padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
-      font-size: 12px; background: #ffffff; color: #0f172a; cursor: pointer;
-    `;
-    this.directiveSelect.innerHTML = `
+    const makeSelect = (id: string, label: string, html: string) => {
+      const box = document.createElement('div');
+      box.style.cssText = 'display: flex; align-items: center; gap: 4px;';
+      const lbl = document.createElement('label');
+      lbl.htmlFor = id;
+      lbl.textContent = label;
+      lbl.style.cssText = 'font-size: 12px; font-weight: 600; color: #64748b;';
+      const sel = document.createElement('select');
+      sel.id = id;
+      sel.setAttribute('aria-label', label.replace(':', ''));
+      sel.style.cssText = 'padding: 3px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: #ffffff; color: #0f172a; cursor: pointer;';
+      sel.innerHTML = html;
+      box.appendChild(lbl);
+      box.appendChild(sel);
+      return { box, sel };
+    };
+
+    const scopeItem = makeSelect('od-compile-scope', 'Scope:', `
+      <option value="auto">Auto (Detect)</option>
+      <option value="component">Component</option>
+      <option value="page">Page</option>
+    `);
+    this.scopeSelect = scopeItem.sel;
+
+    const dirItem = makeSelect('od-compile-directive', 'Directive:', `
       <option value="strict-fidelity">Strict Fidelity</option>
       <option value="creative-allowed">Creative Allowed</option>
-    `;
-    dirBox.appendChild(dirLbl);
-    dirBox.appendChild(this.directiveSelect);
+    `);
+    this.directiveSelect = dirItem.sel;
+
+    controlsBox.appendChild(scopeItem.box);
+    controlsBox.appendChild(dirItem.box);
 
     optionsBar.appendChild(legendItem.lbl);
     optionsBar.appendChild(designDirItem.lbl);
     optionsBar.appendChild(responsiveItem.lbl);
-    optionsBar.appendChild(dirBox);
+    optionsBar.appendChild(controlsBox);
 
     // Textarea Body
     const bodyContainer = document.createElement('div');
@@ -209,10 +225,8 @@ export class PlaygroundCompileModal {
     this.modalEl.addEventListener('keydown', (e) => e.stopPropagation());
 
     // Event listeners
-    this.legendCheckbox.addEventListener('change', () => this.refreshContent());
-    this.designDirCheckbox.addEventListener('change', () => this.refreshContent());
-    this.responsiveCheckbox.addEventListener('change', () => this.refreshContent());
-    this.directiveSelect.addEventListener('change', () => this.refreshContent());
+    [this.legendCheckbox, this.designDirCheckbox, this.responsiveCheckbox, this.directiveSelect, this.scopeSelect]
+      .forEach(el => el.addEventListener('change', () => this.refreshContent()));
 
     this.copyBtn.addEventListener('click', async () => {
       try {
@@ -267,6 +281,7 @@ export class PlaygroundCompileModal {
       designDirection: this.designDirCheckbox.checked,
       responsive: this.responsiveCheckbox.checked,
       directive: this.directiveSelect.value as 'strict-fidelity' | 'creative-allowed',
+      scope: this.scopeSelect.value as 'auto' | 'component' | 'page',
       platform: (meta['platform'] as string) || undefined,
     });
     this.textareaEl.value = markdown;
