@@ -218,4 +218,63 @@ test.describe('Phase 0.2.0 §2: Accessibility (a11y) Audit Suite', () => {
     );
     expect(criticalOrSerious, `Violations with frame hierarchy: ${JSON.stringify(criticalOrSerious, null, 2)}`).toHaveLength(0);
   });
+
+  test('State 7: Tag panel open with selected shape and focused input passes axe-core', async ({ page }) => {
+    await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const s = editor.createShape({
+        type: 'rect',
+        x: 100,
+        y: 100,
+        meta: { name: 'Card Item', semantic: { type: 'card', name: 'Card Item' } },
+        props: { width: 140, height: 90, fill: '#3b82f6' },
+      });
+      editor.selectShape(s.id);
+    });
+
+    const isVisible = await page.locator('#tag-panel').isVisible();
+    expect(isVisible).toBe(true);
+
+    await page.focus('#tag-panel-name');
+
+    const results = await new AxeBuilder({ page })
+      .include(['#canvas-container', '#tag-panel'])
+      .analyze();
+
+    const criticalOrSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious'
+    );
+    expect(criticalOrSerious, `Violations with tag panel open: ${JSON.stringify(criticalOrSerious, null, 2)}`).toHaveLength(0);
+  });
+
+  test('State 8: Compile specification modal passes axe-core with zero critical violations', async ({ page }) => {
+    await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      editor.createShape({
+        type: 'rect',
+        x: 100,
+        y: 100,
+        meta: { name: 'Demo Rect', semantic: { type: 'card' } },
+        props: { width: 100, height: 80, fill: '#e2e8f0' },
+      });
+      (window as any).__od_debug__.compileModal.open();
+    });
+
+    const isModalVisible = await page.locator('#od-compile-modal').isVisible();
+    expect(isModalVisible).toBe(true);
+
+    const results = await new AxeBuilder({ page })
+      .include('#od-compile-modal')
+      .analyze();
+
+    await page.evaluate(() => {
+      (window as any).__od_debug__.compileModal.close();
+    });
+
+    const criticalOrSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious'
+    );
+    expect(criticalOrSerious, `Violations on compile modal: ${JSON.stringify(criticalOrSerious, null, 2)}`).toHaveLength(0);
+  });
 });
+

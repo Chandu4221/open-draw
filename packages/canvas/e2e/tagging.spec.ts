@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () => {
+test.describe('Phase 5 §0.1: Real-Input Tag Panel & Semantics Suite', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('#canvas-container');
@@ -30,52 +30,27 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
     });
 
     // Before selection: panel is hidden
-    const isHiddenBefore = await page.evaluate(() => {
-      const panel = document.getElementById('tag-panel');
-      return !panel || panel.style.display === 'none';
-    });
-    expect(isHiddenBefore).toBe(true);
+    await expect(page.locator('#tag-panel')).toBeHidden();
 
     // Select shape
     await page.evaluate((id) => {
-      const editor = (window as any).__od_debug__.editor;
-      editor.selectShape(id);
+      (window as any).__od_debug__.editor.selectShape(id);
     }, shapeId);
 
-    // After selection: panel is visible and displays shape metadata
-    const panelState = await page.evaluate(() => {
-      const panel = document.getElementById('tag-panel')!;
-      const idEl = document.getElementById('tag-panel-id')!;
-      const nameInput = document.getElementById('tag-panel-name') as HTMLInputElement;
-      const typeSelect = document.getElementById('tag-panel-type') as HTMLSelectElement;
-
-      return {
-        visible: panel.style.display !== 'none',
-        idText: idEl.textContent,
-        nameValue: nameInput.value,
-        typeValue: typeSelect.value,
-      };
-    });
-
-    expect(panelState.visible).toBe(true);
-    expect(panelState.idText).toBe(`#${shapeId}`);
-    expect(panelState.nameValue).toBe('Profile Card');
-    expect(panelState.typeValue).toBe('card');
+    // After selection: panel is visible and displays metadata
+    await expect(page.locator('#tag-panel')).toBeVisible();
+    await expect(page.locator('#tag-panel-id')).toHaveText(`#${shapeId}`);
+    await expect(page.locator('#tag-panel-name')).toHaveValue('Profile Card');
+    await expect(page.locator('#tag-panel-type')).toHaveValue('card');
 
     // Deselect -> panel hidden
     await page.evaluate(() => {
-      const editor = (window as any).__od_debug__.editor;
-      editor.clearSelection();
+      (window as any).__od_debug__.editor.clearSelection();
     });
-
-    const isHiddenAfter = await page.evaluate(() => {
-      const panel = document.getElementById('tag-panel');
-      return !panel || panel.style.display === 'none';
-    });
-    expect(isHiddenAfter).toBe(true);
+    await expect(page.locator('#tag-panel')).toBeHidden();
   });
 
-  test('retag via popover updates chip in single transaction; undo restores previous type', async ({ page }) => {
+  test('retag via real selectOption updates chip in single transaction; undo restores previous type', async ({ page }) => {
     const shapeId = await page.evaluate(() => {
       const editor = (window as any).__od_debug__.editor;
       const s = editor.createShape({
@@ -89,12 +64,14 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
       return s.id;
     });
 
-    // Retag from 'card' to 'button' via type dropdown
-    await page.evaluate(() => {
-      const select = document.getElementById('tag-panel-type') as HTMLSelectElement;
-      select.value = 'button';
-      select.dispatchEvent(new Event('change'));
-    });
+    const initialUndoCount = await page.evaluate(() => (window as any).__od_debug__.editor.store.undoStack.length);
+
+    // Real Playwright interaction: selectOption
+    await page.selectOption('#tag-panel-type', 'button');
+
+    // Verify single undo entry created
+    const undoCountAfter = await page.evaluate(() => (window as any).__od_debug__.editor.store.undoStack.length);
+    expect(undoCountAfter).toBe(initialUndoCount + 1);
 
     // Assert store updated to button
     const typeAfter = await page.evaluate((id) => {
@@ -104,11 +81,8 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
     expect(typeAfter).toBe('button');
 
     // Assert visible chip contains 'button'
-    const chipText = await page.evaluate((id) => {
-      const chip = document.querySelector(`.od-semantic-chip[data-shape-id="${id}"] text`);
-      return chip?.textContent;
-    }, shapeId);
-    expect(chipText).toContain('button');
+    const chip = page.locator(`.od-semantic-chip[data-shape-id="${shapeId}"] text`);
+    await expect(chip).toContainText('button');
 
     // Undo: single step restores 'card'
     await page.evaluate(() => {
@@ -120,15 +94,10 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
       return s?.meta?.semantic?.type;
     }, shapeId);
     expect(typeRestored).toBe('card');
-
-    const chipRestored = await page.evaluate((id) => {
-      const chip = document.querySelector(`.od-semantic-chip[data-shape-id="${id}"] text`);
-      return chip?.textContent;
-    }, shapeId);
-    expect(chipRestored).toContain('card');
+    await expect(chip).toContainText('card');
   });
 
-  test('rename via popover updates chip label while keeping shape ID unchanged', async ({ page }) => {
+  test('rename via real page.click and page.fill maintains focus, selection, and single undo entry', async ({ page }) => {
     const shapeId = await page.evaluate(() => {
       const editor = (window as any).__od_debug__.editor;
       const s = editor.createShape({
@@ -142,12 +111,25 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
       return s.id;
     });
 
-    // Rename via input
-    await page.evaluate(() => {
-      const input = document.getElementById('tag-panel-name') as HTMLInputElement;
-      input.value = 'Submit CTA';
-      input.dispatchEvent(new Event('change'));
-    });
+    const initialUndoCount = await page.evaluate(() => (window as any).__od_debug__.editor.store.undoStack.length);
+
+    // Real click into the input: MUST NOT deselect shape or close panel (§0.4.1 defect)
+    await page.click('#tag-panel-name');
+    await expect(page.locator('#tag-panel')).toBeVisible();
+
+    const isFocused = await page.evaluate(() => document.activeElement?.id === 'tag-panel-name');
+    expect(isFocused).toBe(true);
+
+    const isStillSelected = await page.evaluate((id) => (window as any).__od_debug__.editor.isSelected(id), shapeId);
+    expect(isStillSelected).toBe(true);
+
+    // Real fill and Enter key commit
+    await page.fill('#tag-panel-name', 'Submit CTA');
+    await page.keyboard.press('Enter');
+
+    // Single undo entry created
+    const undoCountAfter = await page.evaluate(() => (window as any).__od_debug__.editor.store.undoStack.length);
+    expect(undoCountAfter).toBe(initialUndoCount + 1);
 
     const storeState = await page.evaluate((id) => {
       const s = (window as any).__od_debug__.editor.store.getShape(id);
@@ -162,16 +144,44 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
     expect(storeState.name).toBe('Submit CTA');
     expect(storeState.type).toBe('button');
 
-    // Assert chip label format matches `#<id> Submit CTA`
-    const chipText = await page.evaluate((id) => {
-      const chip = document.querySelector(`.od-semantic-chip[data-shape-id="${id}"] text`);
-      return chip?.textContent;
-    }, shapeId);
-    expect(chipText).toBe(`#${shapeId} Submit CTA`);
+    const chip = page.locator(`.od-semantic-chip[data-shape-id="${shapeId}"] text`);
+    await expect(chip).toHaveText(`#${shapeId} Submit CTA`);
+  });
+
+  test('keyboard path: Tab reaches panel inputs and typing does not trigger canvas shortcuts', async ({ page }) => {
+    const shapeId = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const s = editor.createShape({
+        type: 'rect',
+        x: 100,
+        y: 100,
+        props: { width: 150, height: 50, fill: '#3b82f6' },
+        meta: { semantic: { type: 'button' } },
+      });
+      editor.selectShape(s.id);
+      return s.id;
+    });
+
+    // Click input to focus
+    await page.click('#tag-panel-name');
+    await expect(page.locator('#tag-panel-name')).toBeFocused();
+
+    // Type letters 'r', 'v', 'd' which are canvas tool shortcuts
+    await page.keyboard.type('vrd');
+
+    // Verify canvas tool did not switch to rect/draw and shape was not deleted
+    const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
+    expect(tool).toBe('select');
+
+    const shapeExists = await page.evaluate((id) => (window as any).__od_debug__.editor.store.getShape(id) !== undefined, shapeId);
+    expect(shapeExists).toBe(true);
+
+    // Verify input value contains typed text
+    await expect(page.locator('#tag-panel-name')).toHaveValue('vrd');
   });
 
   test('provenance hint displays inference status and retagged-by-you state', async ({ page }) => {
-    const { rectId } = await page.evaluate(() => {
+    await page.evaluate(() => {
       const editor = (window as any).__od_debug__.editor;
       const p = editor.createShape({
         type: 'frame',
@@ -188,28 +198,15 @@ test.describe('Phase 4 §0.2: Tag Popover & Human Tagging Affordance Gate', () =
         meta: { parent: p.id },
       });
       editor.selectShape(r.id);
-      return { rectId: r.id };
     });
 
     // Initial inferred state: should show "Inferred: section"
-    const initialHint = await page.evaluate(() => {
-      const hint = document.getElementById('tag-panel-hint');
-      return hint?.textContent;
-    });
-    expect(initialHint).toBe('Inferred: section');
+    await expect(page.locator('#tag-panel-hint')).toHaveText('Inferred: section');
 
-    // Retag to card
-    await page.evaluate(() => {
-      const select = document.getElementById('tag-panel-type') as HTMLSelectElement;
-      select.value = 'card';
-      select.dispatchEvent(new Event('change'));
-    });
+    // Real selectOption to retag
+    await page.selectOption('#tag-panel-type', 'card');
 
     // After user override: should show "Inferred: section — retagged by you"
-    const retaggedHint = await page.evaluate(() => {
-      const hint = document.getElementById('tag-panel-hint');
-      return hint?.textContent;
-    });
-    expect(retaggedHint).toBe('Inferred: section — retagged by you');
+    await expect(page.locator('#tag-panel-hint')).toHaveText('Inferred: section — retagged by you');
   });
 });
