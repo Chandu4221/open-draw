@@ -2,9 +2,9 @@
   {
     "shapeCount": 100,
     "domNodeCount": 303,
-    "ttffMs": 21,
-    "avgDragBlockMs": 0.03333333333333333,
-    "maxDragBlockMs": 1,
+    "ttffMs": 12,
+    "avgDragBlockMs": 0,
+    "maxDragBlockMs": 0,
     "pan02xMs": 16.65,
     "pan10xMs": 16.65,
     "pan50xMs": 16.65
@@ -12,21 +12,21 @@
   {
     "shapeCount": 500,
     "domNodeCount": 1503,
-    "ttffMs": 30,
+    "ttffMs": 39,
     "avgDragBlockMs": 0,
     "maxDragBlockMs": 0,
-    "pan02xMs": 16.45,
-    "pan10xMs": 16.65,
+    "pan02xMs": 15.8,
+    "pan10xMs": 16.7,
     "pan50xMs": 16.65
   },
   {
     "shapeCount": 1000,
     "domNodeCount": 3003,
-    "ttffMs": 54,
-    "avgDragBlockMs": 0.03333333333333333,
-    "maxDragBlockMs": 1,
-    "pan02xMs": 16.2,
-    "pan10xMs": 16.65,
-    "pan50xMs": 16.75
+    "ttffMs": 57,
+    "avgDragBlockMs": 0,
+    "maxDragBlockMs": 0,
+    "pan02xMs": 15.9,
+    "pan10xMs": 16.7,
+    "pan50xMs": 16.65
   }
 ]
