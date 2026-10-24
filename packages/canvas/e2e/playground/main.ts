@@ -2,11 +2,13 @@ import { CanvasEditor } from '@open-draw/canvas';
 import { inferType, validateSemantics } from '@open-draw/semantics';
 import type { ShapeRecord } from '@open-draw/schema';
 import { PlaygroundTagPanel } from '../../../../apps/studio/src/playground-tag-panel.js';
+import { PlaygroundCompileModal } from '../../../../apps/studio/src/playground-compile-modal.js';
 
 const container = document.getElementById('canvas-container') as HTMLElement;
 const editor = new CanvasEditor();
 editor.mount(container);
-const tagPanel = new PlaygroundTagPanel(editor, container);
+const tagPanel = new PlaygroundTagPanel(editor, document.body);
+const compileModal = new PlaygroundCompileModal(editor);
 
 // Expose debug handle in dev
 (window as unknown as {
@@ -16,6 +18,8 @@ const tagPanel = new PlaygroundTagPanel(editor, container);
     CanvasEditor: typeof CanvasEditor;
     semantics: { inferType: typeof inferType; validateSemantics: typeof validateSemantics };
     setChipMode: (mode: 'always' | 'hover' | 'off') => void;
+    tagPanel: PlaygroundTagPanel;
+    compileModal: PlaygroundCompileModal;
   };
 }).__od_debug__ = {
   editor,
@@ -29,6 +33,8 @@ const tagPanel = new PlaygroundTagPanel(editor, container);
     chipMode = mode;
     updateChips();
   },
+  tagPanel,
+  compileModal,
 };
 
 let chipMode: 'always' | 'hover' | 'off' = 'off';

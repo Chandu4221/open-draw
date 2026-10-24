@@ -17,7 +17,7 @@ const editor = new CanvasEditor();
 editor.mount(container);
 
 // Initialize tag panel popover (§0.2)
-const tagPanel = new PlaygroundTagPanel(editor, container);
+const tagPanel = new PlaygroundTagPanel(editor, document.body);
 
 // Initialize compile specification modal (§2)
 const compileModal = new PlaygroundCompileModal(editor);

@@ -45,6 +45,12 @@ export class PlaygroundTagPanel {
       display: none;
     `;
 
+    // Defense-in-depth: stop bubbling to canvas container or document
+    this.rootEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.rootEl.addEventListener('mousedown', (e) => e.stopPropagation());
+    this.rootEl.addEventListener('wheel', (e) => e.stopPropagation());
+    this.rootEl.addEventListener('keydown', (e) => e.stopPropagation());
+
     // Header: Shape ID
     const header = document.createElement('div');
     header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;';
@@ -86,6 +92,19 @@ export class PlaygroundTagPanel {
     this.nameInput.style.cssText = 'width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; outline: none; background: #ffffff;';
     this.nameInput.addEventListener('change', () => this.onNameCommit());
     this.nameInput.addEventListener('blur', () => this.onNameCommit());
+    this.nameInput.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        this.onNameCommit();
+        this.nameInput.blur();
+      } else if (e.key === 'Escape') {
+        const shape = this.activeShapeId ? this.editor.store.getShape(this.activeShapeId) : null;
+        const currentName = shape ? (((shape.meta?.semantic as Record<string, unknown>)?.name as string) || '') : '';
+        this.nameInput.value = currentName;
+        this.nameInput.blur();
+        this.update();
+      }
+    });
 
     nameGroup.appendChild(nameLabel);
     nameGroup.appendChild(this.nameInput);
@@ -222,5 +241,9 @@ export class PlaygroundTagPanel {
     }
 
     this.isUpdating = false;
+  }
+
+  destroy(): void {
+    this.rootEl.remove();
   }
 }

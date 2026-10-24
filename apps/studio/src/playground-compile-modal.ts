@@ -128,7 +128,26 @@ export class PlaygroundCompileModal {
     `;
     closeBtn.textContent = 'Close';
 
+    const downloadBtn = document.createElement('button');
+    downloadBtn.id = 'od-compile-download-btn';
+    downloadBtn.setAttribute('aria-label', 'Download .md');
+    downloadBtn.style.cssText = `
+      padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1;
+      background: #ffffff; color: #334155; font-weight: 600; font-size: 13px; cursor: pointer;
+    `;
+    downloadBtn.textContent = 'Download .md';
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([this.textareaEl.value], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'opendraw-spec.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
     btnGroup.appendChild(closeBtn);
+    btnGroup.appendChild(downloadBtn);
     btnGroup.appendChild(this.copyBtn);
 
     footer.appendChild(statsSpan);
@@ -141,6 +160,19 @@ export class PlaygroundCompileModal {
     this.modalEl.appendChild(footer);
     this.overlayEl.appendChild(this.modalEl);
     document.body.appendChild(this.overlayEl);
+
+    // Defense-in-depth: stop bubbling to canvas container or document
+    this.overlayEl.addEventListener('pointerdown', (e) => {
+      if (e.target === this.overlayEl) this.close();
+      e.stopPropagation();
+    });
+    this.overlayEl.addEventListener('mousedown', (e) => e.stopPropagation());
+    this.overlayEl.addEventListener('wheel', (e) => e.stopPropagation());
+
+    this.modalEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.modalEl.addEventListener('mousedown', (e) => e.stopPropagation());
+    this.modalEl.addEventListener('wheel', (e) => e.stopPropagation());
+    this.modalEl.addEventListener('keydown', (e) => e.stopPropagation());
 
     // Event listeners
     this.legendCheckbox.addEventListener('change', () => this.refreshContent());
@@ -164,12 +196,11 @@ export class PlaygroundCompileModal {
 
     closeBtn.addEventListener('click', () => this.close());
     header.querySelector('#od-compile-close-x')?.addEventListener('click', () => this.close());
-    this.overlayEl.addEventListener('click', (e) => {
-      if (e.target === this.overlayEl) this.close();
-    });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.overlayEl.style.display === 'flex') {
+        e.stopPropagation();
+        e.preventDefault();
         this.close();
       }
     });
@@ -182,6 +213,10 @@ export class PlaygroundCompileModal {
 
   public close(): void {
     this.overlayEl.style.display = 'none';
+  }
+
+  public destroy(): void {
+    this.overlayEl.remove();
   }
 
   private refreshContent(): void {
