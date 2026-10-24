@@ -90,17 +90,17 @@ export class SingleFieldsController {
     this.typeSelect.addEventListener('change', () => this.onTypeChange());
     typeGroup.appendChild(typeLabel);
     typeGroup.appendChild(this.typeSelect);
-    this.containerEl.appendChild(typeGroup);
 
-    // Provenance Hint
+    // Provenance Hint (only takes space when inference metadata is present)
     this.hintEl = document.createElement('div');
     this.hintEl.id = 'inspector-hint';
-    this.hintEl.style.cssText = 'font-size: 10px; color: #64748b; font-style: italic; margin-bottom: 10px; min-height: 14px;';
-    this.containerEl.appendChild(this.hintEl);
+    this.hintEl.style.cssText = 'font-size: 10px; color: #64748b; font-style: italic; margin-top: 4px; display: none;';
+    typeGroup.appendChild(this.hintEl);
+    this.containerEl.appendChild(typeGroup);
 
     // Horizontal divider between Semantic Type and Parent Frame
     const typeDivider = document.createElement('div');
-    typeDivider.style.cssText = 'border-bottom: 1px solid #e2e8f0; margin: 12px 0 10px 0;';
+    typeDivider.style.cssText = 'border-bottom: 1px solid #e2e8f0; margin: 12px 0;';
     this.containerEl.appendChild(typeDivider);
   }
 
@@ -142,10 +142,12 @@ export class SingleFieldsController {
     this.typeSelect.value = currentType in SEMANTIC_TYPES ? currentType : 'section';
 
     if (inferredType) {
+      this.hintEl.style.display = 'block';
       this.hintEl.textContent = currentType === inferredType
         ? `Inferred: ${inferredType}`
         : `Inferred: ${inferredType} — retagged by you`;
     } else {
+      this.hintEl.style.display = 'none';
       this.hintEl.textContent = '';
     }
     this.isUpdating = false;
@@ -203,5 +205,7 @@ export class SingleFieldsController {
     this.lastInferredType = null;
     this.idEl.textContent = '';
     this.idEl.style.display = 'none';
+    this.hintEl.textContent = '';
+    this.hintEl.style.display = 'none';
   }
 }
