@@ -178,11 +178,13 @@
     .split-btn-group .btn-chevron span {
       font-size: 18px;
     }
-    .color-trigger-group {
+    .color-trigger-group,
+    .tags-trigger-group {
       display: flex;
       align-items: center;
     }
-    .color-btn {
+    .color-btn,
+    .tags-btn {
       padding: 0 6px 0 8px;
       gap: 5px;
       height: 34px;
@@ -295,6 +297,50 @@
       inset: 4px;
       border-radius: 50%;
       border: 2px solid #ffffff;
+    }
+    .tags-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 170px;
+    }
+    .tag-option-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-main);
+      text-align: left;
+      font-family: inherit;
+      transition: all 0.12s ease;
+      width: 100%;
+    }
+    .tag-option-item:hover {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+    }
+    .tag-option-item.active {
+      background: #eff6ff;
+      color: var(--accent);
+      border-color: #bfdbfe;
+    }
+    .tag-option-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .tag-option-title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .tag-option-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
     }
     .btn-primary {
       background: var(--accent);
@@ -452,6 +498,34 @@
       </div>
     </div>
 
+    <!-- Floating Tags / Chips Popup Panel -->
+    <div id="popup-tags" class="popover-panel hidden" role="dialog" aria-label="Tags Display">
+      <div class="popover-header">Tags Display</div>
+      <div class="tags-options-list">
+        <button class="tag-option-item" data-chip-mode="always" title="Always show semantic chips">
+          <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+          <div class="tag-option-text">
+            <span class="tag-option-title">Always</span>
+            <span class="tag-option-desc">Visible on all shapes</span>
+          </div>
+        </button>
+        <button class="tag-option-item active" data-chip-mode="hover" title="Show semantic chips on hover or selection">
+          <span class="material-symbols-outlined" style="font-size: 18px;">touch_app</span>
+          <div class="tag-option-text">
+            <span class="tag-option-title">On Hover</span>
+            <span class="tag-option-desc">Hover or selection</span>
+          </div>
+        </button>
+        <button class="tag-option-item" data-chip-mode="off" title="Show semantic chips on selection only">
+          <span class="material-symbols-outlined" style="font-size: 18px;">visibility_off</span>
+          <div class="tag-option-text">
+            <span class="tag-option-title">Off</span>
+            <span class="tag-option-desc">Hide all tags</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
     <!-- Floating Bottom Dock Toolbar -->
     <nav id="toolbar-dock" aria-label="Canvas Toolbar">
       <!-- Main Tools: Select & Active Shape (with Popup Expander - zero duplicates) -->
@@ -483,11 +557,12 @@
 
       <div class="divider"></div>
 
-      <!-- Chips Mode Toggle (Phase 5 §1.2) -->
-      <div class="tool-group" id="chip-mode-group" role="radiogroup" aria-label="Semantic Chips Mode">
-        <button class="btn btn-chip-mode" data-chip-mode="always" title="Always show semantic chips">Always</button>
-        <button class="btn btn-chip-mode active" data-chip-mode="hover" title="Show semantic chips on hover or selection">Hover</button>
-        <button class="btn btn-chip-mode" data-chip-mode="off" title="Show semantic chips on selection only">Off</button>
+      <!-- Tags Setting Trigger -->
+      <div class="tags-trigger-group" id="tags-trigger-group">
+        <button class="btn tags-btn" id="btn-toggle-tags" title="Tags Display (Hover)">
+          <span class="material-symbols-outlined" id="active-tag-icon" style="font-size: 20px;">tag</span>
+          <span class="material-symbols-outlined" style="font-size: 16px; margin-left: -2px;">expand_less</span>
+        </button>
       </div>
 
       <div class="divider"></div>

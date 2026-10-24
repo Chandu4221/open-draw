@@ -122,13 +122,17 @@ document.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach((btn) => {
 
 // Chips mode toggle
 document.querySelectorAll<HTMLButtonElement>('[data-chip-mode]').forEach((btn) => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
     const mode = btn.getAttribute('data-chip-mode') as ChipMode;
     if (mode) {
       chips.setMode(mode);
       document.querySelectorAll<HTMLButtonElement>('[data-chip-mode]').forEach((b) => {
         b.classList.toggle('active', b.getAttribute('data-chip-mode') === mode);
       });
+      const tagBtn = document.getElementById('btn-toggle-tags');
+      if (tagBtn) tagBtn.title = `Tags Display (${mode.charAt(0).toUpperCase() + mode.slice(1)})`;
+      popups.closeAll();
     }
   });
 });
@@ -259,5 +263,12 @@ function seedStarterWireframe(ed: CanvasEditor): void {
 // Dev handles
 (window as unknown as { __od_debug__: Record<string, unknown> }).__od_debug__ = {
   editor, inspector, chips, autosave, toast, clearModal, compileModal,
-  setChipMode: (mode: ChipMode) => chips.setMode(mode),
+  setChipMode: (mode: ChipMode) => {
+    chips.setMode(mode);
+    document.querySelectorAll<HTMLButtonElement>('[data-chip-mode]').forEach((b) => {
+      b.classList.toggle('active', b.getAttribute('data-chip-mode') === mode);
+    });
+    const tagBtn = document.getElementById('btn-toggle-tags');
+    if (tagBtn) tagBtn.title = `Tags Display (${mode.charAt(0).toUpperCase() + mode.slice(1)})`;
+  },
 };

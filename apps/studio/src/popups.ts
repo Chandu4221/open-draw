@@ -15,8 +15,10 @@ export function initPopups(
 
   const popupShapes = document.getElementById('popup-shapes') as HTMLElement | null;
   const popupColors = document.getElementById('popup-colors') as HTMLElement | null;
+  const popupTags = document.getElementById('popup-tags') as HTMLElement | null;
   const btnToggleShapes = document.getElementById('btn-toggle-shapes') as HTMLButtonElement | null;
   const btnToggleColors = document.getElementById('btn-toggle-colors') as HTMLButtonElement | null;
+  const btnToggleTags = document.getElementById('btn-toggle-tags') as HTMLButtonElement | null;
   const toolActiveShape = document.getElementById('tool-active-shape') as HTMLButtonElement | null;
   const activeShapeIcon = document.getElementById('active-shape-icon') as HTMLElement | null;
   const activeColorDot = document.getElementById('active-color-dot') as HTMLElement | null;
@@ -24,8 +26,10 @@ export function initPopups(
   function closeAll(): void {
     if (popupShapes) popupShapes.classList.add('hidden');
     if (popupColors) popupColors.classList.add('hidden');
+    if (popupTags) popupTags.classList.add('hidden');
     btnToggleShapes?.classList.remove('active');
     btnToggleColors?.classList.remove('active');
+    btnToggleTags?.classList.remove('active');
   }
 
   function positionPopup(popup: HTMLElement, trigger: HTMLElement): void {
@@ -56,6 +60,11 @@ export function initPopups(
   btnToggleColors?.addEventListener('click', (e) => {
     e.stopPropagation();
     togglePopup(popupColors, btnToggleColors);
+  });
+
+  btnToggleTags?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePopup(popupTags, btnToggleTags);
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-popup-tool]').forEach((btn) => {
@@ -116,8 +125,10 @@ export function initPopups(
     if (
       !target?.closest('#popup-shapes') &&
       !target?.closest('#popup-colors') &&
+      !target?.closest('#popup-tags') &&
       !target?.closest('#btn-toggle-shapes') &&
-      !target?.closest('#btn-toggle-colors')
+      !target?.closest('#btn-toggle-colors') &&
+      !target?.closest('#btn-toggle-tags')
     ) {
       closeAll();
     }
@@ -133,6 +144,9 @@ export function initPopups(
     }
     if (popupColors && !popupColors.classList.contains('hidden') && btnToggleColors) {
       positionPopup(popupColors, btnToggleColors);
+    }
+    if (popupTags && !popupTags.classList.contains('hidden') && btnToggleTags) {
+      positionPopup(popupTags, btnToggleTags);
     }
   });
 
