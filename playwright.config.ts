@@ -33,6 +33,6 @@ export default defineConfig({
     command: 'npx vite --config packages/canvas/e2e/playground/vite.config.ts packages/canvas/e2e/playground --host 127.0.0.1 --port 5188 --strictPort',
     url: 'http://127.0.0.1:5188',
     reuseExistingServer: !process.env.CI,
-    timeout: 30000,
+    timeout: 60000,
   },
 });

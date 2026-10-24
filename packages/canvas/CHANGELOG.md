@@ -2,6 +2,25 @@
 
 All notable changes to `@open-draw/canvas` are documented in this file in adherence to Semantic Versioning.
 
+## 0.6.0 (2026-10-24)
+
+Major feature and aesthetics release: double-click inline text editing inside any shape, VS Code-style Structure Tree View, 14 new design styles (19 total styles), platform-aware style mapping, zero-emoji professional UI aesthetics (ADR-007), and CI/CD workflow hardening. Zero runtime dependencies preserved.
+
+### Features & Improvements
+- **Double-Click Inline Text Editing Inside Any Shape:**
+  - Double-clicking any shape on the canvas (rect, frame, note, ellipse) calculates the visual center, establishes transactional parent hierarchy, and immediately opens the inline text editor.
+- **VS Code-Style Structure Tree View in Studio Inspector:**
+  - Integrated collapsible twisty chevrons (`expand_more` / `chevron_right`), vertical nested guide lines (`.od-tree-children`), and hover actions (Reveal on canvas, Copy ID).
+  - Component container icons (`crop_square` box icon for `card`, `crop_free` for `frame`, `splitscreen` for `section`, `layers` for `group`) preserve visual semantic hierarchy without forcing filesystem folder icons.
+  - Full-width selection highlights synced bidirectionally with canvas selection and custom context menus.
+- **14 New Design Styles & Platform-Specific Mapping:**
+  - Added 14 new design style token profiles: Modern Skeuomorphism, Claymorphism, Linear Modern, Bento Grid, Aurora Glow, Win95 Retro, Cyberpunk, Synthwave, Pixel Art, Swiss Style, Raw Brutalism, Monochrome, Apple Cupertino, and Fluent 2.
+  - Document Settings dynamically filters styles by active target platform (`web`, `android`, `flutter`) with automatic graceful fallback.
+- **Professional UI Aesthetics (ADR-007):**
+  - Replaced all Unicode toy emojis with monochrome Google Material Symbols across the UI.
+- **CI/CD Idempotency & Workflow Hardening:**
+  - Hardened publish workflow with idempotent dry-run and release validation for `@open-draw/schema` and `@open-draw/canvas`, preventing registry collision failures.
+
 ## 0.5.1 (2026-10-24)
 
 Feature and cross-browser precision release: single-click text shape insertion, subpixel stroke-drift fixes under extreme zoom in Firefox, and CI/CD workflow hardening. Zero runtime dependencies preserved.

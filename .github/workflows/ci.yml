@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - 'build/**'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - main
@@ -83,4 +85,14 @@ jobs:
 
       - name: Run E2E Matrix (Chromium, Firefox, WebKit)
         run: npm run test:e2e
+
+      - name: Upload Playwright Artifacts on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
 

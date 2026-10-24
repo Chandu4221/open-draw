@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (must match 0.5.1 in packages/canvas/package.json)'
+        description: 'Version to publish (must match 0.6.0 in packages/canvas/package.json)'
         required: true
-        default: '0.5.1'
+        default: '0.6.0'
 
 jobs:
   publish:
@@ -25,6 +25,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate version input matches package.json
+        run: |
+          CANVAS_VER=$(node -p "require('./packages/canvas/package.json').version")
+          INPUT_VER="${{ github.event.inputs.version }}"
+          if [ -n "$INPUT_VER" ] && [ "$INPUT_VER" != "$CANVAS_VER" ]; then
+            echo "ERROR: Input version ($INPUT_VER) does not match packages/canvas/package.json ($CANVAS_VER)!"
+            exit 1
+          fi
+          echo "Target publish version verified: $CANVAS_VER"
+
       - name: Verify All 9 CI Fences & Build
         run: npm run verify
 
@@ -38,7 +48,13 @@ jobs:
           fi
 
       - name: Dry-run publish (@open-draw/canvas)
-        run: npm publish --dry-run --workspace @open-draw/canvas
+        run: |
+          CANVAS_VER=$(node -p "require('./packages/canvas/package.json').version")
+          if npm view "@open-draw/canvas@${CANVAS_VER}" version >/dev/null 2>&1; then
+            echo "@open-draw/canvas@${CANVAS_VER} already published on npm; skipping dry-run."
+          else
+            npm publish --dry-run --workspace @open-draw/canvas
+          fi
 
       # Publish in strict topological order: schema first (if not already published), then canvas
       - name: Publish @open-draw/schema
