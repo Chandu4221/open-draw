@@ -61,6 +61,7 @@ export interface ShapeDefinition<P = Record<string, unknown>> {
   update?(element: SVGElement, shape: ShapeRecord<P>, prevShape: ShapeRecord<P>, ctx: RenderContext): void;
   doubleClick?(shape: ShapeRecord<P>, event: MouseEvent, ctx: InteractionContext): void;
   readonly lockAspect?: boolean;
+  readonly insertOnClick?: boolean;
   readonly capabilities?: ShapeCapabilities<P>;
 }
 

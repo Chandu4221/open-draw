@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DuplicateShapeTypeError, ShapeRegistry, type ShapeDefinition } from './registry.js';
 import { rectDefinition } from './shapes/rect/index.js';
 import { groupDefinition } from './shapes/group/index.js';
+import { textDefinition } from './shapes/text/index.js';
 
 describe('ShapeRegistry', () => {
   it('registers and retrieves shape definitions', () => {
@@ -76,3 +77,13 @@ describe('groupDefinition plugin', () => {
     expect(groupDefinition.defaultProps()).toEqual({});
   });
 });
+
+describe('textDefinition plugin', () => {
+  it('configures insertOnClick flag exclusively for text', () => {
+    expect(textDefinition.type).toBe('text');
+    expect(textDefinition.insertOnClick).toBe(true);
+    expect(rectDefinition.insertOnClick).toBeUndefined();
+    expect(groupDefinition.insertOnClick).toBeUndefined();
+  });
+});
+

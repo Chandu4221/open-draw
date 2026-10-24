@@ -86,6 +86,32 @@ export class ShapeCreationController {
           this.editor.store.mergeLastHistoryEntry();
         }
       }
+    } else if (!this.createdId && !this.didDrag && this.tool && this.startPt) {
+      const def = this.editor.registry.get(this.tool);
+      if (def?.insertOnClick) {
+        const shape = this.editor.createShape({
+          type: this.tool,
+          x: this.startPt.x,
+          y: this.startPt.y,
+          props: def.defaultProps(),
+        });
+        this.editor.selectShape(shape.id);
+        const suggested = findSuggestedParent(
+          def.geometry.bounds(shape),
+          this.editor.store.listShapes(),
+          this.editor.registry,
+          shape.id
+        );
+        if (suggested) {
+          this.editor.store.updateShape(shape.id, {
+            meta: { ...shape.meta, parent: suggested.id },
+          });
+          this.editor.store.mergeLastHistoryEntry();
+        }
+        if (def.capabilities?.text?.canEditText(shape)) {
+          this.editor.textEditing.startEditing(shape.id, this.editor);
+        }
+      }
     }
 
     this.isCreating = false;

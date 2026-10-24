@@ -9,6 +9,7 @@ export * from './render.js';
 
 export const textDefinition: ShapeDefinition<TextProps> = {
   type: 'text',
+  insertOnClick: true,
   defaultProps(): TextProps {
     return {
       text: 'Text',

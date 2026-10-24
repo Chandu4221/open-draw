@@ -242,4 +242,73 @@ test.describe('Privileged Capability #1: Text Editing E2E Gate', () => {
     const updatedShape = await page.evaluate((id) => (window as any).__od_debug__.editor.getShape(id), shapeId);
     expect(updatedShape.props.text).toBe('Hello World with spaces');
   });
+
+  test('single click on canvas with text tool inserts text shape and opens inline editor', async ({ page }) => {
+    // 1. Activate text tool
+    await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      editor.setTool('text');
+    });
+
+    const tool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
+    expect(tool).toBe('text');
+
+    // 2. Click canvas at (250, 180) without dragging
+    const containerBox = await page.locator('#canvas-container').boundingBox();
+    expect(containerBox).not.toBeNull();
+    const clickX = (containerBox?.x ?? 0) + 250;
+    const clickY = (containerBox?.y ?? 0) + 180;
+
+    await page.mouse.move(clickX, clickY);
+    await page.mouse.down();
+    await page.mouse.up();
+
+    // 3. Verify text shape was created in store
+    const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+    expect(shapes.length).toBe(1);
+    const shape = shapes[0];
+    expect(shape.type).toBe('text');
+    expect(shape.x).toBe(250);
+    expect(shape.y).toBe(180);
+
+    // Verify tool reset to 'select'
+    const resetTool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
+    expect(resetTool).toBe('select');
+
+    // 4. Verify text editor textarea is mounted and active
+    const textarea = page.locator(`.od-shape[data-id="${shape.id}"] textarea.od-text-editor`);
+    await expect(textarea).toBeVisible();
+    await expect(textarea).toBeFocused();
+
+    // 5. Type text and commit via canvas blur
+    await page.keyboard.type('Clicked text');
+    await page.locator('#canvas-container').click({ position: { x: 500, y: 500 } });
+
+    // Verify committed text
+    const updatedShape = await page.evaluate((id) => (window as any).__od_debug__.editor.getShape(id), shape.id);
+    expect(updatedShape.props.text).toBe('Clicked text');
+  });
+
+  test('single click on canvas with rect tool does not insert shape', async ({ page }) => {
+    await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      editor.setTool('rect');
+    });
+
+    const containerBox = await page.locator('#canvas-container').boundingBox();
+    expect(containerBox).not.toBeNull();
+    const clickX = (containerBox?.x ?? 0) + 250;
+    const clickY = (containerBox?.y ?? 0) + 180;
+
+    await page.mouse.move(clickX, clickY);
+    await page.mouse.down();
+    await page.mouse.up();
+
+    const shapes = await page.evaluate(() => (window as any).__od_debug__.editor.store.listShapes());
+    expect(shapes.length).toBe(0);
+
+    const resetTool = await page.evaluate(() => (window as any).__od_debug__.editor.getTool());
+    expect(resetTool).toBe('select');
+  });
 });
+
