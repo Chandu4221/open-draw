@@ -122,4 +122,78 @@ test.describe('Phase 5 §7.3: Structure Tree Tab Suite', () => {
     const isSelected = await page.evaluate((id) => (window as any).__od_debug__.editor.isSelected(id), shapeId);
     expect(isSelected).toBe(true);
   });
+
+  test('collapses and expands container nodes using twisty chevrons', async ({ page }) => {
+    const [frameId, childId] = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const f = editor.createShape({
+        id: 'frame-parent',
+        type: 'frame',
+        x: 100,
+        y: 100,
+        props: { width: 300, height: 200 },
+        meta: { semantic: { type: 'card', name: 'Card Container' } },
+      });
+      const c = editor.createShape({
+        id: 'inner-child',
+        type: 'rect',
+        x: 120,
+        y: 120,
+        props: { width: 80, height: 40 },
+        meta: { parent: 'frame-parent', semantic: { type: 'button', name: 'Submit' } },
+      });
+      return [f.id, c.id];
+    });
+
+    await page.click('#inspector-tab-tree');
+
+    // Both parent and child should be visible initially
+    const parentNode = page.locator(`.od-tree-node[data-id="${frameId}"]`);
+    const childNode = page.locator(`.od-tree-node[data-id="${childId}"]`);
+    await expect(parentNode).toBeVisible();
+    await expect(childNode).toBeVisible();
+
+    // Check twisty is expanded (▾)
+    const twisty = parentNode.locator('.od-tree-twisty');
+    await expect(twisty).toHaveText('▾');
+
+    // Click twisty to collapse
+    await twisty.click();
+
+    // Child should now be hidden
+    await expect(childNode).toBeHidden();
+    await expect(twisty).toHaveText('▸');
+
+    // Click twisty again to expand
+    await twisty.click();
+    await expect(childNode).toBeVisible();
+    await expect(twisty).toHaveText('▾');
+  });
+
+  test('quick action reveal button centers and selects shape', async ({ page }) => {
+    const shapeId = await page.evaluate(() => {
+      const editor = (window as any).__od_debug__.editor;
+      const s = editor.createShape({
+        id: 'offscreen-target',
+        type: 'rect',
+        x: 2000,
+        y: 2000,
+        props: { width: 100, height: 100 },
+        meta: { semantic: { type: 'card' } },
+      });
+      return s.id;
+    });
+
+    await page.click('#inspector-tab-tree');
+    const node = page.locator(`.od-tree-node[data-id="${shapeId}"]`);
+    await node.hover();
+
+    const revealBtn = node.locator('.od-tree-action-btn[title="Reveal on canvas"]');
+    await expect(revealBtn).toBeVisible();
+    await revealBtn.click();
+
+    const isSelected = await page.evaluate((id) => (window as any).__od_debug__.editor.isSelected(id), shapeId);
+    expect(isSelected).toBe(true);
+  });
 });
+

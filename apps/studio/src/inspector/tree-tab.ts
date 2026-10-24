@@ -1,12 +1,13 @@
 import type { CanvasEditor } from '@open-draw/canvas';
 import type { ShapeRecord } from '@open-draw/schema';
+import { TreeContextMenu } from './tree-context-menu.js';
 
 export class StructureTreeTab {
   private editor: CanvasEditor;
   readonly element: HTMLElement;
   private treeContainer: HTMLElement;
-  private contextMenuEl: HTMLElement;
-  private activeContextShapeId: string | null = null;
+  private contextMenu: TreeContextMenu;
+  private collapsedIds = new Set<string>();
   private unsubscribeStore?: () => void;
   private unsubscribeSelection?: () => void;
 
@@ -20,50 +21,22 @@ export class StructureTreeTab {
 
     this.treeContainer = document.createElement('div');
     this.treeContainer.id = 'od-tree-container';
-    this.treeContainer.style.cssText = `
-      max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;
-      font-size: 12px; font-family: monospace;
-    `;
+    this.treeContainer.className = 'od-tree-container';
     this.element.appendChild(this.treeContainer);
 
-    // Floating Context Menu
-    this.contextMenuEl = document.createElement('div');
-    this.contextMenuEl.id = 'od-tree-context-menu';
-    this.contextMenuEl.style.cssText = `
-      position: fixed; display: none; z-index: 100;
-      background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px 0; font-family: sans-serif;
-      font-size: 12px; min-width: 130px;
-    `;
-
-    const revealItem = document.createElement('div');
-    revealItem.id = 'od-tree-menu-reveal';
-    revealItem.textContent = 'Reveal on canvas';
-    revealItem.style.cssText = 'padding: 6px 12px; cursor: pointer; color: #0f172a;';
-    revealItem.addEventListener('mouseenter', () => revealItem.style.background = '#f1f5f9');
-    revealItem.addEventListener('mouseleave', () => revealItem.style.background = 'transparent');
-    revealItem.addEventListener('click', () => this.onRevealShape());
-
-    const copyItem = document.createElement('div');
-    copyItem.id = 'od-tree-menu-copy';
-    copyItem.textContent = 'Copy ID';
-    copyItem.style.cssText = 'padding: 6px 12px; cursor: pointer; color: #0f172a;';
-    copyItem.addEventListener('mouseenter', () => copyItem.style.background = '#f1f5f9');
-    copyItem.addEventListener('mouseleave', () => copyItem.style.background = 'transparent');
-    copyItem.addEventListener('click', () => this.onCopyId());
-
-    this.contextMenuEl.appendChild(revealItem);
-    this.contextMenuEl.appendChild(copyItem);
-    document.body.appendChild(this.contextMenuEl);
-
-    document.addEventListener('pointerdown', (e) => {
-      if (!this.contextMenuEl.contains(e.target as Node)) {
-        this.hideContextMenu();
-      }
+    this.contextMenu = new TreeContextMenu({
+      onReveal: (shapeId) => this.revealShape(shapeId),
+      onCopy: (shapeId) => {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(shapeId).catch(() => {});
+        }
+      },
     });
 
     this.unsubscribeStore = this.editor.store.listen(() => this.render());
-    this.unsubscribeSelection = this.editor.selectionManager.subscribe(() => this.updateSelectionHighlight());
+    this.unsubscribeSelection = this.editor.selectionManager.subscribe(() => {
+      this.updateSelectionHighlight();
+    });
 
     this.render();
   }
@@ -75,26 +48,7 @@ export class StructureTreeTab {
 
   hide(): void {
     this.element.style.display = 'none';
-    this.hideContextMenu();
-  }
-
-  private hideContextMenu(): void {
-    this.contextMenuEl.style.display = 'none';
-    this.activeContextShapeId = null;
-  }
-
-  private onRevealShape(): void {
-    if (!this.activeContextShapeId) return;
-    this.revealShape(this.activeContextShapeId);
-    this.hideContextMenu();
-  }
-
-  private onCopyId(): void {
-    if (!this.activeContextShapeId) return;
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(this.activeContextShapeId).catch(() => {});
-    }
-    this.hideContextMenu();
+    this.contextMenu.hide();
   }
 
   revealShape(shapeId: string): void {
@@ -103,7 +57,6 @@ export class StructureTreeTab {
 
     this.editor.selectionManager.setSelection([shapeId]);
 
-    // Pan camera to center shape in viewport if off-screen
     const container = this.editor.getContainer();
     if (container) {
       const rect = container.getBoundingClientRect();
@@ -126,7 +79,8 @@ export class StructureTreeTab {
     this.treeContainer.innerHTML = '';
     const shapes = this.editor.store.listShapes();
     if (shapes.length === 0) {
-      this.treeContainer.innerHTML = '<div style="color: #94a3b8; font-style: italic; padding: 12px; text-align: center;">Empty canvas</div>';
+      this.treeContainer.innerHTML =
+        '<div style="color: #94a3b8; font-style: italic; padding: 12px; text-align: center;">Empty canvas</div>';
       return;
     }
 
@@ -150,37 +104,64 @@ export class StructureTreeTab {
     const sortList = (arr: ShapeRecord[]) =>
       [...arr].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
 
-    const renderNode = (s: ShapeRecord, depth: number) => {
+    const renderNode = (s: ShapeRecord, containerEl: HTMLElement) => {
+      const children = childrenByParent.get(s.id);
+      const hasChildren = Boolean(children && children.length > 0);
+      const isCollapsed = this.collapsedIds.has(s.id);
+
       const nodeEl = document.createElement('div');
       nodeEl.className = 'od-tree-node';
       nodeEl.setAttribute('data-id', s.id);
-      nodeEl.style.cssText = `
-        padding: 5px 8px 5px ${depth * 14 + 8}px; cursor: pointer;
-        display: flex; align-items: center; gap: 6px; border-radius: 4px;
-        margin-bottom: 2px; user-select: none;
-      `;
 
       if (this.editor.selection.includes(s.id)) {
         nodeEl.classList.add('selected');
-        nodeEl.style.background = '#e0f2fe';
-        nodeEl.style.color = '#0369a1';
-        nodeEl.style.fontWeight = '600';
       }
 
-      // Icon
+      // Chevron Twisty vs Spacer
+      if (hasChildren) {
+        const twisty = document.createElement('span');
+        twisty.className = 'od-tree-twisty';
+        twisty.setAttribute('data-action', 'toggle-collapse');
+        twisty.textContent = isCollapsed ? '▸' : '▾';
+        twisty.title = isCollapsed ? 'Expand' : 'Collapse';
+        twisty.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.collapsedIds.has(s.id)) {
+            this.collapsedIds.delete(s.id);
+          } else {
+            this.collapsedIds.add(s.id);
+          }
+          this.render();
+        });
+        nodeEl.appendChild(twisty);
+      } else {
+        const spacer = document.createElement('span');
+        spacer.className = 'od-tree-spacer';
+        nodeEl.appendChild(spacer);
+      }
+
+      // Icon (folder vs leaf type icon)
       const iconEl = document.createElement('span');
       iconEl.className = 'od-tree-icon';
-      iconEl.style.fontSize = '11px';
-      const TYPE_ICONS: Record<string, string> = {
-        frame: '⛶',
-        group: '⧉',
-        text: 'T',
-        image: '🖼',
-      };
-      iconEl.textContent = TYPE_ICONS[s.type] ?? '▢';
+      if (hasChildren) {
+        iconEl.textContent = isCollapsed ? '📁' : '📂';
+      } else {
+        const TYPE_ICONS: Record<string, string> = {
+          frame: '⛶',
+          group: '⧉',
+          text: 'T',
+          image: '🖼',
+          circle: '◯',
+          diamond: '◇',
+          arrow: '➔',
+          line: '―',
+          star: '★',
+        };
+        iconEl.textContent = TYPE_ICONS[s.type] ?? '▢';
+      }
       nodeEl.appendChild(iconEl);
 
-      // Label
+      // Label (Primary name + #id)
       const sem = (s.meta['semantic'] ?? {}) as Record<string, unknown>;
       const semType = sem['type'] as string | undefined;
       const name = (sem['name'] as string) || '';
@@ -189,11 +170,17 @@ export class StructureTreeTab {
 
       const labelEl = document.createElement('span');
       labelEl.className = 'od-tree-label';
-      labelEl.textContent = `#${s.id} ${displayLabel}`;
-      labelEl.style.flex = '1';
-      labelEl.style.overflow = 'hidden';
-      labelEl.style.textOverflow = 'ellipsis';
-      labelEl.style.whiteSpace = 'nowrap';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'od-tree-name';
+      nameEl.textContent = displayLabel;
+      labelEl.appendChild(nameEl);
+
+      const idEl = document.createElement('span');
+      idEl.className = 'od-tree-id';
+      idEl.textContent = `#${s.id}`;
+      labelEl.appendChild(idEl);
+
       nodeEl.appendChild(labelEl);
 
       // Untagged badge
@@ -201,13 +188,36 @@ export class StructureTreeTab {
         const badgeEl = document.createElement('span');
         badgeEl.className = 'od-tree-untagged-badge';
         badgeEl.textContent = 'untagged';
-        badgeEl.style.cssText = `
-          font-size: 9px; font-weight: 600; text-transform: uppercase;
-          background: #fee2e2; color: #b91c1c; padding: 1px 4px;
-          border-radius: 3px; letter-spacing: 0.3px;
-        `;
         nodeEl.appendChild(badgeEl);
       }
+
+      // Hover actions (🎯 Reveal, 📋 Copy ID)
+      const actionsEl = document.createElement('span');
+      actionsEl.className = 'od-tree-actions';
+
+      const revealBtn = document.createElement('button');
+      revealBtn.className = 'od-tree-action-btn';
+      revealBtn.title = 'Reveal on canvas';
+      revealBtn.textContent = '🎯';
+      revealBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.revealShape(s.id);
+      });
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'od-tree-action-btn';
+      copyBtn.title = 'Copy ID';
+      copyBtn.textContent = '📋';
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(s.id).catch(() => {});
+        }
+      });
+
+      actionsEl.appendChild(revealBtn);
+      actionsEl.appendChild(copyBtn);
+      nodeEl.appendChild(actionsEl);
 
       // Click to select
       nodeEl.addEventListener('click', (e) => {
@@ -228,24 +238,24 @@ export class StructureTreeTab {
       nodeEl.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.activeContextShapeId = s.id;
-        this.contextMenuEl.style.left = `${e.clientX}px`;
-        this.contextMenuEl.style.top = `${e.clientY}px`;
-        this.contextMenuEl.style.display = 'block';
+        this.contextMenu.show(e.clientX, e.clientY, s.id);
       });
 
-      this.treeContainer.appendChild(nodeEl);
+      containerEl.appendChild(nodeEl);
 
-      const children = childrenByParent.get(s.id);
-      if (children && children.length > 0) {
+      // Render children under guide lines if expanded
+      if (hasChildren && !isCollapsed && children) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'od-tree-children';
         for (const child of sortList(children)) {
-          renderNode(child, depth + 1);
+          renderNode(child, childContainer);
         }
+        containerEl.appendChild(childContainer);
       }
     };
 
     for (const root of sortList(roots)) {
-      renderNode(root, 0);
+      renderNode(root, this.treeContainer);
     }
   }
 
@@ -254,17 +264,10 @@ export class StructureTreeTab {
     const allNodeEls = this.treeContainer.querySelectorAll('.od-tree-node');
     for (const nodeEl of allNodeEls) {
       const id = nodeEl.getAttribute('data-id');
-      const el = nodeEl as HTMLElement;
       if (id && sel.includes(id)) {
-        el.classList.add('selected');
-        el.style.background = '#e0f2fe';
-        el.style.color = '#0369a1';
-        el.style.fontWeight = '600';
+        nodeEl.classList.add('selected');
       } else {
-        el.classList.remove('selected');
-        el.style.background = 'transparent';
-        el.style.color = '#0f172a';
-        el.style.fontWeight = 'normal';
+        nodeEl.classList.remove('selected');
       }
     }
   }
@@ -272,7 +275,7 @@ export class StructureTreeTab {
   destroy(): void {
     if (this.unsubscribeStore) this.unsubscribeStore();
     if (this.unsubscribeSelection) this.unsubscribeSelection();
-    this.contextMenuEl.remove();
+    this.contextMenu.destroy();
     this.element.remove();
   }
 }
