@@ -1,13 +1,25 @@
 # OpenDraw Specification
 
-<!-- open-draw-spec:v1 -->
+<!-- open-draw-spec:v1.1 -->
+
+> **Consumption Directive: strict-fidelity**
+> Build EXACTLY the elements specified. Do not add, remove, or restyle beyond the Design Direction. Do not invent unspecified content.
+
+> **Bounds semantics:** Bounds are content-size in scene coordinate space. Absolute positions are spatial suggestions, not layout mandates; consuming agents adapt to target platform layout systems.
 
 ## Screen Structure
 
-- **[section]** f(k7w2) "Hero Section" (1200×600 at 0,0)
-  - **[heading]** f(m8q4) "Hero Title" (400×60 at 100,50) text: "Welcome to OpenDraw"
-  - **[button]** f(p2r9) "Primary CTA" (160×44 at 100,150) text: "Get Started"
-- **[section]** f(v3x5) "Footer" (1200×120 at 0,650)
+- **[section]** f(k7w2)
+  - **[heading]** f(m8q4) text: "Welcome to OpenDraw"
+  - **[button]** f(p2r9) text: "Get Started"
+- **[section]** f(v3x5)
+
+## Responsive Behavior
+
+### Breakpoint: Mobile (< 768px) (580px)
+
+- **[section]** f(k7w2) reflows (580×600 at 0,0)
+- **[section]** f(v3x5) reflows (580×120 at 0,650)
 
 ## Design Direction
 
@@ -38,16 +50,9 @@
 
 | Semantic Type | Platform Component | Container | Default Role | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `annotation` | `<aside />` | — | `note` | Accessible secondary note |
 | `button` | `<button />` | — | `button` | Interactive action element |
-| `card` | `<article />` | `column` | `article` | Surface with border and padding |
-| `column` | `<div />` | `column` | `group` | Flex child with width fractions |
-| `heading` | `<h2 />` | — | `heading` | Semantic heading element |
-| `image` | `<img />` | — | `img` | Image with mandatory alt attribute |
-| `nav` | `<nav />` | `row` | `navigation` | Accessible landmark header |
-| `page` | `<main />` | `flex` | `region` | Top-level semantic container |
+| `heading` | `<h2 />` | — | `heading` | Semantic heading element (h1-h6 based on hierarchy level) |
 | `section` | `<section />` | `column` | `region` | Vertical layout landmark |
-| `text` | `<p />` | — | `paragraph` | Standard typography paragraph |
 
 ## Element Legend
 

@@ -2,6 +2,7 @@ export interface StyleTokens {
   readonly id: string;
   readonly label: string;
   readonly description: string;
+  readonly notes?: string;
   readonly palette: {
     readonly background: string;
     readonly surface: string;

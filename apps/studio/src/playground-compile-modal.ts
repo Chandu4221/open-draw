@@ -7,6 +7,8 @@ export class PlaygroundCompileModal {
   private readonly textareaEl: HTMLTextAreaElement;
   private readonly legendCheckbox: HTMLInputElement;
   private readonly designDirCheckbox: HTMLInputElement;
+  private readonly responsiveCheckbox: HTMLInputElement;
+  private readonly directiveSelect: HTMLSelectElement;
   private readonly copyBtn: HTMLButtonElement;
   private readonly editor: CanvasEditor;
   private readonly getMetaProvider?: () => Record<string, unknown>;
@@ -47,7 +49,7 @@ export class PlaygroundCompileModal {
       <div>
         <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
           <span>Compiled Markdown Specification</span>
-          <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1;">v1 spec</span>
+          <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1;">v1.1 spec</span>
         </h3>
         <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">Deterministic, byte-stable specification for AI prompts &amp; developers</p>
       </div>
@@ -57,30 +59,56 @@ export class PlaygroundCompileModal {
     // Options Bar
     const optionsBar = document.createElement('div');
     optionsBar.style.cssText = `
-      display: flex; align-items: center; gap: 20px; padding: 10px 20px;
-      border-bottom: 1px solid #e2e8f0; background: #ffffff; font-size: 13px; color: #334155;
+      display: flex; align-items: center; gap: 16px; padding: 10px 20px;
+      border-bottom: 1px solid #e2e8f0; background: #ffffff; font-size: 13px; color: #334155; flex-wrap: wrap;
     `;
 
-    const legendLabel = document.createElement('label');
-    legendLabel.style.cssText = 'display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;';
-    this.legendCheckbox = document.createElement('input');
-    this.legendCheckbox.type = 'checkbox';
-    this.legendCheckbox.checked = true;
-    this.legendCheckbox.setAttribute('aria-label', 'Include Element Legend');
-    legendLabel.appendChild(this.legendCheckbox);
-    legendLabel.appendChild(document.createTextNode('Include Element Legend'));
+    const makeCheckbox = (label: string, checked = true) => {
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = checked;
+      input.setAttribute('aria-label', `Include ${label}`);
+      lbl.appendChild(input);
+      lbl.appendChild(document.createTextNode(label));
+      return { lbl, input };
+    };
 
-    const designDirLabel = document.createElement('label');
-    designDirLabel.style.cssText = 'display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;';
-    this.designDirCheckbox = document.createElement('input');
-    this.designDirCheckbox.type = 'checkbox';
-    this.designDirCheckbox.checked = true;
-    this.designDirCheckbox.setAttribute('aria-label', 'Include Design Direction');
-    designDirLabel.appendChild(this.designDirCheckbox);
-    designDirLabel.appendChild(document.createTextNode('Include Design Direction'));
+    const legendItem = makeCheckbox('Element Legend');
+    this.legendCheckbox = legendItem.input;
 
-    optionsBar.appendChild(legendLabel);
-    optionsBar.appendChild(designDirLabel);
+    const designDirItem = makeCheckbox('Design Direction');
+    this.designDirCheckbox = designDirItem.input;
+
+    const responsiveItem = makeCheckbox('Responsive');
+    this.responsiveCheckbox = responsiveItem.input;
+
+    const dirBox = document.createElement('div');
+    dirBox.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-left: auto;';
+    const dirLbl = document.createElement('label');
+    dirLbl.htmlFor = 'od-compile-directive';
+    dirLbl.textContent = 'Directive:';
+    dirLbl.style.cssText = 'font-size: 12px; font-weight: 600; color: #64748b;';
+
+    this.directiveSelect = document.createElement('select');
+    this.directiveSelect.id = 'od-compile-directive';
+    this.directiveSelect.setAttribute('aria-label', 'Consumption Directive');
+    this.directiveSelect.style.cssText = `
+      padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1;
+      font-size: 12px; background: #ffffff; color: #0f172a; cursor: pointer;
+    `;
+    this.directiveSelect.innerHTML = `
+      <option value="strict-fidelity">Strict Fidelity</option>
+      <option value="creative-allowed">Creative Allowed</option>
+    `;
+    dirBox.appendChild(dirLbl);
+    dirBox.appendChild(this.directiveSelect);
+
+    optionsBar.appendChild(legendItem.lbl);
+    optionsBar.appendChild(designDirItem.lbl);
+    optionsBar.appendChild(responsiveItem.lbl);
+    optionsBar.appendChild(dirBox);
 
     // Textarea Body
     const bodyContainer = document.createElement('div');
@@ -183,6 +211,8 @@ export class PlaygroundCompileModal {
     // Event listeners
     this.legendCheckbox.addEventListener('change', () => this.refreshContent());
     this.designDirCheckbox.addEventListener('change', () => this.refreshContent());
+    this.responsiveCheckbox.addEventListener('change', () => this.refreshContent());
+    this.directiveSelect.addEventListener('change', () => this.refreshContent());
 
     this.copyBtn.addEventListener('click', async () => {
       try {
@@ -235,6 +265,8 @@ export class PlaygroundCompileModal {
     const markdown = compile(snapshot, {
       legend: this.legendCheckbox.checked,
       designDirection: this.designDirCheckbox.checked,
+      responsive: this.responsiveCheckbox.checked,
+      directive: this.directiveSelect.value as 'strict-fidelity' | 'creative-allowed',
       platform: (meta['platform'] as string) || undefined,
     });
     this.textareaEl.value = markdown;

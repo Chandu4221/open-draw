@@ -1,10 +1,13 @@
 import type { ShapeRecord, Snapshot } from '@open-draw/schema';
 import { getPlatformProfile, getStyleProfile, SEMANTIC_TYPES } from '@open-draw/semantics';
+import { renderResponsiveSection } from './responsive-section.js';
 
 export interface CompileOptions {
   readonly title?: string;
   readonly legend?: boolean;
   readonly designDirection?: boolean;
+  readonly responsive?: boolean;
+  readonly directive?: 'strict-fidelity' | 'creative-allowed';
   readonly platform?: string;
 }
 
@@ -16,15 +19,24 @@ function getShapeBounds(shape: ShapeRecord): { x: number; y: number; width: numb
   return { x, y, width, height };
 }
 
-function getSemanticMeta(shape: ShapeRecord): { type: string; name: string } {
+interface SemanticMeta {
+  readonly rawType?: string;
+  readonly type: string;
+  readonly name: string;
+  readonly isUntagged: boolean;
+}
+
+function getSemanticMeta(shape: ShapeRecord): SemanticMeta {
   const semantic = (shape.meta?.semantic ?? {}) as Record<string, unknown>;
-  const type = (semantic.type as string) || shape.type;
+  const rawType = typeof semantic.type === 'string' && semantic.type.trim() ? semantic.type.trim() : undefined;
   const name = (semantic.name as string) || '';
-  return { type, name };
+  const isUntagged = !rawType;
+  const type = rawType || shape.type;
+  return { rawType, type, name, isUntagged };
 }
 
 /**
- * Compiles an OpenDraw scene into a byte-stable, deterministic markdown specification.
+ * Compiles an OpenDraw scene into a byte-stable, deterministic markdown specification (Format v1.1).
  */
 export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, options: CompileOptions = {}): string {
   const shapes: readonly ShapeRecord[] = Array.isArray(scene)
@@ -36,11 +48,37 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
   const title = options.title || 'OpenDraw Specification';
   const lines: string[] = [];
 
-  // Header & Format Identifier
+  // Header & Format Identifier v1.1 per Phase 5 §6.1.8
   lines.push(`# ${title}`);
   lines.push('');
-  lines.push('<!-- open-draw-spec:v1 -->');
+  lines.push('<!-- open-draw-spec:v1.1 -->');
   lines.push('');
+
+  // Consumption Directives per Phase 5 §6.1.6
+  const directive = options.directive ?? 'strict-fidelity';
+  if (directive === 'creative-allowed') {
+    lines.push('> **Consumption Directive: creative-allowed**');
+    lines.push('> Preserve every f(id) identity, semantic type, role, and structure exactly. Styling and additive content extension are permitted within the Design Direction.');
+  } else {
+    lines.push('> **Consumption Directive: strict-fidelity**');
+    lines.push('> Build EXACTLY the elements specified. Do not add, remove, or restyle beyond the Design Direction. Do not invent unspecified content.');
+  }
+  lines.push('');
+
+  // Bounds Semantics Declaration per Phase 5 §6.1.3
+  lines.push('> **Bounds semantics:** Bounds are content-size in scene coordinate space. Absolute positions are spatial suggestions, not layout mandates; consuming agents adapt to target platform layout systems.');
+  lines.push('');
+
+  // Untagged Elements Warning per Phase 5 §6.1.5 (Q-008)
+  const untaggedShapes = shapes.filter(s => getSemanticMeta(s).isUntagged);
+  if (untaggedShapes.length > 0) {
+    const untaggedList = [...untaggedShapes]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map(s => `f(${s.id})`)
+      .join(', ');
+    lines.push(`> ⚠ **Untagged Elements:** Shapes ${untaggedList} have no semantic type. Assign semantic types in OpenDraw Studio before final handoff.`);
+    lines.push('');
+  }
 
   // Extract scene meta
   const sceneMeta = (!Array.isArray(scene) && scene && typeof scene === 'object')
@@ -73,7 +111,7 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
 
   const sortedRoots = sortShapes(rootShapes);
 
-  // Section 1: Screen Structure
+  // Section 1: Screen Structure (Pure tree + content per Phase 5 §6.1.2)
   lines.push('## Screen Structure');
   lines.push('');
 
@@ -86,13 +124,14 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
       if (visited.has(s.id)) return;
       visited.add(s.id);
 
-      const { type, name } = getSemanticMeta(s);
-      const bounds = getShapeBounds(s);
+      const { type, isUntagged } = getSemanticMeta(s);
       const indent = '  '.repeat(depth);
-      const textProp = typeof s.props['text'] === 'string' ? ` text: "${s.props['text'].replace(/"/g, '\\"')}"` : '';
-      const namePart = name ? ` "${name}"` : '';
+      const textProp = typeof s.props['text'] === 'string' && s.props['text']
+        ? ` text: "${s.props['text'].replace(/"/g, '\\"')}"`
+        : '';
+      const typeBadge = isUntagged ? `untagged:${s.type}` : type;
 
-      lines.push(`${indent}- **[${type}]** f(${s.id})${namePart} (${bounds.width}×${bounds.height} at ${bounds.x},${bounds.y})${textProp}`);
+      lines.push(`${indent}- **[${typeBadge}]** f(${s.id})${textProp}`);
 
       const children = childrenByParent.get(s.id);
       if (children && children.length > 0) {
@@ -106,7 +145,6 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
       renderNode(root, 0);
     }
 
-    // Cycle fallback: any shapes not visited through roots
     if (visited.size < shapes.length) {
       for (const s of sortShapes([...shapes])) {
         if (!visited.has(s.id)) {
@@ -118,7 +156,19 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
     lines.push('');
   }
 
-  // Section 2: Design Direction (if requested)
+  // Section 2: Responsive Behavior per Phase 5 §6.1.4 (on by default)
+  if (options.responsive !== false && shapes.length > 0) {
+    const snapshot: Snapshot = {
+      version: 1,
+      shapes: [...shapes],
+      meta: sceneMeta,
+    };
+    const platform = getPlatformProfile(platformKey);
+    const respLines = renderResponsiveSection(snapshot, platform, shapes);
+    for (const l of respLines) lines.push(l);
+  }
+
+  // Section 3: Design Direction (if requested)
   if (options.designDirection) {
     lines.push('## Design Direction');
     lines.push('');
@@ -128,6 +178,11 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
 
     const style = getStyleProfile(styleKey);
     if (style) {
+      if (style.notes) {
+        lines.push(`> **Style Guidance:** ${style.notes}`);
+        lines.push('');
+      }
+
       lines.push('### Style Tokens');
       lines.push('');
       lines.push('| Category | Token | Value |');
@@ -163,20 +218,36 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
     if (platform && platform.mappings) {
       lines.push('### Platform Component Mappings');
       lines.push('');
-      lines.push('| Semantic Type | Platform Component | Container | Default Role | Notes |');
-      lines.push('| :--- | :--- | :--- | :--- | :--- |');
-      for (const [typeId, comp] of Object.entries(platform.mappings).sort(([a], [b]) => a.localeCompare(b))) {
-        const def = SEMANTIC_TYPES[typeId];
-        const container = comp.containerType ? `\`${comp.containerType}\`` : '—';
-        const notes = comp.notes ? comp.notes : '—';
-        lines.push(`| \`${typeId}\` | \`<${comp.componentName} />\` | ${container} | \`${def?.defaultRole || 'none'}\` | ${notes} |`);
+
+      // Filter mappings strictly to semantic types present in scene per Phase 5 §6.1.1
+      const sceneSemanticTypes = new Set<string>();
+      for (const s of shapes) {
+        const { rawType } = getSemanticMeta(s);
+        if (rawType && platform.mappings[rawType]) {
+          sceneSemanticTypes.add(rawType);
+        }
+      }
+
+      if (sceneSemanticTypes.size > 0) {
+        lines.push('| Semantic Type | Platform Component | Container | Default Role | Notes |');
+        lines.push('| :--- | :--- | :--- | :--- | :--- |');
+        for (const typeId of [...sceneSemanticTypes].sort((a, b) => a.localeCompare(b))) {
+          const comp = platform.mappings[typeId];
+          if (!comp) continue;
+          const def = SEMANTIC_TYPES[typeId];
+          const container = comp.containerType ? `\`${comp.containerType}\`` : '—';
+          const notes = comp.notes ? comp.notes : '—';
+          lines.push(`| \`${typeId}\` | \`<${comp.componentName} />\` | ${container} | \`${def?.defaultRole || 'none'}\` | ${notes} |`);
+        }
+      } else {
+        lines.push('*No mapped semantic components present in scene.*');
       }
       lines.push('');
     }
   }
 
-  // Section 3: Element Legend (if requested)
-  if (options.legend) {
+  // Section 4: Element Legend (Single canonical home for Bounds & Name per Phase 5 §6.1.2)
+  if (options.legend && shapes.length > 0) {
     lines.push('## Element Legend');
     lines.push('');
     lines.push('| ID | Type | Name | Parent | Bounds |');
@@ -184,12 +255,13 @@ export function compile(scene: Snapshot | readonly ShapeRecord[] | unknown, opti
 
     const sortedById = [...shapes].sort((a, b) => a.id.localeCompare(b.id));
     for (const s of sortedById) {
-      const { type, name } = getSemanticMeta(s);
+      const { type, name, isUntagged } = getSemanticMeta(s);
       const bounds = getShapeBounds(s);
       const parentId = (s.meta?.parent ?? s.meta?.parentId) as string | undefined;
       const parentRef = parentId ? `f(${parentId})` : '—';
       const nameCell = name ? `\`${name}\`` : '—';
-      lines.push(`| f(${s.id}) | \`${type}\` | ${nameCell} | ${parentRef} | ${bounds.width}×${bounds.height} at ${bounds.x},${bounds.y} |`);
+      const typeCell = isUntagged ? `${s.type} *untagged*` : `\`${type}\``;
+      lines.push(`| f(${s.id}) | ${typeCell} | ${nameCell} | ${parentRef} | ${bounds.width}×${bounds.height} at ${bounds.x},${bounds.y} |`);
     }
     lines.push('');
   }

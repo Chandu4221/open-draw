@@ -31,6 +31,6 @@ describe('Platform & Style Profiles (Data Modules)', () => {
     expect(neubrutalism?.shadows.y).toBe(4);
 
     const allStyles = listStyleProfiles();
-    expect(allStyles).toHaveLength(1);
+    expect(allStyles).toHaveLength(5);
   });
 });

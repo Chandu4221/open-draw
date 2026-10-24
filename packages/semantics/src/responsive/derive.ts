@@ -51,7 +51,7 @@ export function derive(
   // Group direct children by parentId
   const childrenByParent = new Map<ShapeId, ShapeRecord[]>();
   for (const s of scene.shapes) {
-    const parentId = (s.meta.parent ?? s.meta.parentId) as string | undefined;
+    const parentId = (s.meta?.parent ?? s.meta?.parentId) as string | undefined;
     if (parentId) {
       const list = childrenByParent.get(parentId) ?? [];
       list.push(s);
@@ -61,7 +61,7 @@ export function derive(
 
   // Identify container sections or pages
   for (const shape of scene.shapes) {
-    const parentId = (shape.meta.parent ?? shape.meta.parentId) as string | undefined;
+    const parentId = (shape.meta?.parent ?? shape.meta?.parentId) as string | undefined;
     if (parentId) continue; // child shapes handled through parent reflow
 
     const origW = getNum(shape.props.width, 1200);
