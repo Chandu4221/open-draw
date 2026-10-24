@@ -3,7 +3,7 @@ import type { ShapeRecord } from '@open-draw/schema';
 import { TreeContextMenu } from './tree-context-menu.js';
 
 const SEMANTIC_ICONS: Record<string, string> = {
-  button: 'smart_button', input: 'edit', card: 'space_dashboard', section: 'splitscreen',
+  button: 'smart_button', input: 'edit', card: 'crop_square', section: 'splitscreen',
   navbar: 'menu', nav: 'menu', footer: 'view_agenda', list: 'format_list_bulleted',
   table: 'table_chart', tabs: 'tab', modal: 'wysiwyg', alert: 'warning',
   badge: 'label', avatar: 'account_circle', select: 'arrow_drop_down_circle',
@@ -166,11 +166,10 @@ export class StructureTreeTab {
       const isUntagged = !semType;
       const displayLabel = name ? `${name} (${semType || s.type})` : (semType || s.type);
 
-      if (hasChildren) {
-        iconEl.textContent = isCollapsed ? 'folder' : 'folder_open';
-      } else {
-        iconEl.textContent = (semType && SEMANTIC_ICONS[semType]) ?? SHAPE_ICONS[s.type] ?? 'crop_square';
-      }
+      const iconGlyph = (semType && SEMANTIC_ICONS[semType]) ??
+        SHAPE_ICONS[s.type] ??
+        'crop_square';
+      iconEl.textContent = iconGlyph;
       nodeEl.appendChild(iconEl);
 
       // Label (Primary name + #id)

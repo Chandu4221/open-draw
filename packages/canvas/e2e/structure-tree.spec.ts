@@ -153,6 +153,10 @@ test.describe('Phase 5 §7.3: Structure Tree Tab Suite', () => {
     await expect(parentNode).toBeVisible();
     await expect(childNode).toBeVisible();
 
+    // Check parent card container displays box icon (crop_square), not folder
+    const parentIcon = parentNode.locator('.od-tree-icon');
+    await expect(parentIcon).toHaveText('crop_square');
+
     // Check twisty is expanded (expand_more)
     const twisty = parentNode.locator('.od-tree-twisty');
     await expect(twisty).toHaveText('expand_more');
