@@ -82,8 +82,8 @@ document (R-017).
 type ShapeMeta = {
   semantic?: { id: SemanticId; platform: "web" | "react-native" };
   order: Partial<Record<DeviceClass, number>>; // flex order per class; absent = 0
-  hiddenOn?: readonly DeviceClass[];            // absent = visible everywhere
-  style?: StyleId;                             // local override; inherited by default
+  hiddenOn?: readonly DeviceClass[]; // absent = visible everywhere
+  style?: StyleId; // local override; inherited by default
 };
 ```
 
@@ -107,7 +107,7 @@ The engine ignores it until the derive pipeline lands. The field is decided
 type Transaction = {
   readonly id: TransactionId;
   readonly commands: readonly Command[]; // one gesture = one batch
-  readonly inverse: readonly Command[];  // computed at apply time
+  readonly inverse: readonly Command[]; // computed at apply time
 };
 ```
 
