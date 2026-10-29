@@ -3,13 +3,8 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: [
-      "**/dist/**",
-      "**/coverage/**",
-      "**/node_modules/**",
-      "**/.turbo/**"
-    ]
+    ignores: ["**/dist/**", "**/coverage/**", "**/node_modules/**", "**/.turbo/**"],
   },
   js.configs.recommended,
-  ...tseslint.configs.recommended
+  ...tseslint.configs.recommended,
 );
