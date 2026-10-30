@@ -346,6 +346,10 @@ importers:
         version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2))
 
   packages/document:
+    dependencies:
+      "@open-draw/contracts":
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       eslint:
         specifier: ^10.13.0
