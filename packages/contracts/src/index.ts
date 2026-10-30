@@ -1,5 +1,8 @@
-// @open-draw/contracts — shared public interfaces and extension contracts.
-// Intentionally a placeholder at v0.1.0 (milestone 01). The first contracts
-// land in milestone 02 via idea → discussion → decision → validation →
-// implementation (R-038). No speculative code.
-export {};
+// @open-draw/contracts — shared types, branded ids, and closed registries.
+// Zero dependencies, zero behavior beyond constants and boundary conversion
+// (R-006). Implements ADR-0002.
+export * from "./bounding-box";
+export * from "./device-types";
+export * from "./ids";
+export * from "./platforms";
+export * from "./shape-kinds";

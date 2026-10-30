@@ -81,8 +81,8 @@ document (R-017).
 ```ts
 type ShapeMeta = {
   semantic?: { id: SemanticId; platform: "web" | "react-native" };
-  order: Partial<Record<DeviceClass, number>>; // flex order per class; absent = 0
-  hiddenOn?: readonly DeviceClass[]; // absent = visible everywhere
+  order: Partial<Record<DeviceType, number>>; // flex order per class; absent = 0
+  hiddenOn?: readonly DeviceType[]; // absent = visible everywhere
   style?: StyleId; // local override; inherited by default
 };
 ```
