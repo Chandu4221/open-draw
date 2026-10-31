@@ -1,7 +1,6 @@
-// Playground shell for milestone 02b: the thin imperative shell (R-008)
-// wiring DOM events to the pure canvas core. One gesture = one transaction =
-// one commit on pointer-up (R-018); drags render transient previews, never
-// mid-gesture document mutations. The camera is a wrapping transform (R-017).
+// Playground shell for milestone 3: wires DOM events and UI controls to
+// the createCanvas controller, @open-draw/input action resolution, and document
+// serialization/parsing (R-004, R-008, R-011, R-018, R-041).
 import { useEffect, useRef, useState } from "react";
 import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
 import { parseShapeId, SHAPE_KINDS } from "@open-draw/contracts";
@@ -14,36 +13,28 @@ import {
   createPage,
   createRect,
   createTransaction,
+  DocumentError,
   EMPTY_HISTORY,
+  parseDocument,
   recordHistory,
+  redo,
+  serializeDocument,
   undo,
   type Document,
   type EllipseShape,
   type HistoryState,
   type RectShape,
 } from "@open-draw/document";
+import { ACTIONS, type ActionId, type KeyboardEventDescriptor } from "@open-draw/input";
 import {
   CANVAS_EVENTS,
-  clearSelection,
-  DEFAULT_CAMERA,
-  EMPTY_SELECTION,
-  INITIAL_MACHINE_STATE,
+  createCanvas,
   normalizeBox,
-  panBy,
-  pickHandle,
-  pickShape,
   resizeBox,
-  screenToWorld,
-  selectOne,
-  singleSelected,
   STATES,
   TOOLS,
-  transition,
-  zoomAt,
-  type Camera,
+  type CanvasController,
   type HandleId,
-  type MachineState,
-  type Selection,
   type ToolId,
 } from "@open-draw/canvas";
 import { documentToSvg, previewBoxToSvg, selectionOverlayToSvg } from "@open-draw/renderer-svg";
@@ -58,18 +49,17 @@ interface Gesture {
   readonly handleId: HandleId | null;
   readonly originalBox: BoundingBox | null;
   readonly parentHit: ShapeId | null;
+  readonly targetShapeId: ShapeId | null;
 }
 
 const CANVAS_WIRE_STYLE = { width: "100%", height: "80vh", display: "block", touchAction: "none" };
 
 export default function App() {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const canvasRef = useRef<CanvasController>(createCanvas());
   const documentRef = useRef<Document>(
     createDocument([createPage(parseShapeId("page-1"), { x: 40, y: 40, width: 640, height: 480 })]),
   );
-  const cameraRef = useRef<Camera>(DEFAULT_CAMERA);
-  const selectionRef = useRef<Selection>(EMPTY_SELECTION);
-  const machineRef = useRef<MachineState>(INITIAL_MACHINE_STATE);
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
   const gestureRef = useRef<Gesture | null>(null);
   const lastScreenRef = useRef<Point>({ x: 0, y: 0 });
@@ -79,6 +69,7 @@ export default function App() {
   const spaceRef = useRef(false);
   const toolRef = useRef<ToolId>(TOOLS.select);
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
+  const [statusMessage, setStatusMessage] = useState<string>("");
 
   function chooseTool(next: ToolId): void {
     toolRef.current = next;
@@ -99,10 +90,12 @@ export default function App() {
     if (svg === null) {
       return;
     }
-    const camera = cameraRef.current;
+    const canvas = canvasRef.current;
+    const camera = canvas.getCamera();
     const doc = documentRef.current;
     const overlays: string[] = [];
-    const selectedId = singleSelected(selectionRef.current);
+    const selectedId = canvas.getSelectedId();
+
     if (selectedId !== null) {
       const shape = doc.shapes[selectedId];
       if (shape !== undefined) {
@@ -126,10 +119,12 @@ export default function App() {
         overlays.push(selectionOverlayToSvg(box, camera.zoom));
       }
     }
+
     const gesture = gestureRef.current;
     if (gesture !== null && gesture.kind === "draw") {
       overlays.push(previewBoxToSvg(normalizeBox(gesture.startWorld, lastWorldRef.current)));
     }
+
     const world = documentToSvg(doc) + overlays.join("");
     svg.innerHTML =
       `<g transform="translate(${-camera.x * camera.zoom} ${-camera.y * camera.zoom}) ` +
@@ -154,21 +149,24 @@ export default function App() {
 
   function onPointerDown(event: PointerEvent): void {
     event.preventDefault();
+    const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
-    const world = screenToWorld(cameraRef.current, screen);
+    const world = canvas.screenToWorld(screen);
     const doc = documentRef.current;
-    const camera = cameraRef.current;
-    const selectedId = singleSelected(selectionRef.current);
+    const selectedId = canvas.getSelectedId();
+
     let handle: HandleId | null = null;
     if (selectedId !== null) {
       const shape = doc.shapes[selectedId];
       if (shape !== undefined && shape.kind !== SHAPE_KINDS.page) {
-        handle = pickHandle(camera, absoluteBoundingBox(doc, shape), screen);
+        handle = canvas.pickHandle(absoluteBoundingBox(doc, shape), screen);
       }
     }
+
     const panRequested = event.button === 1 || spaceRef.current;
-    const hit = panRequested ? null : pickShape(doc, world);
-    machineRef.current = transition(machineRef.current, {
+    const hit = panRequested ? null : canvas.pickShape(doc, world);
+
+    canvas.dispatch({
       type: CANVAS_EVENTS.pointerDown,
       screenPoint: screen,
       worldPoint: world,
@@ -178,17 +176,13 @@ export default function App() {
       tool: toolRef.current,
       panRequested,
     });
-    // Select on pointer-down (inventory item 11): the pressed shape carries
-    // its selection overlay through the whole gesture (review Bug 6 fix).
-    // Never when a draw tool is active — drawing over a page must not
-    // select it (review round 2, Finding 1).
-    if (hit !== null && toolRef.current === TOOLS.select) {
-      selectionRef.current = selectOne(hit);
+
+    if (handle === null && hit !== null && toolRef.current === TOOLS.select) {
+      canvas.select(hit);
     }
-    // Capture on the persistent <svg> root — inner nodes are destroyed by
-    // every render(), which would abort the gesture (review Bug 5 fix).
+
     svgRef.current?.setPointerCapture(event.pointerId);
-    const state = machineRef.current;
+    const state = canvas.getMachineState();
     const kind: GestureKind =
       state.stateId === STATES.panning
         ? "pan"
@@ -199,10 +193,12 @@ export default function App() {
             : state.stateId === STATES.pointingShape
               ? "move"
               : "press";
+
     let shapeIds: readonly ShapeId[] = [];
     if (state.stateId === STATES.pointingShape && state.activeShapeId !== null) {
       shapeIds = [state.activeShapeId];
     }
+
     gestureRef.current = {
       kind,
       startScreen: screen,
@@ -214,6 +210,7 @@ export default function App() {
           ? absoluteBoundingBox(doc, doc.shapes[selectedId]!)
           : null,
       parentHit: hit,
+      targetShapeId: selectedId,
     };
     lastScreenRef.current = screen;
     lastWorldRef.current = world;
@@ -225,22 +222,25 @@ export default function App() {
     if (gesture === null) {
       return;
     }
+    const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
-    const world = screenToWorld(cameraRef.current, screen);
-    machineRef.current = transition(machineRef.current, {
+    const world = canvas.screenToWorld(screen);
+
+    canvas.dispatch({
       type: CANVAS_EVENTS.pointerMove,
       screenPoint: screen,
       worldPoint: world,
     });
-    if (machineRef.current.stateId === STATES.draggingShape && gesture.kind === "move") {
+
+    if (canvas.getMachineState().stateId === STATES.draggingShape && gesture.kind === "move") {
       gestureRef.current = {
         ...gesture,
         kind: "move",
-        shapeIds: [machineRef.current.activeShapeId!],
+        shapeIds: [canvas.getMachineState().activeShapeId!],
       };
     }
     if (gesture.kind === "pan") {
-      cameraRef.current = panBy(cameraRef.current, {
+      canvas.panBy({
         x: screen.x - lastScreenRef.current.x,
         y: screen.y - lastScreenRef.current.y,
       });
@@ -255,14 +255,17 @@ export default function App() {
     if (gesture === null) {
       return;
     }
+    const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
-    const world = screenToWorld(cameraRef.current, screen);
-    const before = machineRef.current.stateId;
-    machineRef.current = transition(machineRef.current, {
+    const world = canvas.screenToWorld(screen);
+    const before = canvas.getMachineState().stateId;
+
+    canvas.dispatch({
       type: CANVAS_EVENTS.pointerUp,
       screenPoint: screen,
       worldPoint: world,
     });
+
     if (before === STATES.draggingShape && gesture.shapeIds.length > 0) {
       const dx = world.x - gesture.startWorld.x;
       const dy = world.y - gesture.startWorld.y;
@@ -274,18 +277,15 @@ export default function App() {
     } else if (before === STATES.drawingShape) {
       commitDraw(gesture, world);
     } else if (before === STATES.idle && gesture.kind === "press") {
-      selectionRef.current = clearSelection();
+      canvas.clearSelection();
     }
     gestureRef.current = null;
     render();
   }
 
-  // Resize commit: the gesture box is world-space (absolute); the document
-  // stores parent-local boxes (ADR-0002 D4). The local box is derived by
-  // subtracting the PARENT's absolute origin — never the shape's own
-  // (review Bug 4 fix).
   function commitResize(gesture: Gesture, world: Point): void {
-    const selectedId = singleSelected(selectionRef.current);
+    const canvas = canvasRef.current;
+    const selectedId = gesture.targetShapeId ?? canvas.getSelectedId();
     if (selectedId === null || gesture.handleId === null || gesture.originalBox === null) {
       return;
     }
@@ -312,19 +312,16 @@ export default function App() {
     ]);
   }
 
-  // Drag-to-draw: over a page → shape parented there (parent-local box,
-  // `parent` explicitly passed — review Bug 1 fix); over empty canvas → a
-  // new page sized to the drag with the shape filling it (inventory item 6).
-  // The drawn kind follows the active tool in BOTH branches (review Bug 2
-  // fix).
   function commitDraw(gesture: Gesture, world: Point): void {
     const box = normalizeBox(gesture.startWorld, world);
     const doc = documentRef.current;
     const parentHit = gesture.parentHit;
+    const canvas = canvasRef.current;
     const createDrawnShape = (parent: ShapeId, localBox: BoundingBox): RectShape | EllipseShape =>
       toolRef.current === TOOLS.drawEllipse
         ? createEllipse(nextShapeId(), localBox, { parent })
         : createRect(nextShapeId(), localBox, { parent });
+
     if (parentHit !== null) {
       const parent = doc.shapes[parentHit];
       if (parent !== undefined && parent.kind === SHAPE_KINDS.page) {
@@ -336,7 +333,7 @@ export default function App() {
           height: box.height,
         });
         commit([{ type: COMMANDS.createShape, shape }]);
-        selectionRef.current = selectOne(shape.id);
+        canvas.select(shape.id);
         return;
       }
     }
@@ -351,15 +348,16 @@ export default function App() {
       { type: COMMANDS.createShape, shape: page },
       { type: COMMANDS.createShape, shape },
     ]);
-    selectionRef.current = selectOne(shape.id);
+    canvas.select(shape.id);
   }
 
   function onWheel(event: WheelEvent): void {
     event.preventDefault();
+    const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
     const factor = Math.exp(-event.deltaY * 0.001);
-    cameraRef.current = zoomAt(cameraRef.current, screen, factor);
-    machineRef.current = transition(machineRef.current, {
+    canvas.zoomAt(screen, factor);
+    canvas.dispatch({
       type: CANVAS_EVENTS.wheel,
       screenPoint: screen,
       factor,
@@ -367,23 +365,75 @@ export default function App() {
     render();
   }
 
+  function executeAction(action: ActionId): void {
+    const canvas = canvasRef.current;
+    switch (action) {
+      case ACTIONS.cancel: {
+        canvas.resetMachine();
+        gestureRef.current = null;
+        canvas.clearSelection();
+        chooseTool(TOOLS.select);
+        setStatusMessage("Cancelled / Selection cleared");
+        render();
+        break;
+      }
+      case ACTIONS.undo: {
+        const undone = undo(documentRef.current, historyRef.current);
+        if (undone !== null) {
+          documentRef.current = undone.document;
+          historyRef.current = undone.history;
+          setStatusMessage("Undo performed");
+          render();
+        }
+        break;
+      }
+      case ACTIONS.redo: {
+        const redone = redo(documentRef.current, historyRef.current);
+        if (redone !== null) {
+          documentRef.current = redone.document;
+          historyRef.current = redone.history;
+          setStatusMessage("Redo performed");
+          render();
+        }
+        break;
+      }
+      case ACTIONS.deleteSelected: {
+        const selectedId = canvas.getSelectedId();
+        if (selectedId !== null) {
+          commit([{ type: COMMANDS.deleteShape, id: selectedId }]);
+          canvas.clearSelection();
+          setStatusMessage(`Deleted shape: ${selectedId}`);
+          render();
+        }
+        break;
+      }
+      case ACTIONS.selectTool: {
+        // Cycle tools: select -> drawRect -> drawEllipse -> select
+        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawRect);
+        else if (toolRef.current === TOOLS.drawRect) chooseTool(TOOLS.drawEllipse);
+        else chooseTool(TOOLS.select);
+        break;
+      }
+    }
+  }
+
   function onKeyDown(event: KeyboardEvent): void {
     if (event.code === "Space") {
       spaceRef.current = true;
     }
-    if (event.code === "Escape") {
-      machineRef.current = transition(machineRef.current, { type: CANVAS_EVENTS.keyEscape });
-      gestureRef.current = null;
-      render();
-    }
-    if (event.ctrlKey && event.code === "KeyZ") {
+
+    const descriptor: KeyboardEventDescriptor = {
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+    };
+
+    const action = canvasRef.current.resolveAction(descriptor);
+    if (action !== undefined) {
       event.preventDefault();
-      const undone = undo(documentRef.current, historyRef.current);
-      if (undone !== null) {
-        documentRef.current = undone.document;
-        historyRef.current = undone.history;
-        render();
-      }
+      executeAction(action);
     }
   }
 
@@ -391,6 +441,48 @@ export default function App() {
     if (event.code === "Space") {
       spaceRef.current = false;
     }
+  }
+
+  function handleSave(): void {
+    try {
+      const json = serializeDocument(documentRef.current);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "opendraw-document.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMessage("Document saved successfully");
+    } catch (err) {
+      setStatusMessage(`Save error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function handleLoad(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const loaded = parseDocument(text);
+        documentRef.current = loaded;
+        historyRef.current = EMPTY_HISTORY;
+        canvasRef.current.clearSelection();
+        setStatusMessage("Document loaded successfully");
+        render();
+      } catch (err) {
+        if (err instanceof DocumentError) {
+          setStatusMessage(`Load error (${err.code}): ${err.message}`);
+        } else {
+          setStatusMessage(`Load error: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    };
+    input.click();
   }
 
   useEffect(() => {
@@ -418,17 +510,36 @@ export default function App() {
   return (
     <main>
       <h1>OpenDraw Playground</h1>
-      <div>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "8px",
+        }}
+      >
         <button type="button" onClick={() => chooseTool(TOOLS.select)}>
-          Select
+          Select (V)
         </button>
         <button type="button" onClick={() => chooseTool(TOOLS.drawRect)}>
-          Draw rect
+          Draw rect (R)
         </button>
         <button type="button" onClick={() => chooseTool(TOOLS.drawEllipse)}>
-          Draw ellipse
+          Draw ellipse (O)
         </button>
-        <span>{tool === TOOLS.select ? "select tool" : "draw tool"}</span>
+        <span>|</span>
+        <button type="button" onClick={handleSave}>
+          Save JSON
+        </button>
+        <button type="button" onClick={handleLoad}>
+          Load JSON
+        </button>
+        <span>|</span>
+        <span>Tool: {tool}</span>
+        {statusMessage && (
+          <span style={{ color: "#2563eb", marginLeft: "12px" }}>[{statusMessage}]</span>
+        )}
       </div>
       <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
     </main>
