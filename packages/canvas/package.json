@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@open-draw/contracts": "workspace:*",
-    "@open-draw/document": "workspace:*"
+    "@open-draw/document": "workspace:*",
+    "@open-draw/input": "workspace:*"
   },
   "devDependencies": {
     "eslint": "^10.13.0",

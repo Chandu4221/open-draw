@@ -342,6 +342,9 @@ importers:
       '@open-draw/document':
         specifier: workspace:*
         version: link:../document
+      '@open-draw/input':
+        specifier: workspace:*
+        version: link:../input
     devDependencies:
       eslint:
         specifier: ^10.13.0
