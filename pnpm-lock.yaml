@@ -234,6 +234,18 @@ importers:
 
   apps/playground:
     dependencies:
+      "@open-draw/canvas":
+        specifier: workspace:*
+        version: link:../../packages/canvas
+      "@open-draw/contracts":
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      "@open-draw/document":
+        specifier: workspace:*
+        version: link:../../packages/document
+      "@open-draw/renderer-svg":
+        specifier: workspace:*
+        version: link:../../packages/renderer-svg
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -322,6 +334,13 @@ importers:
         version: 8.3.5(@types/node@24.19.2)
 
   packages/canvas:
+    dependencies:
+      "@open-draw/contracts":
+        specifier: workspace:*
+        version: link:../contracts
+      "@open-draw/document":
+        specifier: workspace:*
+        version: link:../document
     devDependencies:
       eslint:
         specifier: ^10.13.0
@@ -350,6 +369,25 @@ importers:
       "@open-draw/contracts":
         specifier: workspace:*
         version: link:../contracts
+    devDependencies:
+      eslint:
+        specifier: ^10.13.0
+        version: 10.13.0
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2))
+
+  packages/renderer-svg:
+    dependencies:
+      "@open-draw/contracts":
+        specifier: workspace:*
+        version: link:../contracts
+      "@open-draw/document":
+        specifier: workspace:*
+        version: link:../document
     devDependencies:
       eslint:
         specifier: ^10.13.0

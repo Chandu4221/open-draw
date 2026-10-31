@@ -11,6 +11,10 @@
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@open-draw/contracts": "workspace:*",
+    "@open-draw/document": "workspace:*"
+  },
   "devDependencies": {
     "eslint": "^10.13.0",
     "typescript": "~6.0.3",
