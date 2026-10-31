@@ -11,6 +11,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@open-draw/canvas": "workspace:*",
+    "@open-draw/contracts": "workspace:*",
+    "@open-draw/document": "workspace:*",
+    "@open-draw/renderer-svg": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

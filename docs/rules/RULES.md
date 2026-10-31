@@ -33,6 +33,7 @@ Binding, append-only. Every contributor — human developer or AI agent — read
 - **R-013 — Registry shorthand keys.** `{ move, resize }`, never `{ move: move }` — a mismatch must be unwritable.
 - **R-014 — Naming conventions** (lint-enforced): packages `@open-draw/<kebab-case>`; files/dirs `kebab-case`; types `PascalCase` nouns; commands `PascalCase` verb-object (`CreateShape`); functions/variables `camelCase`; const registries `SCREAMING_SNAKE`; enum-like const-object members `camelCase`; serialized keys `kebab-case`, frozen once. Every exported name's kind must be guessable from casing alone; every string findable by Ctrl+click, never by grep.
 - **R-015 — Tests named by behavior.** `describe` = subject, `it` = behavior in plain language.
+- **R-039 — Explicit over short.** A name states exactly what it is — no abbreviation a future developer or AI agent must decode. The geometry frame is `BoundingBox` as both type and field (`shape.boundingBox`); the device form-factor registry is `DeviceType`. "Read it and get it." Renaming toward explicitness is doctrine, not churn.
 
 ## Architecture
 
@@ -43,6 +44,8 @@ Binding, append-only. Every contributor — human developer or AI agent — read
 - **R-020 — Package boundaries are enforced mechanically.** Dependency-cruiser + ESLint `no-restricted-imports` validate the blueprint dependency table in CI (contracts/document: no React, no SVG-DOM; renderer: never canonical state; export adapters: never source of truth; React adapter: no reimplemented engine logic). A boundary that is not lint-enforced is not a boundary.
 - **R-021 — Render styles never alter geometry or semantics.** Regular / crayon / hand-drawn are rendering extensions of the same shape identity. Deterministic, seeded variation. Defined fallback to the standard renderer.
 - **R-022 — Clean-room references.** Pattern-level study of tldraw/excalidraw/Figma is allowed and encouraged. Copying code from them is forbidden — incompatible licensing poisons the founding differentiator.
+- **R-041 — Version-only schema; no timestamps, ever.** Serialized documents carry `schema: { version }` and nothing time-related — no `createdAt`, no `updatedAt`, anywhere in drawing data. Recency is a save/file-layer concern, never document data. Rationale: timestamps serve sync-conflict/recency/audit roles this engine does not need, and cost undo churn, injected clocks, fixture stability, and diff noise.
+- **R-042 — Labels describe for humans; ids identify for machines.** Neither does the other's job. `label` is the only human-authored stored field; display names are DERIVED (label → semantic display name → `SHAPE_KIND_LABELS` fallback) and never stored.
 
 ## Semantics & Platforms
 
@@ -55,6 +58,7 @@ Binding, append-only. Every contributor — human developer or AI agent — read
 - **R-029 — Shapes hidden at the active device class render as ghosts** (dashed/dimmed, click-to-reenable). Presentation only; the document stores only the visibility boolean.
 - **R-030 — Pure solver is spec truth.** Responsive reflow is a pure `derive(scene, deviceClass)` function. The browser is a visualizer; browser measurements never feed the export. The same derive() output drives canvas render AND compile — byte-stable by construction. Active device class is transient view state, not persisted.
 - **R-031 — Overlays cannot detach.** Chips, handles, and any overlay ride the shape's group (transform-invariant by construction), counter-scale under zoom, and are presentation state only — never stored in the document.
+- **R-040 — Device form-factors are DeviceTypes** (supersedes the vocabulary of R-028; the five-entry registry itself is unchanged). The registry is `DEVICE_TYPES` / `DeviceType` / `DEVICE_TYPE_BY_VALUE` in `device-types.ts` — "device class" implied a device taxonomy, but these are form-factor width buckets a shape's responsive data targets. Wherever R-023, R-026, R-027, R-029, and R-030 say "device class(es)", read "device type(s)". The keys (mobile, tablet, laptop, desktop, largeScreen) and serialized values (kebab-case) are the truth in code.
 
 ## Workflow & CI/CD
 
@@ -65,9 +69,11 @@ Binding, append-only. Every contributor — human developer or AI agent — read
 - **R-036 — Releases are cut by tags only** (`v0.x.y`, semver; `1.0.0` only when the SDK contract is stood behind). GitHub Pages serves ONLY the latest production tagged release — Studio + playground from that exact tag. Never dev state. Local development uses the playground via `pnpm dev`.
 - **R-037 — Squash-merge PRs** so conventional-commit titles feed the tag changelog automatically.
 - **R-038 — No invention.** Unresolved questions go to a question log (`docs/od-questions.md`), not into code. Spike, don't assume. If an implementation detail isn't covered by a rule or decision, it's a discussion, not a judgment call.
+- **R-043 — Agent delegation protocol.** Work may be offloaded to an AI agent only when the ruling it implements already exists (rule or ADR); decisions are never delegated. Every agent deliverable must ship with: (1) a **decision inventory** — every judgment made while transcribing, listed explicitly; (2) **quoted rules per file**; (3) **exact verification commands**; (4) an **independent adversarial review** before paste — a second reviewer (fresh agent session or equivalent) attacks the deliverable for defects and rule violations. A deliverable without an inventory or review is presumption — reject (extends R-038 and the review gate to delegated work).
 
 ---
 
 ## Changelog
 
 - **2026-10-29** — Initial ruleset seeded (R-001…R-038) from the founding design sessions (licensing, code doctrine, naming, architecture, semantics/platforms, responsive system, workflow/CI-CD). Supersedes nothing; this is the baseline.
+- **2026-10-31** — Appended R-039…R-043 from the Oct 30–31 design sessions: naming explicitness (R-039), DeviceType vocabulary supersession over R-028's wording (R-040), version-only schema / no timestamps (R-041), derived display names / labels-vs-ids (R-042), agent delegation protocol (R-043). No baseline rule text was edited (append-only).

@@ -5,7 +5,9 @@ import { COMMANDS } from "./commands";
 import type { Command, CommandResult } from "./commands";
 import { applyCreateShape } from "./commands/create-shape";
 import { applyDeleteShape } from "./commands/delete-shape";
+import { applyMoveShapes } from "./commands/move-shapes";
 import { applyReparentShape } from "./commands/reparent-shape";
+import { applySetShapeBoundingBox } from "./commands/set-shape-bounding-box";
 import { applySetShapeLabel } from "./commands/set-shape-label";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
@@ -36,6 +38,10 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applySetShapeLabel(document, command);
     case COMMANDS.reparentShape:
       return applyReparentShape(document, command);
+    case COMMANDS.moveShapes:
+      return applyMoveShapes(document, command);
+    case COMMANDS.setShapeBoundingBox:
+      return applySetShapeBoundingBox(document, command);
   }
 }
 

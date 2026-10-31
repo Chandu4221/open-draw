@@ -125,4 +125,57 @@ describe("applyTransaction", () => {
       ),
     ).toThrow(DocumentError);
   });
+
+  it("moves a shape as one batch and undoes without reordering siblings", () => {
+    const pageId = parseShapeId("page-1");
+    const firstId = parseShapeId("rect-first");
+    const secondId = parseShapeId("rect-second");
+    const built = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 640, height: 480 }),
+      createRect(firstId, { x: 10, y: 10, width: 20, height: 20 }, { parent: pageId }),
+      createRect(secondId, { x: 50, y: 10, width: 20, height: 20 }, { parent: pageId }),
+    ]);
+
+    const moved = applyTransaction(
+      built,
+      createTransaction([{ type: COMMANDS.moveShapes, ids: [firstId], dx: 5, dy: 5 }]),
+    );
+    expect(moved.document.shapes[firstId]?.boundingBox.x).toBe(15);
+
+    const undone = undo(moved.document, recordHistory(EMPTY_HISTORY, moved.inverse));
+    expect(undone?.document.shapes[firstId]?.boundingBox.x).toBe(10);
+    // z-order preserved (review finding): moving must not pop the shape to the
+    // top of the stack.
+    const order = Object.keys(undone?.document.shapes ?? {});
+    expect(order.indexOf("rect-first")).toBeLessThan(order.indexOf("rect-second"));
+  });
+
+  it("resizes a shape and restores the previous box on undo", () => {
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const built = createDocument([
+      createPage(pageId, { x: 100, y: 100, width: 640, height: 480 }),
+      createRect(rectId, { x: 10, y: 10, width: 50, height: 30 }, { parent: pageId }),
+    ]);
+
+    const resized = applyTransaction(
+      built,
+      createTransaction([
+        {
+          type: COMMANDS.setShapeBoundingBox,
+          id: rectId,
+          boundingBox: { x: 10, y: 10, width: 80, height: 60 },
+        },
+      ]),
+    );
+    expect(resized.document.shapes[rectId]?.boundingBox.width).toBe(80);
+
+    const undone = undo(resized.document, recordHistory(EMPTY_HISTORY, resized.inverse));
+    expect(undone?.document.shapes[rectId]?.boundingBox).toEqual({
+      x: 10,
+      y: 10,
+      width: 50,
+      height: 30,
+    });
+  });
 });
