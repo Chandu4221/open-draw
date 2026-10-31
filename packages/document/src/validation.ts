@@ -1,20 +1,30 @@
 // Boundary parser: `unknown` in, typed `Document` out (R-006: parse, don't
-// validate). Hand-rolled on purpose — zero runtime dependencies in the
-// document core; Zod is re-evaluated only when a real external boundary
-// demands it.
-import type { BoundingBox, DeviceType, ShapeId, ShapeKind } from "@open-draw/contracts";
+// validate; R-044: opaque plugin data forward compatibility). Hand-rolled on
+// purpose — zero runtime dependencies in the document core; Zod is re-evaluated
+// only when a real external boundary demands it.
+import type {
+  BoundingBox,
+  CustomShapeKind,
+  DeviceType,
+  PluginId,
+  Point,
+  ShapeId,
+  ShapeKind,
+} from "@open-draw/contracts";
 import {
   DEVICE_TYPE_BY_VALUE,
   PLATFORM_BY_VALUE,
   ROOT_ID,
   SHAPE_KIND_VALUES,
   isRootId,
+  isValidCustomShapeKind,
+  isValidPluginId,
   parseShapeId,
 } from "@open-draw/contracts";
 import type { Document } from "./document";
 import { SCHEMA_VERSION, createDocument } from "./document";
 import { DocumentError } from "./errors";
-import type { SectionDirection, SemanticTag, Shape, ShapeMeta } from "./shape";
+import type { CustomShape, SectionDirection, SemanticTag, Shape, ShapeMeta } from "./shape";
 import { SECTION_DIRECTIONS } from "./shape";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -23,6 +33,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function parsePoint(value: unknown, context: string): Point {
+  if (!isRecord(value) || !isFiniteNumber(value.x) || !isFiniteNumber(value.y)) {
+    throw new DocumentError("invalidShape", `${context} must be { x, y } with finite numbers`);
+  }
+  return { x: value.x, y: value.y };
 }
 
 function parseBoundingBox(value: unknown): BoundingBox {
@@ -91,12 +108,29 @@ function parseMeta(value: unknown): ShapeMeta {
     hiddenOn = value.hiddenOn.map(parseDeviceType);
   }
   const semantic = value.semantic === undefined ? undefined : parseSemantic(value.semantic);
+
+  // R-044: Validate pluginData envelope (PluginId syntax), but treat contents as opaque
+  let pluginData: Record<PluginId, unknown> | undefined;
+  if (value.pluginData !== undefined) {
+    if (!isRecord(value.pluginData)) {
+      throw new DocumentError("invalidMeta", "meta.pluginData must be an object");
+    }
+    pluginData = {};
+    for (const [key, pluginVal] of Object.entries(value.pluginData)) {
+      if (!isValidPluginId(key)) {
+        throw new DocumentError("invalidMeta", `invalid plugin id in meta.pluginData: ${key}`);
+      }
+      pluginData[key as PluginId] = pluginVal;
+    }
+  }
+
   // Cast is safe here: every field was validated above; internal code trusts
   // the type from here on (R-006).
   return {
     ...(semantic === undefined ? {} : { semantic }),
     order,
     ...(hiddenOn === undefined ? {} : { hiddenOn }),
+    ...(pluginData === undefined ? {} : { pluginData }),
   };
 }
 
@@ -115,10 +149,19 @@ function parseShape(value: unknown): Shape {
     throw new DocumentError("invalidShape", "a shape must be an object");
   }
   const id = parseShapeId(value.id);
-  if (typeof value.kind !== "string" || !SHAPE_KIND_VALUES.has(value.kind)) {
-    throw new DocumentError("invalidShape", `unknown kind on shape: ${String(value.kind)}`);
+  if (typeof value.kind !== "string") {
+    throw new DocumentError("invalidShape", `kind must be a string: ${String(value.kind)}`);
   }
-  const kind = value.kind as ShapeKind;
+
+  let kind: ShapeKind;
+  if (SHAPE_KIND_VALUES.has(value.kind)) {
+    kind = value.kind as ShapeKind;
+  } else if (isValidCustomShapeKind(value.kind)) {
+    kind = value.kind as CustomShapeKind;
+  } else {
+    throw new DocumentError("invalidShape", `unknown kind on shape: ${value.kind}`);
+  }
+
   if (value.parent === undefined) {
     throw new DocumentError("invalidShape", "parent must be present (virtual root, no nulls)");
   }
@@ -136,10 +179,45 @@ function parseShape(value: unknown): Shape {
     ...(value.label === undefined ? {} : { label: value.label }),
     meta,
   };
+
   // Validated cast at the boundary: kind membership was checked above and the
   // kind-specific fields are checked right here.
   if (kind === "section") {
     return { ...base, kind, direction: parseSectionDirection(value.direction) } as Shape;
+  }
+  if (kind === "line") {
+    const start = parsePoint(value.start, "line start");
+    const end = parsePoint(value.end, "line end");
+    return { ...base, kind, start, end } as Shape;
+  }
+  if (kind === "pen-path") {
+    if (!Array.isArray(value.points)) {
+      throw new DocumentError("invalidShape", "pen-path points must be an array");
+    }
+    const points = value.points.map((pt, i) => parsePoint(pt, `pen-path point[${i}]`));
+    return { ...base, kind, points } as Shape;
+  }
+  if (typeof kind === "string" && !SHAPE_KIND_VALUES.has(kind)) {
+    // Custom shape: preserve any extra non-base properties
+    const extra: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (
+        k !== "id" &&
+        k !== "kind" &&
+        k !== "parent" &&
+        k !== "boundingBox" &&
+        k !== "label" &&
+        k !== "meta"
+      ) {
+        extra[k] = v;
+      }
+    }
+    const custom: CustomShape = {
+      ...base,
+      kind: kind as CustomShapeKind,
+      ...(Object.keys(extra).length > 0 ? { customData: extra } : {}),
+    };
+    return custom;
   }
   return base as Shape;
 }
