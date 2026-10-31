@@ -16,6 +16,7 @@
     "@open-draw/document": "workspace:*",
     "@open-draw/input": "workspace:*",
     "@open-draw/renderer-svg": "workspace:*",
+    "@open-draw/shapes": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
