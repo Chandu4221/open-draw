@@ -5,6 +5,8 @@ export const COMMANDS = {
   deleteShape: "DeleteShape",
   setShapeLabel: "SetShapeLabel",
   reparentShape: "ReparentShape",
+  moveShapes: "MoveShapes",
+  setShapeBoundingBox: "SetShapeBoundingBox",
 } as const;
 
 export type CommandId = (typeof COMMANDS)[keyof typeof COMMANDS];
