@@ -1,8 +1,17 @@
-// The shape union and validating constructors (ADR-0002 D3–D7). Invariants
-// live in types; constructors validate at the boundary and internal code
-// trusts the result (R-006, R-008).
-import type { BoundingBox, DeviceType, PlatformId, ShapeId, ShapeKind } from "@open-draw/contracts";
-import { ROOT_ID, SHAPE_KINDS, isRootId } from "@open-draw/contracts";
+// The shape union and validating constructors (ADR-0002 D3–D7, ADR-0003 D1–D5).
+// Invariants live in types; constructors validate at the boundary and internal
+// code trusts the result (R-006, R-008).
+import type {
+  BoundingBox,
+  CustomShapeKind,
+  DeviceType,
+  PlatformId,
+  PluginId,
+  Point,
+  ShapeId,
+  ShapeKind,
+} from "@open-draw/contracts";
+import { ROOT_ID, SHAPE_KINDS, SHAPE_KIND_VALUES, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
 
 // Section flow direction: stored and validated now, consumed by the derive
@@ -21,12 +30,12 @@ export interface SemanticTag {
 
 // meta absent semantic = NONE (R-024); absent hiddenOn = visible everywhere
 // (R-028); absent order entry = 0 (one mechanism, two uses — ADR-0002 D6).
-// `style` (local render-style override, R-026) is deferred to the profiles
-// milestone: StyleId has no registry yet.
+// `pluginData`: opaque forward-compatibility namespace (R-044, ADR-0003 D4).
 export interface ShapeMeta {
   readonly semantic?: SemanticTag;
   readonly order: Partial<Record<DeviceType, number>>;
   readonly hiddenOn?: readonly DeviceType[];
+  readonly pluginData?: Readonly<Record<PluginId, unknown>>;
 }
 
 export interface BaseShape {
@@ -55,7 +64,30 @@ export interface EllipseShape extends BaseShape {
   readonly kind: "ellipse";
 }
 
-export type Shape = PageShape | SectionShape | RectShape | EllipseShape;
+export interface LineShape extends BaseShape {
+  readonly kind: "line";
+  readonly start: Point;
+  readonly end: Point;
+}
+
+export interface PenPathShape extends BaseShape {
+  readonly kind: "pen-path";
+  readonly points: readonly Point[];
+}
+
+export interface CustomShape extends BaseShape {
+  readonly kind: CustomShapeKind;
+  readonly customData?: Readonly<Record<string, unknown>>;
+}
+
+export type BuiltinShape =
+  PageShape | SectionShape | RectShape | EllipseShape | LineShape | PenPathShape;
+
+export type Shape = BuiltinShape | CustomShape;
+
+export function isCustomShape(shape: Shape): shape is CustomShape {
+  return !SHAPE_KIND_VALUES.has(shape.kind);
+}
 
 export interface ShapeInit {
   readonly parent?: ShapeId;
@@ -119,5 +151,47 @@ export function createEllipse(
   return Object.freeze({
     ...baseInit(id, SHAPE_KINDS.ellipse, boundingBox, init),
     kind: SHAPE_KINDS.ellipse,
+  });
+}
+
+export function createLine(
+  id: ShapeId,
+  boundingBox: BoundingBox,
+  start: Point,
+  end: Point,
+  init: ShapeInit = {},
+): LineShape {
+  return Object.freeze({
+    ...baseInit(id, SHAPE_KINDS.line, boundingBox, init),
+    kind: SHAPE_KINDS.line,
+    start: Object.freeze({ x: start.x, y: start.y }),
+    end: Object.freeze({ x: end.x, y: end.y }),
+  });
+}
+
+export function createPenPath(
+  id: ShapeId,
+  boundingBox: BoundingBox,
+  points: readonly Point[],
+  init: ShapeInit = {},
+): PenPathShape {
+  return Object.freeze({
+    ...baseInit(id, SHAPE_KINDS.penPath, boundingBox, init),
+    kind: SHAPE_KINDS.penPath,
+    points: Object.freeze(points.map((p) => Object.freeze({ x: p.x, y: p.y }))),
+  });
+}
+
+export function createCustomShape(
+  id: ShapeId,
+  kind: CustomShapeKind,
+  boundingBox: BoundingBox,
+  customData: Readonly<Record<string, unknown>> = {},
+  init: ShapeInit = {},
+): CustomShape {
+  return Object.freeze({
+    ...baseInit(id, kind, boundingBox, init),
+    kind,
+    customData: Object.freeze({ ...customData }),
   });
 }

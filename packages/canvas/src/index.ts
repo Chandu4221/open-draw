@@ -31,6 +31,15 @@ export { HANDLE_PICK_RADIUS_PX, pickHandle, pickShape, pointInBox } from "./hit-
 export { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
 
 export {
+  createShapeKindRegistry,
+  registerShapeKind,
+  type ShapeHitTester,
+  type ShapeKindRegistration,
+  type ShapeKindRegistry,
+  validateRegistration,
+} from "./register-shape-kind";
+
+export {
   clearSelection,
   EMPTY_SELECTION,
   isSelected,

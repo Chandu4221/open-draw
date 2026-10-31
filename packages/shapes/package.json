@@ -1,0 +1,26 @@
+{
+  "name": "@open-draw/shapes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./rect": "./src/rect/index.ts",
+    "./ellipse": "./src/ellipse/index.ts",
+    "./line": "./src/line/index.ts",
+    "./pen-path": "./src/pen-path/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@open-draw/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "^10.13.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
