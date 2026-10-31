@@ -46,6 +46,7 @@ Binding, append-only. Every contributor — human developer or AI agent — read
 - **R-022 — Clean-room references.** Pattern-level study of tldraw/excalidraw/Figma is allowed and encouraged. Copying code from them is forbidden — incompatible licensing poisons the founding differentiator.
 - **R-041 — Version-only schema; no timestamps, ever.** Serialized documents carry `schema: { version }` and nothing time-related — no `createdAt`, no `updatedAt`, anywhere in drawing data. Recency is a save/file-layer concern, never document data. Rationale: timestamps serve sync-conflict/recency/audit roles this engine does not need, and cost undo churn, injected clocks, fixture stability, and diff noise.
 - **R-042 — Labels describe for humans; ids identify for machines.** Neither does the other's job. `label` is the only human-authored stored field; display names are DERIVED (label → semantic display name → `SHAPE_KIND_LABELS` fallback) and never stored.
+- **R-044 — Opaque plugin data forward compatibility namespace.** `meta.pluginData` is an opaque forward-compatibility namespace; R-006 applies to the envelope (`PluginId` format and JSON-serializability check at serialize time — a non-serializable value is a typed throw), never to contents. Document serialization and parsing preserve unknown `PluginId` entries byte-stably without interpreting or dropping them.
 
 ## Semantics & Platforms
 
@@ -76,4 +77,4 @@ Binding, append-only. Every contributor — human developer or AI agent — read
 ## Changelog
 
 - **2026-10-29** — Initial ruleset seeded (R-001…R-038) from the founding design sessions (licensing, code doctrine, naming, architecture, semantics/platforms, responsive system, workflow/CI-CD). Supersedes nothing; this is the baseline.
-- **2026-10-31** — Appended R-039…R-043 from the Oct 30–31 design sessions: naming explicitness (R-039), DeviceType vocabulary supersession over R-028's wording (R-040), version-only schema / no timestamps (R-041), derived display names / labels-vs-ids (R-042), agent delegation protocol (R-043). No baseline rule text was edited (append-only).
+- **2026-10-31** — Appended R-039…R-043 from the Oct 30–31 design sessions: naming explicitness (R-039), DeviceType vocabulary supersession over R-028's wording (R-040), version-only schema / no timestamps (R-041), derived display names / labels-vs-ids (R-042), agent delegation protocol (R-043). Appended R-044 (opaque plugin data forward-compatibility namespace exemption from R-006 content validation) for milestone 04. No baseline rule text was edited (append-only).
