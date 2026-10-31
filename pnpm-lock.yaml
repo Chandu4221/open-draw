@@ -406,6 +406,9 @@ importers:
       "@open-draw/document":
         specifier: workspace:*
         version: link:../document
+      "@open-draw/shapes":
+        specifier: workspace:*
+        version: link:../shapes
     devDependencies:
       eslint:
         specifier: ^10.13.0
