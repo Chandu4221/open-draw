@@ -6,10 +6,6 @@ import {
 } from "@open-draw/contracts";
 
 export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze({
-  page: Object.freeze({
-    id: parseSemanticId("page"),
-    displayName: "Page",
-  }),
   section: Object.freeze({
     id: parseSemanticId("section"),
     displayName: "Section",

@@ -12,13 +12,7 @@ import type {
   ShapeId,
   StyleId,
 } from "@open-draw/contracts";
-import {
-  DEVICE_TYPES,
-  PLATFORMS,
-  SHAPE_KINDS,
-  STYLE_PROFILES,
-  parseShapeId,
-} from "@open-draw/contracts";
+import { DEVICE_TYPES, SHAPE_KINDS, STYLE_PROFILES, parseShapeId } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   applyTransaction,
@@ -739,9 +733,10 @@ export default function App() {
     input.click();
   }
 
-  function handleSetPlatform(platform: PlatformId): void {
+  function handleSetPlatform(platform: PlatformId | ""): void {
     if (!rootPage) return;
-    commit([{ type: COMMANDS.setRootPlatform, id: rootPage.id, platform }]);
+    const targetPlatform = platform === "" ? null : platform;
+    commit([{ type: COMMANDS.setRootPlatform, id: rootPage.id, platform: targetPlatform }]);
     render();
   }
 
@@ -756,8 +751,8 @@ export default function App() {
     if (semanticIdStr === "") {
       commit([{ type: COMMANDS.setShapeSemantic, id: selectedShape.id, semantic: null }]);
     } else {
-      let platform = activeProfile.id;
-      if (!activeProfile.semantics[semanticIdStr]) {
+      let platform = activeProfile?.id ?? "web";
+      if (activeProfile && !activeProfile.semantics[semanticIdStr]) {
         for (const [pid, prof] of Object.entries(PLATFORM_PROFILES)) {
           if (prof.semantics[semanticIdStr]) {
             platform = pid as PlatformId;
@@ -853,14 +848,14 @@ export default function App() {
   const rootPage = selectedShape
     ? resolveRootPage(doc, selectedShape.id)
     : (Object.values(doc.shapes).find((s) => s.kind === SHAPE_KINDS.page) as PageShape | undefined);
-  const rootPlatform = rootPage ? resolveRootPlatform(doc, rootPage.id) : PLATFORMS.web;
+  const rootPlatform = rootPage ? resolveRootPlatform(doc, rootPage.id) : undefined;
   const rootStyle = rootPage ? resolveRootStyle(doc, rootPage.id) : STYLE_PROFILES.minimal;
-  const activeProfile = PLATFORM_PROFILES[rootPlatform] ?? PLATFORM_PROFILES.web;
+  const activeProfile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
   const conflict = selectedShape
     ? computeSemanticConflict(doc, selectedShape, activeProfile)
     : undefined;
   const semanticDef =
-    selectedShape?.meta.semantic !== undefined
+    selectedShape?.meta.semantic !== undefined && activeProfile !== undefined
       ? activeProfile.semantics[selectedShape.meta.semantic.id]
       : undefined;
   const semanticProps = selectedShape?.meta.semantic?.properties ?? {};
@@ -1042,7 +1037,7 @@ export default function App() {
                   Platform Profile (R-026)
                 </label>
                 <select
-                  value={rootPlatform}
+                  value={rootPlatform ?? ""}
                   style={{
                     width: "100%",
                     padding: "6px 8px",
@@ -1050,12 +1045,13 @@ export default function App() {
                     border: "1px solid #cbd5e1",
                   }}
                   disabled={!rootPage}
-                  onChange={(e) => handleSetPlatform(e.target.value as PlatformId)}
+                  onChange={(e) => handleSetPlatform(e.target.value as PlatformId | "")}
                 >
-                  <option value={PLATFORMS.web}>Web</option>
-                  <option value={PLATFORMS.androidNative}>Android Native (Material 3)</option>
-                  <option value={PLATFORMS.flutter}>Flutter</option>
-                  <option value={PLATFORMS.ios}>iOS (Stub)</option>
+                  <option value="">(None / Platform-Agnostic)</option>
+                  <option value="web">Web</option>
+                  <option value="androidNative">Android Native (Material 3)</option>
+                  <option value="flutter">Flutter</option>
+                  <option value="ios">iOS (Stub)</option>
                 </select>
               </div>
               <div style={{ marginBottom: "8px" }}>
@@ -1105,7 +1101,9 @@ export default function App() {
 
                   {selectedShape.kind === SHAPE_KINDS.page ? (
                     <p style={{ color: "#64748b", fontStyle: "italic" }}>
-                      This is a root page. Platform and style settings are configured above.
+                      This is a root container (
+                      {resolveShapeDisplayName(selectedShape, activeProfile)}). Platform and style
+                      settings are configured above.
                     </p>
                   ) : (
                     <>
@@ -1114,30 +1112,46 @@ export default function App() {
                         <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
                           Semantic Tag (R-024)
                         </label>
-                        <select
-                          value={selectedShape.meta.semantic?.id ?? ""}
-                          style={{
-                            width: "100%",
-                            padding: "6px 8px",
-                            borderRadius: "4px",
-                            border: "1px solid #cbd5e1",
-                          }}
-                          onChange={(e) => handleSetSemantic(e.target.value)}
-                        >
-                          <option value="">(None / Baseline)</option>
-                          {Object.values(activeProfile.semantics).map((def) => (
-                            <option key={def.id} value={def.id}>
-                              {def.displayName} ({def.id})
-                            </option>
-                          ))}
-                          {selectedShape.meta.semantic &&
-                            !activeProfile.semantics[selectedShape.meta.semantic.id] && (
-                              <option value={selectedShape.meta.semantic.id}>
-                                [Foreign] {selectedShape.meta.semantic.id} (
-                                {selectedShape.meta.semantic.platform})
+                        {activeProfile ? (
+                          <select
+                            value={selectedShape.meta.semantic?.id ?? ""}
+                            style={{
+                              width: "100%",
+                              padding: "6px 8px",
+                              borderRadius: "4px",
+                              border: "1px solid #cbd5e1",
+                            }}
+                            onChange={(e) => handleSetSemantic(e.target.value)}
+                          >
+                            <option value="">(None / Baseline)</option>
+                            {Object.values(activeProfile.semantics).map((def) => (
+                              <option key={def.id} value={def.id}>
+                                {def.displayName} ({def.id})
                               </option>
-                            )}
-                        </select>
+                            ))}
+                            {selectedShape.meta.semantic &&
+                              !activeProfile.semantics[selectedShape.meta.semantic.id] && (
+                                <option value={selectedShape.meta.semantic.id}>
+                                  [Foreign] {selectedShape.meta.semantic.id} (
+                                  {selectedShape.meta.semantic.platform})
+                                </option>
+                              )}
+                          </select>
+                        ) : (
+                          <div
+                            style={{
+                              padding: "8px 10px",
+                              backgroundColor: "#f8fafc",
+                              border: "1px dashed #cbd5e1",
+                              borderRadius: "4px",
+                              fontSize: "12px",
+                              color: "#64748b",
+                            }}
+                          >
+                            Platform-Agnostic Mode (Pure Geometry). Select a platform profile above
+                            to assign platform semantics.
+                          </div>
+                        )}
                       </div>
 
                       {/* Semantic Conflict Warning Banner (R-025) */}

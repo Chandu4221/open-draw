@@ -7,10 +7,6 @@ import {
 
 export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze(
   {
-    screen: Object.freeze({
-      id: parseSemanticId("screen"),
-      displayName: "Screen",
-    }),
     "top-app-bar": Object.freeze({
       id: parseSemanticId("top-app-bar"),
       displayName: "Top App Bar",

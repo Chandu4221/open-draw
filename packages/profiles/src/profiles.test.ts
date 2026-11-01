@@ -11,9 +11,10 @@ import {
 } from "./index";
 
 describe("web profile", () => {
-  it("declares page root semantic and device types", () => {
+  it("declares page root semantic and device types without exposing page to child semantics", () => {
     expect(WEB_PROFILE.id).toBe("web");
     expect(WEB_PROFILE.rootSemantic).toBe("page");
+    expect(WEB_PROFILE.semantics.page).toBeUndefined();
     expect(WEB_PROFILE.deviceTypes).toHaveLength(5);
     expect(WEB_PROFILE.semantics.navbar?.displayName).toBe("Navigation Bar");
     expect(WEB_PROFILE.semantics.button?.properties).toBeDefined();
@@ -22,12 +23,22 @@ describe("web profile", () => {
 });
 
 describe("android native profile", () => {
-  it("declares screen root semantic and Material 3 vocabulary", () => {
+  it("declares screen root semantic and Material 3 vocabulary without exposing screen to child semantics", () => {
     expect(ANDROID_NATIVE_PROFILE.id).toBe("androidNative");
     expect(ANDROID_NATIVE_PROFILE.rootSemantic).toBe("screen");
+    expect(ANDROID_NATIVE_PROFILE.semantics.screen).toBeUndefined();
     expect(ANDROID_NATIVE_PROFILE.semantics["top-app-bar"]?.displayName).toBe("Top App Bar");
     expect(ANDROID_NATIVE_PROFILE.semantics["floating-action-button"]).toBeDefined();
     expect(ANDROID_NATIVE_PROFILE.semantics.navbar).toBeUndefined();
+  });
+});
+
+describe("flutter profile", () => {
+  it("declares scaffold root semantic without exposing scaffold to child semantics", () => {
+    expect(FLUTTER_PROFILE.id).toBe("flutter");
+    expect(FLUTTER_PROFILE.rootSemantic).toBe("scaffold");
+    expect(FLUTTER_PROFILE.semantics.scaffold).toBeUndefined();
+    expect(FLUTTER_PROFILE.semantics["app-bar"]?.displayName).toBe("AppBar");
   });
 });
 

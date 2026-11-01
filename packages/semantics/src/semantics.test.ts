@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEVICE_TYPES, parseShapeId, PLATFORMS, STYLE_PROFILES } from "@open-draw/contracts";
 import { createDocument, createPage, createRect, createSection } from "@open-draw/document";
-import { ANDROID_NATIVE_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
+import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
   resolveRootPage,
@@ -45,6 +45,18 @@ describe("root resolution (R-026)", () => {
     expect(resolveRootPlatform(doc, buttonId)).toBe("androidNative");
     expect(resolveRootStyle(doc, buttonId)).toBe(STYLE_PROFILES.minimal);
   });
+
+  it("returns undefined for root platform when root page has no platform (Ruling 10, Platform-Agnostic Mode)", () => {
+    const agnosticPageId = parseShapeId("page-agnostic");
+    const childRectId = parseShapeId("child-rect");
+    const agnosticDoc = createDocument([
+      createPage(agnosticPageId, { x: 0, y: 0, width: 1440, height: 900 }),
+      createRect(childRectId, { x: 10, y: 10, width: 100, height: 50 }, { parent: agnosticPageId }),
+    ]);
+
+    expect(resolveRootPlatform(agnosticDoc, agnosticPageId)).toBeUndefined();
+    expect(resolveRootPlatform(agnosticDoc, childRectId)).toBeUndefined();
+  });
 });
 
 describe("semantic resolution and display name (Ruling 9, R-042)", () => {
@@ -59,6 +71,29 @@ describe("semantic resolution and display name (Ruling 9, R-042)", () => {
     });
     expect(semantic?.displayName).toBe("Button");
     expect(semantic?.properties?.variant).toBe("primary");
+  });
+
+  it("resolves dynamic display name for root pages (Screen for Android, Scaffold for Flutter, Page for Web or agnostic)", () => {
+    const pageShape = createPage(pageId, { x: 0, y: 0, width: 1000, height: 1000 });
+
+    // Web profile -> Page
+    expect(resolveShapeDisplayName(pageShape, WEB_PROFILE)).toBe("Page");
+    // Android Native profile -> Screen
+    expect(resolveShapeDisplayName(pageShape, ANDROID_NATIVE_PROFILE)).toBe("Screen");
+    // Flutter profile -> Scaffold
+    expect(resolveShapeDisplayName(pageShape, FLUTTER_PROFILE)).toBe("Scaffold");
+    // Platform-agnostic (profile is undefined) -> Page (fallback to getDisplayName)
+    expect(resolveShapeDisplayName(pageShape, undefined)).toBe("Page");
+
+    // Explicit label overrides root semantic
+    const labeledPage = createPage(
+      pageId,
+      { x: 0, y: 0, width: 1000, height: 1000 },
+      {
+        label: "Custom Dashboard",
+      },
+    );
+    expect(resolveShapeDisplayName(labeledPage, ANDROID_NATIVE_PROFILE)).toBe("Custom Dashboard");
   });
 
   it("resolves display name using complete chain: label -> semantic -> kind", () => {
@@ -94,6 +129,8 @@ describe("semantic resolution and display name (Ruling 9, R-042)", () => {
       },
     );
     expect(resolveShapeDisplayName(untagged, WEB_PROFILE)).toBe("Rectangle");
+    // Pure geometry in platform-agnostic mode
+    expect(resolveShapeDisplayName(untagged, undefined)).toBe("Rectangle");
   });
 });
 
@@ -122,6 +159,47 @@ describe("conflict computation (R-025)", () => {
     expect(conflict?.actualPlatform).toBe(PLATFORMS.web);
   });
 
+  it("flags tagged shape on platform-agnostic root page as conflicted (Ruling 10)", () => {
+    const agnosticDoc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 1000, height: 1000 }),
+      createRect(
+        shapeId,
+        { x: 10, y: 10, width: 200, height: 50 },
+        { parent: pageId, meta: { order: {}, semantic: { id: "navbar", platform: "web" } } },
+      ),
+    ]);
+
+    const conflict = computeSemanticConflict(agnosticDoc, agnosticDoc.shapes[shapeId]!);
+    expect(conflict?.status).toBe("conflicted");
+    expect(conflict?.expectedPlatform).toBeUndefined();
+    expect(conflict?.actualPlatform).toBe("web");
+  });
+
+  it("rejects root semantic assigned to child shapes", () => {
+    // Child rect assigned "screen" on Android Native
+    const doc = createDocument([
+      createPage(
+        pageId,
+        { x: 0, y: 0, width: 1000, height: 1000 },
+        { meta: { order: {}, platform: "androidNative" } },
+      ),
+      createRect(
+        shapeId,
+        { x: 10, y: 10, width: 200, height: 50 },
+        {
+          parent: pageId,
+          meta: { order: {}, semantic: { id: "screen", platform: "androidNative" } },
+        },
+      ),
+    ]);
+
+    const conflict = computeSemanticConflict(doc, doc.shapes[shapeId]!, ANDROID_NATIVE_PROFILE);
+    expect(conflict?.status).toBe("conflicted");
+    expect(conflict?.reason).toContain(
+      'Root semantic "screen" cannot be assigned to child shapes.',
+    );
+  });
+
   it("returns undefined for matching platform tag or untagged shape", () => {
     const doc = createDocument([
       createPage(
@@ -145,6 +223,9 @@ describe("conflict computation (R-025)", () => {
     ]);
     expect(
       computeSemanticConflict(untaggedDoc, untaggedDoc.shapes[shapeId]!, WEB_PROFILE),
+    ).toBeUndefined();
+    expect(
+      computeSemanticConflict(untaggedDoc, untaggedDoc.shapes[shapeId]!, undefined),
     ).toBeUndefined();
   });
 });

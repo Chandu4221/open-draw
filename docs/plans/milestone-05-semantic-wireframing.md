@@ -2,7 +2,7 @@
 
 > Target: `docs/plans/milestone-05-semantic-wireframing.md` · Branch: `feat/semantic-wireframing` ·
 > Rides in the same PR as the code it describes (R-043 pattern).
-> Status: Ratified · Rulings 1–9 codified in ADR-0004.
+> PRE-RULING draft: items marked **[RULING]** need Chandra's decision before code.
 
 ## Goal
 
@@ -101,11 +101,17 @@ text/select/toggle/number); label: string; options?/range? }` — hand-rolled va
    malformed = typed throw; keys validated against the active profile's schema at
    inspector-time when the profile is loaded; unknown keys preserved OPAQUELY (a document
    from profile A must round-trip on a machine without profile A). Rule?
-9. **[RULING — NEW, review-1 finding 1] Display-name split.** `getDisplayName(shape)` stays in
-   `@open-draw/document` as base resolver (`shape.label ?? SHAPE_KIND_LABELS[shape.kind]` —
+9. **[RULING — RATIFIED] Display-name split (review-1 finding 1).** `getDisplayName(shape)`
+   stays in `@open-draw/document` as base resolver (`shape.label ?? SHAPE_KIND_LABELS[shape.kind]` —
    never imports profiles). New `resolveShapeDisplayName(shape, profile?)` in
    `@open-draw/semantics` implements the full chain: label → semantic display name (profile
    data) → SHAPE_KIND_LABELS. Confirm?
+10. **[RULING — RATIFIED, Chandra Nov 1] No default platform.** A root with
+    `meta.platform` unset = **platform-agnostic mode**: rect renders as rect (intrinsic kind
+    untouched, NONE baseline R-024), no vocabulary exists, inspector shows generic controls
+    only. Choosing a platform is an explicit act that activates the profile layer on top.
+    NO silent web default — no `PLATFORM_BY_VALUE` special-casing anywhere in core. Shapes are
+    platform-agnostic geometry; profiles are always an opt-in layer.
 
 ## Work breakdown (sketch — final file list after rulings)
 
@@ -149,7 +155,7 @@ text/select/toggle/number); label: string; options?/range? }` — hand-rolled va
   derivation, semantic properties envelope round-trip (incl. foreign-profile opaque keys),
   ghost rendering presentation-only, semantic tree walk order, all 5 commands incl. non-root
   rejection for set-root-platform/style.
-- Docs: `docs/decisions/0004-semantic-wireframing.md` (records rulings 1–9), this plan file.
+- Docs: `docs/decisions/0004-semantic-wireframing.md` (records rulings 1–10), this plan file.
 
 ## Dependency placement (extends ADR-0001 D2 — amend table in this PR)
 

@@ -24,12 +24,29 @@ export function computeSemanticConflict(
   }
 
   const rootPlatform = resolveRootPlatform(doc, shape.id);
+  if (rootPlatform === undefined) {
+    return {
+      status: SEMANTIC_CONFLICTS.conflicted,
+      actualPlatform: semantic.platform,
+      reason: `Shape is tagged with "${semantic.platform}" semantic "${semantic.id}" on a platform-agnostic root page (Ruling 10, R-025).`,
+    };
+  }
+
   if (semantic.platform !== rootPlatform) {
     return {
       status: SEMANTIC_CONFLICTS.conflicted,
       expectedPlatform: rootPlatform,
       actualPlatform: semantic.platform,
       reason: `Shape is tagged with "${semantic.platform}" semantic "${semantic.id}" on a "${rootPlatform}" root page (R-025).`,
+    };
+  }
+
+  if (shape.kind !== "page" && profile !== undefined && semantic.id === profile.rootSemantic) {
+    return {
+      status: SEMANTIC_CONFLICTS.conflicted,
+      expectedPlatform: rootPlatform,
+      actualPlatform: semantic.platform,
+      reason: `Root semantic "${semantic.id}" cannot be assigned to child shapes.`,
     };
   }
 

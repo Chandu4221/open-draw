@@ -6,7 +6,6 @@ import {
   type ShapeId,
   type StyleId,
   isRootId,
-  PLATFORMS,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
 import type { Document, PageShape, Shape } from "@open-draw/document";
@@ -37,12 +36,12 @@ export function resolveRootPage(doc: Document, shapeId: ShapeId): PageShape | un
 }
 
 /**
- * Resolves the effective platform for a shape from its root ancestor (R-026).
- * Defaults to "web" if no root page is found or if root has no explicit platform.
+ * Resolves the effective platform for a shape from its root ancestor (R-026, Ruling 10).
+ * Returns undefined if no root page is found or if the root page has no explicit platform (Platform-Agnostic Mode).
  */
-export function resolveRootPlatform(doc: Document, shapeId: ShapeId): PlatformId {
+export function resolveRootPlatform(doc: Document, shapeId: ShapeId): PlatformId | undefined {
   const root = resolveRootPage(doc, shapeId);
-  return root?.meta.platform ?? PLATFORMS.web;
+  return root?.meta.platform;
 }
 
 /**

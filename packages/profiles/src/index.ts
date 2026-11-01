@@ -1,6 +1,12 @@
 // @open-draw/profiles — platform and style profile data modules (ADR-0004 D5).
 // Pure data; core engine contains zero platform vocabularies (R-023).
-import type { PlatformId, PlatformProfile, StyleId, StyleProfile } from "@open-draw/contracts";
+import {
+  type PlatformId,
+  type PlatformProfile,
+  type StyleId,
+  type StyleProfile,
+  parseSemanticId,
+} from "@open-draw/contracts";
 import { ANDROID_NATIVE_PROFILE } from "./platforms/android-native";
 import { FLUTTER_PROFILE } from "./platforms/flutter";
 import { WEB_PROFILE } from "./platforms/web";
@@ -18,7 +24,7 @@ export const PLATFORM_PROFILES: Readonly<Record<PlatformId, PlatformProfile>> = 
   ios: Object.freeze({
     id: "ios",
     label: "iOS",
-    rootSemantic: WEB_PROFILE.rootSemantic,
+    rootSemantic: parseSemanticId("screen"),
     semantics: {},
   }),
 });

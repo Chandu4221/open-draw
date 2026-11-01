@@ -6,10 +6,6 @@ import {
 } from "@open-draw/contracts";
 
 export const FLUTTER_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze({
-  scaffold: Object.freeze({
-    id: parseSemanticId("scaffold"),
-    displayName: "Scaffold",
-  }),
   "app-bar": Object.freeze({
     id: parseSemanticId("app-bar"),
     displayName: "AppBar",

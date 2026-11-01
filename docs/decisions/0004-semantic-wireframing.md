@@ -111,9 +111,19 @@ All mutations to semantic and responsive properties flow through reversible, typ
 4. `set-shape-hidden-on`: sets `meta.hiddenOn` (R-028, R-029).
 5. `set-shape-order`: sets `meta.order[deviceType]` (R-027).
 
+### D10 — Platform-agnostic mode & root-vs-child semantic separation (Ruling 10)
+
+- **No Default Platform (Platform-Agnostic Mode)**: When a root page's `meta.platform` is unset, the canvas operates in platform-agnostic mode. No platform profile is active, no platform vocabulary is loaded, and shapes render as pure baseline geometry (`NONE`, R-024). A rectangle's derived display name is strictly `"Rectangle"`. Setting a platform is an explicit user action; silent defaults (such as defaulting to Web) are strictly forbidden across all core packages.
+- **Root Semantics vs Child Element Semantics**:
+  - Root container semantics (`page` for Web, `screen` for Android Native, `scaffold` for Flutter) are declared exclusively via `PlatformProfile.rootSemantic`. They define the platform-specific representation of the root container and are NOT included in child `semantics` dictionaries.
+  - Child shapes (e.g., shapes drawn inside a page) are elements (`button`, `card`, `navbar`, etc.) and must NEVER be tagged with root-level semantics. Assigning a root semantic to a child shape is rejected as a semantic conflict by `computeSemanticConflict`.
+  - Root pages derive their display name dynamically from the active platform's `rootSemantic` ("Page" for Web, "Screen" for Android Native, "Scaffold" for Flutter, and "Page" when platform-agnostic).
+
 ## Consequences
 
 - Adding a platform or design style requires zero modifications to engine code.
 - User data is preserved during platform changes.
+- The canvas supports pure, un-opinionated wireframing without forcing web/app semantics.
+- Root container concepts (`Page`, `Screen`, `Scaffold`) are strictly decoupled from child shape elements.
 - The inspector UI is completely data-driven and reusable across platforms.
 - Document validation enforces structural invariants (R-026) at the system boundary.
