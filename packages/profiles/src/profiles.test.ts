@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ANDROID_NATIVE_PROFILE,
+  CRAYON_STYLE_PROFILE,
   FLUTTER_PROFILE,
   getPlatformProfile,
   getStyleProfile,
@@ -52,6 +53,8 @@ describe("profile registry lookup", () => {
 
   it("returns style profile by style id", () => {
     expect(getStyleProfile("minimal")).toBe(MINIMAL_STYLE_PROFILE);
+    expect(getStyleProfile("crayon")).toBe(CRAYON_STYLE_PROFILE);
     expect(STYLE_PROFILES_REGISTRY.minimal).toBe(MINIMAL_STYLE_PROFILE);
+    expect(STYLE_PROFILES_REGISTRY.crayon).toBe(CRAYON_STYLE_PROFILE);
   });
 });

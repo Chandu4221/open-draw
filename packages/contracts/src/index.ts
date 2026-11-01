@@ -7,6 +7,8 @@ export * from "./device-types";
 export * from "./ids";
 export * from "./platforms";
 export * from "./plugin-contract";
+export * from "./export-contract";
 export * from "./profile-contract";
 export * from "./semantic-contract";
 export * from "./shape-kinds";
+export * from "./style-render-contract";

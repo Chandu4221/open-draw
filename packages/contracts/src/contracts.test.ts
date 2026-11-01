@@ -13,6 +13,9 @@ import {
   SHAPE_KINDS,
   SHAPE_KIND_LABELS,
   SHAPE_KIND_VALUES,
+  EXPORT_FORMATS,
+  EXPORT_FORMAT_BY_VALUE,
+  isExportFormat,
   STYLE_PROFILES,
   STYLE_PROFILE_BY_VALUE,
 } from "./index";
@@ -88,6 +91,20 @@ describe("semantic-contract", () => {
 describe("profile-contract", () => {
   it("exposes style profiles registry", () => {
     expect(STYLE_PROFILES.minimal).toBe("minimal");
+    expect(STYLE_PROFILES.crayon).toBe("crayon");
     expect(STYLE_PROFILE_BY_VALUE.minimal).toBe("minimal");
+    expect(STYLE_PROFILE_BY_VALUE.crayon).toBe("crayon");
+  });
+});
+
+describe("export-contract", () => {
+  it("exposes export formats registry and validator", () => {
+    expect(EXPORT_FORMATS.json).toBe("json");
+    expect(EXPORT_FORMATS.markdown).toBe("markdown");
+    expect(EXPORT_FORMAT_BY_VALUE.json).toBe("json");
+    expect(EXPORT_FORMAT_BY_VALUE.markdown).toBe("markdown");
+    expect(isExportFormat("json")).toBe(true);
+    expect(isExportFormat("markdown")).toBe(true);
+    expect(isExportFormat("csv")).toBe(false);
   });
 });

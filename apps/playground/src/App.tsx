@@ -50,12 +50,14 @@ import {
   type ToolId,
 } from "@open-draw/canvas";
 import {
+  chipOverlayToSvg,
   documentToSvg,
   previewBoxToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
   selectionOverlayToSvg,
 } from "@open-draw/renderer-svg";
+import { exportMarkdown } from "@open-draw/export-markdown";
 import {
   deriveLineBoundingBox,
   derivePenPathBoundingBox,
@@ -158,6 +160,8 @@ export default function App() {
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
+  const [showTagChips, setShowTagChips] = useState<boolean>(false);
+  const showTagChipsRef = useRef<boolean>(false);
 
   function chooseTool(next: ToolId): void {
     toolRef.current = next;
@@ -244,6 +248,35 @@ export default function App() {
         overlays.push(previewPenPathToSvg(gesture.points));
       } else {
         overlays.push(previewBoxToSvg(normalizeBox(gesture.startWorld, lastWorldRef.current)));
+      }
+    }
+
+    if (showTagChipsRef.current) {
+      for (const shape of Object.values(doc.shapes)) {
+        let chipLabel: string | undefined;
+        if (isRootId(shape.parent)) {
+          const platform = shape.meta.platform;
+          if (platform !== undefined) {
+            chipLabel = PLATFORM_PROFILES[platform]?.label ?? platform;
+          }
+        } else if (shape.meta.semantic !== undefined) {
+          const rootPlatform = resolveRootPlatform(doc, shape.id);
+          const profile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
+          chipLabel = resolveShapeDisplayName(shape, profile);
+        }
+
+        if (chipLabel !== undefined) {
+          let box = absoluteBoundingBox(doc, shape);
+          const gesture = gestureRef.current;
+          if (gesture !== null && gesture.kind === "move" && gesture.shapeIds.includes(shape.id)) {
+            box = {
+              ...box,
+              x: box.x + (lastWorldRef.current.x - gesture.startWorld.x),
+              y: box.y + (lastWorldRef.current.y - gesture.startWorld.y),
+            };
+          }
+          overlays.push(chipOverlayToSvg(chipLabel, box, camera.zoom));
+        }
       }
     }
 
@@ -662,6 +695,31 @@ export default function App() {
     }
   }
 
+  function handleExportMarkdown(): void {
+    try {
+      const md = exportMarkdown(documentRef.current);
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "opendraw-document.md";
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMessage("Exported Markdown successfully");
+    } catch (err) {
+      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function toggleShowTagChips(): void {
+    setShowTagChips((prev) => {
+      const next = !prev;
+      showTagChipsRef.current = next;
+      render();
+      return next;
+    });
+  }
+
   function handleLoad(): void {
     const input = document.createElement("input");
     input.type = "file";
@@ -875,8 +933,11 @@ export default function App() {
             Draw pen (P)
           </button>
           <span>|</span>
+          <button type="button" onClick={handleExportMarkdown}>
+            Export Markdown
+          </button>
           <button type="button" onClick={handleSave}>
-            Save JSON
+            Export JSON
           </button>
           <button type="button" onClick={handleLoad}>
             Load JSON
@@ -927,6 +988,17 @@ export default function App() {
             Reset
           </button>
           <span>|</span>
+          <button
+            type="button"
+            onClick={toggleShowTagChips}
+            style={{
+              fontWeight: 600,
+              backgroundColor: showTagChips ? "#2563eb" : undefined,
+              color: showTagChips ? "#ffffff" : undefined,
+            }}
+          >
+            {showTagChips ? "Hide Chips" : "Show Chips"}
+          </button>
           <button
             type="button"
             onClick={() => setShowSidebar((prev) => !prev)}
@@ -1047,7 +1119,8 @@ export default function App() {
                       }}
                       onChange={(e) => handleSetStyle(e.target.value as StyleId)}
                     >
-                      <option value={STYLE_PROFILES.minimal}>Minimal</option>
+                      <option value={STYLE_PROFILES.minimal}>Minimal Wireframe</option>
+                      <option value={STYLE_PROFILES.crayon}>Crayon / Hand-drawn</option>
                     </select>
                   </div>
                 </div>

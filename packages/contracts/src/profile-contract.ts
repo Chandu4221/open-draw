@@ -10,6 +10,7 @@ import type { PropertySchema, SemanticId } from "./semantic-contract";
  */
 export const STYLE_PROFILES = {
   minimal: "minimal",
+  crayon: "crayon",
 } as const;
 
 export type StyleId = keyof typeof STYLE_PROFILES;

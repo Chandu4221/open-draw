@@ -11,11 +11,13 @@ import { ANDROID_NATIVE_PROFILE } from "./platforms/android-native";
 import { FLUTTER_PROFILE } from "./platforms/flutter";
 import { WEB_PROFILE } from "./platforms/web";
 import { MINIMAL_STYLE_PROFILE } from "./styles/minimal";
+import { CRAYON_STYLE_PROFILE } from "./styles/crayon";
 
 export * from "./platforms/web";
 export * from "./platforms/android-native";
 export * from "./platforms/flutter";
 export * from "./styles/minimal";
+export * from "./styles/crayon";
 
 export const PLATFORM_PROFILES: Readonly<Record<PlatformId, PlatformProfile>> = Object.freeze({
   web: WEB_PROFILE,
@@ -31,6 +33,7 @@ export const PLATFORM_PROFILES: Readonly<Record<PlatformId, PlatformProfile>> = 
 
 export const STYLE_PROFILES_REGISTRY: Readonly<Record<StyleId, StyleProfile>> = Object.freeze({
   minimal: MINIMAL_STYLE_PROFILE,
+  crayon: CRAYON_STYLE_PROFILE,
 });
 
 export function getPlatformProfile(id: PlatformId): PlatformProfile | undefined {
