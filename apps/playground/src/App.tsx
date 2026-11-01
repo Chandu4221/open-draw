@@ -100,7 +100,15 @@ interface Gesture {
   readonly points: readonly Point[];
 }
 
-const CANVAS_WIRE_STYLE = { width: "100%", height: "100%", display: "block", touchAction: "none" };
+const CANVAS_WIRE_STYLE = {
+  position: "absolute" as const,
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  display: "block",
+  touchAction: "none",
+};
 
 function initCanvas(): CanvasController {
   return createCanvas({
@@ -154,6 +162,8 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
+  const [zoomPercent, setZoomPercent] = useState<number>(100);
+  const [showSidebar, setShowSidebar] = useState<boolean>(true);
 
   function chooseTool(next: ToolId): void {
     toolRef.current = next;
@@ -163,6 +173,22 @@ export default function App() {
   function handleDeviceChange(deviceType?: DeviceType): void {
     canvasRef.current.setActiveDeviceType(deviceType);
     setActiveDeviceType(deviceType);
+    render();
+  }
+
+  function handleZoom(factor: number): void {
+    const svg = svgRef.current;
+    if (svg === null) return;
+    const rect = svg.getBoundingClientRect();
+    const center: Point = { x: rect.width / 2, y: rect.height / 2 };
+    canvasRef.current.zoomAt(center, factor);
+    setZoomPercent(Math.round(canvasRef.current.getCamera().zoom * 100));
+    render();
+  }
+
+  function handleResetZoom(): void {
+    canvasRef.current.setCamera({ x: 0, y: 0, zoom: 1 });
+    setZoomPercent(100);
     render();
   }
 
@@ -552,6 +578,7 @@ export default function App() {
     const screen = screenPointFrom(event);
     const factor = Math.exp(-event.deltaY * 0.001);
     canvas.zoomAt(screen, factor);
+    setZoomPercent(Math.round(canvas.getCamera().zoom * 100));
     canvas.dispatch({
       type: CANVAS_EVENTS.wheel,
       screenPoint: screen,
@@ -844,9 +871,12 @@ export default function App() {
   return (
     <main
       style={{
-        height: "100vh",
+        height: "100%",
+        width: "100%",
         display: "flex",
         flexDirection: "column",
+        minHeight: 0,
+        overflow: "hidden",
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
@@ -919,18 +949,53 @@ export default function App() {
               {DEVICE_TYPES[dt]}
             </button>
           ))}
+          <span>|</span>
+          <span style={{ fontWeight: 600 }}>Zoom:</span>
+          <button type="button" onClick={() => handleZoom(0.8)} title="Zoom Out">
+            -
+          </button>
+          <span style={{ minWidth: "38px", textAlign: "center" }}>{zoomPercent}%</span>
+          <button type="button" onClick={() => handleZoom(1.25)} title="Zoom In">
+            +
+          </button>
+          <button type="button" onClick={handleResetZoom} title="Reset to 100%">
+            Reset
+          </button>
+          <span>|</span>
+          <button
+            type="button"
+            onClick={() => setShowSidebar((prev) => !prev)}
+            style={{
+              fontWeight: 600,
+              backgroundColor: showSidebar ? undefined : "#e0e7ff",
+              borderColor: showSidebar ? undefined : "#6366f1",
+            }}
+          >
+            {showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+          </button>
           {statusMessage && (
             <span style={{ color: "#2563eb", marginLeft: "8px" }}>[{statusMessage}]</span>
           )}
         </div>
       </header>
 
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div
+        style={{
+          flex: 1,
+          height: "100%",
+          minHeight: 0,
+          minWidth: 0,
+          display: "flex",
+          overflow: "hidden",
+        }}
+      >
         {/* Canvas area */}
         <div
           style={{
             flex: 1,
             height: "100%",
+            minHeight: 0,
+            minWidth: 0,
             position: "relative",
             overflow: "hidden",
             backgroundColor: "#f8fafc",
@@ -940,392 +1005,400 @@ export default function App() {
         </div>
 
         {/* Inspector Sidebar */}
-        <aside
-          style={{
-            width: "360px",
-            height: "100%",
-            boxSizing: "border-box",
-            borderLeft: "1px solid #cbd5e1",
-            overflowY: "auto",
-            padding: "16px",
-            backgroundColor: "#ffffff",
-            fontSize: "13px",
-          }}
-        >
-          {/* Root Page Platform and Style Configuration */}
-          <div
+        {showSidebar && (
+          <aside
             style={{
-              marginBottom: "20px",
-              borderBottom: "1px solid #e2e8f0",
-              paddingBottom: "16px",
+              width: "360px",
+              height: "100%",
+              minHeight: 0,
+              boxSizing: "border-box",
+              borderLeft: "1px solid #cbd5e1",
+              overflowY: "auto",
+              padding: "16px",
+              backgroundColor: "#ffffff",
+              fontSize: "13px",
+              flexShrink: 0,
             }}
           >
-            <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
-              Page Configuration
-            </h2>
-            <div style={{ marginBottom: "8px" }}>
-              <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                Page ID
-              </label>
-              <div style={{ color: "#64748b" }}>{rootPage ? rootPage.id : "None"}</div>
-            </div>
-            <div style={{ marginBottom: "8px" }}>
-              <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                Platform Profile (R-026)
-              </label>
-              <select
-                value={rootPlatform}
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  borderRadius: "4px",
-                  border: "1px solid #cbd5e1",
-                }}
-                disabled={!rootPage}
-                onChange={(e) => handleSetPlatform(e.target.value as PlatformId)}
-              >
-                <option value={PLATFORMS.web}>Web</option>
-                <option value={PLATFORMS.androidNative}>Android Native (Material 3)</option>
-                <option value={PLATFORMS.flutter}>Flutter</option>
-                <option value={PLATFORMS.ios}>iOS (Stub)</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: "8px" }}>
-              <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                Design Style (R-026)
-              </label>
-              <select
-                value={rootStyle}
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  borderRadius: "4px",
-                  border: "1px solid #cbd5e1",
-                }}
-                disabled={!rootPage}
-                onChange={(e) => handleSetStyle(e.target.value as StyleId)}
-              >
-                <option value={STYLE_PROFILES.minimal}>Minimal</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Selected Shape Inspector */}
-          <div
-            style={{
-              marginBottom: "20px",
-              borderBottom: "1px solid #e2e8f0",
-              paddingBottom: "16px",
-            }}
-          >
-            <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
-              Shape Inspector
-            </h2>
-            {!selectedShape ? (
-              <p style={{ color: "#64748b", margin: 0 }}>
-                Select a shape to inspect semantics and responsive properties.
-              </p>
-            ) : (
-              <div>
-                <div style={{ marginBottom: "8px" }}>
-                  <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
-                </div>
-                <div style={{ marginBottom: "8px", color: "#64748b" }}>
-                  <strong>ID:</strong> {selectedShape.id} | <strong>Kind:</strong>{" "}
-                  {selectedShape.kind}
-                </div>
-
-                {selectedShape.kind === SHAPE_KINDS.page ? (
-                  <p style={{ color: "#64748b", fontStyle: "italic" }}>
-                    This is a root page. Platform and style settings are configured above.
-                  </p>
-                ) : (
-                  <>
-                    {/* Semantic Tagging */}
-                    <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-                      <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                        Semantic Tag (R-024)
-                      </label>
-                      <select
-                        value={selectedShape.meta.semantic?.id ?? ""}
-                        style={{
-                          width: "100%",
-                          padding: "6px 8px",
-                          borderRadius: "4px",
-                          border: "1px solid #cbd5e1",
-                        }}
-                        onChange={(e) => handleSetSemantic(e.target.value)}
-                      >
-                        <option value="">(None / Baseline)</option>
-                        {Object.values(activeProfile.semantics).map((def) => (
-                          <option key={def.id} value={def.id}>
-                            {def.displayName} ({def.id})
-                          </option>
-                        ))}
-                        {selectedShape.meta.semantic &&
-                          !activeProfile.semantics[selectedShape.meta.semantic.id] && (
-                            <option value={selectedShape.meta.semantic.id}>
-                              [Foreign] {selectedShape.meta.semantic.id} (
-                              {selectedShape.meta.semantic.platform})
-                            </option>
-                          )}
-                      </select>
-                    </div>
-
-                    {/* Semantic Conflict Warning Banner (R-025) */}
-                    {conflict && (
-                      <div
-                        style={{
-                          backgroundColor: "#fef2f2",
-                          border: "1px solid #f87171",
-                          borderRadius: "4px",
-                          padding: "8px 12px",
-                          marginBottom: "12px",
-                          color: "#991b1b",
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: "2px" }}>
-                          Semantic Conflict ({conflict.status})
-                        </div>
-                        <div style={{ fontSize: "12px" }}>{conflict.reason}</div>
-                      </div>
-                    )}
-
-                    {/* Semantic Properties (Ruling 8) */}
-                    {semanticDef?.properties && semanticDef.properties.length > 0 && (
-                      <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-                        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                          Properties ({semanticDef.displayName})
-                        </label>
-                        {semanticDef.properties.map((schema) => {
-                          const val = semanticProps[schema.id];
-                          return (
-                            <div key={schema.id} style={{ marginBottom: "8px" }}>
-                              <label
-                                style={{
-                                  display: "block",
-                                  fontSize: "12px",
-                                  fontWeight: 500,
-                                  marginBottom: "2px",
-                                }}
-                              >
-                                {schema.label}
-                              </label>
-                              {schema.control === "text" && (
-                                <input
-                                  type="text"
-                                  value={val !== undefined ? String(val) : ""}
-                                  style={{
-                                    width: "100%",
-                                    padding: "4px 8px",
-                                    boxSizing: "border-box",
-                                  }}
-                                  onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
-                                />
-                              )}
-                              {schema.control === "number" && (
-                                <input
-                                  type="number"
-                                  value={val !== undefined ? Number(val) : ""}
-                                  style={{
-                                    width: "100%",
-                                    padding: "4px 8px",
-                                    boxSizing: "border-box",
-                                  }}
-                                  onChange={(e) =>
-                                    handlePropertyChange(
-                                      schema.id,
-                                      e.target.value === "" ? 0 : Number(e.target.value),
-                                    )
-                                  }
-                                />
-                              )}
-                              {schema.control === "toggle" && (
-                                <label
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                  }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(val)}
-                                    onChange={(e) =>
-                                      handlePropertyChange(schema.id, e.target.checked)
-                                    }
-                                  />
-                                  <span>Enabled</span>
-                                </label>
-                              )}
-                              {schema.control === "select" && (
-                                <select
-                                  value={
-                                    val !== undefined
-                                      ? String(val)
-                                      : (schema.options?.[0]?.value ?? "")
-                                  }
-                                  style={{
-                                    width: "100%",
-                                    padding: "4px 8px",
-                                    boxSizing: "border-box",
-                                  }}
-                                  onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
-                                >
-                                  {schema.options?.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                      {opt.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Responsive Hidden On (R-028, R-029) */}
-                    <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                        Responsive Visibility (hiddenOn)
-                      </label>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                        {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
-                          const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
-                          return (
-                            <label
-                              key={dt}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                fontSize: "12px",
-                              }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isHidden}
-                                onChange={() => handleToggleHiddenOn(dt)}
-                              />
-                              <span>{DEVICE_TYPES[dt]}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Responsive Order (R-027) */}
-                    <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                        Responsive Order (order)
-                      </label>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: "6px",
-                        }}
-                      >
-                        {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
-                          const orderVal = selectedShape.meta.order[dt];
-                          return (
-                            <div key={dt} style={{ fontSize: "12px" }}>
-                              <label style={{ display: "block", color: "#64748b" }}>
-                                {DEVICE_TYPES[dt]}:
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={orderVal !== undefined ? orderVal : ""}
-                                style={{
-                                  width: "100%",
-                                  padding: "3px 6px",
-                                  boxSizing: "border-box",
-                                }}
-                                onChange={(e) => handleOrderChange(dt, e.target.value)}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Page Tree Outline */}
-          <div>
-            <h2 style={{ fontSize: "15px", margin: "0 0 8px 0", color: "#0f172a" }}>
-              Page Tree Outline
-            </h2>
+            {/* Root Page Platform and Style Configuration */}
             <div
               style={{
-                maxHeight: "220px",
-                overflowY: "auto",
-                border: "1px solid #cbd5e1",
-                borderRadius: "4px",
-                padding: "6px",
-                backgroundColor: "#f8fafc",
+                marginBottom: "20px",
+                borderBottom: "1px solid #e2e8f0",
+                paddingBottom: "16px",
               }}
             >
-              {treeNodes.length === 0 ? (
-                <span style={{ color: "#94a3b8", fontSize: "12px" }}>Empty tree</span>
+              <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
+                Page Configuration
+              </h2>
+              <div style={{ marginBottom: "8px" }}>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                  Page ID
+                </label>
+                <div style={{ color: "#64748b" }}>{rootPage ? rootPage.id : "None"}</div>
+              </div>
+              <div style={{ marginBottom: "8px" }}>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                  Platform Profile (R-026)
+                </label>
+                <select
+                  value={rootPlatform}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: "4px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                  disabled={!rootPage}
+                  onChange={(e) => handleSetPlatform(e.target.value as PlatformId)}
+                >
+                  <option value={PLATFORMS.web}>Web</option>
+                  <option value={PLATFORMS.androidNative}>Android Native (Material 3)</option>
+                  <option value={PLATFORMS.flutter}>Flutter</option>
+                  <option value={PLATFORMS.ios}>iOS (Stub)</option>
+                </select>
+              </div>
+              <div style={{ marginBottom: "8px" }}>
+                <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                  Design Style (R-026)
+                </label>
+                <select
+                  value={rootStyle}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: "4px",
+                    border: "1px solid #cbd5e1",
+                  }}
+                  disabled={!rootPage}
+                  onChange={(e) => handleSetStyle(e.target.value as StyleId)}
+                >
+                  <option value={STYLE_PROFILES.minimal}>Minimal</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Selected Shape Inspector */}
+            <div
+              style={{
+                marginBottom: "20px",
+                borderBottom: "1px solid #e2e8f0",
+                paddingBottom: "16px",
+              }}
+            >
+              <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
+                Shape Inspector
+              </h2>
+              {!selectedShape ? (
+                <p style={{ color: "#64748b", margin: 0 }}>
+                  Select a shape to inspect semantics and responsive properties.
+                </p>
               ) : (
-                treeNodes.map((node) => (
-                  <div
-                    key={node.shape.id}
-                    style={{
-                      paddingLeft: `${node.depth * 14 + 4}px`,
-                      paddingTop: "3px",
-                      paddingBottom: "3px",
-                      paddingRight: "6px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      borderRadius: "3px",
-                      backgroundColor:
-                        node.shape.id === selectedShapeId ? "#dbeafe" : "transparent",
-                      color: node.shape.id === selectedShapeId ? "#1d4ed8" : "#334155",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                    onClick={() => selectShape(node.shape.id)}
-                  >
-                    <span
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {node.displayName}
-                    </span>
-                    {node.conflict && (
-                      <span
-                        style={{
-                          backgroundColor: "#fee2e2",
-                          color: "#dc2626",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          padding: "1px 4px",
-                          borderRadius: "2px",
-                          marginLeft: "4px",
-                          flexShrink: 0,
-                        }}
-                        title={node.conflict.reason}
-                      >
-                        conflict
-                      </span>
-                    )}
+                <div>
+                  <div style={{ marginBottom: "8px" }}>
+                    <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
                   </div>
-                ))
+                  <div style={{ marginBottom: "8px", color: "#64748b" }}>
+                    <strong>ID:</strong> {selectedShape.id} | <strong>Kind:</strong>{" "}
+                    {selectedShape.kind}
+                  </div>
+
+                  {selectedShape.kind === SHAPE_KINDS.page ? (
+                    <p style={{ color: "#64748b", fontStyle: "italic" }}>
+                      This is a root page. Platform and style settings are configured above.
+                    </p>
+                  ) : (
+                    <>
+                      {/* Semantic Tagging */}
+                      <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                          Semantic Tag (R-024)
+                        </label>
+                        <select
+                          value={selectedShape.meta.semantic?.id ?? ""}
+                          style={{
+                            width: "100%",
+                            padding: "6px 8px",
+                            borderRadius: "4px",
+                            border: "1px solid #cbd5e1",
+                          }}
+                          onChange={(e) => handleSetSemantic(e.target.value)}
+                        >
+                          <option value="">(None / Baseline)</option>
+                          {Object.values(activeProfile.semantics).map((def) => (
+                            <option key={def.id} value={def.id}>
+                              {def.displayName} ({def.id})
+                            </option>
+                          ))}
+                          {selectedShape.meta.semantic &&
+                            !activeProfile.semantics[selectedShape.meta.semantic.id] && (
+                              <option value={selectedShape.meta.semantic.id}>
+                                [Foreign] {selectedShape.meta.semantic.id} (
+                                {selectedShape.meta.semantic.platform})
+                              </option>
+                            )}
+                        </select>
+                      </div>
+
+                      {/* Semantic Conflict Warning Banner (R-025) */}
+                      {conflict && (
+                        <div
+                          style={{
+                            backgroundColor: "#fef2f2",
+                            border: "1px solid #f87171",
+                            borderRadius: "4px",
+                            padding: "8px 12px",
+                            marginBottom: "12px",
+                            color: "#991b1b",
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, marginBottom: "2px" }}>
+                            Semantic Conflict ({conflict.status})
+                          </div>
+                          <div style={{ fontSize: "12px" }}>{conflict.reason}</div>
+                        </div>
+                      )}
+
+                      {/* Semantic Properties (Ruling 8) */}
+                      {semanticDef?.properties && semanticDef.properties.length > 0 && (
+                        <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                            Properties ({semanticDef.displayName})
+                          </label>
+                          {semanticDef.properties.map((schema) => {
+                            const val = semanticProps[schema.id];
+                            return (
+                              <div key={schema.id} style={{ marginBottom: "8px" }}>
+                                <label
+                                  style={{
+                                    display: "block",
+                                    fontSize: "12px",
+                                    fontWeight: 500,
+                                    marginBottom: "2px",
+                                  }}
+                                >
+                                  {schema.label}
+                                </label>
+                                {schema.control === "text" && (
+                                  <input
+                                    type="text"
+                                    value={val !== undefined ? String(val) : ""}
+                                    style={{
+                                      width: "100%",
+                                      padding: "4px 8px",
+                                      boxSizing: "border-box",
+                                    }}
+                                    onChange={(e) =>
+                                      handlePropertyChange(schema.id, e.target.value)
+                                    }
+                                  />
+                                )}
+                                {schema.control === "number" && (
+                                  <input
+                                    type="number"
+                                    value={val !== undefined ? Number(val) : ""}
+                                    style={{
+                                      width: "100%",
+                                      padding: "4px 8px",
+                                      boxSizing: "border-box",
+                                    }}
+                                    onChange={(e) =>
+                                      handlePropertyChange(
+                                        schema.id,
+                                        e.target.value === "" ? 0 : Number(e.target.value),
+                                      )
+                                    }
+                                  />
+                                )}
+                                {schema.control === "toggle" && (
+                                  <label
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={Boolean(val)}
+                                      onChange={(e) =>
+                                        handlePropertyChange(schema.id, e.target.checked)
+                                      }
+                                    />
+                                    <span>Enabled</span>
+                                  </label>
+                                )}
+                                {schema.control === "select" && (
+                                  <select
+                                    value={
+                                      val !== undefined
+                                        ? String(val)
+                                        : (schema.options?.[0]?.value ?? "")
+                                    }
+                                    style={{
+                                      width: "100%",
+                                      padding: "4px 8px",
+                                      boxSizing: "border-box",
+                                    }}
+                                    onChange={(e) =>
+                                      handlePropertyChange(schema.id, e.target.value)
+                                    }
+                                  >
+                                    {schema.options?.map((opt) => (
+                                      <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Responsive Hidden On (R-028, R-029) */}
+                      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                          Responsive Visibility (hiddenOn)
+                        </label>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                          {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
+                            const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
+                            return (
+                              <label
+                                key={dt}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isHidden}
+                                  onChange={() => handleToggleHiddenOn(dt)}
+                                />
+                                <span>{DEVICE_TYPES[dt]}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Responsive Order (R-027) */}
+                      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                          Responsive Order (order)
+                        </label>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "6px",
+                          }}
+                        >
+                          {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
+                            const orderVal = selectedShape.meta.order[dt];
+                            return (
+                              <div key={dt} style={{ fontSize: "12px" }}>
+                                <label style={{ display: "block", color: "#64748b" }}>
+                                  {DEVICE_TYPES[dt]}:
+                                </label>
+                                <input
+                                  type="number"
+                                  placeholder="0"
+                                  value={orderVal !== undefined ? orderVal : ""}
+                                  style={{
+                                    width: "100%",
+                                    padding: "3px 6px",
+                                    boxSizing: "border-box",
+                                  }}
+                                  onChange={(e) => handleOrderChange(dt, e.target.value)}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          </div>
-        </aside>
+
+            {/* Page Tree Outline */}
+            <div>
+              <h2 style={{ fontSize: "15px", margin: "0 0 8px 0", color: "#0f172a" }}>
+                Page Tree Outline
+              </h2>
+              <div
+                style={{
+                  maxHeight: "220px",
+                  overflowY: "auto",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "4px",
+                  padding: "6px",
+                  backgroundColor: "#f8fafc",
+                }}
+              >
+                {treeNodes.length === 0 ? (
+                  <span style={{ color: "#94a3b8", fontSize: "12px" }}>Empty tree</span>
+                ) : (
+                  treeNodes.map((node) => (
+                    <div
+                      key={node.shape.id}
+                      style={{
+                        paddingLeft: `${node.depth * 14 + 4}px`,
+                        paddingTop: "3px",
+                        paddingBottom: "3px",
+                        paddingRight: "6px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        borderRadius: "3px",
+                        backgroundColor:
+                          node.shape.id === selectedShapeId ? "#dbeafe" : "transparent",
+                        color: node.shape.id === selectedShapeId ? "#1d4ed8" : "#334155",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                      onClick={() => selectShape(node.shape.id)}
+                    >
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {node.displayName}
+                      </span>
+                      {node.conflict && (
+                        <span
+                          style={{
+                            backgroundColor: "#fee2e2",
+                            color: "#dc2626",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            padding: "1px 4px",
+                            borderRadius: "2px",
+                            marginLeft: "4px",
+                            flexShrink: 0,
+                          }}
+                          title={node.conflict.reason}
+                        >
+                          conflict
+                        </span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
     </main>
   );
