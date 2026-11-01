@@ -844,6 +844,13 @@ export default function App() {
     render();
   }
 
+  function handleSetLabel(labelStr: string): void {
+    if (!selectedShape) return;
+    const label = labelStr.trim() === "" ? null : labelStr;
+    commit([{ type: COMMANDS.setShapeLabel, id: selectedShape.id, label }]);
+    render();
+  }
+
   function handleSetSemantic(semanticIdStr: string): void {
     if (!selectedShape) return;
     if (semanticIdStr === "") {
@@ -1148,8 +1155,23 @@ export default function App() {
                 <p style={{ color: "#64748b", margin: 0 }}>Select a shape to inspect.</p>
               ) : isRootId(selectedShape.parent) ? (
                 <div>
-                  <div style={{ marginBottom: "8px" }}>
-                    <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                      Name (R-042)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+                      value={selectedShape.label ?? ""}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid #cbd5e1",
+                        boxSizing: "border-box",
+                      }}
+                      onChange={(e) => handleSetLabel(e.target.value)}
+                    />
                   </div>
                   <div style={{ marginBottom: "12px", color: "#64748b" }}>
                     <strong>Shape ID:</strong> {selectedShape.id}
@@ -1198,8 +1220,23 @@ export default function App() {
                 </div>
               ) : (
                 <div>
-                  <div style={{ marginBottom: "6px" }}>
-                    <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                      Name (R-042)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+                      value={selectedShape.label ?? ""}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid #cbd5e1",
+                        boxSizing: "border-box",
+                      }}
+                      onChange={(e) => handleSetLabel(e.target.value)}
+                    />
                   </div>
                   <div style={{ marginBottom: "6px", color: "#64748b" }}>
                     <strong>Shape ID:</strong> {selectedShape.id}
