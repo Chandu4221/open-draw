@@ -137,19 +137,23 @@ function initCanvas(): CanvasController {
   });
 }
 
+let shapeSequence = 0x7a00;
+function nextShapeId(): ShapeId {
+  shapeSequence += 1;
+  return `s-${shapeSequence.toString(16)}` as ShapeId;
+}
+
 export default function App() {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<CanvasController>(initCanvas());
   const [doc, setDoc] = useState<Document>(() =>
-    createDocument([createPage(parseShapeId("page-1"), { x: 40, y: 40, width: 640, height: 480 })]),
+    createDocument([createPage(parseShapeId("s-root"), { x: 40, y: 40, width: 640, height: 480 })]),
   );
   const documentRef = useRef<Document>(doc);
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
   const gestureRef = useRef<Gesture | null>(null);
   const lastScreenRef = useRef<Point>({ x: 0, y: 0 });
   const lastWorldRef = useRef<Point>({ x: 0, y: 0 });
-  const shapeCounterRef = useRef(0);
-  const pageCounterRef = useRef(1);
   const spaceRef = useRef(false);
   const toolRef = useRef<ToolId>(TOOLS.select);
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
@@ -265,16 +269,6 @@ export default function App() {
     documentRef.current = result.document;
     historyRef.current = recordHistory(historyRef.current, result.inverse);
     setDoc(result.document);
-  }
-
-  function nextShapeId(): ShapeId {
-    shapeCounterRef.current += 1;
-    return `shape-${shapeCounterRef.current}` as ShapeId;
-  }
-
-  function nextPageId(): ShapeId {
-    pageCounterRef.current += 1;
-    return `page-${pageCounterRef.current}` as ShapeId;
   }
 
   function onPointerDown(event: PointerEvent): void {
@@ -477,7 +471,7 @@ export default function App() {
           return;
         }
       }
-      const page = createPage(nextPageId(), boundingBox);
+      const page = createPage(nextShapeId(), boundingBox);
       const line = createLine(
         nextShapeId(),
         { x: 0, y: 0, width: boundingBox.width, height: boundingBox.height },
@@ -516,7 +510,7 @@ export default function App() {
           return;
         }
       }
-      const page = createPage(nextPageId(), boundingBox);
+      const page = createPage(nextShapeId(), boundingBox);
       const pen = createPenPath(
         nextShapeId(),
         { x: 0, y: 0, width: boundingBox.width, height: boundingBox.height },
@@ -552,7 +546,7 @@ export default function App() {
         return;
       }
     }
-    const page = createPage(nextPageId(), box);
+    const page = createPage(nextShapeId(), box);
     const shape = createDrawnShape(page.id, {
       x: 0,
       y: 0,
@@ -1015,7 +1009,7 @@ export default function App() {
               flexShrink: 0,
             }}
           >
-            {/* Root Page Platform and Style Configuration */}
+            {/* Root Platform and Style Configuration */}
             <div
               style={{
                 marginBottom: "20px",
@@ -1024,11 +1018,11 @@ export default function App() {
               }}
             >
               <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
-                Page Configuration
+                Configuration
               </h2>
               <div style={{ marginBottom: "8px" }}>
                 <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                  Page ID
+                  Shape ID
                 </label>
                 <div style={{ color: "#64748b" }}>{rootPage ? rootPage.id : "None"}</div>
               </div>
@@ -1095,8 +1089,7 @@ export default function App() {
                     <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
                   </div>
                   <div style={{ marginBottom: "8px", color: "#64748b" }}>
-                    <strong>ID:</strong> {selectedShape.id} | <strong>Kind:</strong>{" "}
-                    {selectedShape.kind}
+                    <strong>Shape ID:</strong> {selectedShape.id}
                   </div>
 
                   {selectedShape.kind === SHAPE_KINDS.page ? (
@@ -1342,10 +1335,10 @@ export default function App() {
               )}
             </div>
 
-            {/* Page Tree Outline */}
+            {/* Tree Outline */}
             <div>
               <h2 style={{ fontSize: "15px", margin: "0 0 8px 0", color: "#0f172a" }}>
-                Page Tree Outline
+                Tree Outline
               </h2>
               <div
                 style={{
