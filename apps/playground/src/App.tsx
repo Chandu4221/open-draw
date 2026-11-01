@@ -728,9 +728,11 @@ export default function App() {
   }
 
   function handleSetPlatform(platform: PlatformId | ""): void {
-    if (!rootPage) return;
+    const targetRoot =
+      selectedShape && selectedShape.kind === SHAPE_KINDS.page ? selectedShape : rootPage;
+    if (!targetRoot) return;
     const targetPlatform = platform === "" ? null : platform;
-    commit([{ type: COMMANDS.setRootPlatform, id: rootPage.id, platform: targetPlatform }]);
+    commit([{ type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: targetPlatform }]);
     const nextProfile = targetPlatform !== null ? PLATFORM_PROFILES[targetPlatform] : undefined;
     if (
       activeDeviceType !== undefined &&
@@ -744,8 +746,10 @@ export default function App() {
   }
 
   function handleSetStyle(style: StyleId): void {
-    if (!rootPage) return;
-    commit([{ type: COMMANDS.setRootStyle, id: rootPage.id, style }]);
+    const targetRoot =
+      selectedShape && selectedShape.kind === SHAPE_KINDS.page ? selectedShape : rootPage;
+    if (!targetRoot) return;
+    commit([{ type: COMMANDS.setRootStyle, id: targetRoot.id, style }]);
     render();
   }
 
@@ -1022,7 +1026,7 @@ export default function App() {
               flexShrink: 0,
             }}
           >
-            {/* Root Platform and Style Configuration */}
+            {/* Selection-Driven Inspector (R-026) */}
             <div
               style={{
                 marginBottom: "20px",
@@ -1031,325 +1035,306 @@ export default function App() {
               }}
             >
               <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
-                Configuration
-              </h2>
-              <div style={{ marginBottom: "8px" }}>
-                <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                  Shape ID
-                </label>
-                <div style={{ color: "#64748b" }}>{rootPage ? rootPage.id : "None"}</div>
-              </div>
-              <div style={{ marginBottom: "8px" }}>
-                <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                  Platform Profile (R-026)
-                </label>
-                <select
-                  value={rootPlatform ?? ""}
-                  style={{
-                    width: "100%",
-                    padding: "6px 8px",
-                    borderRadius: "4px",
-                    border: "1px solid #cbd5e1",
-                  }}
-                  disabled={!rootPage}
-                  onChange={(e) => handleSetPlatform(e.target.value as PlatformId | "")}
-                >
-                  <option value="">(None / Platform-Agnostic)</option>
-                  <option value="web">Web</option>
-                  <option value="androidNative">Android Native (Material 3)</option>
-                  <option value="flutter">Flutter</option>
-                  <option value="ios">iOS (Stub)</option>
-                </select>
-              </div>
-              <div style={{ marginBottom: "8px" }}>
-                <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                  Design Style (R-026)
-                </label>
-                <select
-                  value={rootStyle}
-                  style={{
-                    width: "100%",
-                    padding: "6px 8px",
-                    borderRadius: "4px",
-                    border: "1px solid #cbd5e1",
-                  }}
-                  disabled={!rootPage}
-                  onChange={(e) => handleSetStyle(e.target.value as StyleId)}
-                >
-                  <option value={STYLE_PROFILES.minimal}>Minimal</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Selected Shape Inspector */}
-            <div
-              style={{
-                marginBottom: "20px",
-                borderBottom: "1px solid #e2e8f0",
-                paddingBottom: "16px",
-              }}
-            >
-              <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
-                Shape Inspector
+                {!selectedShape
+                  ? "Inspector"
+                  : selectedShape.kind === SHAPE_KINDS.page
+                    ? "Container Inspector"
+                    : "Shape Inspector"}
               </h2>
               {!selectedShape ? (
-                <p style={{ color: "#64748b", margin: 0 }}>
-                  Select a shape to inspect semantics and responsive properties.
-                </p>
-              ) : (
+                <p style={{ color: "#64748b", margin: 0 }}>Select a board or shape to inspect.</p>
+              ) : selectedShape.kind === SHAPE_KINDS.page ? (
                 <div>
                   <div style={{ marginBottom: "8px" }}>
                     <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
                   </div>
-                  <div style={{ marginBottom: "8px", color: "#64748b" }}>
+                  <div style={{ marginBottom: "12px", color: "#64748b" }}>
                     <strong>Shape ID:</strong> {selectedShape.id}
                   </div>
 
-                  {selectedShape.kind === SHAPE_KINDS.page ? (
-                    <p style={{ color: "#64748b", fontStyle: "italic" }}>
-                      This is a root container (
-                      {resolveShapeDisplayName(selectedShape, activeProfile)}). Platform and style
-                      settings are configured above.
-                    </p>
-                  ) : (
-                    <>
-                      {/* Semantic Conflict Warning Banner (R-025) */}
-                      {conflict && (
-                        <div
-                          style={{
-                            backgroundColor: "#fef2f2",
-                            border: "1px solid #f87171",
-                            borderRadius: "4px",
-                            padding: "8px 12px",
-                            marginBottom: "12px",
-                            color: "#991b1b",
-                          }}
-                        >
-                          <div style={{ fontWeight: 600, marginBottom: "2px" }}>
-                            Semantic Conflict ({conflict.status})
-                          </div>
-                          <div style={{ fontSize: "12px", marginBottom: "6px" }}>
-                            {conflict.reason}
-                          </div>
-                          <button
-                            type="button"
-                            style={{
-                              fontSize: "11px",
-                              padding: "2px 6px",
-                              cursor: "pointer",
-                              backgroundColor: "#ffffff",
-                              border: "1px solid #f87171",
-                              borderRadius: "3px",
-                              color: "#991b1b",
-                            }}
-                            onClick={() => handleSetSemantic("")}
-                          >
-                            Clear Tag to Baseline (NONE)
-                          </button>
-                        </div>
-                      )}
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                      Platform Profile (R-026)
+                    </label>
+                    <select
+                      value={rootPlatform ?? ""}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid #cbd5e1",
+                      }}
+                      onChange={(e) => handleSetPlatform(e.target.value as PlatformId | "")}
+                    >
+                      <option value="">(None / Platform-Agnostic)</option>
+                      <option value="web">Web</option>
+                      <option value="androidNative">Android Native (Material 3)</option>
+                      <option value="flutter">Flutter</option>
+                      <option value="ios">iOS (Stub)</option>
+                    </select>
+                  </div>
 
-                      {/* Semantic Tagging (R-023, R-024) - only displayed when platform profile is active */}
-                      {activeProfile && (
-                        <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-                          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                            Semantic Tag (R-024)
-                          </label>
-                          <select
-                            value={selectedShape.meta.semantic?.id ?? ""}
-                            style={{
-                              width: "100%",
-                              padding: "6px 8px",
-                              borderRadius: "4px",
-                              border: "1px solid #cbd5e1",
-                            }}
-                            onChange={(e) => handleSetSemantic(e.target.value)}
-                          >
-                            <option value="">(None / Baseline)</option>
-                            {Object.values(activeProfile.semantics).map((def) => (
-                              <option key={def.id} value={def.id}>
-                                {def.displayName} ({def.id})
-                              </option>
-                            ))}
-                            {selectedShape.meta.semantic &&
-                              !activeProfile.semantics[selectedShape.meta.semantic.id] && (
-                                <option value={selectedShape.meta.semantic.id}>
-                                  [Foreign] {selectedShape.meta.semantic.id} (
-                                  {selectedShape.meta.semantic.platform})
-                                </option>
-                              )}
-                          </select>
-                        </div>
-                      )}
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                      Design Style (R-026)
+                    </label>
+                    <select
+                      value={rootStyle}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid #cbd5e1",
+                      }}
+                      onChange={(e) => handleSetStyle(e.target.value as StyleId)}
+                    >
+                      <option value={STYLE_PROFILES.minimal}>Minimal</option>
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ marginBottom: "6px" }}>
+                    <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
+                  </div>
+                  <div style={{ marginBottom: "6px", color: "#64748b" }}>
+                    <strong>Shape ID:</strong> {selectedShape.id}
+                  </div>
+                  {rootPage && (
+                    <div style={{ marginBottom: "12px", fontSize: "12px", color: "#64748b" }}>
+                      <strong>Container:</strong> {resolveShapeDisplayName(rootPage, activeProfile)}{" "}
+                      ({rootPage.id})
+                    </div>
+                  )}
+                  {/* Semantic Conflict Warning Banner (R-025) */}
+                  {conflict && (
+                    <div
+                      style={{
+                        backgroundColor: "#fef2f2",
+                        border: "1px solid #f87171",
+                        borderRadius: "4px",
+                        padding: "8px 12px",
+                        marginBottom: "12px",
+                        color: "#991b1b",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, marginBottom: "2px" }}>
+                        Semantic Conflict ({conflict.status})
+                      </div>
+                      <div style={{ fontSize: "12px", marginBottom: "6px" }}>{conflict.reason}</div>
+                      <button
+                        type="button"
+                        style={{
+                          fontSize: "11px",
+                          padding: "2px 6px",
+                          cursor: "pointer",
+                          backgroundColor: "#ffffff",
+                          border: "1px solid #f87171",
+                          borderRadius: "3px",
+                          color: "#991b1b",
+                        }}
+                        onClick={() => handleSetSemantic("")}
+                      >
+                        Clear Tag to Baseline (NONE)
+                      </button>
+                    </div>
+                  )}
 
-                      {/* Semantic Properties (Ruling 8) */}
-                      {semanticDef?.properties && semanticDef.properties.length > 0 && (
-                        <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-                          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                            Properties ({semanticDef.displayName})
-                          </label>
-                          {semanticDef.properties.map((schema) => {
-                            const val = semanticProps[schema.id];
-                            return (
-                              <div key={schema.id} style={{ marginBottom: "8px" }}>
-                                <label
-                                  style={{
-                                    display: "block",
-                                    fontSize: "12px",
-                                    fontWeight: 500,
-                                    marginBottom: "2px",
-                                  }}
-                                >
-                                  {schema.label}
-                                </label>
-                                {schema.control === "text" && (
-                                  <input
-                                    type="text"
-                                    value={val !== undefined ? String(val) : ""}
-                                    style={{
-                                      width: "100%",
-                                      padding: "4px 8px",
-                                      boxSizing: "border-box",
-                                    }}
-                                    onChange={(e) =>
-                                      handlePropertyChange(schema.id, e.target.value)
-                                    }
-                                  />
-                                )}
-                                {schema.control === "number" && (
-                                  <input
-                                    type="number"
-                                    value={val !== undefined ? Number(val) : ""}
-                                    style={{
-                                      width: "100%",
-                                      padding: "4px 8px",
-                                      boxSizing: "border-box",
-                                    }}
-                                    onChange={(e) =>
-                                      handlePropertyChange(
-                                        schema.id,
-                                        e.target.value === "" ? 0 : Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                )}
-                                {schema.control === "toggle" && (
-                                  <label
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "6px",
-                                    }}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={Boolean(val)}
-                                      onChange={(e) =>
-                                        handlePropertyChange(schema.id, e.target.checked)
-                                      }
-                                    />
-                                    <span>Enabled</span>
-                                  </label>
-                                )}
-                                {schema.control === "select" && (
-                                  <select
-                                    value={
-                                      val !== undefined
-                                        ? String(val)
-                                        : (schema.options?.[0]?.value ?? "")
-                                    }
-                                    style={{
-                                      width: "100%",
-                                      padding: "4px 8px",
-                                      boxSizing: "border-box",
-                                    }}
-                                    onChange={(e) =>
-                                      handlePropertyChange(schema.id, e.target.value)
-                                    }
-                                  >
-                                    {schema.options?.map((opt) => (
-                                      <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                  {/* Semantic Tagging (R-023, R-024) - only displayed when platform profile is active */}
+                  {activeProfile && (
+                    <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                        Semantic Tag (R-024)
+                      </label>
+                      <select
+                        value={selectedShape.meta.semantic?.id ?? ""}
+                        style={{
+                          width: "100%",
+                          padding: "6px 8px",
+                          borderRadius: "4px",
+                          border: "1px solid #cbd5e1",
+                        }}
+                        onChange={(e) => handleSetSemantic(e.target.value)}
+                      >
+                        <option value="">(None / Baseline)</option>
+                        {Object.values(activeProfile.semantics).map((def) => (
+                          <option key={def.id} value={def.id}>
+                            {def.displayName} ({def.id})
+                          </option>
+                        ))}
+                        {selectedShape.meta.semantic &&
+                          !activeProfile.semantics[selectedShape.meta.semantic.id] && (
+                            <option value={selectedShape.meta.semantic.id}>
+                              [Foreign] {selectedShape.meta.semantic.id} (
+                              {selectedShape.meta.semantic.platform})
+                            </option>
+                          )}
+                      </select>
+                    </div>
+                  )}
 
-                      {/* Responsive Hidden On (R-023, R-028, R-029) - only displayed when profile declares deviceTypes (e.g. Web) */}
-                      {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
-                        <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-                          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                            Responsive Visibility (hiddenOn)
-                          </label>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                            {activeProfile.deviceTypes.map((dt) => {
-                              const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
-                              return (
-                                <label
-                                  key={dt}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "4px",
-                                    fontSize: "12px",
-                                  }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isHidden}
-                                    onChange={() => handleToggleHiddenOn(dt)}
-                                  />
-                                  <span>{DEVICE_TYPES[dt]}</span>
-                                </label>
-                              );
-                            })}
+                  {/* Semantic Properties (Ruling 8) */}
+                  {semanticDef?.properties && semanticDef.properties.length > 0 && (
+                    <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                        Properties ({semanticDef.displayName})
+                      </label>
+                      {semanticDef.properties.map((schema) => {
+                        const val = semanticProps[schema.id];
+                        return (
+                          <div key={schema.id} style={{ marginBottom: "8px" }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: "12px",
+                                fontWeight: 500,
+                                marginBottom: "2px",
+                              }}
+                            >
+                              {schema.label}
+                            </label>
+                            {schema.control === "text" && (
+                              <input
+                                type="text"
+                                value={val !== undefined ? String(val) : ""}
+                                style={{
+                                  width: "100%",
+                                  padding: "4px 8px",
+                                  boxSizing: "border-box",
+                                }}
+                                onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
+                              />
+                            )}
+                            {schema.control === "number" && (
+                              <input
+                                type="number"
+                                value={val !== undefined ? Number(val) : ""}
+                                style={{
+                                  width: "100%",
+                                  padding: "4px 8px",
+                                  boxSizing: "border-box",
+                                }}
+                                onChange={(e) =>
+                                  handlePropertyChange(
+                                    schema.id,
+                                    e.target.value === "" ? 0 : Number(e.target.value),
+                                  )
+                                }
+                              />
+                            )}
+                            {schema.control === "toggle" && (
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(val)}
+                                  onChange={(e) =>
+                                    handlePropertyChange(schema.id, e.target.checked)
+                                  }
+                                />
+                                <span>Enabled</span>
+                              </label>
+                            )}
+                            {schema.control === "select" && (
+                              <select
+                                value={
+                                  val !== undefined
+                                    ? String(val)
+                                    : (schema.options?.[0]?.value ?? "")
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "4px 8px",
+                                  boxSizing: "border-box",
+                                }}
+                                onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
+                              >
+                                {schema.options?.map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        );
+                      })}
+                    </div>
+                  )}
 
-                      {/* Responsive Order (R-023, R-027) - only displayed when profile declares deviceTypes (e.g. Web) */}
-                      {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
-                        <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-                          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                            Responsive Order (order)
-                          </label>
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "1fr 1fr",
-                              gap: "6px",
-                            }}
-                          >
-                            {activeProfile.deviceTypes.map((dt) => {
-                              const orderVal = selectedShape.meta.order[dt];
-                              return (
-                                <div key={dt} style={{ fontSize: "12px" }}>
-                                  <label style={{ display: "block", color: "#64748b" }}>
-                                    {DEVICE_TYPES[dt]}:
-                                  </label>
-                                  <input
-                                    type="number"
-                                    placeholder="0"
-                                    value={orderVal !== undefined ? orderVal : ""}
-                                    style={{
-                                      width: "100%",
-                                      padding: "3px 6px",
-                                      boxSizing: "border-box",
-                                    }}
-                                    onChange={(e) => handleOrderChange(dt, e.target.value)}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </>
+                  {/* Responsive Hidden On (R-023, R-028, R-029) - only displayed when profile declares deviceTypes (e.g. Web) */}
+                  {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
+                    <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                        Responsive Visibility (hiddenOn)
+                      </label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                        {activeProfile.deviceTypes.map((dt) => {
+                          const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
+                          return (
+                            <label
+                              key={dt}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                fontSize: "12px",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isHidden}
+                                onChange={() => handleToggleHiddenOn(dt)}
+                              />
+                              <span>{DEVICE_TYPES[dt]}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Responsive Order (R-023, R-027) - only displayed when profile declares deviceTypes (e.g. Web) */}
+                  {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
+                    <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                        Responsive Order (order)
+                      </label>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "6px",
+                        }}
+                      >
+                        {activeProfile.deviceTypes.map((dt) => {
+                          const orderVal = selectedShape.meta.order[dt];
+                          return (
+                            <div key={dt} style={{ fontSize: "12px" }}>
+                              <label style={{ display: "block", color: "#64748b" }}>
+                                {DEVICE_TYPES[dt]}:
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={orderVal !== undefined ? orderVal : ""}
+                                style={{
+                                  width: "100%",
+                                  padding: "3px 6px",
+                                  boxSizing: "border-box",
+                                }}
+                                onChange={(e) => handleOrderChange(dt, e.target.value)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
