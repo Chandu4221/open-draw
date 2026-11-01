@@ -15,8 +15,10 @@ import type {
 import { DEVICE_TYPES, ROOT_ID, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
+  ancestorsOf,
   applyTransaction,
   COMMANDS,
+  computeReparentBoundingBox,
   createDocument,
   createEllipse,
   createLine,
@@ -26,10 +28,13 @@ import {
   DocumentError,
   EMPTY_HISTORY,
   parseDocument,
+  pickDropTarget,
+  pruneSelectedDescendants,
   recordHistory,
   redo,
   serializeDocument,
   undo,
+  type Command,
   type Document,
   type EllipseShape,
   type HistoryState,
@@ -221,7 +226,12 @@ export default function App() {
       if (shape !== undefined) {
         let box = absoluteBoundingBox(doc, shape);
         const gesture = gestureRef.current;
-        if (gesture !== null && gesture.kind === "move" && gesture.shapeIds.includes(selectedId)) {
+        const isSelectedMoved =
+          gesture !== null &&
+          gesture.kind === "move" &&
+          (gesture.shapeIds.includes(selectedId) ||
+            ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
+        if (isSelectedMoved) {
           box = {
             ...box,
             x: box.x + (lastWorldRef.current.x - gesture.startWorld.x),
@@ -268,7 +278,12 @@ export default function App() {
         if (chipLabel !== undefined) {
           let box = absoluteBoundingBox(doc, shape);
           const gesture = gestureRef.current;
-          if (gesture !== null && gesture.kind === "move" && gesture.shapeIds.includes(shape.id)) {
+          const isShapeMoved =
+            gesture !== null &&
+            gesture.kind === "move" &&
+            (gesture.shapeIds.includes(shape.id) ||
+              ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
+          if (isShapeMoved) {
             box = {
               ...box,
               x: box.x + (lastWorldRef.current.x - gesture.startWorld.x),
@@ -426,11 +441,7 @@ export default function App() {
     });
 
     if (before === STATES.draggingShape && gesture.shapeIds.length > 0) {
-      const dx = world.x - gesture.startWorld.x;
-      const dy = world.y - gesture.startWorld.y;
-      if (dx !== 0 || dy !== 0) {
-        commit([{ type: COMMANDS.moveShapes, ids: gesture.shapeIds, dx, dy }]);
-      }
+      commitDrag(gesture, world);
     } else if (before === STATES.resizingShape) {
       commitResize(gesture, world);
     } else if (before === STATES.drawingShape) {
@@ -441,6 +452,66 @@ export default function App() {
     gestureRef.current = null;
     setSelectedShapeId(canvas.getSelectedId());
     render();
+  }
+
+  function commitDrag(gesture: Gesture, world: Point): void {
+    const dx = world.x - gesture.startWorld.x;
+    const dy = world.y - gesture.startWorld.y;
+    if (dx === 0 && dy === 0) {
+      return;
+    }
+    const doc = documentRef.current;
+    const topLevelShapeIds = pruneSelectedDescendants(doc, gesture.shapeIds);
+    const commands: Command[] = [];
+    const sameParentMoves: ShapeId[] = [];
+
+    for (const id of topLevelShapeIds) {
+      const shape = doc.shapes[id];
+      if (shape === undefined) continue;
+
+      const currentWorldBox = absoluteBoundingBox(doc, shape);
+      const droppedWorldBox: BoundingBox = {
+        x: currentWorldBox.x + dx,
+        y: currentWorldBox.y + dy,
+        width: currentWorldBox.width,
+        height: currentWorldBox.height,
+      };
+      const center: Point = {
+        x: droppedWorldBox.x + droppedWorldBox.width / 2,
+        y: droppedWorldBox.y + droppedWorldBox.height / 2,
+      };
+      const targetParentId = pickDropTarget(doc, center, [id]);
+
+      if (targetParentId !== shape.parent) {
+        const newBoundingBox = computeReparentBoundingBox(
+          doc,
+          shape,
+          targetParentId,
+          droppedWorldBox,
+        );
+        commands.push({
+          type: COMMANDS.reparentShape,
+          id,
+          parent: targetParentId,
+          boundingBox: newBoundingBox,
+        });
+      } else {
+        sameParentMoves.push(id);
+      }
+    }
+
+    if (sameParentMoves.length > 0) {
+      commands.push({
+        type: COMMANDS.moveShapes,
+        ids: sameParentMoves,
+        dx,
+        dy,
+      });
+    }
+
+    if (commands.length > 0) {
+      commit(commands);
+    }
   }
 
   function commitResize(gesture: Gesture, world: Point): void {
@@ -477,13 +548,14 @@ export default function App() {
     const parentHit = gesture.parentHit;
     const canvas = canvasRef.current;
 
-    const hitShape = parentHit !== null ? doc.shapes[parentHit] : undefined;
-    const targetRoot = hitShape ? resolveRootShape(doc, hitShape.id) : undefined;
+    const targetParentId =
+      parentHit !== null ? pickDropTarget(doc, gesture.startWorld, []) : ROOT_ID;
+    const targetParent = !isRootId(targetParentId) ? doc.shapes[targetParentId] : undefined;
 
     if (toolRef.current === TOOLS.drawLine) {
       const { boundingBox, start, end } = deriveLineBoundingBox(gesture.startWorld, world);
-      if (targetRoot !== undefined) {
-        const parentBox = absoluteBoundingBox(doc, targetRoot);
+      if (targetParent !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetParent);
         const line = createLine(
           nextShapeId(),
           {
@@ -494,7 +566,7 @@ export default function App() {
           },
           start,
           end,
-          { parent: targetRoot.id },
+          { parent: targetParent.id },
         );
         commit([{ type: COMMANDS.createShape, shape: line }]);
         canvas.select(line.id);
@@ -509,8 +581,8 @@ export default function App() {
     if (toolRef.current === TOOLS.drawPenPath) {
       const allPoints = gesture.points.length > 0 ? gesture.points : [gesture.startWorld, world];
       const { boundingBox, points } = derivePenPathBoundingBox(allPoints);
-      if (targetRoot !== undefined) {
-        const parentBox = absoluteBoundingBox(doc, targetRoot);
+      if (targetParent !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetParent);
         const pen = createPenPath(
           nextShapeId(),
           {
@@ -520,7 +592,7 @@ export default function App() {
             height: boundingBox.height,
           },
           points,
-          { parent: targetRoot.id },
+          { parent: targetParent.id },
         );
         commit([{ type: COMMANDS.createShape, shape: pen }]);
         canvas.select(pen.id);
@@ -538,9 +610,9 @@ export default function App() {
         ? createEllipse(nextShapeId(), localBox, { parent })
         : createRect(nextShapeId(), localBox, { parent });
 
-    if (targetRoot !== undefined) {
-      const parentBox = absoluteBoundingBox(doc, targetRoot);
-      const shape = createDrawnShape(targetRoot.id, {
+    if (targetParent !== undefined) {
+      const parentBox = absoluteBoundingBox(doc, targetParent);
+      const shape = createDrawnShape(targetParent.id, {
         x: box.x - parentBox.x,
         y: box.y - parentBox.y,
         width: box.width,

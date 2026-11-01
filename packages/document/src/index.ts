@@ -10,5 +10,6 @@ export * from "./validation";
 export * from "./commands";
 export * from "./transactions";
 export * from "./history";
+export * from "./reparent";
 export { serializeDocument, type SerializedDocument } from "./serialize-document";
 export { parseDocument } from "./parse-document";
