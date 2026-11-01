@@ -731,6 +731,15 @@ export default function App() {
     if (!rootPage) return;
     const targetPlatform = platform === "" ? null : platform;
     commit([{ type: COMMANDS.setRootPlatform, id: rootPage.id, platform: targetPlatform }]);
+    const nextProfile = targetPlatform !== null ? PLATFORM_PROFILES[targetPlatform] : undefined;
+    if (
+      activeDeviceType !== undefined &&
+      (nextProfile?.deviceTypes === undefined ||
+        !nextProfile.deviceTypes.includes(activeDeviceType))
+    ) {
+      setActiveDeviceType(undefined);
+      canvasRef.current.setActiveDeviceType(undefined);
+    }
     render();
   }
 
@@ -911,33 +920,37 @@ export default function App() {
           </button>
           <span>|</span>
           <span>Tool: {tool}</span>
-          <span>|</span>
-          <span style={{ fontWeight: 600 }}>Device:</span>
-          <button
-            type="button"
-            style={{
-              fontWeight: activeDeviceType === undefined ? 700 : 400,
-              backgroundColor: activeDeviceType === undefined ? "#2563eb" : undefined,
-              color: activeDeviceType === undefined ? "#ffffff" : undefined,
-            }}
-            onClick={() => handleDeviceChange(undefined)}
-          >
-            All
-          </button>
-          {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => (
-            <button
-              key={dt}
-              type="button"
-              style={{
-                fontWeight: activeDeviceType === dt ? 700 : 400,
-                backgroundColor: activeDeviceType === dt ? "#2563eb" : undefined,
-                color: activeDeviceType === dt ? "#ffffff" : undefined,
-              }}
-              onClick={() => handleDeviceChange(dt)}
-            >
-              {DEVICE_TYPES[dt]}
-            </button>
-          ))}
+          {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
+            <>
+              <span>|</span>
+              <span style={{ fontWeight: 600 }}>Device:</span>
+              <button
+                type="button"
+                style={{
+                  fontWeight: activeDeviceType === undefined ? 700 : 400,
+                  backgroundColor: activeDeviceType === undefined ? "#2563eb" : undefined,
+                  color: activeDeviceType === undefined ? "#ffffff" : undefined,
+                }}
+                onClick={() => handleDeviceChange(undefined)}
+              >
+                All
+              </button>
+              {activeProfile.deviceTypes.map((dt) => (
+                <button
+                  key={dt}
+                  type="button"
+                  style={{
+                    fontWeight: activeDeviceType === dt ? 700 : 400,
+                    backgroundColor: activeDeviceType === dt ? "#2563eb" : undefined,
+                    color: activeDeviceType === dt ? "#ffffff" : undefined,
+                  }}
+                  onClick={() => handleDeviceChange(dt)}
+                >
+                  {DEVICE_TYPES[dt]}
+                </button>
+              ))}
+            </>
+          )}
           <span>|</span>
           <span style={{ fontWeight: 600 }}>Zoom:</span>
           <button type="button" onClick={() => handleZoom(0.8)} title="Zoom Out">
@@ -1100,12 +1113,48 @@ export default function App() {
                     </p>
                   ) : (
                     <>
-                      {/* Semantic Tagging */}
-                      <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-                        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-                          Semantic Tag (R-024)
-                        </label>
-                        {activeProfile ? (
+                      {/* Semantic Conflict Warning Banner (R-025) */}
+                      {conflict && (
+                        <div
+                          style={{
+                            backgroundColor: "#fef2f2",
+                            border: "1px solid #f87171",
+                            borderRadius: "4px",
+                            padding: "8px 12px",
+                            marginBottom: "12px",
+                            color: "#991b1b",
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, marginBottom: "2px" }}>
+                            Semantic Conflict ({conflict.status})
+                          </div>
+                          <div style={{ fontSize: "12px", marginBottom: "6px" }}>
+                            {conflict.reason}
+                          </div>
+                          <button
+                            type="button"
+                            style={{
+                              fontSize: "11px",
+                              padding: "2px 6px",
+                              cursor: "pointer",
+                              backgroundColor: "#ffffff",
+                              border: "1px solid #f87171",
+                              borderRadius: "3px",
+                              color: "#991b1b",
+                            }}
+                            onClick={() => handleSetSemantic("")}
+                          >
+                            Clear Tag to Baseline (NONE)
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Semantic Tagging (R-023, R-024) - only displayed when platform profile is active */}
+                      {activeProfile && (
+                        <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                            Semantic Tag (R-024)
+                          </label>
                           <select
                             value={selectedShape.meta.semantic?.id ?? ""}
                             style={{
@@ -1130,39 +1179,6 @@ export default function App() {
                                 </option>
                               )}
                           </select>
-                        ) : (
-                          <div
-                            style={{
-                              padding: "8px 10px",
-                              backgroundColor: "#f8fafc",
-                              border: "1px dashed #cbd5e1",
-                              borderRadius: "4px",
-                              fontSize: "12px",
-                              color: "#64748b",
-                            }}
-                          >
-                            Platform-Agnostic Mode (Pure Geometry). Select a platform profile above
-                            to assign platform semantics.
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Semantic Conflict Warning Banner (R-025) */}
-                      {conflict && (
-                        <div
-                          style={{
-                            backgroundColor: "#fef2f2",
-                            border: "1px solid #f87171",
-                            borderRadius: "4px",
-                            padding: "8px 12px",
-                            marginBottom: "12px",
-                            color: "#991b1b",
-                          }}
-                        >
-                          <div style={{ fontWeight: 600, marginBottom: "2px" }}>
-                            Semantic Conflict ({conflict.status})
-                          </div>
-                          <div style={{ fontSize: "12px" }}>{conflict.reason}</div>
                         </div>
                       )}
 
@@ -1264,71 +1280,75 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Responsive Hidden On (R-028, R-029) */}
-                      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-                        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                          Responsive Visibility (hiddenOn)
-                        </label>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                          {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
-                            const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
-                            return (
-                              <label
-                                key={dt}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  fontSize: "12px",
-                                }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isHidden}
-                                  onChange={() => handleToggleHiddenOn(dt)}
-                                />
-                                <span>{DEVICE_TYPES[dt]}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Responsive Order (R-027) */}
-                      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-                        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-                          Responsive Order (order)
-                        </label>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: "6px",
-                          }}
-                        >
-                          {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
-                            const orderVal = selectedShape.meta.order[dt];
-                            return (
-                              <div key={dt} style={{ fontSize: "12px" }}>
-                                <label style={{ display: "block", color: "#64748b" }}>
-                                  {DEVICE_TYPES[dt]}:
-                                </label>
-                                <input
-                                  type="number"
-                                  placeholder="0"
-                                  value={orderVal !== undefined ? orderVal : ""}
+                      {/* Responsive Hidden On (R-023, R-028, R-029) - only displayed when profile declares deviceTypes (e.g. Web) */}
+                      {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
+                        <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                            Responsive Visibility (hiddenOn)
+                          </label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                            {activeProfile.deviceTypes.map((dt) => {
+                              const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
+                              return (
+                                <label
+                                  key={dt}
                                   style={{
-                                    width: "100%",
-                                    padding: "3px 6px",
-                                    boxSizing: "border-box",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    fontSize: "12px",
                                   }}
-                                  onChange={(e) => handleOrderChange(dt, e.target.value)}
-                                />
-                              </div>
-                            );
-                          })}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isHidden}
+                                    onChange={() => handleToggleHiddenOn(dt)}
+                                  />
+                                  <span>{DEVICE_TYPES[dt]}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Responsive Order (R-023, R-027) - only displayed when profile declares deviceTypes (e.g. Web) */}
+                      {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
+                        <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                            Responsive Order (order)
+                          </label>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr",
+                              gap: "6px",
+                            }}
+                          >
+                            {activeProfile.deviceTypes.map((dt) => {
+                              const orderVal = selectedShape.meta.order[dt];
+                              return (
+                                <div key={dt} style={{ fontSize: "12px" }}>
+                                  <label style={{ display: "block", color: "#64748b" }}>
+                                    {DEVICE_TYPES[dt]}:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={orderVal !== undefined ? orderVal : ""}
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 6px",
+                                      boxSizing: "border-box",
+                                    }}
+                                    onChange={(e) => handleOrderChange(dt, e.target.value)}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
