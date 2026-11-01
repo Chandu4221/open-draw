@@ -2,7 +2,13 @@
 // never truth; R-020: the renderer never holds canonical state; ADR-0003 D3).
 // Pure Document → string (R-008). Presentation constants are registry data, not
 // stringly internals (R-005).
-import type { BoundingBox, BuiltinShapeKind, Point, ShapeId } from "@open-draw/contracts";
+import type {
+  BoundingBox,
+  BuiltinShapeKind,
+  DeviceType,
+  Point,
+  ShapeId,
+} from "@open-draw/contracts";
 import { SHAPE_KINDS, SHAPE_KIND_LABELS } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
@@ -39,6 +45,7 @@ export interface RendererFallbackEvent {
 export type ShapeSvgRenderer = (shape: Shape, box: BoundingBox) => string;
 
 export interface RenderOptions {
+  readonly activeDeviceType?: DeviceType | undefined;
   readonly onFallback?: (event: RendererFallbackEvent) => void;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
 }
@@ -75,11 +82,22 @@ export const DEFAULT_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>>
 
 export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptions): string {
   const renderer = options?.customRenderers?.[shape.kind] ?? DEFAULT_SHAPE_RENDERERS[shape.kind];
+  let rendered: string;
   if (renderer !== undefined) {
-    return renderer(shape, box);
+    rendered = renderer(shape, box);
+  } else {
+    options?.onFallback?.({ shapeId: shape.id, kind: shape.kind });
+    rendered = fallbackShapeToSvg(shape, box);
   }
-  options?.onFallback?.({ shapeId: shape.id, kind: shape.kind });
-  return fallbackShapeToSvg(shape, box);
+
+  // R-029: Presentation-only ghost rendering for shapes hidden on active device type
+  if (
+    options?.activeDeviceType !== undefined &&
+    shape.meta.hiddenOn?.includes(options.activeDeviceType)
+  ) {
+    return `<g opacity="0.35" stroke-dasharray="4 4">${rendered}</g>`;
+  }
+  return rendered;
 }
 
 // The whole document in pre-order walk order (structural order).

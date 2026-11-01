@@ -1,7 +1,7 @@
 // Canvas controller entry point (R-004, R-008, R-036, ADR-0003 D1).
 // Encapsulates machine transition, camera transform, selection state,
 // shape-kind capabilities, and action dispatch.
-import type { BoundingBox, CapabilityId, Point, ShapeId } from "@open-draw/contracts";
+import type { BoundingBox, CapabilityId, DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import type { Document } from "@open-draw/document";
 import type { ActionId, KeyboardEventDescriptor } from "@open-draw/input";
 import { resolveKeyBinding } from "@open-draw/input";
@@ -29,6 +29,7 @@ export interface CanvasOptions {
   readonly camera?: Camera;
   readonly selection?: Selection;
   readonly shapeKinds?: ShapeKindRegistry | readonly ShapeKindRegistration[];
+  readonly activeDeviceType?: DeviceType;
 }
 
 export interface CanvasController {
@@ -56,11 +57,15 @@ export interface CanvasController {
   pickShape(doc: Document, worldPoint: Point): ShapeId | null;
   pickHandle(worldBox: BoundingBox, screenPoint: Point): HandleId | null;
   resolveAction(event: KeyboardEventDescriptor): ActionId | undefined;
+
+  getActiveDeviceType(): DeviceType | undefined;
+  setActiveDeviceType(deviceType?: DeviceType): void;
 }
 
 export function createCanvas(options: CanvasOptions = {}): CanvasController {
   let camera = options.camera ?? DEFAULT_CAMERA;
   let selection = options.selection ?? EMPTY_SELECTION;
+  let activeDeviceType = options.activeDeviceType;
   let machine = INITIAL_MACHINE_STATE;
   let shapeKindRegistry: ShapeKindRegistry =
     options.shapeKinds === undefined
@@ -111,5 +116,10 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry),
     pickHandle: (box, point) => pickHandle(camera, box, point),
     resolveAction: (event) => resolveKeyBinding(event),
+
+    getActiveDeviceType: () => activeDeviceType,
+    setActiveDeviceType: (deviceType) => {
+      activeDeviceType = deviceType;
+    },
   };
 }

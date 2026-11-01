@@ -1,6 +1,6 @@
 // Canvas controller behavior (R-004, R-015, ADR-0003).
 import { describe, expect, it } from "vitest";
-import { CAPABILITIES, type CapabilityId, parseShapeId } from "@open-draw/contracts";
+import { CAPABILITIES, type CapabilityId, DEVICE_TYPES, parseShapeId } from "@open-draw/contracts";
 import { createDocument, createPage, createRect } from "@open-draw/document";
 import { createCanvas } from "./create-canvas";
 import { TOOLS } from "./tools";
@@ -103,5 +103,19 @@ describe("createCanvas", () => {
   it("exposes drawLine and drawPenPath in TOOLS registry", () => {
     expect(TOOLS.drawLine).toBe("draw-line");
     expect(TOOLS.drawPenPath).toBe("draw-pen-path");
+  });
+
+  it("tracks activeDeviceType view state", () => {
+    const canvas = createCanvas();
+    expect(canvas.getActiveDeviceType()).toBeUndefined();
+
+    canvas.setActiveDeviceType(DEVICE_TYPES.mobile);
+    expect(canvas.getActiveDeviceType()).toBe(DEVICE_TYPES.mobile);
+
+    canvas.setActiveDeviceType(undefined);
+    expect(canvas.getActiveDeviceType()).toBeUndefined();
+
+    const canvasWithInit = createCanvas({ activeDeviceType: DEVICE_TYPES.tablet });
+    expect(canvasWithInit.getActiveDeviceType()).toBe(DEVICE_TYPES.tablet);
   });
 });

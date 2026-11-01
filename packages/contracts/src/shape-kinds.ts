@@ -22,7 +22,7 @@ export type CustomShapeKind = string & { readonly __brand: "CustomShapeKind" };
 export type ShapeKind = BuiltinShapeKind | CustomShapeKind;
 
 export const SHAPE_KIND_LABELS: Readonly<Record<BuiltinShapeKind, string>> = {
-  page: "Page",
+  page: "Canvas Board",
   section: "Section",
   rect: "Rectangle",
   ellipse: "Ellipse",

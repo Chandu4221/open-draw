@@ -6,16 +6,19 @@ import type {
   BoundingBox,
   CustomShapeKind,
   DeviceType,
+  PlatformId,
   PluginId,
   Point,
   ShapeId,
   ShapeKind,
+  StyleId,
 } from "@open-draw/contracts";
 import {
   DEVICE_TYPE_BY_VALUE,
   PLATFORM_BY_VALUE,
   ROOT_ID,
   SHAPE_KIND_VALUES,
+  STYLE_PROFILE_BY_VALUE,
   isRootId,
   isValidCustomShapeKind,
   isValidPluginId,
@@ -76,17 +79,82 @@ function parseSemantic(value: unknown): SemanticTag {
   if (!isRecord(value) || typeof value.id !== "string" || typeof value.platform !== "string") {
     throw new DocumentError("invalidMeta", "semantic must be { id, platform } with strings");
   }
-  const platform = PLATFORM_BY_VALUE[value.platform];
+  const platform =
+    PLATFORM_BY_VALUE[value.platform] ??
+    (Object.values(PLATFORM_BY_VALUE).includes(value.platform as PlatformId)
+      ? (value.platform as PlatformId)
+      : undefined);
   if (platform === undefined) {
     throw new DocumentError("invalidMeta", `unknown platform: ${value.platform}`);
   }
-  return { id: value.id, platform };
+
+  let properties: Record<string, string | number | boolean> | undefined;
+  if (value.properties !== undefined) {
+    if (!isRecord(value.properties)) {
+      throw new DocumentError("invalidMeta", "semantic.properties must be an object");
+    }
+    properties = {};
+    for (const [propKey, propVal] of Object.entries(value.properties)) {
+      if (typeof propVal !== "string" && typeof propVal !== "boolean" && !isFiniteNumber(propVal)) {
+        throw new DocumentError(
+          "invalidMeta",
+          `semantic property ${propKey} must be a string, finite number, or boolean`,
+        );
+      }
+      properties[propKey] = propVal;
+    }
+  }
+
+  return {
+    id: value.id,
+    platform,
+    ...(properties === undefined ? {} : { properties }),
+  };
 }
 
-function parseMeta(value: unknown): ShapeMeta {
+function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
   if (!isRecord(value)) {
     throw new DocumentError("invalidMeta", "meta must be an object");
   }
+  if (!isRootShape) {
+    if (value.platform !== undefined) {
+      throw new DocumentError("invalidMeta", "platform may only be set on root shapes (R-026)");
+    }
+    if (value.style !== undefined) {
+      throw new DocumentError("invalidMeta", "style may only be set on root shapes (R-026)");
+    }
+  }
+
+  let platform: PlatformId | undefined;
+  if (value.platform !== undefined) {
+    if (typeof value.platform !== "string") {
+      throw new DocumentError("invalidMeta", "meta.platform must be a string");
+    }
+    platform =
+      PLATFORM_BY_VALUE[value.platform] ??
+      (Object.values(PLATFORM_BY_VALUE).includes(value.platform as PlatformId)
+        ? (value.platform as PlatformId)
+        : undefined);
+    if (platform === undefined) {
+      throw new DocumentError("invalidMeta", `unknown platform: ${value.platform}`);
+    }
+  }
+
+  let style: StyleId | undefined;
+  if (value.style !== undefined) {
+    if (typeof value.style !== "string") {
+      throw new DocumentError("invalidMeta", "meta.style must be a string");
+    }
+    style =
+      STYLE_PROFILE_BY_VALUE[value.style] ??
+      (Object.values(STYLE_PROFILE_BY_VALUE).includes(value.style as StyleId)
+        ? (value.style as StyleId)
+        : undefined);
+    if (style === undefined) {
+      throw new DocumentError("invalidMeta", `unknown style: ${value.style}`);
+    }
+  }
+
   const order: Partial<Record<DeviceType, number>> = {};
   if (value.order !== undefined) {
     if (!isRecord(value.order)) {
@@ -131,6 +199,8 @@ function parseMeta(value: unknown): ShapeMeta {
     order,
     ...(hiddenOn === undefined ? {} : { hiddenOn }),
     ...(pluginData === undefined ? {} : { pluginData }),
+    ...(platform === undefined ? {} : { platform }),
+    ...(style === undefined ? {} : { style }),
   };
 }
 
@@ -170,7 +240,8 @@ function parseShape(value: unknown): Shape {
   if (value.label !== undefined && typeof value.label !== "string") {
     throw new DocumentError("invalidShape", "label must be a string when present");
   }
-  const meta = parseMeta(value.meta);
+  const isRootShape = isRootId(parent);
+  const meta = parseMeta(value.meta, isRootShape);
   const base = {
     id,
     kind,
@@ -237,9 +308,6 @@ export function parseDocument(input: unknown): Document {
     const shape = parseShape(entry);
     if (shape.id !== key) {
       throw new DocumentError("invalidShape", `record key must match shape id: ${key}`);
-    }
-    if (isRootId(shape.parent) && shape.kind !== "page") {
-      throw new DocumentError("invalidShape", `root children must be pages: ${shape.id}`);
     }
     shapes.push(shape);
   }

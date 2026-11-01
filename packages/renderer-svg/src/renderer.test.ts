@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { parseCustomShapeKind, parseShapeId } from "@open-draw/contracts";
+import { DEVICE_TYPES, parseCustomShapeKind, parseShapeId } from "@open-draw/contracts";
 import {
   createCustomShape,
   createDocument,
   createLine,
   createPage,
   createPenPath,
+  createRect,
 } from "@open-draw/document";
 import {
   documentToSvg,
@@ -103,6 +104,33 @@ describe("documentToSvg", () => {
 
     expect(svg).toContain('class="custom-star"');
     expect(onFallback).not.toHaveBeenCalled();
+  });
+
+  it("renders ghost presentation when activeDeviceType matches hiddenOn (R-029)", () => {
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 800, height: 600 }),
+      createRect(
+        rectId,
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: pageId, meta: { hiddenOn: [DEVICE_TYPES.mobile], order: {} } },
+      ),
+    ]);
+
+    // When activeDeviceType is mobile, shape should be wrapped in ghost group
+    const mobileSvg = documentToSvg(doc, { activeDeviceType: DEVICE_TYPES.mobile });
+    expect(mobileSvg).toContain('<g opacity="0.35" stroke-dasharray="4 4"><rect');
+
+    // When activeDeviceType is desktop, shape should render normally without ghost group
+    const desktopSvg = documentToSvg(doc, { activeDeviceType: DEVICE_TYPES.desktop });
+    expect(desktopSvg).not.toContain('<g opacity="0.35" stroke-dasharray="4 4">');
+    expect(desktopSvg).toContain("<rect");
+
+    // When activeDeviceType is undefined, shape renders normally
+    const normalSvg = documentToSvg(doc);
+    expect(normalSvg).not.toContain('<g opacity="0.35" stroke-dasharray="4 4">');
   });
 });
 

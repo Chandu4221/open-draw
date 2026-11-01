@@ -78,7 +78,7 @@ describe("parseDocument", () => {
     expect(() => parseDocument(serialize([page, section, rect, nested]))).toThrow(DocumentError);
   });
 
-  it("rejects a root child that is not a page", () => {
+  it("accepts a root child that is not a page as a freestanding shape on canvas", () => {
     const stray = createRect(
       parseShapeId("stray-1"),
       { x: 0, y: 0, width: 10, height: 10 },
@@ -86,7 +86,9 @@ describe("parseDocument", () => {
         parent: ROOT_ID,
       },
     );
-    expect(() => parseDocument(serialize([stray]))).toThrow(DocumentError);
+    const doc = parseDocument(serialize([stray]));
+    expect(doc.shapes[parseShapeId("stray-1")]?.kind).toBe("rect");
+    expect(doc.shapes[parseShapeId("stray-1")]?.parent).toBe(ROOT_ID);
   });
 
   it("rejects an unknown device type in meta", () => {
@@ -95,5 +97,103 @@ describe("parseDocument", () => {
     };
     input.shapes["rect-1"]!.meta = { order: { phablet: 1 } };
     expect(() => parseDocument(input)).toThrow(DocumentError);
+  });
+
+  it("accepts platform and style on root pages (R-026)", () => {
+    const rootPage = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        meta: {
+          order: {},
+          platform: "web",
+          style: "minimal",
+        },
+      },
+    );
+    const document = parseDocument(serialize([rootPage]));
+    expect(document.shapes[parseShapeId("page-1")]?.meta.platform).toBe("web");
+    expect(document.shapes[parseShapeId("page-1")]?.meta.style).toBe("minimal");
+  });
+
+  it("accepts platform and style on root rects (R-026)", () => {
+    const rootRect = createRect(
+      parseShapeId("root-rect-1"),
+      { x: 0, y: 0, width: 640, height: 480 },
+      {
+        parent: ROOT_ID,
+        meta: {
+          order: {},
+          platform: "androidNative",
+          style: "minimal",
+        },
+      },
+    );
+    const document = parseDocument(serialize([rootRect]));
+    expect(document.shapes[parseShapeId("root-rect-1")]?.meta.platform).toBe("androidNative");
+    expect(document.shapes[parseShapeId("root-rect-1")]?.meta.style).toBe("minimal");
+  });
+
+  it("allows a root rectangle to contain child shapes", () => {
+    const rootRect = createRect(
+      parseShapeId("root-rect-1"),
+      { x: 0, y: 0, width: 640, height: 480 },
+      { parent: ROOT_ID },
+    );
+    const childRect = createRect(
+      parseShapeId("child-rect-1"),
+      { x: 10, y: 10, width: 100, height: 50 },
+      { parent: parseShapeId("root-rect-1") },
+    );
+    const document = parseDocument(serialize([rootRect, childRect]));
+    expect(document.shapes[parseShapeId("child-rect-1")]?.parent).toBe("root-rect-1");
+  });
+
+  it("rejects platform on non-root shapes (R-026)", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["rect-1"]!.meta = { order: {}, platform: "web" };
+    expect(() => parseDocument(input)).toThrow(/platform may only be set on root shapes/);
+  });
+
+  it("rejects style on non-root shapes (R-026)", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["section-1"]!.meta = { order: {}, style: "minimal" };
+    expect(() => parseDocument(input)).toThrow(/style may only be set on root shapes/);
+  });
+
+  it("validates semantic tag and properties envelope (R-044)", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["rect-1"]!.meta = {
+      order: {},
+      semantic: {
+        id: "button",
+        platform: "web",
+        properties: { variant: "primary", disabled: false, count: 5 },
+      },
+    };
+    const document = parseDocument(input);
+    expect(document.shapes[parseShapeId("rect-1")]?.meta.semantic?.properties?.variant).toBe(
+      "primary",
+    );
+
+    // Reject non-primitive property values
+    const invalidInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    invalidInput.shapes["rect-1"]!.meta = {
+      order: {},
+      semantic: {
+        id: "button",
+        platform: "web",
+        properties: { nested: { invalid: true } },
+      },
+    };
+    expect(() => parseDocument(invalidInput)).toThrow(/semantic property.*must be a string/);
   });
 });
