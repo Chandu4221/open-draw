@@ -20,11 +20,14 @@ export function resolveShapeDisplayName(shape: Shape, profile?: PlatformProfile)
   if (shape.label !== undefined && shape.label !== "") {
     return shape.label;
   }
-  if (shape.kind === "page" && profile?.rootSemantic !== undefined) {
-    const rootName =
-      ROOT_SEMANTIC_DISPLAY_NAMES[profile.rootSemantic] ??
-      profile.rootSemantic.charAt(0).toUpperCase() + profile.rootSemantic.slice(1);
-    return rootName;
+  if (shape.kind === "page") {
+    if (profile?.rootSemantic !== undefined) {
+      return (
+        ROOT_SEMANTIC_DISPLAY_NAMES[profile.rootSemantic] ??
+        profile.rootSemantic.charAt(0).toUpperCase() + profile.rootSemantic.slice(1)
+      );
+    }
+    return "Canvas Board";
   }
   if (shape.meta.semantic !== undefined && profile !== undefined) {
     const definition = profile.semantics[shape.meta.semantic.id];

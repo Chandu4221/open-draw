@@ -117,7 +117,7 @@ All mutations to semantic and responsive properties flow through reversible, typ
 - **Root Semantics vs Child Element Semantics**:
   - Root container semantics (`page` for Web, `screen` for Android Native, `scaffold` for Flutter) are declared exclusively via `PlatformProfile.rootSemantic`. They define the platform-specific representation of the root container and are NOT included in child `semantics` dictionaries.
   - Child shapes (e.g., shapes drawn inside a page) are elements (`button`, `card`, `navbar`, etc.) and must NEVER be tagged with root-level semantics. Assigning a root semantic to a child shape is rejected as a semantic conflict by `computeSemanticConflict`.
-  - Root pages derive their display name dynamically from the active platform's `rootSemantic` ("Page" for Web, "Screen" for Android Native, "Scaffold" for Flutter, and "Page" when platform-agnostic).
+  - Root pages derive their display name dynamically from the active platform's `rootSemantic` ("Page" for Web, "Screen" for Android Native, "Scaffold" for Flutter, and "Canvas Board" when platform-agnostic).
 
 ## Consequences
 

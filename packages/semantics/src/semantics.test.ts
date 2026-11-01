@@ -73,7 +73,7 @@ describe("semantic resolution and display name (Ruling 9, R-042)", () => {
     expect(semantic?.properties?.variant).toBe("primary");
   });
 
-  it("resolves dynamic display name for root pages (Screen for Android, Scaffold for Flutter, Page for Web or agnostic)", () => {
+  it("resolves dynamic display name for root containers (Screen for Android, Scaffold for Flutter, Page for Web, Canvas Board for agnostic)", () => {
     const pageShape = createPage(pageId, { x: 0, y: 0, width: 1000, height: 1000 });
 
     // Web profile -> Page
@@ -82,8 +82,8 @@ describe("semantic resolution and display name (Ruling 9, R-042)", () => {
     expect(resolveShapeDisplayName(pageShape, ANDROID_NATIVE_PROFILE)).toBe("Screen");
     // Flutter profile -> Scaffold
     expect(resolveShapeDisplayName(pageShape, FLUTTER_PROFILE)).toBe("Scaffold");
-    // Platform-agnostic (profile is undefined) -> Page (fallback to getDisplayName)
-    expect(resolveShapeDisplayName(pageShape, undefined)).toBe("Page");
+    // Platform-agnostic (profile is undefined) -> Canvas Board
+    expect(resolveShapeDisplayName(pageShape, undefined)).toBe("Canvas Board");
 
     // Explicit label overrides root semantic
     const labeledPage = createPage(
