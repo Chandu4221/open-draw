@@ -309,9 +309,6 @@ export function parseDocument(input: unknown): Document {
     if (shape.id !== key) {
       throw new DocumentError("invalidShape", `record key must match shape id: ${key}`);
     }
-    if (isRootId(shape.parent) && shape.kind !== "page") {
-      throw new DocumentError("invalidShape", `root children must be pages: ${shape.id}`);
-    }
     shapes.push(shape);
   }
   return createDocument(shapes);

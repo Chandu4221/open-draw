@@ -12,7 +12,13 @@ import type {
   ShapeId,
   StyleId,
 } from "@open-draw/contracts";
-import { DEVICE_TYPES, SHAPE_KINDS, STYLE_PROFILES, parseShapeId } from "@open-draw/contracts";
+import {
+  DEVICE_TYPES,
+  ROOT_ID,
+  SHAPE_KINDS,
+  STYLE_PROFILES,
+  parseShapeId,
+} from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   applyTransaction,
@@ -448,41 +454,43 @@ export default function App() {
     const parentHit = gesture.parentHit;
     const canvas = canvasRef.current;
 
+    const hitShape = parentHit !== null ? doc.shapes[parentHit] : undefined;
+    const targetPage = hitShape
+      ? hitShape.kind === SHAPE_KINDS.page
+        ? (hitShape as PageShape)
+        : resolveRootPage(doc, hitShape.id)
+      : undefined;
+
+    if (toolRef.current === TOOLS.drawBoard) {
+      const box = normalizeBox(gesture.startWorld, world);
+      const page = createPage(nextShapeId(), box);
+      commit([{ type: COMMANDS.createShape, shape: page }]);
+      canvas.select(page.id);
+      return;
+    }
+
     if (toolRef.current === TOOLS.drawLine) {
       const { boundingBox, start, end } = deriveLineBoundingBox(gesture.startWorld, world);
-      if (parentHit !== null) {
-        const parent = doc.shapes[parentHit];
-        if (parent !== undefined && parent.kind === SHAPE_KINDS.page) {
-          const parentBox = absoluteBoundingBox(doc, parent);
-          const line = createLine(
-            nextShapeId(),
-            {
-              x: boundingBox.x - parentBox.x,
-              y: boundingBox.y - parentBox.y,
-              width: boundingBox.width,
-              height: boundingBox.height,
-            },
-            start,
-            end,
-            { parent: parent.id },
-          );
-          commit([{ type: COMMANDS.createShape, shape: line }]);
-          canvas.select(line.id);
-          return;
-        }
+      if (targetPage !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetPage);
+        const line = createLine(
+          nextShapeId(),
+          {
+            x: boundingBox.x - parentBox.x,
+            y: boundingBox.y - parentBox.y,
+            width: boundingBox.width,
+            height: boundingBox.height,
+          },
+          start,
+          end,
+          { parent: targetPage.id },
+        );
+        commit([{ type: COMMANDS.createShape, shape: line }]);
+        canvas.select(line.id);
+        return;
       }
-      const page = createPage(nextShapeId(), boundingBox);
-      const line = createLine(
-        nextShapeId(),
-        { x: 0, y: 0, width: boundingBox.width, height: boundingBox.height },
-        start,
-        end,
-        { parent: page.id },
-      );
-      commit([
-        { type: COMMANDS.createShape, shape: page },
-        { type: COMMANDS.createShape, shape: line },
-      ]);
+      const line = createLine(nextShapeId(), boundingBox, start, end, { parent: ROOT_ID });
+      commit([{ type: COMMANDS.createShape, shape: line }]);
       canvas.select(line.id);
       return;
     }
@@ -490,37 +498,25 @@ export default function App() {
     if (toolRef.current === TOOLS.drawPenPath) {
       const allPoints = gesture.points.length > 0 ? gesture.points : [gesture.startWorld, world];
       const { boundingBox, points } = derivePenPathBoundingBox(allPoints);
-      if (parentHit !== null) {
-        const parent = doc.shapes[parentHit];
-        if (parent !== undefined && parent.kind === SHAPE_KINDS.page) {
-          const parentBox = absoluteBoundingBox(doc, parent);
-          const pen = createPenPath(
-            nextShapeId(),
-            {
-              x: boundingBox.x - parentBox.x,
-              y: boundingBox.y - parentBox.y,
-              width: boundingBox.width,
-              height: boundingBox.height,
-            },
-            points,
-            { parent: parent.id },
-          );
-          commit([{ type: COMMANDS.createShape, shape: pen }]);
-          canvas.select(pen.id);
-          return;
-        }
+      if (targetPage !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetPage);
+        const pen = createPenPath(
+          nextShapeId(),
+          {
+            x: boundingBox.x - parentBox.x,
+            y: boundingBox.y - parentBox.y,
+            width: boundingBox.width,
+            height: boundingBox.height,
+          },
+          points,
+          { parent: targetPage.id },
+        );
+        commit([{ type: COMMANDS.createShape, shape: pen }]);
+        canvas.select(pen.id);
+        return;
       }
-      const page = createPage(nextShapeId(), boundingBox);
-      const pen = createPenPath(
-        nextShapeId(),
-        { x: 0, y: 0, width: boundingBox.width, height: boundingBox.height },
-        points,
-        { parent: page.id },
-      );
-      commit([
-        { type: COMMANDS.createShape, shape: page },
-        { type: COMMANDS.createShape, shape: pen },
-      ]);
+      const pen = createPenPath(nextShapeId(), boundingBox, points, { parent: ROOT_ID });
+      commit([{ type: COMMANDS.createShape, shape: pen }]);
       canvas.select(pen.id);
       return;
     }
@@ -531,32 +527,21 @@ export default function App() {
         ? createEllipse(nextShapeId(), localBox, { parent })
         : createRect(nextShapeId(), localBox, { parent });
 
-    if (parentHit !== null) {
-      const parent = doc.shapes[parentHit];
-      if (parent !== undefined && parent.kind === SHAPE_KINDS.page) {
-        const parentBox = absoluteBoundingBox(doc, parent);
-        const shape = createDrawnShape(parent.id, {
-          x: box.x - parentBox.x,
-          y: box.y - parentBox.y,
-          width: box.width,
-          height: box.height,
-        });
-        commit([{ type: COMMANDS.createShape, shape }]);
-        canvas.select(shape.id);
-        return;
-      }
+    if (targetPage !== undefined) {
+      const parentBox = absoluteBoundingBox(doc, targetPage);
+      const shape = createDrawnShape(targetPage.id, {
+        x: box.x - parentBox.x,
+        y: box.y - parentBox.y,
+        width: box.width,
+        height: box.height,
+      });
+      commit([{ type: COMMANDS.createShape, shape }]);
+      canvas.select(shape.id);
+      return;
     }
-    const page = createPage(nextShapeId(), box);
-    const shape = createDrawnShape(page.id, {
-      x: 0,
-      y: 0,
-      width: box.width,
-      height: box.height,
-    });
-    commit([
-      { type: COMMANDS.createShape, shape: page },
-      { type: COMMANDS.createShape, shape },
-    ]);
+
+    const shape = createDrawnShape(ROOT_ID, box);
+    commit([{ type: COMMANDS.createShape, shape }]);
     canvas.select(shape.id);
   }
 
@@ -624,7 +609,8 @@ export default function App() {
         break;
       }
       case ACTIONS.selectTool: {
-        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawRect);
+        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawBoard);
+        else if (toolRef.current === TOOLS.drawBoard) chooseTool(TOOLS.drawRect);
         else if (toolRef.current === TOOLS.drawRect) chooseTool(TOOLS.drawEllipse);
         else if (toolRef.current === TOOLS.drawEllipse) chooseTool(TOOLS.drawLine);
         else if (toolRef.current === TOOLS.drawLine) chooseTool(TOOLS.drawPenPath);
@@ -642,6 +628,10 @@ export default function App() {
     if (!event.ctrlKey && !event.metaKey && !event.altKey) {
       if (event.code === "KeyV") {
         chooseTool(TOOLS.select);
+        return;
+      }
+      if (event.code === "KeyB") {
+        chooseTool(TOOLS.drawBoard);
         return;
       }
       if (event.code === "KeyR") {
@@ -866,9 +856,7 @@ export default function App() {
       ? activeProfile.semantics[selectedShape.meta.semantic.id]
       : undefined;
   const semanticProps = selectedShape?.meta.semantic?.properties ?? {};
-  const treeNodes = rootPage
-    ? walkSemanticTree(doc, rootPage.id, activeProfile, activeDeviceType)
-    : [];
+  const treeNodes = walkSemanticTree(doc, ROOT_ID, activeProfile, activeDeviceType);
 
   return (
     <main
@@ -902,6 +890,9 @@ export default function App() {
         >
           <button type="button" onClick={() => chooseTool(TOOLS.select)}>
             Select (V)
+          </button>
+          <button type="button" onClick={() => chooseTool(TOOLS.drawBoard)}>
+            Board (B)
           </button>
           <button type="button" onClick={() => chooseTool(TOOLS.drawRect)}>
             Draw rect (R)
@@ -1100,12 +1091,12 @@ export default function App() {
                   <div style={{ marginBottom: "6px", color: "#64748b" }}>
                     <strong>Shape ID:</strong> {selectedShape.id}
                   </div>
-                  {rootPage && (
-                    <div style={{ marginBottom: "12px", fontSize: "12px", color: "#64748b" }}>
-                      <strong>Container:</strong> {resolveShapeDisplayName(rootPage, activeProfile)}{" "}
-                      ({rootPage.id})
-                    </div>
-                  )}
+                  <div style={{ marginBottom: "12px", fontSize: "12px", color: "#64748b" }}>
+                    <strong>Container:</strong>{" "}
+                    {rootPage
+                      ? `${resolveShapeDisplayName(rootPage, activeProfile)} (${rootPage.id})`
+                      : "Canvas (Root)"}
+                  </div>
                   {/* Semantic Conflict Warning Banner (R-025) */}
                   {conflict && (
                     <div

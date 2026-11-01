@@ -23,12 +23,6 @@ const CONTAINER_KINDS: ReadonlySet<string> = new Set([SHAPE_KINDS.page, SHAPE_KI
 function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
   for (const shape of Object.values(shapes)) {
     if (isRootId(shape.parent)) {
-      if (shape.kind !== SHAPE_KINDS.page) {
-        throw new DocumentError(
-          "invalidShape",
-          `root children must be pages, got kind: ${shape.kind} (${shape.id})`,
-        );
-      }
       continue;
     }
     const visited = new Set<ShapeId>([shape.id]);

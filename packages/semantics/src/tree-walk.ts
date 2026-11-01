@@ -1,7 +1,13 @@
 // Hierarchical semantic tree walk (ADR-0004 Context, Scope note).
 // Preorder hierarchical traversal: root page -> sections -> contents.
 // Provides the pure traversal seam consumed by future Markdown exporters.
-import type { DeviceType, PlatformProfile, SemanticConflict, ShapeId } from "@open-draw/contracts";
+import {
+  isRootId,
+  type DeviceType,
+  type PlatformProfile,
+  type SemanticConflict,
+  type ShapeId,
+} from "@open-draw/contracts";
 import { childrenOf, type Document, type Shape } from "@open-draw/document";
 import { computeSemanticConflict } from "./compute-conflict";
 import { resolveShapeDisplayName } from "./display-name";
@@ -16,7 +22,7 @@ export interface SemanticTreeNode {
 }
 
 /**
- * Pure hierarchical preorder walk of a document from a root shape.
+ * Pure hierarchical preorder walk of a document from a root shape or the virtual canvas root (ROOT_ID).
  */
 export function walkSemanticTree(
   doc: Document,
@@ -24,11 +30,6 @@ export function walkSemanticTree(
   profile?: PlatformProfile,
   deviceType?: DeviceType,
 ): readonly SemanticTreeNode[] {
-  const rootShape = doc.shapes[rootId];
-  if (rootShape === undefined) {
-    return [];
-  }
-
   const nodes: SemanticTreeNode[] = [];
 
   function visit(shape: Shape, depth: number): void {
@@ -61,6 +62,18 @@ export function walkSemanticTree(
     for (const child of children) {
       visit(child, depth + 1);
     }
+  }
+
+  if (isRootId(rootId)) {
+    for (const child of childrenOf(doc, rootId)) {
+      visit(child, 0);
+    }
+    return nodes;
+  }
+
+  const rootShape = doc.shapes[rootId];
+  if (rootShape === undefined) {
+    return [];
   }
 
   visit(rootShape, 0);

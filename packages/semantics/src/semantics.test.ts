@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { DEVICE_TYPES, parseShapeId, PLATFORMS, STYLE_PROFILES } from "@open-draw/contracts";
+import {
+  DEVICE_TYPES,
+  parseShapeId,
+  PLATFORMS,
+  ROOT_ID,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
 import { createDocument, createPage, createRect, createSection } from "@open-draw/document";
 import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
@@ -56,6 +62,17 @@ describe("root resolution (R-026)", () => {
 
     expect(resolveRootPlatform(agnosticDoc, agnosticPageId)).toBeUndefined();
     expect(resolveRootPlatform(agnosticDoc, childRectId)).toBeUndefined();
+  });
+
+  it("returns undefined for root page and platform when shape is freestanding on canvas", () => {
+    const freestandingId = parseShapeId("free-rect");
+    const docWithFree = createDocument([
+      createRect(freestandingId, { x: 50, y: 50, width: 100, height: 100 }, { parent: ROOT_ID }),
+    ]);
+
+    expect(resolveRootPage(docWithFree, freestandingId)).toBeUndefined();
+    expect(resolveRootPlatform(docWithFree, freestandingId)).toBeUndefined();
+    expect(resolveRootStyle(docWithFree, freestandingId)).toBe(STYLE_PROFILES.minimal);
   });
 });
 
@@ -271,5 +288,29 @@ describe("hierarchical tree walk", () => {
     expect(walkMobile[2]?.depth).toBe(2);
     expect(walkMobile[3]?.shape.id).toBe(childA);
     expect(walkMobile[3]?.depth).toBe(2);
+  });
+
+  it("traverses whole document from ROOT_ID including boards and freestanding shapes", () => {
+    const pageId = parseShapeId("page-1");
+    const childId = parseShapeId("child-1");
+    const freeId = parseShapeId("free-1");
+
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 800, height: 600 }),
+      createRect(childId, { x: 10, y: 10, width: 50, height: 50 }, { parent: pageId }),
+      createRect(freeId, { x: 900, y: 10, width: 100, height: 100 }, { parent: ROOT_ID }),
+    ]);
+
+    const walk = walkSemanticTree(doc, ROOT_ID, undefined);
+    expect(walk).toHaveLength(3);
+    // Page at depth 0
+    expect(walk[0]?.shape.id).toBe(pageId);
+    expect(walk[0]?.depth).toBe(0);
+    // Child inside page at depth 1
+    expect(walk[1]?.shape.id).toBe(childId);
+    expect(walk[1]?.depth).toBe(1);
+    // Freestanding rect on canvas at depth 0
+    expect(walk[2]?.shape.id).toBe(freeId);
+    expect(walk[2]?.depth).toBe(0);
   });
 });

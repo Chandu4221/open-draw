@@ -4,6 +4,7 @@
 // the same value-union pattern as CommandId in the commands registry.
 export const TOOLS = {
   select: "select",
+  drawBoard: "draw-board",
   drawRect: "draw-rect",
   drawEllipse: "draw-ellipse",
   drawLine: "draw-line",

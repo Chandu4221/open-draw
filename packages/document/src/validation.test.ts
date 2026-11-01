@@ -78,7 +78,7 @@ describe("parseDocument", () => {
     expect(() => parseDocument(serialize([page, section, rect, nested]))).toThrow(DocumentError);
   });
 
-  it("rejects a root child that is not a page", () => {
+  it("accepts a root child that is not a page as a freestanding shape on canvas", () => {
     const stray = createRect(
       parseShapeId("stray-1"),
       { x: 0, y: 0, width: 10, height: 10 },
@@ -86,7 +86,9 @@ describe("parseDocument", () => {
         parent: ROOT_ID,
       },
     );
-    expect(() => parseDocument(serialize([stray]))).toThrow(DocumentError);
+    const doc = parseDocument(serialize([stray]));
+    expect(doc.shapes[parseShapeId("stray-1")]?.kind).toBe("rect");
+    expect(doc.shapes[parseShapeId("stray-1")]?.parent).toBe(ROOT_ID);
   });
 
   it("rejects an unknown device type in meta", () => {
