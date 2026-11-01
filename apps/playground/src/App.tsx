@@ -17,6 +17,7 @@ import {
   ROOT_ID,
   SHAPE_KINDS,
   STYLE_PROFILES,
+  isRootId,
   parseShapeId,
 } from "@open-draw/contracts";
 import {
@@ -26,7 +27,6 @@ import {
   createDocument,
   createEllipse,
   createLine,
-  createPage,
   createPenPath,
   createRect,
   createTransaction,
@@ -41,7 +41,6 @@ import {
   type EllipseShape,
   type HistoryState,
   type LineShape,
-  type PageShape,
   type PenPathShape,
   type RectShape,
 } from "@open-draw/document";
@@ -79,8 +78,8 @@ import {
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
-  resolveRootPage,
   resolveRootPlatform,
+  resolveRootShape,
   resolveRootStyle,
   resolveShapeDisplayName,
   walkSemanticTree,
@@ -153,7 +152,7 @@ export default function App() {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<CanvasController>(initCanvas());
   const [doc, setDoc] = useState<Document>(() =>
-    createDocument([createPage(parseShapeId("s-root"), { x: 40, y: 40, width: 640, height: 480 })]),
+    createDocument([createRect(parseShapeId("s-root"), { x: 40, y: 40, width: 640, height: 480 })]),
   );
   const documentRef = useRef<Document>(doc);
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
@@ -455,24 +454,12 @@ export default function App() {
     const canvas = canvasRef.current;
 
     const hitShape = parentHit !== null ? doc.shapes[parentHit] : undefined;
-    const targetPage = hitShape
-      ? hitShape.kind === SHAPE_KINDS.page
-        ? (hitShape as PageShape)
-        : resolveRootPage(doc, hitShape.id)
-      : undefined;
-
-    if (toolRef.current === TOOLS.drawBoard) {
-      const box = normalizeBox(gesture.startWorld, world);
-      const page = createPage(nextShapeId(), box);
-      commit([{ type: COMMANDS.createShape, shape: page }]);
-      canvas.select(page.id);
-      return;
-    }
+    const targetRoot = hitShape ? resolveRootShape(doc, hitShape.id) : undefined;
 
     if (toolRef.current === TOOLS.drawLine) {
       const { boundingBox, start, end } = deriveLineBoundingBox(gesture.startWorld, world);
-      if (targetPage !== undefined) {
-        const parentBox = absoluteBoundingBox(doc, targetPage);
+      if (targetRoot !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetRoot);
         const line = createLine(
           nextShapeId(),
           {
@@ -483,7 +470,7 @@ export default function App() {
           },
           start,
           end,
-          { parent: targetPage.id },
+          { parent: targetRoot.id },
         );
         commit([{ type: COMMANDS.createShape, shape: line }]);
         canvas.select(line.id);
@@ -498,8 +485,8 @@ export default function App() {
     if (toolRef.current === TOOLS.drawPenPath) {
       const allPoints = gesture.points.length > 0 ? gesture.points : [gesture.startWorld, world];
       const { boundingBox, points } = derivePenPathBoundingBox(allPoints);
-      if (targetPage !== undefined) {
-        const parentBox = absoluteBoundingBox(doc, targetPage);
+      if (targetRoot !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetRoot);
         const pen = createPenPath(
           nextShapeId(),
           {
@@ -509,7 +496,7 @@ export default function App() {
             height: boundingBox.height,
           },
           points,
-          { parent: targetPage.id },
+          { parent: targetRoot.id },
         );
         commit([{ type: COMMANDS.createShape, shape: pen }]);
         canvas.select(pen.id);
@@ -527,9 +514,9 @@ export default function App() {
         ? createEllipse(nextShapeId(), localBox, { parent })
         : createRect(nextShapeId(), localBox, { parent });
 
-    if (targetPage !== undefined) {
-      const parentBox = absoluteBoundingBox(doc, targetPage);
-      const shape = createDrawnShape(targetPage.id, {
+    if (targetRoot !== undefined) {
+      const parentBox = absoluteBoundingBox(doc, targetRoot);
+      const shape = createDrawnShape(targetRoot.id, {
         x: box.x - parentBox.x,
         y: box.y - parentBox.y,
         width: box.width,
@@ -609,8 +596,7 @@ export default function App() {
         break;
       }
       case ACTIONS.selectTool: {
-        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawBoard);
-        else if (toolRef.current === TOOLS.drawBoard) chooseTool(TOOLS.drawRect);
+        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawRect);
         else if (toolRef.current === TOOLS.drawRect) chooseTool(TOOLS.drawEllipse);
         else if (toolRef.current === TOOLS.drawEllipse) chooseTool(TOOLS.drawLine);
         else if (toolRef.current === TOOLS.drawLine) chooseTool(TOOLS.drawPenPath);
@@ -628,10 +614,6 @@ export default function App() {
     if (!event.ctrlKey && !event.metaKey && !event.altKey) {
       if (event.code === "KeyV") {
         chooseTool(TOOLS.select);
-        return;
-      }
-      if (event.code === "KeyB") {
-        chooseTool(TOOLS.drawBoard);
         return;
       }
       if (event.code === "KeyR") {
@@ -718,8 +700,7 @@ export default function App() {
   }
 
   function handleSetPlatform(platform: PlatformId | ""): void {
-    const targetRoot =
-      selectedShape && selectedShape.kind === SHAPE_KINDS.page ? selectedShape : rootPage;
+    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const targetPlatform = platform === "" ? null : platform;
     commit([{ type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: targetPlatform }]);
@@ -736,8 +717,7 @@ export default function App() {
   }
 
   function handleSetStyle(style: StyleId): void {
-    const targetRoot =
-      selectedShape && selectedShape.kind === SHAPE_KINDS.page ? selectedShape : rootPage;
+    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
     if (!targetRoot) return;
     commit([{ type: COMMANDS.setRootStyle, id: targetRoot.id, style }]);
     render();
@@ -842,11 +822,11 @@ export default function App() {
   });
 
   const selectedShape = selectedShapeId !== null ? doc.shapes[selectedShapeId] : undefined;
-  const rootPage = selectedShape
-    ? resolveRootPage(doc, selectedShape.id)
-    : (Object.values(doc.shapes).find((s) => s.kind === SHAPE_KINDS.page) as PageShape | undefined);
-  const rootPlatform = rootPage ? resolveRootPlatform(doc, rootPage.id) : undefined;
-  const rootStyle = rootPage ? resolveRootStyle(doc, rootPage.id) : STYLE_PROFILES.minimal;
+  const rootShape = selectedShape
+    ? resolveRootShape(doc, selectedShape.id)
+    : Object.values(doc.shapes).find((s) => isRootId(s.parent) && s.meta.platform !== undefined);
+  const rootPlatform = rootShape ? resolveRootPlatform(doc, rootShape.id) : undefined;
+  const rootStyle = rootShape ? resolveRootStyle(doc, rootShape.id) : STYLE_PROFILES.minimal;
   const activeProfile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
   const conflict = selectedShape
     ? computeSemanticConflict(doc, selectedShape, activeProfile)
@@ -890,9 +870,6 @@ export default function App() {
         >
           <button type="button" onClick={() => chooseTool(TOOLS.select)}>
             Select (V)
-          </button>
-          <button type="button" onClick={() => chooseTool(TOOLS.drawBoard)}>
-            Board (B)
           </button>
           <button type="button" onClick={() => chooseTool(TOOLS.drawRect)}>
             Draw rect (R)
@@ -1028,13 +1005,13 @@ export default function App() {
               <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
                 {!selectedShape
                   ? "Inspector"
-                  : selectedShape.kind === SHAPE_KINDS.page
+                  : isRootId(selectedShape.parent)
                     ? "Container Inspector"
                     : "Shape Inspector"}
               </h2>
               {!selectedShape ? (
-                <p style={{ color: "#64748b", margin: 0 }}>Select a board or shape to inspect.</p>
-              ) : selectedShape.kind === SHAPE_KINDS.page ? (
+                <p style={{ color: "#64748b", margin: 0 }}>Select a shape to inspect.</p>
+              ) : isRootId(selectedShape.parent) ? (
                 <div>
                   <div style={{ marginBottom: "8px" }}>
                     <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
@@ -1093,8 +1070,8 @@ export default function App() {
                   </div>
                   <div style={{ marginBottom: "12px", fontSize: "12px", color: "#64748b" }}>
                     <strong>Container:</strong>{" "}
-                    {rootPage
-                      ? `${resolveShapeDisplayName(rootPage, activeProfile)} (${rootPage.id})`
+                    {rootShape
+                      ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
                       : "Canvas (Root)"}
                   </div>
                   {/* Semantic Conflict Warning Banner (R-025) */}

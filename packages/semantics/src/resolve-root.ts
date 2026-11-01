@@ -1,5 +1,5 @@
 // Root resolution for platform and design style (R-026, ADR-0004 D7).
-// Platform and style are properties of root shapes (pages) only; children
+// Platform and style are properties of root shapes only; children
 // inherit both by tree position and never store either.
 import {
   type PlatformId,
@@ -8,13 +8,13 @@ import {
   isRootId,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
-import type { Document, PageShape, Shape } from "@open-draw/document";
+import type { Document, Shape } from "@open-draw/document";
 
 /**
- * Resolves the root page ancestor for any shape in the document.
- * If the shape itself is a root page, returns it.
+ * Resolves the root shape ancestor (immediate child of ROOT_ID) for any shape in the document (R-026).
+ * If the shape itself is an immediate child of ROOT_ID, returns it.
  */
-export function resolveRootPage(doc: Document, shapeId: ShapeId): PageShape | undefined {
+export function resolveRootShape(doc: Document, shapeId: ShapeId): Shape | undefined {
   let currentId: ShapeId | undefined = shapeId;
   const visited = new Set<ShapeId>();
 
@@ -27,8 +27,8 @@ export function resolveRootPage(doc: Document, shapeId: ShapeId): PageShape | un
     if (shape === undefined) {
       break;
     }
-    if (shape.kind === "page" && isRootId(shape.parent)) {
-      return shape as PageShape;
+    if (isRootId(shape.parent)) {
+      return shape;
     }
     currentId = shape.parent;
   }
@@ -36,19 +36,27 @@ export function resolveRootPage(doc: Document, shapeId: ShapeId): PageShape | un
 }
 
 /**
+ * Resolves the root page ancestor for any shape in the document.
+ * Backward-compatible helper for legacy page-kind roots.
+ */
+export function resolveRootPage(doc: Document, shapeId: ShapeId): Shape | undefined {
+  return resolveRootShape(doc, shapeId);
+}
+
+/**
  * Resolves the effective platform for a shape from its root ancestor (R-026, Ruling 10).
- * Returns undefined if no root page is found or if the root page has no explicit platform (Platform-Agnostic Mode).
+ * Returns undefined if no root shape is found or if the root shape has no explicit platform (Platform-Agnostic Mode).
  */
 export function resolveRootPlatform(doc: Document, shapeId: ShapeId): PlatformId | undefined {
-  const root = resolveRootPage(doc, shapeId);
+  const root = resolveRootShape(doc, shapeId);
   return root?.meta.platform;
 }
 
 /**
  * Resolves the effective design style for a shape from its root ancestor (R-026).
- * Defaults to "minimal" if no root page is found or if root has no explicit style.
+ * Defaults to "minimal" if no root shape is found or if root has no explicit style.
  */
 export function resolveRootStyle(doc: Document, shapeId: ShapeId): StyleId {
-  const root = resolveRootPage(doc, shapeId);
+  const root = resolveRootShape(doc, shapeId);
   return root?.meta.style ?? STYLE_PROFILES.minimal;
 }

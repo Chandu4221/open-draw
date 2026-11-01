@@ -65,6 +65,26 @@ describe("document commands (milestone 05)", () => {
     expect(undone.document.shapes[pageId]?.meta.platform).toBeUndefined();
   });
 
+  it("applies SetRootPlatform on root rects and inverts cleanly", () => {
+    const rootRectId = parseShapeId("root-rect-1");
+    const doc = createDocument([createRect(rootRectId, { x: 0, y: 0, width: 640, height: 480 })]);
+    const result = applyTransaction(
+      doc,
+      createTransaction([
+        {
+          type: COMMANDS.setRootPlatform,
+          id: rootRectId,
+          platform: "androidNative",
+        },
+      ]),
+    );
+
+    expect(result.document.shapes[rootRectId]?.meta.platform).toBe("androidNative");
+
+    const undone = applyTransaction(result.document, createTransaction(result.inverse));
+    expect(undone.document.shapes[rootRectId]?.meta.platform).toBeUndefined();
+  });
+
   it("rejects SetRootPlatform on non-root shapes (R-026)", () => {
     const doc = createBaseDoc();
     expect(() =>

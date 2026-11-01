@@ -2,6 +2,7 @@
 // Pure function: nothing is ever written back to the document.
 // Foreign tags stay stored; switching page platforms computes conflict dynamically.
 import {
+  isRootId,
   SEMANTIC_CONFLICTS,
   type PlatformProfile,
   type SemanticConflict,
@@ -41,7 +42,7 @@ export function computeSemanticConflict(
     };
   }
 
-  if (shape.kind !== "page" && profile !== undefined && semantic.id === profile.rootSemantic) {
+  if (!isRootId(shape.parent) && profile !== undefined && semantic.id === profile.rootSemantic) {
     return {
       status: SEMANTIC_CONFLICTS.conflicted,
       expectedPlatform: rootPlatform,

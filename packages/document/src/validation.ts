@@ -112,16 +112,16 @@ function parseSemantic(value: unknown): SemanticTag {
   };
 }
 
-function parseMeta(value: unknown, isRootPage = false): ShapeMeta {
+function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
   if (!isRecord(value)) {
     throw new DocumentError("invalidMeta", "meta must be an object");
   }
-  if (!isRootPage) {
+  if (!isRootShape) {
     if (value.platform !== undefined) {
-      throw new DocumentError("invalidMeta", "platform may only be set on root pages (R-026)");
+      throw new DocumentError("invalidMeta", "platform may only be set on root shapes (R-026)");
     }
     if (value.style !== undefined) {
-      throw new DocumentError("invalidMeta", "style may only be set on root pages (R-026)");
+      throw new DocumentError("invalidMeta", "style may only be set on root shapes (R-026)");
     }
   }
 
@@ -240,8 +240,8 @@ function parseShape(value: unknown): Shape {
   if (value.label !== undefined && typeof value.label !== "string") {
     throw new DocumentError("invalidShape", "label must be a string when present");
   }
-  const isRootPage = isRootId(parent) && kind === "page";
-  const meta = parseMeta(value.meta, isRootPage);
+  const isRootShape = isRootId(parent);
+  const meta = parseMeta(value.meta, isRootShape);
   const base = {
     id,
     kind,

@@ -1,4 +1,4 @@
-// SetRootStyle: sets style on root pages ONLY (R-026, ADR-0004 D7).
+// SetRootStyle: sets style on root shapes ONLY (R-026, ADR-0004 D7).
 // Rejects non-root shapes with typed DocumentError.
 import { type ShapeId, type StyleId, isRootId } from "@open-draw/contracts";
 import type { Command, CommandResult } from "..";
@@ -19,8 +19,8 @@ export function applySetRootStyle(document: Document, command: SetRootStyle): Co
   if (shape === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
   }
-  if (!isRootId(shape.parent) || shape.kind !== "page") {
-    throw new DocumentError("invalidShape", "style may only be set on root pages (R-026)");
+  if (!isRootId(shape.parent)) {
+    throw new DocumentError("invalidShape", "style may only be set on root shapes (R-026)");
   }
 
   const previousStyle = shape.meta.style ?? null;

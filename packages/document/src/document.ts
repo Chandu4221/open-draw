@@ -40,11 +40,17 @@ function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
     }
   }
   for (const shape of Object.values(shapes)) {
-    if (!isRootId(shape.parent) && !CONTAINER_KINDS.has(shapes[shape.parent]!.kind)) {
-      throw new DocumentError(
-        "invalidShape",
-        `parent must be a page or section, got: ${shapes[shape.parent]!.kind} (${shape.id})`,
-      );
+    if (!isRootId(shape.parent)) {
+      const parentShape = shapes[shape.parent];
+      const isValidContainer =
+        parentShape !== undefined &&
+        (CONTAINER_KINDS.has(parentShape.kind) || isRootId(parentShape.parent));
+      if (!isValidContainer) {
+        throw new DocumentError(
+          "invalidShape",
+          `parent must be a root shape, page, or section, got: ${parentShape?.kind} (${shape.id})`,
+        );
+      }
     }
   }
 }

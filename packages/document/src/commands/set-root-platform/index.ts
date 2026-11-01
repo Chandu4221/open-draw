@@ -1,4 +1,4 @@
-// SetRootPlatform: sets platform on root pages ONLY (R-026, ADR-0004 D7).
+// SetRootPlatform: sets platform on root shapes ONLY (R-026, ADR-0004 D7).
 // Rejects non-root shapes with typed DocumentError.
 import { type PlatformId, type ShapeId, isRootId } from "@open-draw/contracts";
 import type { Command, CommandResult } from "..";
@@ -19,8 +19,8 @@ export function applySetRootPlatform(document: Document, command: SetRootPlatfor
   if (shape === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
   }
-  if (!isRootId(shape.parent) || shape.kind !== "page") {
-    throw new DocumentError("invalidShape", "platform may only be set on root pages (R-026)");
+  if (!isRootId(shape.parent)) {
+    throw new DocumentError("invalidShape", "platform may only be set on root shapes (R-026)");
   }
 
   const previousPlatform = shape.meta.platform ?? null;

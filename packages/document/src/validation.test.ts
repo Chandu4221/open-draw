@@ -116,12 +116,45 @@ describe("parseDocument", () => {
     expect(document.shapes[parseShapeId("page-1")]?.meta.style).toBe("minimal");
   });
 
+  it("accepts platform and style on root rects (R-026)", () => {
+    const rootRect = createRect(
+      parseShapeId("root-rect-1"),
+      { x: 0, y: 0, width: 640, height: 480 },
+      {
+        parent: ROOT_ID,
+        meta: {
+          order: {},
+          platform: "androidNative",
+          style: "minimal",
+        },
+      },
+    );
+    const document = parseDocument(serialize([rootRect]));
+    expect(document.shapes[parseShapeId("root-rect-1")]?.meta.platform).toBe("androidNative");
+    expect(document.shapes[parseShapeId("root-rect-1")]?.meta.style).toBe("minimal");
+  });
+
+  it("allows a root rectangle to contain child shapes", () => {
+    const rootRect = createRect(
+      parseShapeId("root-rect-1"),
+      { x: 0, y: 0, width: 640, height: 480 },
+      { parent: ROOT_ID },
+    );
+    const childRect = createRect(
+      parseShapeId("child-rect-1"),
+      { x: 10, y: 10, width: 100, height: 50 },
+      { parent: parseShapeId("root-rect-1") },
+    );
+    const document = parseDocument(serialize([rootRect, childRect]));
+    expect(document.shapes[parseShapeId("child-rect-1")]?.parent).toBe("root-rect-1");
+  });
+
   it("rejects platform on non-root shapes (R-026)", () => {
     const input = serialize([page, section, rect]) as {
       shapes: Record<string, Record<string, unknown>>;
     };
     input.shapes["rect-1"]!.meta = { order: {}, platform: "web" };
-    expect(() => parseDocument(input)).toThrow(/platform may only be set on root pages/);
+    expect(() => parseDocument(input)).toThrow(/platform may only be set on root shapes/);
   });
 
   it("rejects style on non-root shapes (R-026)", () => {
@@ -129,7 +162,7 @@ describe("parseDocument", () => {
       shapes: Record<string, Record<string, unknown>>;
     };
     input.shapes["section-1"]!.meta = { order: {}, style: "minimal" };
-    expect(() => parseDocument(input)).toThrow(/style may only be set on root pages/);
+    expect(() => parseDocument(input)).toThrow(/style may only be set on root shapes/);
   });
 
   it("validates semantic tag and properties envelope (R-044)", () => {

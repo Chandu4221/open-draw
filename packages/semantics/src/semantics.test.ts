@@ -12,6 +12,7 @@ import {
   computeSemanticConflict,
   resolveRootPage,
   resolveRootPlatform,
+  resolveRootShape,
   resolveRootStyle,
   resolveSemantic,
   resolveShapeDisplayName,
@@ -64,15 +65,34 @@ describe("root resolution (R-026)", () => {
     expect(resolveRootPlatform(agnosticDoc, childRectId)).toBeUndefined();
   });
 
-  it("returns undefined for root page and platform when shape is freestanding on canvas", () => {
+  it("resolves root shape and undefined platform when shape is freestanding on canvas", () => {
     const freestandingId = parseShapeId("free-rect");
     const docWithFree = createDocument([
       createRect(freestandingId, { x: 50, y: 50, width: 100, height: 100 }, { parent: ROOT_ID }),
     ]);
 
-    expect(resolveRootPage(docWithFree, freestandingId)).toBeUndefined();
+    expect(resolveRootShape(docWithFree, freestandingId)?.id).toBe(freestandingId);
     expect(resolveRootPlatform(docWithFree, freestandingId)).toBeUndefined();
     expect(resolveRootStyle(docWithFree, freestandingId)).toBe(STYLE_PROFILES.minimal);
+  });
+
+  it("children of a root rectangle inherit the root rectangle's platform", () => {
+    const rootRectId = parseShapeId("root-rect-screen");
+    const childButtonId = parseShapeId("child-btn");
+    const docWithRootRect = createDocument([
+      createRect(
+        rootRectId,
+        { x: 0, y: 0, width: 640, height: 480 },
+        {
+          parent: ROOT_ID,
+          meta: { order: {}, platform: PLATFORMS.flutter, style: STYLE_PROFILES.minimal },
+        },
+      ),
+      createRect(childButtonId, { x: 10, y: 10, width: 100, height: 40 }, { parent: rootRectId }),
+    ]);
+
+    expect(resolveRootPlatform(docWithRootRect, childButtonId)).toBe(PLATFORMS.flutter);
+    expect(resolveRootShape(docWithRootRect, childButtonId)?.id).toBe(rootRectId);
   });
 });
 
@@ -111,6 +131,23 @@ describe("semantic resolution and display name (Ruling 9, R-042)", () => {
       },
     );
     expect(resolveShapeDisplayName(labeledPage, ANDROID_NATIVE_PROFILE)).toBe("Custom Dashboard");
+  });
+
+  it("resolves dynamic display name for root rectangles promoted to platform screens", () => {
+    const rootRect = createRect(
+      parseShapeId("rect-screen"),
+      { x: 0, y: 0, width: 640, height: 480 },
+      { parent: ROOT_ID },
+    );
+
+    // Web profile -> Page
+    expect(resolveShapeDisplayName(rootRect, WEB_PROFILE)).toBe("Page");
+    // Android Native profile -> Screen
+    expect(resolveShapeDisplayName(rootRect, ANDROID_NATIVE_PROFILE)).toBe("Screen");
+    // Flutter profile -> Scaffold
+    expect(resolveShapeDisplayName(rootRect, FLUTTER_PROFILE)).toBe("Scaffold");
+    // Platform-agnostic (profile is undefined) -> Rectangle
+    expect(resolveShapeDisplayName(rootRect, undefined)).toBe("Rectangle");
   });
 
   it("resolves display name using complete chain: label -> semantic -> kind", () => {

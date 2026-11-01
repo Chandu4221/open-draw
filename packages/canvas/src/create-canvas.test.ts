@@ -100,8 +100,7 @@ describe("createCanvas", () => {
     expect(canvas.pickShape(doc, { x: 50, y: 70 })).toBe(rectId);
   });
 
-  it("exposes drawBoard, drawLine and drawPenPath in TOOLS registry", () => {
-    expect(TOOLS.drawBoard).toBe("draw-board");
+  it("exposes drawLine and drawPenPath in TOOLS registry", () => {
     expect(TOOLS.drawLine).toBe("draw-line");
     expect(TOOLS.drawPenPath).toBe("draw-pen-path");
   });
