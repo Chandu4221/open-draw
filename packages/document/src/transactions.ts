@@ -7,8 +7,13 @@ import { applyCreateShape } from "./commands/create-shape";
 import { applyDeleteShape } from "./commands/delete-shape";
 import { applyMoveShapes } from "./commands/move-shapes";
 import { applyReparentShape } from "./commands/reparent-shape";
+import { applySetRootPlatform } from "./commands/set-root-platform";
+import { applySetRootStyle } from "./commands/set-root-style";
 import { applySetShapeBoundingBox } from "./commands/set-shape-bounding-box";
+import { applySetShapeHiddenOn } from "./commands/set-shape-hidden-on";
 import { applySetShapeLabel } from "./commands/set-shape-label";
+import { applySetShapeOrder } from "./commands/set-shape-order";
+import { applySetShapeSemantic } from "./commands/set-shape-semantic";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 
@@ -42,6 +47,16 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applyMoveShapes(document, command);
     case COMMANDS.setShapeBoundingBox:
       return applySetShapeBoundingBox(document, command);
+    case COMMANDS.setShapeSemantic:
+      return applySetShapeSemantic(document, command);
+    case COMMANDS.setRootPlatform:
+      return applySetRootPlatform(document, command);
+    case COMMANDS.setRootStyle:
+      return applySetRootStyle(document, command);
+    case COMMANDS.setShapeHiddenOn:
+      return applySetShapeHiddenOn(document, command);
+    case COMMANDS.setShapeOrder:
+      return applySetShapeOrder(document, command);
   }
 }
 

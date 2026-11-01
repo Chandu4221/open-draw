@@ -96,4 +96,69 @@ describe("parseDocument", () => {
     input.shapes["rect-1"]!.meta = { order: { phablet: 1 } };
     expect(() => parseDocument(input)).toThrow(DocumentError);
   });
+
+  it("accepts platform and style on root pages (R-026)", () => {
+    const rootPage = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        meta: {
+          order: {},
+          platform: "web",
+          style: "minimal",
+        },
+      },
+    );
+    const document = parseDocument(serialize([rootPage]));
+    expect(document.shapes[parseShapeId("page-1")]?.meta.platform).toBe("web");
+    expect(document.shapes[parseShapeId("page-1")]?.meta.style).toBe("minimal");
+  });
+
+  it("rejects platform on non-root shapes (R-026)", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["rect-1"]!.meta = { order: {}, platform: "web" };
+    expect(() => parseDocument(input)).toThrow(/platform may only be set on root pages/);
+  });
+
+  it("rejects style on non-root shapes (R-026)", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["section-1"]!.meta = { order: {}, style: "minimal" };
+    expect(() => parseDocument(input)).toThrow(/style may only be set on root pages/);
+  });
+
+  it("validates semantic tag and properties envelope (R-044)", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["rect-1"]!.meta = {
+      order: {},
+      semantic: {
+        id: "button",
+        platform: "web",
+        properties: { variant: "primary", disabled: false, count: 5 },
+      },
+    };
+    const document = parseDocument(input);
+    expect(document.shapes[parseShapeId("rect-1")]?.meta.semantic?.properties?.variant).toBe(
+      "primary",
+    );
+
+    // Reject non-primitive property values
+    const invalidInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    invalidInput.shapes["rect-1"]!.meta = {
+      order: {},
+      semantic: {
+        id: "button",
+        platform: "web",
+        properties: { nested: { invalid: true } },
+      },
+    };
+    expect(() => parseDocument(invalidInput)).toThrow(/semantic property.*must be a string/);
+  });
 });

@@ -260,6 +260,82 @@ describe("serializeDocument & parseDocument", () => {
     });
     expect(() => parseDocument(noSchema)).toThrow(DocumentError);
   });
+
+  it("round-trips platform, style, and semantic properties byte-stably", () => {
+    const pageId = parseShapeId("page-1");
+    const buttonId = parseShapeId("button-1");
+
+    const doc = createDocument([
+      createPage(
+        pageId,
+        { x: 0, y: 0, width: 1440, height: 900 },
+        {
+          meta: {
+            order: {},
+            platform: "web",
+            style: "minimal",
+          },
+        },
+      ),
+      createRect(
+        buttonId,
+        { x: 100, y: 100, width: 120, height: 40 },
+        {
+          parent: pageId,
+          meta: {
+            order: {},
+            semantic: {
+              id: "button",
+              platform: "web",
+              properties: {
+                variant: "primary",
+                disabled: false,
+                count: 10,
+              },
+            },
+          },
+        },
+      ),
+    ]);
+
+    const serialized = serializeDocument(doc);
+    const parsed = parseDocument(serialized);
+    const reSerialized = serializeDocument(parsed);
+
+    expect(reSerialized).toBe(serialized);
+    expect(parsed.shapes[pageId]?.meta.platform).toBe("web");
+    expect(parsed.shapes[pageId]?.meta.style).toBe("minimal");
+    expect(parsed.shapes[buttonId]?.meta.semantic?.properties?.variant).toBe("primary");
+    expect(parsed.shapes[buttonId]?.meta.semantic?.properties?.disabled).toBe(false);
+  });
+
+  it("throws DocumentError when semantic properties contain non-serializable values", () => {
+    const pageId = parseShapeId("page-1");
+    const buttonId = parseShapeId("button-1");
+
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 1440, height: 900 }),
+      createRect(
+        buttonId,
+        { x: 100, y: 100, width: 120, height: 40 },
+        {
+          parent: pageId,
+          meta: {
+            order: {},
+            semantic: {
+              id: "button",
+              platform: "web",
+              properties: {
+                fn: (() => {}) as unknown as string,
+              },
+            },
+          },
+        },
+      ),
+    ]);
+
+    expect(() => serializeDocument(doc)).toThrow(/not JSON-serializable/);
+  });
 });
 
 describe("applySetShapeBoundingBox point scaling", () => {

@@ -1,7 +1,7 @@
 // Pure document serializer (R-008, R-014, R-041, R-044). Emits version-only
 // schema without timestamps. Sibling z-order is preserved by maintaining map
 // iteration order. ROOT_ID is strictly excluded.
-import { isRootId } from "@open-draw/contracts";
+import { PLATFORMS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 import { isCustomShape } from "./shape";
@@ -118,7 +118,26 @@ export function serializeDocument(doc: Document): string {
       meta.hiddenOn = shape.meta.hiddenOn;
     }
     if (shape.meta.semantic !== undefined) {
-      meta.semantic = shape.meta.semantic;
+      const semantic: Record<string, unknown> = {
+        id: shape.meta.semantic.id,
+        platform: PLATFORMS[shape.meta.semantic.platform] ?? shape.meta.semantic.platform,
+      };
+      if (shape.meta.semantic.properties !== undefined) {
+        if (!isJsonSerializable(shape.meta.semantic.properties)) {
+          throw new DocumentError(
+            "invalidDocument",
+            `meta.semantic.properties on shape ${shape.id} is not JSON-serializable`,
+          );
+        }
+        semantic.properties = shape.meta.semantic.properties;
+      }
+      meta.semantic = semantic;
+    }
+    if (shape.meta.platform !== undefined) {
+      meta.platform = PLATFORMS[shape.meta.platform] ?? shape.meta.platform;
+    }
+    if (shape.meta.style !== undefined) {
+      meta.style = STYLE_PROFILES[shape.meta.style] ?? shape.meta.style;
     }
     if (shape.meta.pluginData !== undefined) {
       if (!isJsonSerializable(shape.meta.pluginData)) {
