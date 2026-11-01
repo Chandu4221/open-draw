@@ -2,13 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   CAPABILITIES,
   CAPABILITY_VALUES,
+  CONTROL_TYPES,
   isValidCustomShapeKind,
   isValidPluginId,
+  isValidSemanticId,
   parseCustomShapeKind,
   parsePluginId,
+  parseSemanticId,
+  SEMANTIC_CONFLICTS,
   SHAPE_KINDS,
   SHAPE_KIND_LABELS,
   SHAPE_KIND_VALUES,
+  STYLE_PROFILES,
+  STYLE_PROFILE_BY_VALUE,
 } from "./index";
 
 describe("capabilities", () => {
@@ -54,5 +60,34 @@ describe("shape-kinds", () => {
     expect(isValidCustomShapeKind("vendor:Star")).toBe(false);
     expect(parseCustomShapeKind("vendor:star")).toBe("vendor:star");
     expect(() => parseCustomShapeKind("invalid")).toThrow(/invalid custom shape kind/);
+  });
+});
+
+describe("semantic-contract", () => {
+  it("validates kebab-case semantic ids", () => {
+    expect(isValidSemanticId("navbar")).toBe(true);
+    expect(isValidSemanticId("top-app-bar")).toBe(true);
+    expect(isValidSemanticId("button-1")).toBe(true);
+    expect(isValidSemanticId("Button")).toBe(false);
+    expect(isValidSemanticId("nav_bar")).toBe(false);
+    expect(isValidSemanticId("")).toBe(false);
+    expect(parseSemanticId("card")).toBe("card");
+    expect(() => parseSemanticId("Invalid_Id")).toThrow(/invalid semantic id/);
+  });
+
+  it("exposes control types and conflict statuses", () => {
+    expect(CONTROL_TYPES.text).toBe("text");
+    expect(CONTROL_TYPES.select).toBe("select");
+    expect(CONTROL_TYPES.toggle).toBe("toggle");
+    expect(CONTROL_TYPES.number).toBe("number");
+    expect(SEMANTIC_CONFLICTS.valid).toBe("valid");
+    expect(SEMANTIC_CONFLICTS.conflicted).toBe("conflicted");
+  });
+});
+
+describe("profile-contract", () => {
+  it("exposes style profiles registry", () => {
+    expect(STYLE_PROFILES.minimal).toBe("minimal");
+    expect(STYLE_PROFILE_BY_VALUE.minimal).toBe("minimal");
   });
 });
