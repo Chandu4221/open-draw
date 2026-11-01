@@ -8,16 +8,22 @@ import type {
   DeviceType,
   Point,
   ShapeId,
+  StyleId,
 } from "@open-draw/contracts";
-import { SHAPE_KINDS, SHAPE_KIND_LABELS } from "@open-draw/contracts";
+import { isRootId, SHAPE_KINDS, SHAPE_KIND_LABELS, STYLE_PROFILES } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
+  ancestorsOf,
   shapeListInOrder,
   type Document,
   type LineShape,
   type PenPathShape,
   type Shape,
 } from "@open-draw/document";
+import { CRAYON_SHAPE_RENDERERS } from "./styles/crayon";
+
+export * from "./styles/crayon";
+export * from "./overlays";
 
 const RENDER_STYLES = {
   contentFill: "#ffffff",
@@ -46,6 +52,7 @@ export type ShapeSvgRenderer = (shape: Shape, box: BoundingBox) => string;
 
 export interface RenderOptions {
   readonly activeDeviceType?: DeviceType | undefined;
+  readonly styleProfile?: StyleId | undefined;
   readonly onFallback?: (event: RendererFallbackEvent) => void;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
 }
@@ -80,8 +87,30 @@ export const DEFAULT_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>>
   },
 });
 
+/**
+ * Resolves the effective style profile for a shape from its root ancestor (R-026).
+ */
+export function resolveEffectiveStyle(doc: Document, shape: Shape): StyleId {
+  if (isRootId(shape.parent)) {
+    return shape.meta.style ?? STYLE_PROFILES.minimal;
+  }
+  const ancestors = ancestorsOf(doc, shape);
+  const root = ancestors[ancestors.length - 1];
+  return root?.meta.style ?? STYLE_PROFILES.minimal;
+}
+
 export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptions): string {
-  const renderer = options?.customRenderers?.[shape.kind] ?? DEFAULT_SHAPE_RENDERERS[shape.kind];
+  let renderer: ShapeSvgRenderer | undefined;
+
+  if (options?.customRenderers?.[shape.kind] !== undefined) {
+    renderer = options.customRenderers[shape.kind];
+  } else if (options?.styleProfile === STYLE_PROFILES.crayon) {
+    // Crayon style: use crayon renderer with standard fallback for unhandled kinds (R-021)
+    renderer = CRAYON_SHAPE_RENDERERS[shape.kind] ?? DEFAULT_SHAPE_RENDERERS[shape.kind];
+  } else {
+    renderer = DEFAULT_SHAPE_RENDERERS[shape.kind];
+  }
+
   let rendered: string;
   if (renderer !== undefined) {
     rendered = renderer(shape, box);
@@ -101,10 +130,18 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
 }
 
 // The whole document in pre-order walk order (structural order).
+// Style selection is root-resolved (R-026).
 // Fallback emission surfaces via the pure options callback without singletons (R-008, ADR-0003 D3).
 export function documentToSvg(document: Document, options?: RenderOptions): string {
   return shapeListInOrder(document)
-    .map((shape) => shapeToSvg(shape, absoluteBoundingBox(document, shape), options))
+    .map((shape) => {
+      const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
+      const shapeOptions =
+        effectiveStyle !== options?.styleProfile
+          ? { ...options, styleProfile: effectiveStyle }
+          : options;
+      return shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
+    })
     .join("");
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
 import type { Shape } from "./shape";
-import { createPage, createRect, createSection } from "./shape";
+import { createEllipse, createPage, createRect, createSection } from "./shape";
 import { DocumentError } from "./errors";
 import { parseDocument } from "./validation";
 
@@ -68,6 +68,22 @@ describe("parseDocument", () => {
   });
 
   it("rejects a non-container parent", () => {
+    const ellipse = createEllipse(
+      parseShapeId("ellipse-1"),
+      { x: 10, y: 10, width: 50, height: 50 },
+      { parent: parseShapeId("section-1") },
+    );
+    const nested = createRect(
+      parseShapeId("rect-2"),
+      { x: 0, y: 0, width: 10, height: 10 },
+      {
+        parent: parseShapeId("ellipse-1"),
+      },
+    );
+    expect(() => parseDocument(serialize([page, section, ellipse, nested]))).toThrow(DocumentError);
+  });
+
+  it("allows a nested rectangle to contain child shapes for N-level nesting", () => {
     const nested = createRect(
       parseShapeId("rect-2"),
       { x: 0, y: 0, width: 10, height: 10 },
@@ -75,7 +91,8 @@ describe("parseDocument", () => {
         parent: parseShapeId("rect-1"),
       },
     );
-    expect(() => parseDocument(serialize([page, section, rect, nested]))).toThrow(DocumentError);
+    const doc = parseDocument(serialize([page, section, rect, nested]));
+    expect(doc.shapes[parseShapeId("rect-2")]?.parent).toBe("rect-1");
   });
 
   it("accepts a root child that is not a page as a freestanding shape on canvas", () => {

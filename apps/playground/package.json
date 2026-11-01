@@ -14,6 +14,7 @@
     "@open-draw/canvas": "workspace:*",
     "@open-draw/contracts": "workspace:*",
     "@open-draw/document": "workspace:*",
+    "@open-draw/export-markdown": "workspace:*",
     "@open-draw/input": "workspace:*",
     "@open-draw/profiles": "workspace:*",
     "@open-draw/renderer-svg": "workspace:*",

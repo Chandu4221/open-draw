@@ -18,7 +18,11 @@ export interface Document {
   readonly shapes: Readonly<Record<ShapeId, Shape>>;
 }
 
-const CONTAINER_KINDS: ReadonlySet<string> = new Set([SHAPE_KINDS.page, SHAPE_KINDS.section]);
+export const CONTAINER_KINDS: ReadonlySet<string> = new Set([
+  SHAPE_KINDS.page,
+  SHAPE_KINDS.section,
+  SHAPE_KINDS.rect,
+]);
 
 function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
   for (const shape of Object.values(shapes)) {
@@ -48,7 +52,7 @@ function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
       if (!isValidContainer) {
         throw new DocumentError(
           "invalidShape",
-          `parent must be a root shape, page, or section, got: ${parentShape?.kind} (${shape.id})`,
+          `parent must be a root shape, page, section, or rect, got: ${parentShape?.kind} (${shape.id})`,
         );
       }
     }

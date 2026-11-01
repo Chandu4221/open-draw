@@ -9,6 +9,7 @@ import {
   createRect,
 } from "@open-draw/document";
 import {
+  chipOverlayToSvg,
   documentToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
@@ -147,5 +148,80 @@ describe("gesture previews", () => {
       { x: 20, y: 30 },
     ]);
     expect(svg).toContain('points="0,0 10,15 20,30"');
+  });
+});
+
+describe("crayon render style (ADR-0005 D3, R-021)", () => {
+  it("renders deterministic byte-identical SVG for the same shape across calls", () => {
+    const rectId = parseShapeId("rect-1");
+    const doc = createDocument([createRect(rectId, { x: 50, y: 60, width: 200, height: 100 })]);
+
+    const run1 = documentToSvg(doc, { styleProfile: "crayon" });
+    const run2 = documentToSvg(doc, { styleProfile: "crayon" });
+
+    expect(run1).toBe(run2);
+    expect(run1).toContain("<path");
+    expect(run1).toContain('stroke="#2d3748"');
+  });
+
+  it("falls back to standard renderer for custom shape kinds under crayon style (R-021)", () => {
+    const starId = parseShapeId("star-1");
+    const starKind = parseCustomShapeKind("vendor:star");
+    const doc = createDocument([
+      createCustomShape(starId, starKind, { x: 10, y: 10, width: 80, height: 80 }),
+    ]);
+
+    const svg = documentToSvg(doc, { styleProfile: "crayon" });
+    expect(svg).toContain("[vendor:star]");
+  });
+
+  it("inherits crayon style from root ancestor (R-026)", () => {
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+
+    const doc = createDocument([
+      createPage(
+        pageId,
+        { x: 0, y: 0, width: 800, height: 600 },
+        { meta: { style: "crayon", order: {} } },
+      ),
+      createRect(rectId, { x: 20, y: 20, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    const svg = documentToSvg(doc);
+    // Child rect should be rendered with crayon wobbled path
+    expect(svg).toContain('<path d="M');
+    expect(svg).toContain('stroke="#2d3748"');
+  });
+});
+
+describe("chip overlay (ADR-0005 D5, R-031)", () => {
+  it("counter-scales dimensions and font size with 1 / zoom", () => {
+    const box = { x: 100, y: 200, width: 300, height: 150 };
+
+    // At zoom = 1.0, scale is 1.0
+    const zoom1 = chipOverlayToSvg("Navigation Bar", box, 1.0);
+    expect(zoom1).toContain('height="16.0"');
+    expect(zoom1).toContain('font-size="10.0"');
+    expect(zoom1).toContain('y="182.0"'); // 200 - 18
+
+    // At zoom = 2.0, scale is 0.5 (world dimensions halved so screen size stays constant)
+    const zoom2 = chipOverlayToSvg("Navigation Bar", box, 2.0);
+    expect(zoom2).toContain('height="8.0"');
+    expect(zoom2).toContain('font-size="5.0"');
+    expect(zoom2).toContain('y="191.0"'); // 200 - 9
+
+    // At zoom = 0.5, scale is 2.0 (world dimensions doubled)
+    const zoomHalf = chipOverlayToSvg("Navigation Bar", box, 0.5);
+    expect(zoomHalf).toContain('height="32.0"');
+    expect(zoomHalf).toContain('font-size="20.0"');
+    expect(zoomHalf).toContain('y="164.0"'); // 200 - 36
+  });
+
+  it("rides the shape bounding box position", () => {
+    const box = { x: 450, y: 300, width: 200, height: 100 };
+    const svg = chipOverlayToSvg("Page", box, 1.0);
+    expect(svg).toContain('x="450.0"');
+    expect(svg).toContain("Page");
   });
 });

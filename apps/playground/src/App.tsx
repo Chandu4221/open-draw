@@ -15,8 +15,10 @@ import type {
 import { DEVICE_TYPES, ROOT_ID, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
+  ancestorsOf,
   applyTransaction,
   COMMANDS,
+  computeReparentBoundingBox,
   createDocument,
   createEllipse,
   createLine,
@@ -26,10 +28,13 @@ import {
   DocumentError,
   EMPTY_HISTORY,
   parseDocument,
+  pickDropTarget,
+  pruneSelectedDescendants,
   recordHistory,
   redo,
   serializeDocument,
   undo,
+  type Command,
   type Document,
   type EllipseShape,
   type HistoryState,
@@ -50,12 +55,14 @@ import {
   type ToolId,
 } from "@open-draw/canvas";
 import {
+  chipOverlayToSvg,
   documentToSvg,
   previewBoxToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
   selectionOverlayToSvg,
 } from "@open-draw/renderer-svg";
+import { exportMarkdown } from "@open-draw/export-markdown";
 import {
   deriveLineBoundingBox,
   derivePenPathBoundingBox,
@@ -158,6 +165,8 @@ export default function App() {
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
+  const [showTagChips, setShowTagChips] = useState<boolean>(false);
+  const showTagChipsRef = useRef<boolean>(false);
 
   function chooseTool(next: ToolId): void {
     toolRef.current = next;
@@ -217,7 +226,12 @@ export default function App() {
       if (shape !== undefined) {
         let box = absoluteBoundingBox(doc, shape);
         const gesture = gestureRef.current;
-        if (gesture !== null && gesture.kind === "move" && gesture.shapeIds.includes(selectedId)) {
+        const isSelectedMoved =
+          gesture !== null &&
+          gesture.kind === "move" &&
+          (gesture.shapeIds.includes(selectedId) ||
+            ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
+        if (isSelectedMoved) {
           box = {
             ...box,
             x: box.x + (lastWorldRef.current.x - gesture.startWorld.x),
@@ -244,6 +258,40 @@ export default function App() {
         overlays.push(previewPenPathToSvg(gesture.points));
       } else {
         overlays.push(previewBoxToSvg(normalizeBox(gesture.startWorld, lastWorldRef.current)));
+      }
+    }
+
+    if (showTagChipsRef.current) {
+      for (const shape of Object.values(doc.shapes)) {
+        let chipLabel: string | undefined;
+        if (isRootId(shape.parent)) {
+          const platform = shape.meta.platform;
+          if (platform !== undefined) {
+            chipLabel = PLATFORM_PROFILES[platform]?.label ?? platform;
+          }
+        } else if (shape.meta.semantic !== undefined) {
+          const rootPlatform = resolveRootPlatform(doc, shape.id);
+          const profile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
+          chipLabel = resolveShapeDisplayName(shape, profile);
+        }
+
+        if (chipLabel !== undefined) {
+          let box = absoluteBoundingBox(doc, shape);
+          const gesture = gestureRef.current;
+          const isShapeMoved =
+            gesture !== null &&
+            gesture.kind === "move" &&
+            (gesture.shapeIds.includes(shape.id) ||
+              ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
+          if (isShapeMoved) {
+            box = {
+              ...box,
+              x: box.x + (lastWorldRef.current.x - gesture.startWorld.x),
+              y: box.y + (lastWorldRef.current.y - gesture.startWorld.y),
+            };
+          }
+          overlays.push(chipOverlayToSvg(chipLabel, box, camera.zoom));
+        }
       }
     }
 
@@ -393,11 +441,7 @@ export default function App() {
     });
 
     if (before === STATES.draggingShape && gesture.shapeIds.length > 0) {
-      const dx = world.x - gesture.startWorld.x;
-      const dy = world.y - gesture.startWorld.y;
-      if (dx !== 0 || dy !== 0) {
-        commit([{ type: COMMANDS.moveShapes, ids: gesture.shapeIds, dx, dy }]);
-      }
+      commitDrag(gesture, world);
     } else if (before === STATES.resizingShape) {
       commitResize(gesture, world);
     } else if (before === STATES.drawingShape) {
@@ -408,6 +452,66 @@ export default function App() {
     gestureRef.current = null;
     setSelectedShapeId(canvas.getSelectedId());
     render();
+  }
+
+  function commitDrag(gesture: Gesture, world: Point): void {
+    const dx = world.x - gesture.startWorld.x;
+    const dy = world.y - gesture.startWorld.y;
+    if (dx === 0 && dy === 0) {
+      return;
+    }
+    const doc = documentRef.current;
+    const topLevelShapeIds = pruneSelectedDescendants(doc, gesture.shapeIds);
+    const commands: Command[] = [];
+    const sameParentMoves: ShapeId[] = [];
+
+    for (const id of topLevelShapeIds) {
+      const shape = doc.shapes[id];
+      if (shape === undefined) continue;
+
+      const currentWorldBox = absoluteBoundingBox(doc, shape);
+      const droppedWorldBox: BoundingBox = {
+        x: currentWorldBox.x + dx,
+        y: currentWorldBox.y + dy,
+        width: currentWorldBox.width,
+        height: currentWorldBox.height,
+      };
+      const center: Point = {
+        x: droppedWorldBox.x + droppedWorldBox.width / 2,
+        y: droppedWorldBox.y + droppedWorldBox.height / 2,
+      };
+      const targetParentId = pickDropTarget(doc, center, [id]);
+
+      if (targetParentId !== shape.parent) {
+        const newBoundingBox = computeReparentBoundingBox(
+          doc,
+          shape,
+          targetParentId,
+          droppedWorldBox,
+        );
+        commands.push({
+          type: COMMANDS.reparentShape,
+          id,
+          parent: targetParentId,
+          boundingBox: newBoundingBox,
+        });
+      } else {
+        sameParentMoves.push(id);
+      }
+    }
+
+    if (sameParentMoves.length > 0) {
+      commands.push({
+        type: COMMANDS.moveShapes,
+        ids: sameParentMoves,
+        dx,
+        dy,
+      });
+    }
+
+    if (commands.length > 0) {
+      commit(commands);
+    }
   }
 
   function commitResize(gesture: Gesture, world: Point): void {
@@ -444,13 +548,14 @@ export default function App() {
     const parentHit = gesture.parentHit;
     const canvas = canvasRef.current;
 
-    const hitShape = parentHit !== null ? doc.shapes[parentHit] : undefined;
-    const targetRoot = hitShape ? resolveRootShape(doc, hitShape.id) : undefined;
+    const targetParentId =
+      parentHit !== null ? pickDropTarget(doc, gesture.startWorld, []) : ROOT_ID;
+    const targetParent = !isRootId(targetParentId) ? doc.shapes[targetParentId] : undefined;
 
     if (toolRef.current === TOOLS.drawLine) {
       const { boundingBox, start, end } = deriveLineBoundingBox(gesture.startWorld, world);
-      if (targetRoot !== undefined) {
-        const parentBox = absoluteBoundingBox(doc, targetRoot);
+      if (targetParent !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetParent);
         const line = createLine(
           nextShapeId(),
           {
@@ -461,7 +566,7 @@ export default function App() {
           },
           start,
           end,
-          { parent: targetRoot.id },
+          { parent: targetParent.id },
         );
         commit([{ type: COMMANDS.createShape, shape: line }]);
         canvas.select(line.id);
@@ -476,8 +581,8 @@ export default function App() {
     if (toolRef.current === TOOLS.drawPenPath) {
       const allPoints = gesture.points.length > 0 ? gesture.points : [gesture.startWorld, world];
       const { boundingBox, points } = derivePenPathBoundingBox(allPoints);
-      if (targetRoot !== undefined) {
-        const parentBox = absoluteBoundingBox(doc, targetRoot);
+      if (targetParent !== undefined) {
+        const parentBox = absoluteBoundingBox(doc, targetParent);
         const pen = createPenPath(
           nextShapeId(),
           {
@@ -487,7 +592,7 @@ export default function App() {
             height: boundingBox.height,
           },
           points,
-          { parent: targetRoot.id },
+          { parent: targetParent.id },
         );
         commit([{ type: COMMANDS.createShape, shape: pen }]);
         canvas.select(pen.id);
@@ -505,9 +610,9 @@ export default function App() {
         ? createEllipse(nextShapeId(), localBox, { parent })
         : createRect(nextShapeId(), localBox, { parent });
 
-    if (targetRoot !== undefined) {
-      const parentBox = absoluteBoundingBox(doc, targetRoot);
-      const shape = createDrawnShape(targetRoot.id, {
+    if (targetParent !== undefined) {
+      const parentBox = absoluteBoundingBox(doc, targetParent);
+      const shape = createDrawnShape(targetParent.id, {
         x: box.x - parentBox.x,
         y: box.y - parentBox.y,
         width: box.width,
@@ -662,6 +767,31 @@ export default function App() {
     }
   }
 
+  function handleExportMarkdown(): void {
+    try {
+      const md = exportMarkdown(documentRef.current);
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "opendraw-document.md";
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatusMessage("Exported Markdown successfully");
+    } catch (err) {
+      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function toggleShowTagChips(): void {
+    setShowTagChips((prev) => {
+      const next = !prev;
+      showTagChipsRef.current = next;
+      render();
+      return next;
+    });
+  }
+
   function handleLoad(): void {
     const input = document.createElement("input");
     input.type = "file";
@@ -711,6 +841,13 @@ export default function App() {
     const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
     if (!targetRoot) return;
     commit([{ type: COMMANDS.setRootStyle, id: targetRoot.id, style }]);
+    render();
+  }
+
+  function handleSetLabel(labelStr: string): void {
+    if (!selectedShape) return;
+    const label = labelStr.trim() === "" ? null : labelStr;
+    commit([{ type: COMMANDS.setShapeLabel, id: selectedShape.id, label }]);
     render();
   }
 
@@ -875,8 +1012,11 @@ export default function App() {
             Draw pen (P)
           </button>
           <span>|</span>
+          <button type="button" onClick={handleExportMarkdown}>
+            Export Markdown
+          </button>
           <button type="button" onClick={handleSave}>
-            Save JSON
+            Export JSON
           </button>
           <button type="button" onClick={handleLoad}>
             Load JSON
@@ -927,6 +1067,17 @@ export default function App() {
             Reset
           </button>
           <span>|</span>
+          <button
+            type="button"
+            onClick={toggleShowTagChips}
+            style={{
+              fontWeight: 600,
+              backgroundColor: showTagChips ? "#2563eb" : undefined,
+              color: showTagChips ? "#ffffff" : undefined,
+            }}
+          >
+            {showTagChips ? "Hide Chips" : "Show Chips"}
+          </button>
           <button
             type="button"
             onClick={() => setShowSidebar((prev) => !prev)}
@@ -1004,8 +1155,23 @@ export default function App() {
                 <p style={{ color: "#64748b", margin: 0 }}>Select a shape to inspect.</p>
               ) : isRootId(selectedShape.parent) ? (
                 <div>
-                  <div style={{ marginBottom: "8px" }}>
-                    <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                      Name (R-042)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+                      value={selectedShape.label ?? ""}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid #cbd5e1",
+                        boxSizing: "border-box",
+                      }}
+                      onChange={(e) => handleSetLabel(e.target.value)}
+                    />
                   </div>
                   <div style={{ marginBottom: "12px", color: "#64748b" }}>
                     <strong>Shape ID:</strong> {selectedShape.id}
@@ -1047,14 +1213,30 @@ export default function App() {
                       }}
                       onChange={(e) => handleSetStyle(e.target.value as StyleId)}
                     >
-                      <option value={STYLE_PROFILES.minimal}>Minimal</option>
+                      <option value={STYLE_PROFILES.minimal}>Minimal Wireframe</option>
+                      <option value={STYLE_PROFILES.crayon}>Crayon / Hand-drawn</option>
                     </select>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div style={{ marginBottom: "6px" }}>
-                    <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
+                  <div style={{ marginBottom: "10px" }}>
+                    <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                      Name (R-042)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+                      value={selectedShape.label ?? ""}
+                      style={{
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "4px",
+                        border: "1px solid #cbd5e1",
+                        boxSizing: "border-box",
+                      }}
+                      onChange={(e) => handleSetLabel(e.target.value)}
+                    />
                   </div>
                   <div style={{ marginBottom: "6px", color: "#64748b" }}>
                     <strong>Shape ID:</strong> {selectedShape.id}
