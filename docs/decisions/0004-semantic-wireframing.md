@@ -79,7 +79,7 @@ OpenDraw's founding blueprint separates visual geometry from semantics and platf
 
 ### D7 — Root resolution for platform and style (R-026)
 
-- `meta.platform?: PlatformId` and `meta.style?: StyleId` are settable **only** on root pages (`parent === ROOT_ID` and `kind === "page"`).
+- `meta.platform?: PlatformId` and `meta.style?: StyleId` are settable **only** on root shapes (`parent === ROOT_ID`).
 - Boundary validation in `parseDocument` and `parseMeta` loudly rejects `platform` or `style` on any non-root shape with a typed `DocumentError("invalidMeta", ...)`.
 - Nested children inherit platform and style dynamically by ascending the tree to their root ancestor via `resolveRootPlatform(doc, shapeId)` and `resolveRootStyle(doc, shapeId)`.
 
@@ -106,8 +106,8 @@ The dependency graph remains a strictly acyclic DAG.
 All mutations to semantic and responsive properties flow through reversible, typed commands in `@open-draw/document/src/commands/`:
 
 1. `set-shape-semantic`: sets or clears `meta.semantic` (including `properties`).
-2. `set-root-platform`: sets `meta.platform` on root pages (throws typed error if target is not a root page).
-3. `set-root-style`: sets `meta.style` on root pages (throws typed error if target is not a root page).
+2. `set-root-platform`: sets `meta.platform` on root shapes (throws typed error if target is not a root shape).
+3. `set-root-style`: sets `meta.style` on root shapes (throws typed error if target is not a root shape).
 4. `set-shape-hidden-on`: sets `meta.hiddenOn` (R-028, R-029).
 5. `set-shape-order`: sets `meta.order[deviceType]` (R-027).
 
