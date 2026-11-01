@@ -246,9 +246,15 @@ importers:
       "@open-draw/input":
         specifier: workspace:*
         version: link:../../packages/input
+      "@open-draw/profiles":
+        specifier: workspace:*
+        version: link:../../packages/profiles
       "@open-draw/renderer-svg":
         specifier: workspace:*
         version: link:../../packages/renderer-svg
+      "@open-draw/semantics":
+        specifier: workspace:*
+        version: link:../../packages/semantics
       "@open-draw/shapes":
         specifier: workspace:*
         version: link:../../packages/shapes

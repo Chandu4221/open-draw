@@ -24,7 +24,7 @@ describe("root resolution (R-026)", () => {
       {
         meta: {
           order: {},
-          platform: PLATFORMS.androidNative,
+          platform: "androidNative",
           style: STYLE_PROFILES.minimal,
         },
       },
@@ -42,7 +42,7 @@ describe("root resolution (R-026)", () => {
   });
 
   it("inherits root platform and style by tree position (R-026)", () => {
-    expect(resolveRootPlatform(doc, buttonId)).toBe(PLATFORMS.androidNative);
+    expect(resolveRootPlatform(doc, buttonId)).toBe("androidNative");
     expect(resolveRootStyle(doc, buttonId)).toBe(STYLE_PROFILES.minimal);
   });
 });
@@ -107,7 +107,7 @@ describe("conflict computation (R-025)", () => {
       createPage(
         pageId,
         { x: 0, y: 0, width: 1000, height: 1000 },
-        { meta: { order: {}, platform: PLATFORMS.androidNative } },
+        { meta: { order: {}, platform: "androidNative" } },
       ),
       createRect(
         shapeId,
@@ -118,7 +118,7 @@ describe("conflict computation (R-025)", () => {
 
     const conflict = computeSemanticConflict(doc, doc.shapes[shapeId]!, ANDROID_NATIVE_PROFILE);
     expect(conflict?.status).toBe("conflicted");
-    expect(conflict?.expectedPlatform).toBe(PLATFORMS.androidNative);
+    expect(conflict?.expectedPlatform).toBe("androidNative");
     expect(conflict?.actualPlatform).toBe(PLATFORMS.web);
   });
 
@@ -181,14 +181,14 @@ describe("hierarchical tree walk", () => {
 
     const walkMobile = walkSemanticTree(doc, pageId, WEB_PROFILE, DEVICE_TYPES.mobile);
     expect(walkMobile).toHaveLength(4);
-    expect(walkMobile[0].shape.id).toBe(pageId);
-    expect(walkMobile[0].depth).toBe(0);
-    expect(walkMobile[1].shape.id).toBe(secId);
-    expect(walkMobile[1].depth).toBe(1);
+    expect(walkMobile[0]?.shape.id).toBe(pageId);
+    expect(walkMobile[0]?.depth).toBe(0);
+    expect(walkMobile[1]?.shape.id).toBe(secId);
+    expect(walkMobile[1]?.depth).toBe(1);
     // On mobile, childB (order 1) comes before childA (order 2)
-    expect(walkMobile[2].shape.id).toBe(childB);
-    expect(walkMobile[2].depth).toBe(2);
-    expect(walkMobile[3].shape.id).toBe(childA);
-    expect(walkMobile[3].depth).toBe(2);
+    expect(walkMobile[2]?.shape.id).toBe(childB);
+    expect(walkMobile[2]?.depth).toBe(2);
+    expect(walkMobile[3]?.shape.id).toBe(childA);
+    expect(walkMobile[3]?.depth).toBe(2);
   });
 });

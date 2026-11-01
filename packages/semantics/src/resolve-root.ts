@@ -9,7 +9,7 @@ import {
   PLATFORMS,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
-import type { Document, PageShape } from "@open-draw/document";
+import type { Document, PageShape, Shape } from "@open-draw/document";
 
 /**
  * Resolves the root page ancestor for any shape in the document.
@@ -24,12 +24,12 @@ export function resolveRootPage(doc: Document, shapeId: ShapeId): PageShape | un
       break;
     }
     visited.add(currentId);
-    const shape = doc.shapes[currentId];
+    const shape: Shape | undefined = doc.shapes[currentId];
     if (shape === undefined) {
       break;
     }
-    if (isRootId(shape.parent) && shape.kind === "page") {
-      return shape;
+    if (shape.kind === "page" && isRootId(shape.parent)) {
+      return shape as PageShape;
     }
     currentId = shape.parent;
   }

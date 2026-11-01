@@ -1,6 +1,5 @@
 // Web Platform Profile (ADR-0004 D5, R-023).
 import {
-  DEVICE_TYPES,
   type PlatformProfile,
   type SemanticDefinition,
   parseSemanticId,
@@ -137,12 +136,6 @@ export const WEB_PROFILE: PlatformProfile = Object.freeze({
   id: "web",
   label: "Web",
   rootSemantic: parseSemanticId("page"),
-  deviceTypes: Object.freeze([
-    DEVICE_TYPES.mobile,
-    DEVICE_TYPES.tablet,
-    DEVICE_TYPES.laptop,
-    DEVICE_TYPES.desktop,
-    DEVICE_TYPES.largeScreen,
-  ]),
+  deviceTypes: Object.freeze(["mobile", "tablet", "laptop", "desktop", "largeScreen"] as const),
   semantics: WEB_SEMANTICS,
 });

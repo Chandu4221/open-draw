@@ -54,12 +54,12 @@ describe("document commands (milestone 05)", () => {
         {
           type: COMMANDS.setRootPlatform,
           id: pageId,
-          platform: PLATFORMS.androidNative,
+          platform: "androidNative",
         },
       ]),
     );
 
-    expect(result.document.shapes[pageId]?.meta.platform).toBe(PLATFORMS.androidNative);
+    expect(result.document.shapes[pageId]?.meta.platform).toBe("androidNative");
 
     const undone = applyTransaction(result.document, createTransaction(result.inverse));
     expect(undone.document.shapes[pageId]?.meta.platform).toBeUndefined();

@@ -2,7 +2,13 @@
 // never truth; R-020: the renderer never holds canonical state; ADR-0003 D3).
 // Pure Document → string (R-008). Presentation constants are registry data, not
 // stringly internals (R-005).
-import type { BoundingBox, BuiltinShapeKind, DeviceType, Point, ShapeId } from "@open-draw/contracts";
+import type {
+  BoundingBox,
+  BuiltinShapeKind,
+  DeviceType,
+  Point,
+  ShapeId,
+} from "@open-draw/contracts";
 import { SHAPE_KINDS, SHAPE_KIND_LABELS } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
@@ -39,7 +45,7 @@ export interface RendererFallbackEvent {
 export type ShapeSvgRenderer = (shape: Shape, box: BoundingBox) => string;
 
 export interface RenderOptions {
-  readonly activeDeviceType?: DeviceType;
+  readonly activeDeviceType?: DeviceType | undefined;
   readonly onFallback?: (event: RendererFallbackEvent) => void;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
 }

@@ -1,9 +1,24 @@
-// Playground shell for milestone 4: wires DOM events and UI controls to
+// Playground shell for milestone 5: wires DOM events and UI controls to
 // the createCanvas controller, @open-draw/input action resolution, @open-draw/shapes
-// extensions, and document serialization/parsing (R-004, R-008, R-011, R-018, R-041, R-044).
+// extensions, @open-draw/profiles, @open-draw/semantics, and document serialization/parsing
+// (R-004, R-008, R-011, R-018, R-024, R-025, R-026, R-027, R-028, R-029, R-041, R-044).
 import { useEffect, useRef, useState } from "react";
-import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
-import { parseShapeId, SHAPE_KINDS } from "@open-draw/contracts";
+import type {
+  BoundingBox,
+  DeviceType,
+  PlatformId,
+  Point,
+  SemanticId,
+  ShapeId,
+  StyleId,
+} from "@open-draw/contracts";
+import {
+  DEVICE_TYPES,
+  PLATFORMS,
+  SHAPE_KINDS,
+  STYLE_PROFILES,
+  parseShapeId,
+} from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   applyTransaction,
@@ -26,6 +41,7 @@ import {
   type EllipseShape,
   type HistoryState,
   type LineShape,
+  type PageShape,
   type PenPathShape,
   type RectShape,
 } from "@open-draw/document";
@@ -60,6 +76,15 @@ import {
   PEN_PATH_CAPABILITIES,
   RECT_CAPABILITIES,
 } from "@open-draw/shapes";
+import { PLATFORM_PROFILES } from "@open-draw/profiles";
+import {
+  computeSemanticConflict,
+  resolveRootPage,
+  resolveRootPlatform,
+  resolveRootStyle,
+  resolveShapeDisplayName,
+  walkSemanticTree,
+} from "@open-draw/semantics";
 
 type GestureKind = "move" | "draw" | "resize" | "pan" | "press";
 
@@ -75,7 +100,7 @@ interface Gesture {
   readonly points: readonly Point[];
 }
 
-const CANVAS_WIRE_STYLE = { width: "100%", height: "80vh", display: "block", touchAction: "none" };
+const CANVAS_WIRE_STYLE = { width: "100%", height: "100%", display: "block", touchAction: "none" };
 
 function initCanvas(): CanvasController {
   return createCanvas({
@@ -113,9 +138,10 @@ function initCanvas(): CanvasController {
 export default function App() {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<CanvasController>(initCanvas());
-  const documentRef = useRef<Document>(
+  const [doc, setDoc] = useState<Document>(() =>
     createDocument([createPage(parseShapeId("page-1"), { x: 40, y: 40, width: 640, height: 480 })]),
   );
+  const documentRef = useRef<Document>(doc);
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
   const gestureRef = useRef<Gesture | null>(null);
   const lastScreenRef = useRef<Point>({ x: 0, y: 0 });
@@ -126,10 +152,24 @@ export default function App() {
   const toolRef = useRef<ToolId>(TOOLS.select);
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
   const [statusMessage, setStatusMessage] = useState<string>("");
+  const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
+  const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
 
   function chooseTool(next: ToolId): void {
     toolRef.current = next;
     setTool(next);
+  }
+
+  function handleDeviceChange(deviceType?: DeviceType): void {
+    canvasRef.current.setActiveDeviceType(deviceType);
+    setActiveDeviceType(deviceType);
+    render();
+  }
+
+  function selectShape(id: ShapeId): void {
+    canvasRef.current.select(id);
+    setSelectedShapeId(id);
+    render();
   }
 
   function screenPointFrom(event: PointerEvent | WheelEvent): Point {
@@ -189,6 +229,7 @@ export default function App() {
 
     const world =
       documentToSvg(doc, {
+        activeDeviceType: canvas.getActiveDeviceType(),
         onFallback: (event) => {
           setStatusMessage(`Fallback render: ${event.shapeId} (${event.kind})`);
         },
@@ -203,6 +244,7 @@ export default function App() {
     const result = applyTransaction(documentRef.current, createTransaction(commands));
     documentRef.current = result.document;
     historyRef.current = recordHistory(historyRef.current, result.inverse);
+    setDoc(result.document);
   }
 
   function nextShapeId(): ShapeId {
@@ -247,6 +289,10 @@ export default function App() {
 
     if (handle === null && hit !== null && toolRef.current === TOOLS.select) {
       canvas.select(hit);
+      setSelectedShapeId(hit);
+    } else if (handle === null && hit === null && toolRef.current === TOOLS.select) {
+      canvas.clearSelection();
+      setSelectedShapeId(null);
     }
 
     svgRef.current?.setPointerCapture(event.pointerId);
@@ -301,20 +347,15 @@ export default function App() {
       worldPoint: world,
     });
 
-    if (canvas.getMachineState().stateId === STATES.draggingShape && gesture.kind === "move") {
-      gestureRef.current = {
-        ...gesture,
-        kind: "move",
-        shapeIds: [canvas.getMachineState().activeShapeId!],
-      };
-    }
-    if (gesture.kind === "pan") {
+    const state = canvas.getMachineState();
+    if (state.stateId === STATES.panning) {
       canvas.panBy({
         x: screen.x - lastScreenRef.current.x,
         y: screen.y - lastScreenRef.current.y,
       });
-    } else if (gesture.kind === "draw" && toolRef.current === TOOLS.drawPenPath) {
-      // Accumulate points in transient gesture state (R-018: one gesture = one commit at pointerUp)
+    }
+
+    if (gesture.kind === "draw" && toolRef.current === TOOLS.drawPenPath) {
       gestureRef.current = {
         ...gesture,
         points: [...gesture.points, world],
@@ -355,6 +396,7 @@ export default function App() {
       canvas.clearSelection();
     }
     gestureRef.current = null;
+    setSelectedShapeId(canvas.getSelectedId());
     render();
   }
 
@@ -525,6 +567,7 @@ export default function App() {
         canvas.resetMachine();
         gestureRef.current = null;
         canvas.clearSelection();
+        setSelectedShapeId(null);
         chooseTool(TOOLS.select);
         setStatusMessage("Cancelled / Selection cleared");
         render();
@@ -535,6 +578,8 @@ export default function App() {
         if (undone !== null) {
           documentRef.current = undone.document;
           historyRef.current = undone.history;
+          setSelectedShapeId(canvas.getSelectedId());
+          setDoc(undone.document);
           setStatusMessage("Undo performed");
           render();
         }
@@ -545,6 +590,8 @@ export default function App() {
         if (redone !== null) {
           documentRef.current = redone.document;
           historyRef.current = redone.history;
+          setSelectedShapeId(canvas.getSelectedId());
+          setDoc(redone.document);
           setStatusMessage("Redo performed");
           render();
         }
@@ -555,13 +602,13 @@ export default function App() {
         if (selectedId !== null) {
           commit([{ type: COMMANDS.deleteShape, id: selectedId }]);
           canvas.clearSelection();
+          setSelectedShapeId(null);
           setStatusMessage(`Deleted shape: ${selectedId}`);
           render();
         }
         break;
       }
       case ACTIONS.selectTool: {
-        // Cycle tools: select -> drawRect -> drawEllipse -> drawLine -> drawPenPath -> select
         if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawRect);
         else if (toolRef.current === TOOLS.drawRect) chooseTool(TOOLS.drawEllipse);
         else if (toolRef.current === TOOLS.drawEllipse) chooseTool(TOOLS.drawLine);
@@ -650,6 +697,8 @@ export default function App() {
         documentRef.current = loaded;
         historyRef.current = EMPTY_HISTORY;
         canvasRef.current.clearSelection();
+        setSelectedShapeId(null);
+        setDoc(loaded);
         setStatusMessage("Document loaded successfully");
         render();
       } catch (err) {
@@ -661,6 +710,94 @@ export default function App() {
       }
     };
     input.click();
+  }
+
+  function handleSetPlatform(platform: PlatformId): void {
+    if (!rootPage) return;
+    commit([{ type: COMMANDS.setRootPlatform, id: rootPage.id, platform }]);
+    render();
+  }
+
+  function handleSetStyle(style: StyleId): void {
+    if (!rootPage) return;
+    commit([{ type: COMMANDS.setRootStyle, id: rootPage.id, style }]);
+    render();
+  }
+
+  function handleSetSemantic(semanticIdStr: string): void {
+    if (!selectedShape) return;
+    if (semanticIdStr === "") {
+      commit([{ type: COMMANDS.setShapeSemantic, id: selectedShape.id, semantic: null }]);
+    } else {
+      let platform = activeProfile.id;
+      if (!activeProfile.semantics[semanticIdStr]) {
+        for (const [pid, prof] of Object.entries(PLATFORM_PROFILES)) {
+          if (prof.semantics[semanticIdStr]) {
+            platform = pid as PlatformId;
+            break;
+          }
+        }
+      }
+      commit([
+        {
+          type: COMMANDS.setShapeSemantic,
+          id: selectedShape.id,
+          semantic: {
+            id: semanticIdStr as SemanticId,
+            platform,
+            properties: {},
+          },
+        },
+      ]);
+    }
+    render();
+  }
+
+  function handlePropertyChange(propId: string, val: string | number | boolean): void {
+    if (!selectedShape || !selectedShape.meta.semantic) return;
+    const currentProps = selectedShape.meta.semantic.properties ?? {};
+    commit([
+      {
+        type: COMMANDS.setShapeSemantic,
+        id: selectedShape.id,
+        semantic: {
+          ...selectedShape.meta.semantic,
+          properties: {
+            ...currentProps,
+            [propId]: val,
+          },
+        },
+      },
+    ]);
+    render();
+  }
+
+  function handleToggleHiddenOn(dt: DeviceType): void {
+    if (!selectedShape) return;
+    const current = selectedShape.meta.hiddenOn ?? [];
+    const next = current.includes(dt) ? current.filter((d) => d !== dt) : [...current, dt];
+    commit([
+      {
+        type: COMMANDS.setShapeHiddenOn,
+        id: selectedShape.id,
+        hiddenOn: next.length > 0 ? next : null,
+      },
+    ]);
+    render();
+  }
+
+  function handleOrderChange(dt: DeviceType, valStr: string): void {
+    if (!selectedShape) return;
+    const order = valStr.trim() === "" ? null : Number(valStr);
+    commit([
+      {
+        type: COMMANDS.setShapeOrder,
+        id: selectedShape.id,
+        deviceType: dt,
+        order,
+      },
+    ]);
+    render();
   }
 
   useEffect(() => {
@@ -685,47 +822,511 @@ export default function App() {
     };
   });
 
+  const selectedShape = selectedShapeId !== null ? doc.shapes[selectedShapeId] : undefined;
+  const rootPage = selectedShape
+    ? resolveRootPage(doc, selectedShape.id)
+    : (Object.values(doc.shapes).find((s) => s.kind === SHAPE_KINDS.page) as PageShape | undefined);
+  const rootPlatform = rootPage ? resolveRootPlatform(doc, rootPage.id) : PLATFORMS.web;
+  const rootStyle = rootPage ? resolveRootStyle(doc, rootPage.id) : STYLE_PROFILES.minimal;
+  const activeProfile = PLATFORM_PROFILES[rootPlatform] ?? PLATFORM_PROFILES.web;
+  const conflict = selectedShape
+    ? computeSemanticConflict(doc, selectedShape, activeProfile)
+    : undefined;
+  const semanticDef =
+    selectedShape?.meta.semantic !== undefined
+      ? activeProfile.semantics[selectedShape.meta.semantic.id]
+      : undefined;
+  const semanticProps = selectedShape?.meta.semantic?.properties ?? {};
+  const treeNodes = rootPage
+    ? walkSemanticTree(doc, rootPage.id, activeProfile, activeDeviceType)
+    : [];
+
   return (
-    <main>
-      <h1>OpenDraw Playground</h1>
-      <div
+    <main
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <header
         style={{
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "8px",
+          padding: "8px 16px",
+          borderBottom: "1px solid #e2e8f0",
+          backgroundColor: "#ffffff",
+          flexShrink: 0,
         }}
       >
-        <button type="button" onClick={() => chooseTool(TOOLS.select)}>
-          Select (V)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawRect)}>
-          Draw rect (R)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawEllipse)}>
-          Draw ellipse (O)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawLine)}>
-          Draw line (L)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawPenPath)}>
-          Draw pen (P)
-        </button>
-        <span>|</span>
-        <button type="button" onClick={handleSave}>
-          Save JSON
-        </button>
-        <button type="button" onClick={handleLoad}>
-          Load JSON
-        </button>
-        <span>|</span>
-        <span>Tool: {tool}</span>
-        {statusMessage && (
-          <span style={{ color: "#2563eb", marginLeft: "12px" }}>[{statusMessage}]</span>
-        )}
+        <h1 style={{ fontSize: "18px", margin: "0 0 8px 0" }}>OpenDraw Playground</h1>
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            fontSize: "13px",
+          }}
+        >
+          <button type="button" onClick={() => chooseTool(TOOLS.select)}>
+            Select (V)
+          </button>
+          <button type="button" onClick={() => chooseTool(TOOLS.drawRect)}>
+            Draw rect (R)
+          </button>
+          <button type="button" onClick={() => chooseTool(TOOLS.drawEllipse)}>
+            Draw ellipse (O)
+          </button>
+          <button type="button" onClick={() => chooseTool(TOOLS.drawLine)}>
+            Draw line (L)
+          </button>
+          <button type="button" onClick={() => chooseTool(TOOLS.drawPenPath)}>
+            Draw pen (P)
+          </button>
+          <span>|</span>
+          <button type="button" onClick={handleSave}>
+            Save JSON
+          </button>
+          <button type="button" onClick={handleLoad}>
+            Load JSON
+          </button>
+          <span>|</span>
+          <span>Tool: {tool}</span>
+          <span>|</span>
+          <span style={{ fontWeight: 600 }}>Device:</span>
+          <button
+            type="button"
+            style={{
+              fontWeight: activeDeviceType === undefined ? 700 : 400,
+              backgroundColor: activeDeviceType === undefined ? "#2563eb" : undefined,
+              color: activeDeviceType === undefined ? "#ffffff" : undefined,
+            }}
+            onClick={() => handleDeviceChange(undefined)}
+          >
+            All
+          </button>
+          {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => (
+            <button
+              key={dt}
+              type="button"
+              style={{
+                fontWeight: activeDeviceType === dt ? 700 : 400,
+                backgroundColor: activeDeviceType === dt ? "#2563eb" : undefined,
+                color: activeDeviceType === dt ? "#ffffff" : undefined,
+              }}
+              onClick={() => handleDeviceChange(dt)}
+            >
+              {DEVICE_TYPES[dt]}
+            </button>
+          ))}
+          {statusMessage && (
+            <span style={{ color: "#2563eb", marginLeft: "8px" }}>[{statusMessage}]</span>
+          )}
+        </div>
+      </header>
+
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Canvas area */}
+        <div
+          style={{
+            flex: 1,
+            height: "100%",
+            position: "relative",
+            overflow: "hidden",
+            backgroundColor: "#f8fafc",
+          }}
+        >
+          <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
+        </div>
+
+        {/* Inspector Sidebar */}
+        <aside
+          style={{
+            width: "360px",
+            height: "100%",
+            boxSizing: "border-box",
+            borderLeft: "1px solid #cbd5e1",
+            overflowY: "auto",
+            padding: "16px",
+            backgroundColor: "#ffffff",
+            fontSize: "13px",
+          }}
+        >
+          {/* Root Page Platform and Style Configuration */}
+          <div
+            style={{
+              marginBottom: "20px",
+              borderBottom: "1px solid #e2e8f0",
+              paddingBottom: "16px",
+            }}
+          >
+            <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
+              Page Configuration
+            </h2>
+            <div style={{ marginBottom: "8px" }}>
+              <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                Page ID
+              </label>
+              <div style={{ color: "#64748b" }}>{rootPage ? rootPage.id : "None"}</div>
+            </div>
+            <div style={{ marginBottom: "8px" }}>
+              <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                Platform Profile (R-026)
+              </label>
+              <select
+                value={rootPlatform}
+                style={{
+                  width: "100%",
+                  padding: "6px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid #cbd5e1",
+                }}
+                disabled={!rootPage}
+                onChange={(e) => handleSetPlatform(e.target.value as PlatformId)}
+              >
+                <option value={PLATFORMS.web}>Web</option>
+                <option value={PLATFORMS.androidNative}>Android Native (Material 3)</option>
+                <option value={PLATFORMS.flutter}>Flutter</option>
+                <option value={PLATFORMS.ios}>iOS (Stub)</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: "8px" }}>
+              <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                Design Style (R-026)
+              </label>
+              <select
+                value={rootStyle}
+                style={{
+                  width: "100%",
+                  padding: "6px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid #cbd5e1",
+                }}
+                disabled={!rootPage}
+                onChange={(e) => handleSetStyle(e.target.value as StyleId)}
+              >
+                <option value={STYLE_PROFILES.minimal}>Minimal</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Selected Shape Inspector */}
+          <div
+            style={{
+              marginBottom: "20px",
+              borderBottom: "1px solid #e2e8f0",
+              paddingBottom: "16px",
+            }}
+          >
+            <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
+              Shape Inspector
+            </h2>
+            {!selectedShape ? (
+              <p style={{ color: "#64748b", margin: 0 }}>
+                Select a shape to inspect semantics and responsive properties.
+              </p>
+            ) : (
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <strong>Name:</strong> {resolveShapeDisplayName(selectedShape, activeProfile)}
+                </div>
+                <div style={{ marginBottom: "8px", color: "#64748b" }}>
+                  <strong>ID:</strong> {selectedShape.id} | <strong>Kind:</strong>{" "}
+                  {selectedShape.kind}
+                </div>
+
+                {selectedShape.kind === SHAPE_KINDS.page ? (
+                  <p style={{ color: "#64748b", fontStyle: "italic" }}>
+                    This is a root page. Platform and style settings are configured above.
+                  </p>
+                ) : (
+                  <>
+                    {/* Semantic Tagging */}
+                    <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+                        Semantic Tag (R-024)
+                      </label>
+                      <select
+                        value={selectedShape.meta.semantic?.id ?? ""}
+                        style={{
+                          width: "100%",
+                          padding: "6px 8px",
+                          borderRadius: "4px",
+                          border: "1px solid #cbd5e1",
+                        }}
+                        onChange={(e) => handleSetSemantic(e.target.value)}
+                      >
+                        <option value="">(None / Baseline)</option>
+                        {Object.values(activeProfile.semantics).map((def) => (
+                          <option key={def.id} value={def.id}>
+                            {def.displayName} ({def.id})
+                          </option>
+                        ))}
+                        {selectedShape.meta.semantic &&
+                          !activeProfile.semantics[selectedShape.meta.semantic.id] && (
+                            <option value={selectedShape.meta.semantic.id}>
+                              [Foreign] {selectedShape.meta.semantic.id} (
+                              {selectedShape.meta.semantic.platform})
+                            </option>
+                          )}
+                      </select>
+                    </div>
+
+                    {/* Semantic Conflict Warning Banner (R-025) */}
+                    {conflict && (
+                      <div
+                        style={{
+                          backgroundColor: "#fef2f2",
+                          border: "1px solid #f87171",
+                          borderRadius: "4px",
+                          padding: "8px 12px",
+                          marginBottom: "12px",
+                          color: "#991b1b",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: "2px" }}>
+                          Semantic Conflict ({conflict.status})
+                        </div>
+                        <div style={{ fontSize: "12px" }}>{conflict.reason}</div>
+                      </div>
+                    )}
+
+                    {/* Semantic Properties (Ruling 8) */}
+                    {semanticDef?.properties && semanticDef.properties.length > 0 && (
+                      <div style={{ marginTop: "12px", marginBottom: "12px" }}>
+                        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                          Properties ({semanticDef.displayName})
+                        </label>
+                        {semanticDef.properties.map((schema) => {
+                          const val = semanticProps[schema.id];
+                          return (
+                            <div key={schema.id} style={{ marginBottom: "8px" }}>
+                              <label
+                                style={{
+                                  display: "block",
+                                  fontSize: "12px",
+                                  fontWeight: 500,
+                                  marginBottom: "2px",
+                                }}
+                              >
+                                {schema.label}
+                              </label>
+                              {schema.control === "text" && (
+                                <input
+                                  type="text"
+                                  value={val !== undefined ? String(val) : ""}
+                                  style={{
+                                    width: "100%",
+                                    padding: "4px 8px",
+                                    boxSizing: "border-box",
+                                  }}
+                                  onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
+                                />
+                              )}
+                              {schema.control === "number" && (
+                                <input
+                                  type="number"
+                                  value={val !== undefined ? Number(val) : ""}
+                                  style={{
+                                    width: "100%",
+                                    padding: "4px 8px",
+                                    boxSizing: "border-box",
+                                  }}
+                                  onChange={(e) =>
+                                    handlePropertyChange(
+                                      schema.id,
+                                      e.target.value === "" ? 0 : Number(e.target.value),
+                                    )
+                                  }
+                                />
+                              )}
+                              {schema.control === "toggle" && (
+                                <label
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(val)}
+                                    onChange={(e) =>
+                                      handlePropertyChange(schema.id, e.target.checked)
+                                    }
+                                  />
+                                  <span>Enabled</span>
+                                </label>
+                              )}
+                              {schema.control === "select" && (
+                                <select
+                                  value={
+                                    val !== undefined
+                                      ? String(val)
+                                      : (schema.options?.[0]?.value ?? "")
+                                  }
+                                  style={{
+                                    width: "100%",
+                                    padding: "4px 8px",
+                                    boxSizing: "border-box",
+                                  }}
+                                  onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
+                                >
+                                  {schema.options?.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Responsive Hidden On (R-028, R-029) */}
+                    <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                        Responsive Visibility (hiddenOn)
+                      </label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                        {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
+                          const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
+                          return (
+                            <label
+                              key={dt}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                fontSize: "12px",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isHidden}
+                                onChange={() => handleToggleHiddenOn(dt)}
+                              />
+                              <span>{DEVICE_TYPES[dt]}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Responsive Order (R-027) */}
+                    <div style={{ marginTop: "16px", marginBottom: "12px" }}>
+                      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+                        Responsive Order (order)
+                      </label>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "6px",
+                        }}
+                      >
+                        {(Object.keys(DEVICE_TYPES) as DeviceType[]).map((dt) => {
+                          const orderVal = selectedShape.meta.order[dt];
+                          return (
+                            <div key={dt} style={{ fontSize: "12px" }}>
+                              <label style={{ display: "block", color: "#64748b" }}>
+                                {DEVICE_TYPES[dt]}:
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={orderVal !== undefined ? orderVal : ""}
+                                style={{
+                                  width: "100%",
+                                  padding: "3px 6px",
+                                  boxSizing: "border-box",
+                                }}
+                                onChange={(e) => handleOrderChange(dt, e.target.value)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Page Tree Outline */}
+          <div>
+            <h2 style={{ fontSize: "15px", margin: "0 0 8px 0", color: "#0f172a" }}>
+              Page Tree Outline
+            </h2>
+            <div
+              style={{
+                maxHeight: "220px",
+                overflowY: "auto",
+                border: "1px solid #cbd5e1",
+                borderRadius: "4px",
+                padding: "6px",
+                backgroundColor: "#f8fafc",
+              }}
+            >
+              {treeNodes.length === 0 ? (
+                <span style={{ color: "#94a3b8", fontSize: "12px" }}>Empty tree</span>
+              ) : (
+                treeNodes.map((node) => (
+                  <div
+                    key={node.shape.id}
+                    style={{
+                      paddingLeft: `${node.depth * 14 + 4}px`,
+                      paddingTop: "3px",
+                      paddingBottom: "3px",
+                      paddingRight: "6px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      borderRadius: "3px",
+                      backgroundColor:
+                        node.shape.id === selectedShapeId ? "#dbeafe" : "transparent",
+                      color: node.shape.id === selectedShapeId ? "#1d4ed8" : "#334155",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                    onClick={() => selectShape(node.shape.id)}
+                  >
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {node.displayName}
+                    </span>
+                    {node.conflict && (
+                      <span
+                        style={{
+                          backgroundColor: "#fee2e2",
+                          color: "#dc2626",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          padding: "1px 4px",
+                          borderRadius: "2px",
+                          marginLeft: "4px",
+                          flexShrink: 0,
+                        }}
+                        title={node.conflict.reason}
+                      >
+                        conflict
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </aside>
       </div>
-      <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
     </main>
   );
 }

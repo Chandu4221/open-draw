@@ -59,7 +59,7 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
 );
 
 export const ANDROID_NATIVE_PROFILE: PlatformProfile = Object.freeze({
-  id: "android-native",
+  id: "androidNative",
   label: "Android (Material 3)",
   rootSemantic: parseSemanticId("screen"),
   semantics: ANDROID_NATIVE_SEMANTICS,
