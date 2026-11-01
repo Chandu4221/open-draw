@@ -1,0 +1,26 @@
+{
+  "name": "@open-draw/profiles",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/platforms/web/index.ts",
+    "./android-native": "./src/platforms/android-native/index.ts",
+    "./flutter": "./src/platforms/flutter/index.ts",
+    "./minimal-style": "./src/styles/minimal/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@open-draw/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "^10.13.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
