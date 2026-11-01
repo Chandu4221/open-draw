@@ -350,4 +350,43 @@ describe("hierarchical tree walk", () => {
     expect(walk[2]?.shape.id).toBe(freeId);
     expect(walk[2]?.depth).toBe(0);
   });
+
+  it("resolves each root shape and its subtree using that root's own platform profile (R-026)", () => {
+    const webRootId = parseShapeId("web-root");
+    const webButtonId = parseShapeId("web-btn");
+    const freeRectId = parseShapeId("free-rect");
+
+    const doc = createDocument([
+      createRect(
+        webRootId,
+        { x: 0, y: 0, width: 800, height: 600 },
+        {
+          parent: ROOT_ID,
+          meta: { order: {}, platform: PLATFORMS.web, style: STYLE_PROFILES.minimal },
+        },
+      ),
+      createRect(
+        webButtonId,
+        { x: 10, y: 10, width: 100, height: 40 },
+        {
+          parent: webRootId,
+          meta: { order: {}, semantic: { id: "button", platform: PLATFORMS.web } },
+        },
+      ),
+      createRect(freeRectId, { x: 900, y: 10, width: 100, height: 100 }, { parent: ROOT_ID }),
+    ]);
+
+    // Walking with profile = undefined (as when a freestanding shape is selected)
+    const walk = walkSemanticTree(doc, ROOT_ID, undefined);
+    expect(walk).toHaveLength(3);
+    // The web root rectangle still resolves as "Page"
+    expect(walk[0]?.shape.id).toBe(webRootId);
+    expect(walk[0]?.displayName).toBe("Page");
+    // The child inside the web root still resolves as "Button"
+    expect(walk[1]?.shape.id).toBe(webButtonId);
+    expect(walk[1]?.displayName).toBe("Button");
+    // The freestanding shape resolves as "Rectangle"
+    expect(walk[2]?.shape.id).toBe(freeRectId);
+    expect(walk[2]?.displayName).toBe("Rectangle");
+  });
 });

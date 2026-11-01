@@ -9,8 +9,10 @@ import {
   type ShapeId,
 } from "@open-draw/contracts";
 import { childrenOf, type Document, type Shape } from "@open-draw/document";
+import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { computeSemanticConflict } from "./compute-conflict";
 import { resolveShapeDisplayName } from "./display-name";
+import { resolveRootPlatform } from "./resolve-root";
 import { resolveSemantic, type ResolvedSemantic } from "./resolve-semantic";
 
 export interface SemanticTreeNode {
@@ -33,9 +35,11 @@ export function walkSemanticTree(
   const nodes: SemanticTreeNode[] = [];
 
   function visit(shape: Shape, depth: number): void {
-    const semantic = resolveSemantic(profile, shape.meta.semantic);
-    const conflict = computeSemanticConflict(doc, shape, profile);
-    const displayName = resolveShapeDisplayName(shape, profile);
+    const shapePlatform = resolveRootPlatform(doc, shape.id);
+    const shapeProfile = shapePlatform !== undefined ? PLATFORM_PROFILES[shapePlatform] : profile;
+    const semantic = resolveSemantic(shapeProfile, shape.meta.semantic);
+    const conflict = computeSemanticConflict(doc, shape, shapeProfile);
+    const displayName = resolveShapeDisplayName(shape, shapeProfile);
 
     nodes.push({
       shape,

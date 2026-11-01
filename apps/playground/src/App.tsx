@@ -12,14 +12,7 @@ import type {
   ShapeId,
   StyleId,
 } from "@open-draw/contracts";
-import {
-  DEVICE_TYPES,
-  ROOT_ID,
-  SHAPE_KINDS,
-  STYLE_PROFILES,
-  isRootId,
-  parseShapeId,
-} from "@open-draw/contracts";
+import { DEVICE_TYPES, ROOT_ID, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   applyTransaction,
@@ -151,9 +144,7 @@ function nextShapeId(): ShapeId {
 export default function App() {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<CanvasController>(initCanvas());
-  const [doc, setDoc] = useState<Document>(() =>
-    createDocument([createRect(parseShapeId("s-root"), { x: 40, y: 40, width: 640, height: 480 })]),
-  );
+  const [doc, setDoc] = useState<Document>(() => createDocument([]));
   const documentRef = useRef<Document>(doc);
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
   const gestureRef = useRef<Gesture | null>(null);
