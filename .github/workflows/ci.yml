@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   branch-name:
     name: "Branch name (R-032)"
@@ -38,6 +41,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Dependency rules (R-020)
+        run: pnpm lint:deps
+
+      - name: Naming rules (R-014)
+        run: pnpm lint:naming
 
       - name: Check (R-035 tier 1/2)
         run: pnpm check

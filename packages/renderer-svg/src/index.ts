@@ -21,9 +21,11 @@ import {
   type Shape,
 } from "@open-draw/document";
 import { CRAYON_SHAPE_RENDERERS } from "./styles/crayon";
+import { escapeXml } from "./escape-xml";
 
 export * from "./styles/crayon";
 export * from "./overlays";
+export * from "./escape-xml";
 
 const RENDER_STYLES = {
   contentFill: "#ffffff",
@@ -62,8 +64,9 @@ export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
     shape.kind in SHAPE_KIND_LABELS
       ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
       : shape.kind;
+  const safeLabel = escapeXml(label);
   const rect = `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.fallbackFill}" stroke="${RENDER_STYLES.fallbackStroke}" stroke-dasharray="${RENDER_STYLES.fallbackDasharray}" />`;
-  const text = `<text x="${box.x + 8}" y="${box.y + 18}" font-family="sans-serif" font-size="12" fill="${RENDER_STYLES.fallbackStroke}">[${label}]</text>`;
+  const text = `<text x="${box.x + 8}" y="${box.y + 18}" font-family="sans-serif" font-size="12" fill="${RENDER_STYLES.fallbackStroke}">[${safeLabel}]</text>`;
   return rect + text;
 }
 

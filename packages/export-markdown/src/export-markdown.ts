@@ -25,13 +25,30 @@ export interface MarkdownExportOptions extends ExportOptions {
   readonly deviceType?: DeviceType;
 }
 
+/**
+ * Safely escapes user-derived strings for structured Markdown export (R-008, R-016).
+ * Neutralizes newlines, Markdown formatting syntax, and raw HTML tags.
+ */
+export function escapeMarkdownText(text: string): string {
+  if (text === "") {
+    return "";
+  }
+  return text
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\\/g, "\\\\")
+    .replace(/([`*_#[\]()<>~|])/g, "\\$1")
+    .trim();
+}
+
 function formatProperties(properties: Readonly<Record<string, string | number | boolean>>): string {
   const entries = Object.entries(properties);
   if (entries.length === 0) {
     return "";
   }
   entries.sort(([a], [b]) => a.localeCompare(b));
-  const formatted = entries.map(([key, value]) => `${key}: ${String(value)}`).join(", ");
+  const formatted = entries
+    .map(([key, value]) => `${escapeMarkdownText(key)}: ${escapeMarkdownText(String(value))}`)
+    .join(", ");
   return ` (${formatted})`;
 }
 
@@ -66,12 +83,14 @@ function formatRootMeta(doc: Document, shape: Shape): string {
 }
 
 function renderNode(doc: Document, node: SemanticTreeNode): string {
+  const safeDisplayName = escapeMarkdownText(node.displayName);
+
   // Depth 0 = immediate child of ROOT_ID (Root shape on canvas)
   if (node.depth === 0) {
     const metaStr = formatRootMeta(doc, node.shape);
     const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
     const conflictStr = formatConflict(node);
-    return `## ${node.displayName}${metaStr}${hiddenStr}${conflictStr}`;
+    return `## ${safeDisplayName}${metaStr}${hiddenStr}${conflictStr}`;
   }
 
   // Nested container section
@@ -80,7 +99,7 @@ function renderNode(doc: Document, node: SemanticTreeNode): string {
     const hashes = "#".repeat(headingLevel);
     const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
     const conflictStr = formatConflict(node);
-    return `${hashes} ${node.displayName}${hiddenStr}${conflictStr}`;
+    return `${hashes} ${safeDisplayName}${hiddenStr}${conflictStr}`;
   }
 
   // Leaf content shapes
@@ -94,7 +113,7 @@ function renderNode(doc: Document, node: SemanticTreeNode): string {
   const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
   const conflictStr = formatConflict(node);
 
-  return `${indent}- **${node.displayName}**${semanticTag}${properties}${hiddenStr}${conflictStr}`;
+  return `${indent}- **${safeDisplayName}**${semanticTag}${properties}${hiddenStr}${conflictStr}`;
 }
 
 /**

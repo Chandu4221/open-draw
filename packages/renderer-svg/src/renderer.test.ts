@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEVICE_TYPES, parseCustomShapeKind, parseShapeId } from "@open-draw/contracts";
+import {
+  type CustomShapeKind,
+  DEVICE_TYPES,
+  parseCustomShapeKind,
+  parseShapeId,
+  ROOT_ID,
+} from "@open-draw/contracts";
 import {
   createCustomShape,
   createDocument,
@@ -7,10 +13,12 @@ import {
   createPage,
   createPenPath,
   createRect,
+  type Shape,
 } from "@open-draw/document";
 import {
   chipOverlayToSvg,
   documentToSvg,
+  fallbackShapeToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
   type RendererFallbackEvent,
@@ -223,5 +231,42 @@ describe("chip overlay (ADR-0005 D5, R-031)", () => {
     const svg = chipOverlayToSvg("Page", box, 1.0);
     expect(svg).toContain('x="450.0"');
     expect(svg).toContain("Page");
+  });
+
+  it("escapes hostile XML/HTML characters in chip overlay label and color options", () => {
+    const box = { x: 10, y: 10, width: 100, height: 50 };
+    const hostileChip = chipOverlayToSvg('Button & <script>alert("xss")</script>', box, 1.0, {
+      backgroundColor: '#2563eb" onload="alert(1)',
+      textColor: '#ffffff" onerror="alert(2)',
+    });
+
+    // Label should have characters escaped
+    expect(hostileChip).not.toContain("<script>");
+    expect(hostileChip).toContain(
+      "Button &amp; &lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;",
+    );
+
+    // Color attributes must not permit attribute breakouts
+    expect(hostileChip).not.toContain('onload="alert(1)"');
+    expect(hostileChip).toContain('fill="#2563eb&quot; onload=&quot;alert(1)"');
+    expect(hostileChip).not.toContain('onerror="alert(2)"');
+    expect(hostileChip).toContain('fill="#ffffff&quot; onerror=&quot;alert(2)">');
+  });
+});
+
+describe("fallback shape escaping", () => {
+  it("escapes hostile XML/HTML characters in fallback shape kinds", () => {
+    const hostileShape = {
+      id: parseShapeId("hostile-1"),
+      kind: 'vendor:<script>alert("xss")</script>' as unknown as CustomShapeKind,
+      parent: ROOT_ID,
+      box: { x: 0, y: 0, width: 100, height: 100 },
+      meta: { order: {} },
+    } as unknown as Shape;
+    const box = { x: 0, y: 0, width: 100, height: 100 };
+    const svg = fallbackShapeToSvg(hostileShape, box);
+
+    expect(svg).not.toContain("<script>");
+    expect(svg).toContain("[vendor:&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;]");
   });
 });

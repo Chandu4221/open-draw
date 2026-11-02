@@ -14,7 +14,6 @@
   "dependencies": {
     "@open-draw/contracts": "workspace:*",
     "@open-draw/document": "workspace:*",
-    "@open-draw/profiles": "workspace:*",
     "@open-draw/semantics": "workspace:*"
   },
   "devDependencies": {

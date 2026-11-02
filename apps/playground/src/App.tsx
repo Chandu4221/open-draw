@@ -42,7 +42,12 @@ import {
   type PenPathShape,
   type RectShape,
 } from "@open-draw/document";
-import { ACTIONS, type ActionId, type KeyboardEventDescriptor } from "@open-draw/input";
+import {
+  ACTIONS,
+  shouldHandleKeyEvent,
+  type ActionId,
+  type KeyboardEventDescriptor,
+} from "@open-draw/input";
 import {
   CANVAS_EVENTS,
   createCanvas,
@@ -692,43 +697,35 @@ export default function App() {
         break;
       }
       case ACTIONS.selectTool: {
-        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawRect);
-        else if (toolRef.current === TOOLS.drawRect) chooseTool(TOOLS.drawEllipse);
-        else if (toolRef.current === TOOLS.drawEllipse) chooseTool(TOOLS.drawLine);
-        else if (toolRef.current === TOOLS.drawLine) chooseTool(TOOLS.drawPenPath);
-        else chooseTool(TOOLS.select);
+        chooseTool(TOOLS.select);
+        break;
+      }
+      case ACTIONS.selectToolRect: {
+        chooseTool(TOOLS.drawRect);
+        break;
+      }
+      case ACTIONS.selectToolEllipse: {
+        chooseTool(TOOLS.drawEllipse);
+        break;
+      }
+      case ACTIONS.selectToolLine: {
+        chooseTool(TOOLS.drawLine);
+        break;
+      }
+      case ACTIONS.selectToolPenPath: {
+        chooseTool(TOOLS.drawPenPath);
         break;
       }
     }
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if (event.code === "Space") {
-      spaceRef.current = true;
-    }
-
-    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-      if (event.code === "KeyV") {
-        chooseTool(TOOLS.select);
-        return;
-      }
-      if (event.code === "KeyR") {
-        chooseTool(TOOLS.drawRect);
-        return;
-      }
-      if (event.code === "KeyO") {
-        chooseTool(TOOLS.drawEllipse);
-        return;
-      }
-      if (event.code === "KeyL") {
-        chooseTool(TOOLS.drawLine);
-        return;
-      }
-      if (event.code === "KeyP") {
-        chooseTool(TOOLS.drawPenPath);
-        return;
-      }
-    }
+    const target = event.target as HTMLElement | null;
+    const isEditableTarget =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      Boolean(target?.isContentEditable);
 
     const descriptor: KeyboardEventDescriptor = {
       code: event.code,
@@ -736,7 +733,16 @@ export default function App() {
       metaKey: event.metaKey,
       shiftKey: event.shiftKey,
       altKey: event.altKey,
+      isEditableTarget,
     };
+
+    if (!shouldHandleKeyEvent(descriptor)) {
+      return;
+    }
+
+    if (event.code === "Space") {
+      spaceRef.current = true;
+    }
 
     const action = canvasRef.current.resolveAction(descriptor);
     if (action !== undefined) {

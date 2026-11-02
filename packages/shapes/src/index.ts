@@ -1,6 +1,6 @@
 // @open-draw/shapes — built-in shape kind modules (rect, ellipse, line, pen-path).
 // Implements ADR-0003 D1, D5, D6. Depends ONLY on @open-draw/contracts (R-002, R-020).
-import type { CapabilityId } from "@open-draw/contracts";
+import { type CapabilityId, SHAPE_KINDS } from "@open-draw/contracts";
 import { RECT_CAPABILITIES } from "./rect";
 import { ELLIPSE_CAPABILITIES } from "./ellipse";
 import { LINE_CAPABILITIES } from "./line";
@@ -36,8 +36,8 @@ export interface ShapeDefinition {
 
 export const BUILTIN_SHAPE_CAPABILITIES: Readonly<Record<string, readonly CapabilityId[]>> =
   Object.freeze({
-    rect: RECT_CAPABILITIES,
-    ellipse: ELLIPSE_CAPABILITIES,
-    line: LINE_CAPABILITIES,
-    "pen-path": PEN_PATH_CAPABILITIES,
+    [SHAPE_KINDS.rect]: RECT_CAPABILITIES,
+    [SHAPE_KINDS.ellipse]: ELLIPSE_CAPABILITIES,
+    [SHAPE_KINDS.line]: LINE_CAPABILITIES,
+    [SHAPE_KINDS.penPath]: PEN_PATH_CAPABILITIES,
   });

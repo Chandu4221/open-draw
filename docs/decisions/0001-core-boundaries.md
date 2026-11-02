@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-10-28
 - **Supersedes:** none
-- **Rules implemented:** R-001…R-004 (package boundary rules; see `docs/rules/opendraw-rules-md.md` for exact numbering)
+- **Rules implemented:** R-001…R-004 (package boundary rules; see `docs/rules/RULES.md` for exact numbering)
 
 ## Context
 

@@ -3,7 +3,7 @@
 // styles never alter semantics (R-021). Named per R-039: explicit over short.
 // For point-carrying kinds (line, pen-path), points are proportionally scaled to
 // preserve geometry within the new bounding box.
-import type { BoundingBox, ShapeId } from "@open-draw/contracts";
+import { type BoundingBox, type ShapeId, SHAPE_KINDS } from "@open-draw/contracts";
 import type { Command, CommandResult } from "..";
 import type { Document } from "../../document";
 import { createDocument } from "../../document";
@@ -35,7 +35,7 @@ export function applySetShapeBoundingBox(
     nextShape = scaleHook(shape, previousBox, command.boundingBox);
   } else if (!isCustomShape(shape)) {
     switch (shape.kind) {
-      case "line": {
+      case SHAPE_KINDS.line: {
         const scaleX = previousBox.width === 0 ? 1 : command.boundingBox.width / previousBox.width;
         const scaleY =
           previousBox.height === 0 ? 1 : command.boundingBox.height / previousBox.height;
@@ -47,7 +47,7 @@ export function applySetShapeBoundingBox(
         };
         break;
       }
-      case "pen-path": {
+      case SHAPE_KINDS.penPath: {
         const scaleX = previousBox.width === 0 ? 1 : command.boundingBox.width / previousBox.width;
         const scaleY =
           previousBox.height === 0 ? 1 : command.boundingBox.height / previousBox.height;

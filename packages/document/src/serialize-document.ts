@@ -1,7 +1,7 @@
 // Pure document serializer (R-008, R-014, R-041, R-044). Emits version-only
 // schema without timestamps. Sibling z-order is preserved by maintaining map
 // iteration order. ROOT_ID is strictly excluded.
-import { PLATFORMS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
+import { PLATFORMS, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 import { isCustomShape } from "./shape";
@@ -94,18 +94,18 @@ export function serializeDocument(doc: Document): string {
       }
     } else {
       switch (shape.kind) {
-        case "page":
-        case "rect":
-        case "ellipse":
+        case SHAPE_KINDS.page:
+        case SHAPE_KINDS.rect:
+        case SHAPE_KINDS.ellipse:
           break;
-        case "section":
+        case SHAPE_KINDS.section:
           shapeRecord.direction = shape.direction;
           break;
-        case "line":
+        case SHAPE_KINDS.line:
           shapeRecord.start = { x: shape.start.x, y: shape.start.y };
           shapeRecord.end = { x: shape.end.x, y: shape.end.y };
           break;
-        case "pen-path":
+        case SHAPE_KINDS.penPath:
           shapeRecord.points = shape.points.map((p) => ({ x: p.x, y: p.y }));
           break;
       }
