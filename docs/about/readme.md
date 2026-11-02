@@ -10,8 +10,6 @@ The project should be designed for extensibility and long-term maintainability f
 
 ## 1. The product has two complementary parts
 
-[Canva vs. Figma: The 2024 UX/UI Design Tool Face-off](https://images.openai.com/static-rsc-4/H2CJYRVO8rk5wK-9oNCnDwuCBLT3myNgPM0KIr3_4jTw4iQpYdrLWCWtRuc3qfI7p6XPrKKyq6uFQJm4T8ONOuuYx2bKAYrksilmrg4WmghKa3ZepeOq-yVvBiUSGyit1ADWnOoeQDjk8xIj-yNS1uDCWt68vwS_B5pxTHfASdM?purpose=inline)
-
 ## A. OpenDraw Canvas SDK
 
 The independent, reusable canvas engine.
@@ -21,8 +19,6 @@ The independent, reusable canvas engine.
 - Undo/redo, serialization, and document manipulation.
 - Standard shapes, custom SVG shapes, and extensible rendering.
 - A plugin and capability system for adding features without modifying the core.
-
-[Penpot UI design software: A beginner’s guide](https://images.openai.com/static-rsc-4/qZqMsRl9mNKIIjI1KawaGUZRMX6YCq6nMIdACK2HlcPo5Mu6TyHHw3veHfln8DgJpmuj_tM5wIRnrC5bw6pnZLMcqqFGA8l910EwVArJp8U1dT6_R_fPz5A5DzUnuil6xPShFQUZg9zgriLN5-GQYq5j_eU2iEjPNrz5zpO7akw?purpose=inline)
 
 ## B. OpenDraw Studio
 
@@ -66,29 +62,21 @@ The first useful SDK release should include:
 - Provide configurable keyboard and pointer bindings.
 - Support custom shapes and rendering extensions.
 
-The built-in experience should be batteries-included. Installing `@opendraw/canvas` should give developers a working canvas with standard shapes, default input behavior, history, and essential interactions. Developers should not need to manually assemble ten packages just to draw a rectangle.
+The built-in experience should be batteries-included. Installing `@open-draw/canvas` should give developers a working canvas with standard shapes, default input behavior, history, and essential interactions. Developers should not need to manually assemble ten packages just to draw a rectangle.
 
 ### 3.2 Initial shape library
-
-[Rectangle Outline SVG, PNG , Digital Download - Etsy](https://images.openai.com/static-rsc-4/OkzetSEcBFFJO2_F9W3cjf2T3sagmR2uUKiS7aST-HMF1f5DBapdRmfObVOo-gIPB7XJlXZ1RN3bbflvWHxJsKd4xHecP3AakW0RnQlCkOIKNTuLdUitPH_sVtf_Ewqlxa9J3yLEJEZeSgPXDqsD7nYHKu12anG27oHbSg4R1Z8?purpose=inline)
 
 Rectangle
 
 Position, dimensions, fill, stroke, corner radius.
 
-[Download Thin Line Circle Logo Template Vector Free | Logowik](https://images.openai.com/static-rsc-4/HKpIZ3ai1hChM4wUw2Jh1YXDrwNQxFx3JFPCFBzpH2Gs9iuvkSv8dmD8WYObh_RTVCM8vCrARL31lDaHWgGQz0kvaOhX-RnutHVSwIlGHeklfeocCpPRTqLOBYLA4rY0bmIYv5YLV_3GrnUfVuD_o2RG4JpWaa3KdpYegmLQc7s?purpose=inline)
-
 Ellipse / circle
 
 Center or bounding-box geometry, fill, and stroke.
 
-[Free Vectors | Curved hand-drawn brush lines/black](https://images.openai.com/static-rsc-4/EwuDbmSmxtlaJkcoMIVIJL0y0642jdCF43BgtSYCoqspQeUmHFZoHWscGNM9HDJ1ZmPjv8bnXsFBKSKR6P06YykLeQPQRn071m6fbOWJnMVz5CbgTwWB17W0NemFAX-xXbJWT5hIqs9cd2WscIzsBLHThu2DSeshp8YqKio5Xug?purpose=inline)
-
 Pen path
 
 Path data, control points, and optional path-editing capability.
-
-[прямая линия на прозрачном фоне 28 фото](https://images.openai.com/static-rsc-4/JtjetA9TvAmd4q9GzYBhXnvj8UqNwNDKZxxtP0AG4Iw7s5lUHIAewv3X07oYmKOIVyagjIrPRUYJ1Kyr7_Y-yt2xaxpbXfB6BTOftUGOcEOd_oPjOyWjOgzJICfGoJvSeCeFSXcZC1C1PSInA6tnn_Q6vU2SCCuMRmBCBIj7Vo8?purpose=inline)
 
 Line
 
@@ -425,11 +413,11 @@ OpenDraw Studio
 
 React application, editor shell, inspector, and panels
 
-React adapter — `@opendraw/react`
+React adapter — `@open-draw/react`
 
 Lifecycle, props, hooks, and subscriptions
 
-Canvas engine — `@opendraw/canvas`
+Canvas engine — `@open-draw/canvas`
 
 Document operations, interactions, history, input, and rendering coordination
 
@@ -501,9 +489,9 @@ Dependencies should flow through explicit contracts. Avoid circular dependencies
 
 ### 11.2 Public API strategy
 
-The primary developer-facing package should be `@opendraw/canvas`, which provides the basic working experience.
+The primary developer-facing package should be `@open-draw/canvas`, which provides the basic working experience.
 
-Other packages can be published when their separate installation provides real value—for example, `@opendraw/react` or `@opendraw/semantics`.
+Other packages can be published when their separate installation provides real value—for example, `@open-draw/react` or `@open-draw/semantics`.
 
 Internal packages such as history or low-level input infrastructure do not need to become public just because they exist in the source tree. Stable APIs and compatibility commitments should determine publication.
 
