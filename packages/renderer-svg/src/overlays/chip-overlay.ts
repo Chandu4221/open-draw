@@ -2,6 +2,7 @@
 // Pure (label, box, zoom) → SVG string; counter-scales under zoom (R-008, R-031).
 // Overlays ride the shape's world coordinates and cannot detach.
 import type { BoundingBox } from "@open-draw/contracts";
+import { escapeXml } from "../escape-xml";
 
 export interface ChipOverlayOptions {
   readonly backgroundColor?: string;
@@ -37,16 +38,9 @@ export function chipOverlayToSvg(
   const y = box.y >= 18 * scale ? box.y - 18 * scale : box.y + 2 * scale;
   const rx = 3 * scale;
 
-  const bg = options?.backgroundColor ?? DEFAULT_CHIP_COLORS.background;
-  const textCol = options?.textColor ?? DEFAULT_CHIP_COLORS.text;
-
-  // Escape special XML characters in label
-  const escapedLabel = label
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  const bg = escapeXml(options?.backgroundColor ?? DEFAULT_CHIP_COLORS.background);
+  const textCol = escapeXml(options?.textColor ?? DEFAULT_CHIP_COLORS.text);
+  const escapedLabel = escapeXml(label);
 
   const rect = `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="${rx.toFixed(1)}" fill="${bg}" />`;
   const text = `<text x="${(x + paddingX).toFixed(1)}" y="${(y + 11.5 * scale).toFixed(1)}" font-family="system-ui, -apple-system, sans-serif" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="${textCol}">${escapedLabel}</text>`;
