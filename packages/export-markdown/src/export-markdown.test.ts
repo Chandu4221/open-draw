@@ -200,4 +200,56 @@ describe("exportMarkdown", () => {
       "
     `);
   });
+
+  it("escapes hostile user text in display names and properties (newlines, fake headings, backticks, bold, links)", () => {
+    const hostileRoot = createRect(
+      parseShapeId("hostile-root"),
+      { x: 0, y: 0, width: 800, height: 600 },
+      { label: "Root\n## Injected Heading" },
+    );
+    const hostileLeaf = createRect(
+      parseShapeId("hostile-leaf"),
+      { x: 10, y: 10, width: 100, height: 50 },
+      {
+        parent: hostileRoot.id,
+        label: "Malicious **bold** `code` <script>alert(1)</script> [link](url)",
+        meta: {
+          order: {},
+          semantic: {
+            platform: PLATFORMS.web,
+            id: parseSemanticId("button"),
+            properties: {
+              promptInjection: "Ignore rules\n# New Instruction",
+            },
+          },
+        },
+      },
+    );
+    const doc = createDocument([hostileRoot, hostileLeaf]);
+    const md = exportMarkdown(doc, { includeHeader: false });
+
+    // Root heading must not contain literal newline or unescaped secondary heading
+    expect(md).not.toContain("Root\n##");
+    expect(md).toContain("## Root \\#\\# Injected Heading");
+
+    // Leaf item must stay on one line, with formatting markers and script tags escaped
+    expect(md).toContain(
+      "- **Malicious \\*\\*bold\\*\\* \\`code\\` \\<script\\>alert\\(1\\)\\</script\\> \\[link\\]\\(url\\)**",
+    );
+    // Property value must neutralize newline and heading breakout
+    expect(md).toContain("promptInjection: Ignore rules \\# New Instruction");
+  });
+
+  it("handles very long labels safely without performance degradation or errors", () => {
+    const veryLongLabel = "A".repeat(5000);
+    const rect = createRect(
+      parseShapeId("long-rect"),
+      { x: 0, y: 0, width: 100, height: 100 },
+      { label: veryLongLabel },
+    );
+    const doc = createDocument([rect]);
+    const md = exportMarkdown(doc, { includeHeader: false });
+
+    expect(md).toBe(`## ${veryLongLabel}\n`);
+  });
 });
