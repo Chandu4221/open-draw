@@ -409,9 +409,6 @@ importers:
       "@open-draw/document":
         specifier: workspace:*
         version: link:../document
-      "@open-draw/profiles":
-        specifier: workspace:*
-        version: link:../profiles
       "@open-draw/semantics":
         specifier: workspace:*
         version: link:../semantics
@@ -462,9 +459,6 @@ importers:
       "@open-draw/document":
         specifier: workspace:*
         version: link:../document
-      "@open-draw/shapes":
-        specifier: workspace:*
-        version: link:../shapes
     devDependencies:
       eslint:
         specifier: ^10.13.0

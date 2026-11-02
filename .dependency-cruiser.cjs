@@ -75,11 +75,10 @@ module.exports = {
     {
       name: "export-markdown-boundary",
       severity: "error",
-      comment:
-        "@open-draw/export-markdown may only depend on contracts, document, semantics, profiles",
+      comment: "@open-draw/export-markdown may only depend on contracts, document, semantics",
       from: { path: "^packages/export-markdown/" },
       to: {
-        path: "^packages/(?!export-markdown/|contracts/|document/|semantics/|profiles/)|^@open-draw/(?!contracts$|document$|semantics$|profiles$)",
+        path: "^packages/(?!export-markdown/|contracts/|document/|semantics/)|^@open-draw/(?!contracts$|document$|semantics$)",
       },
     },
     {
