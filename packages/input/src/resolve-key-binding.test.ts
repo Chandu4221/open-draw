@@ -21,7 +21,18 @@ describe("resolveKeyBinding", () => {
     expect(resolveKeyBinding({ code: "Backspace" })).toBe(ACTIONS.deleteSelected);
   });
 
+  it("resolves tool shortcut keys according to ratified keybindings (R-011, R2)", () => {
+    expect(resolveKeyBinding({ code: "KeyV" })).toBe(ACTIONS.selectTool);
+    expect(resolveKeyBinding({ code: "Digit1" })).toBe(ACTIONS.selectTool);
+    expect(resolveKeyBinding({ code: "KeyR" })).toBe(ACTIONS.selectToolRect);
+    expect(resolveKeyBinding({ code: "KeyO" })).toBe(ACTIONS.selectToolEllipse);
+    expect(resolveKeyBinding({ code: "KeyL" })).toBe(ACTIONS.selectToolLine);
+    expect(resolveKeyBinding({ code: "KeyP" })).toBe(ACTIONS.selectToolPenPath);
+    expect(resolveKeyBinding({ code: "KeyD" })).toBe(ACTIONS.selectToolPenPath);
+  });
+
   it("returns undefined for unbound keys", () => {
-    expect(resolveKeyBinding({ code: "KeyP" })).toBeUndefined();
+    expect(resolveKeyBinding({ code: "KeyT" })).toBeUndefined();
+    expect(resolveKeyBinding({ code: "KeyX" })).toBeUndefined();
   });
 });

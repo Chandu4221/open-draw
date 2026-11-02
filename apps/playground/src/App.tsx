@@ -697,11 +697,23 @@ export default function App() {
         break;
       }
       case ACTIONS.selectTool: {
-        if (toolRef.current === TOOLS.select) chooseTool(TOOLS.drawRect);
-        else if (toolRef.current === TOOLS.drawRect) chooseTool(TOOLS.drawEllipse);
-        else if (toolRef.current === TOOLS.drawEllipse) chooseTool(TOOLS.drawLine);
-        else if (toolRef.current === TOOLS.drawLine) chooseTool(TOOLS.drawPenPath);
-        else chooseTool(TOOLS.select);
+        chooseTool(TOOLS.select);
+        break;
+      }
+      case ACTIONS.selectToolRect: {
+        chooseTool(TOOLS.drawRect);
+        break;
+      }
+      case ACTIONS.selectToolEllipse: {
+        chooseTool(TOOLS.drawEllipse);
+        break;
+      }
+      case ACTIONS.selectToolLine: {
+        chooseTool(TOOLS.drawLine);
+        break;
+      }
+      case ACTIONS.selectToolPenPath: {
+        chooseTool(TOOLS.drawPenPath);
         break;
       }
     }
@@ -730,29 +742,6 @@ export default function App() {
 
     if (event.code === "Space") {
       spaceRef.current = true;
-    }
-
-    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-      if (event.code === "KeyV") {
-        chooseTool(TOOLS.select);
-        return;
-      }
-      if (event.code === "KeyR") {
-        chooseTool(TOOLS.drawRect);
-        return;
-      }
-      if (event.code === "KeyO") {
-        chooseTool(TOOLS.drawEllipse);
-        return;
-      }
-      if (event.code === "KeyL") {
-        chooseTool(TOOLS.drawLine);
-        return;
-      }
-      if (event.code === "KeyP") {
-        chooseTool(TOOLS.drawPenPath);
-        return;
-      }
     }
 
     const action = canvasRef.current.resolveAction(descriptor);

@@ -29,5 +29,10 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = [
   { code: "Delete", action: ACTIONS.deleteSelected },
   { code: "Backspace", action: ACTIONS.deleteSelected },
   { code: "KeyV", action: ACTIONS.selectTool },
-  { code: "KeyT", action: ACTIONS.selectTool },
+  { code: "Digit1", action: ACTIONS.selectTool },
+  { code: "KeyR", action: ACTIONS.selectToolRect },
+  { code: "KeyO", action: ACTIONS.selectToolEllipse },
+  { code: "KeyL", action: ACTIONS.selectToolLine },
+  { code: "KeyP", action: ACTIONS.selectToolPenPath },
+  { code: "KeyD", action: ACTIONS.selectToolPenPath },
 ];
