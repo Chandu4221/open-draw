@@ -52,31 +52,42 @@ export interface BaseShape {
   readonly meta: ShapeMeta;
 }
 
+export const BASE_SHAPE_KEYS = {
+  id: "id",
+  kind: "kind",
+  parent: "parent",
+  boundingBox: "boundingBox",
+  label: "label",
+  meta: "meta",
+} as const satisfies Record<keyof BaseShape, string>;
+
+export const BASE_SHAPE_KEY_SET: ReadonlySet<string> = new Set(Object.values(BASE_SHAPE_KEYS));
+
 export interface PageShape extends BaseShape {
-  readonly kind: "page";
+  readonly kind: (typeof SHAPE_KINDS)["page"];
 }
 
 export interface SectionShape extends BaseShape {
-  readonly kind: "section";
+  readonly kind: (typeof SHAPE_KINDS)["section"];
   readonly direction: SectionDirection;
 }
 
 export interface RectShape extends BaseShape {
-  readonly kind: "rect";
+  readonly kind: (typeof SHAPE_KINDS)["rect"];
 }
 
 export interface EllipseShape extends BaseShape {
-  readonly kind: "ellipse";
+  readonly kind: (typeof SHAPE_KINDS)["ellipse"];
 }
 
 export interface LineShape extends BaseShape {
-  readonly kind: "line";
+  readonly kind: (typeof SHAPE_KINDS)["line"];
   readonly start: Point;
   readonly end: Point;
 }
 
 export interface PenPathShape extends BaseShape {
-  readonly kind: "pen-path";
+  readonly kind: (typeof SHAPE_KINDS)["penPath"];
   readonly points: readonly Point[];
 }
 

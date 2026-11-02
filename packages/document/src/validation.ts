@@ -17,6 +17,7 @@ import {
   DEVICE_TYPE_BY_VALUE,
   PLATFORM_BY_VALUE,
   ROOT_ID,
+  SHAPE_KINDS,
   SHAPE_KIND_VALUES,
   STYLE_PROFILE_BY_VALUE,
   isRootId,
@@ -27,7 +28,14 @@ import {
 import type { Document } from "./document";
 import { SCHEMA_VERSION, createDocument } from "./document";
 import { DocumentError } from "./errors";
-import type { CustomShape, SectionDirection, SemanticTag, Shape, ShapeMeta } from "./shape";
+import {
+  BASE_SHAPE_KEY_SET,
+  type CustomShape,
+  type SectionDirection,
+  type SemanticTag,
+  type Shape,
+  type ShapeMeta,
+} from "./shape";
 import { SECTION_DIRECTIONS } from "./shape";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -253,15 +261,15 @@ function parseShape(value: unknown): Shape {
 
   // Validated cast at the boundary: kind membership was checked above and the
   // kind-specific fields are checked right here.
-  if (kind === "section") {
+  if (kind === SHAPE_KINDS.section) {
     return { ...base, kind, direction: parseSectionDirection(value.direction) } as Shape;
   }
-  if (kind === "line") {
+  if (kind === SHAPE_KINDS.line) {
     const start = parsePoint(value.start, "line start");
     const end = parsePoint(value.end, "line end");
     return { ...base, kind, start, end } as Shape;
   }
-  if (kind === "pen-path") {
+  if (kind === SHAPE_KINDS.penPath) {
     if (!Array.isArray(value.points)) {
       throw new DocumentError("invalidShape", "pen-path points must be an array");
     }
@@ -272,14 +280,7 @@ function parseShape(value: unknown): Shape {
     // Custom shape: preserve any extra non-base properties
     const extra: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) {
-      if (
-        k !== "id" &&
-        k !== "kind" &&
-        k !== "parent" &&
-        k !== "boundingBox" &&
-        k !== "label" &&
-        k !== "meta"
-      ) {
+      if (!BASE_SHAPE_KEY_SET.has(k)) {
         extra[k] = v;
       }
     }

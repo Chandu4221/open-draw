@@ -22,12 +22,12 @@ export type CustomShapeKind = string & { readonly __brand: "CustomShapeKind" };
 export type ShapeKind = BuiltinShapeKind | CustomShapeKind;
 
 export const SHAPE_KIND_LABELS: Readonly<Record<BuiltinShapeKind, string>> = {
-  page: "Canvas Board",
-  section: "Section",
-  rect: "Rectangle",
-  ellipse: "Ellipse",
-  line: "Line",
-  "pen-path": "Pen Path",
+  [SHAPE_KINDS.page]: "Canvas Board",
+  [SHAPE_KINDS.section]: "Section",
+  [SHAPE_KINDS.rect]: "Rectangle",
+  [SHAPE_KINDS.ellipse]: "Ellipse",
+  [SHAPE_KINDS.line]: "Line",
+  [SHAPE_KINDS.penPath]: "Pen Path",
 };
 
 export const SHAPE_KIND_VALUES: ReadonlySet<string> = new Set(Object.values(SHAPE_KINDS));
