@@ -8,6 +8,7 @@ export interface KeyboardEventDescriptor {
   readonly metaKey?: boolean;
   readonly shiftKey?: boolean;
   readonly altKey?: boolean;
+  readonly isEditableTarget?: boolean;
 }
 
 export interface KeyBinding {

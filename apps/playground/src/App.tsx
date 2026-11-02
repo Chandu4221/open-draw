@@ -42,7 +42,12 @@ import {
   type PenPathShape,
   type RectShape,
 } from "@open-draw/document";
-import { ACTIONS, type ActionId, type KeyboardEventDescriptor } from "@open-draw/input";
+import {
+  ACTIONS,
+  shouldHandleKeyEvent,
+  type ActionId,
+  type KeyboardEventDescriptor,
+} from "@open-draw/input";
 import {
   CANVAS_EVENTS,
   createCanvas,
@@ -703,6 +708,26 @@ export default function App() {
   }
 
   function onKeyDown(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    const isEditableTarget =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      Boolean(target?.isContentEditable);
+
+    const descriptor: KeyboardEventDescriptor = {
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      isEditableTarget,
+    };
+
+    if (!shouldHandleKeyEvent(descriptor)) {
+      return;
+    }
+
     if (event.code === "Space") {
       spaceRef.current = true;
     }
@@ -729,14 +754,6 @@ export default function App() {
         return;
       }
     }
-
-    const descriptor: KeyboardEventDescriptor = {
-      code: event.code,
-      ctrlKey: event.ctrlKey,
-      metaKey: event.metaKey,
-      shiftKey: event.shiftKey,
-      altKey: event.altKey,
-    };
 
     const action = canvasRef.current.resolveAction(descriptor);
     if (action !== undefined) {
