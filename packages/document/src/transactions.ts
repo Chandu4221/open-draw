@@ -16,6 +16,7 @@ import { applySetShapeOrder } from "./commands/set-shape-order";
 import { applySetShapeSemantic } from "./commands/set-shape-semantic";
 import { applySetShapeStyle } from "./commands/set-shape-style";
 import { applySetShapeContent } from "./commands/set-shape-content";
+import { applyDuplicateShapes } from "./commands/duplicate-shapes";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 
@@ -63,6 +64,8 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applySetShapeStyle(document, command);
     case COMMANDS.setShapeContent:
       return applySetShapeContent(document, command);
+    case COMMANDS.duplicateShapes:
+      return applyDuplicateShapes(document, command);
   }
 }
 

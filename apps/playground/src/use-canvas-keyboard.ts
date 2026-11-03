@@ -1,13 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
-import type { ShapeId } from "@open-draw/contracts";
+import { ROOT_ID, type ShapeId } from "@open-draw/contracts";
 import {
   COMMANDS,
+  pruneSelectedDescendants,
   redo,
+  subtreeOf,
   undo,
   type Command,
   type Document,
   type HistoryState,
+  type Shape,
 } from "@open-draw/document";
 import {
   ACTIONS,
@@ -16,6 +19,7 @@ import {
   type ActionId,
   type KeyboardEventDescriptor,
 } from "@open-draw/input";
+import { nextShapeId } from "./canvas-gestures";
 import type { Gesture } from "./types";
 
 export interface CanvasKeyboardProps {
@@ -46,6 +50,8 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
     commit,
     render,
   } = props;
+
+  const clipboardRef = useRef<readonly Shape[] | null>(null);
 
   function executeAction(action: ActionId): void {
     const canvas = canvasRef.current;
@@ -92,6 +98,119 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
           setSelectedShapeId(null);
           setStatusMessage(
             ids.length === 1 ? `Deleted shape: ${ids[0]}` : `Deleted ${ids.length} shapes`,
+          );
+          render();
+        }
+        break;
+      }
+      case ACTIONS.duplicate: {
+        const ids = canvas.getSelectedIds();
+        if (ids.length > 0) {
+          const doc = documentRef.current;
+          const topLevelIds = pruneSelectedDescendants(doc, ids);
+          if (topLevelIds.length === 0) break;
+
+          const newShapeIds: Record<ShapeId, ShapeId> = {};
+          for (const topId of topLevelIds) {
+            for (const s of subtreeOf(doc, topId)) {
+              newShapeIds[s.id] = nextShapeId();
+            }
+          }
+
+          commit([
+            {
+              type: COMMANDS.duplicateShapes,
+              ids: topLevelIds,
+              dx: 20,
+              dy: 20,
+              newShapeIds,
+            },
+          ]);
+
+          const newTopIds = topLevelIds.map((id) => newShapeIds[id]!);
+          canvas.selectMany(newTopIds);
+          setSelectedShapeId(newTopIds.length === 1 ? newTopIds[0]! : null);
+          setStatusMessage(
+            newTopIds.length === 1
+              ? `Duplicated shape: ${newTopIds[0]}`
+              : `Duplicated ${newTopIds.length} shapes`,
+          );
+          render();
+        }
+        break;
+      }
+      case ACTIONS.copy: {
+        const ids = canvas.getSelectedIds();
+        if (ids.length > 0) {
+          const doc = documentRef.current;
+          const topLevelIds = pruneSelectedDescendants(doc, ids);
+          if (topLevelIds.length === 0) break;
+
+          const copied: Shape[] = [];
+          for (const topId of topLevelIds) {
+            copied.push(...subtreeOf(doc, topId));
+          }
+          clipboardRef.current = copied;
+          setStatusMessage(
+            copied.length === 1
+              ? `Copied shape: ${copied[0]?.id}`
+              : `Copied ${copied.length} shapes`,
+          );
+        }
+        break;
+      }
+      case ACTIONS.paste: {
+        const clipboard = clipboardRef.current;
+        if (clipboard !== null && clipboard.length > 0) {
+          const clipboardIdSet = new Set(clipboard.map((s) => s.id));
+          const topLevelCopied = clipboard.filter((s) => !clipboardIdSet.has(s.parent));
+          if (topLevelCopied.length === 0) break;
+
+          const idMap = new Map<ShapeId, ShapeId>();
+          for (const s of clipboard) {
+            idMap.set(s.id, nextShapeId());
+          }
+
+          const clonedShapes: Shape[] = clipboard.map((shape): Shape => {
+            const isTopLevel = !clipboardIdSet.has(shape.parent);
+            const newId = idMap.get(shape.id)!;
+            const newParent = isTopLevel ? ROOT_ID : (idMap.get(shape.parent) ?? ROOT_ID);
+            const newBoundingBox = isTopLevel
+              ? { ...shape.boundingBox, x: shape.boundingBox.x + 20, y: shape.boundingBox.y + 20 }
+              : shape.boundingBox;
+
+            return {
+              ...shape,
+              id: newId,
+              parent: newParent,
+              boundingBox: newBoundingBox,
+            };
+          });
+
+          // Offset clipboard shapes so successive pastes don't overlap exactly
+          clipboardRef.current = clipboard.map((shape) => {
+            if (!clipboardIdSet.has(shape.parent)) {
+              return {
+                ...shape,
+                boundingBox: {
+                  ...shape.boundingBox,
+                  x: shape.boundingBox.x + 20,
+                  y: shape.boundingBox.y + 20,
+                },
+              };
+            }
+            return shape;
+          });
+
+          commit(clonedShapes.map((shape) => ({ type: COMMANDS.createShape, shape })));
+
+          const newTopIds = topLevelCopied.map((s) => idMap.get(s.id)!);
+          canvas.selectMany(newTopIds);
+          setSelectedShapeId(newTopIds.length === 1 ? newTopIds[0]! : null);
+          setStatusMessage(
+            newTopIds.length === 1
+              ? `Pasted shape: ${newTopIds[0]}`
+              : `Pasted ${newTopIds.length} shapes`,
           );
           render();
         }
