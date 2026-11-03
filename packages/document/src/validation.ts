@@ -15,6 +15,7 @@ import type {
 } from "@open-draw/contracts";
 import {
   DEVICE_TYPE_BY_VALUE,
+  MAX_DOCUMENT_DEPTH,
   PLATFORM_BY_VALUE,
   ROOT_ID,
   SHAPE_KINDS,
@@ -294,6 +295,53 @@ function parseShape(value: unknown): Shape {
   return base as Shape;
 }
 
+function validateDocumentDepth(rawShapes: Record<string, unknown>): void {
+  const depthCache = new Map<string, number>();
+
+  for (const [id, entry] of Object.entries(rawShapes)) {
+    if (depthCache.has(id)) {
+      continue;
+    }
+    const path: string[] = [id];
+    let cursor: unknown = isRecord(entry) ? entry.parent : undefined;
+    let pathDepth = 1;
+
+    while (cursor !== undefined && cursor !== ROOT_ID) {
+      if (typeof cursor !== "string") {
+        break;
+      }
+      if (depthCache.has(cursor)) {
+        pathDepth += depthCache.get(cursor)!;
+        break;
+      }
+      path.push(cursor);
+      pathDepth++;
+      if (pathDepth > MAX_DOCUMENT_DEPTH) {
+        throw new DocumentError(
+          "documentDepthExceeded",
+          `document depth exceeds maximum of ${MAX_DOCUMENT_DEPTH}`,
+        );
+      }
+      if (path.indexOf(cursor) !== path.length - 1) {
+        break;
+      }
+      const parentEntry = rawShapes[cursor];
+      cursor = isRecord(parentEntry) ? parentEntry.parent : undefined;
+    }
+
+    if (pathDepth > MAX_DOCUMENT_DEPTH) {
+      throw new DocumentError(
+        "documentDepthExceeded",
+        `document depth exceeds maximum of ${MAX_DOCUMENT_DEPTH}`,
+      );
+    }
+
+    for (let i = 0; i < path.length; i++) {
+      depthCache.set(path[i]!, pathDepth - i);
+    }
+  }
+}
+
 export function parseDocument(input: unknown): Document {
   if (!isRecord(input)) {
     throw new DocumentError("invalidDocument", "a document must be an object");
@@ -304,6 +352,10 @@ export function parseDocument(input: unknown): Document {
   if (!isRecord(input.shapes)) {
     throw new DocumentError("invalidDocument", "shapes must be a record keyed by shape id");
   }
+
+  // Pre-validate document depth before expensive per-shape parsing (Ruling V1, R-006)
+  validateDocumentDepth(input.shapes);
+
   const shapes: Shape[] = [];
   for (const [key, entry] of Object.entries(input.shapes)) {
     const shape = parseShape(entry);

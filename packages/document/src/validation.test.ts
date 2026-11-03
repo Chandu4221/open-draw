@@ -3,6 +3,7 @@ import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
 import type { Shape } from "./shape";
 import { createEllipse, createPage, createRect, createSection } from "./shape";
 import { DocumentError } from "./errors";
+import { serializeDocument } from "./serialize-document";
 import { parseDocument } from "./validation";
 
 function serialize(shapes: readonly Shape[]): unknown {
@@ -212,5 +213,81 @@ describe("parseDocument", () => {
       },
     };
     expect(() => parseDocument(invalidInput)).toThrow(/semantic property.*must be a string/);
+  });
+
+  describe("document depth limits (Ruling V1, Task S2)", () => {
+    function createNestedChain(depth: number): Shape[] {
+      const shapes: Shape[] = [];
+      const root = createPage(parseShapeId("shape-1"), { x: 0, y: 0, width: 1000, height: 1000 });
+      shapes.push(root);
+      for (let i = 2; i <= depth; i++) {
+        const parentId = parseShapeId(`shape-${i - 1}`);
+        const shapeId = parseShapeId(`shape-${i}`);
+        shapes.push(
+          createSection(shapeId, { x: 0, y: 0, width: 100, height: 100 }, "column", {
+            parent: parentId,
+          }),
+        );
+      }
+      return shapes;
+    }
+
+    it("rejects a document nested one level over the maximum (257 levels) with documentDepthExceeded (Ruling V1, Task S2)", () => {
+      const chain = createNestedChain(257);
+      const input = serialize(chain);
+      let thrownError: unknown;
+      try {
+        parseDocument(input);
+      } catch (err) {
+        thrownError = err;
+      }
+      expect(thrownError).toBeInstanceOf(DocumentError);
+      expect((thrownError as DocumentError).code).toBe("documentDepthExceeded");
+    });
+
+    it("loads and preserves a document at exactly the maximum depth (256 levels)", () => {
+      const chain = createNestedChain(256);
+      const input = serialize(chain);
+      const doc = parseDocument(input);
+      expect(Object.keys(doc.shapes)).toHaveLength(256);
+      expect(doc.shapes[parseShapeId("shape-256")]?.parent).toBe("shape-255");
+      const serialized = serializeDocument(doc);
+      const parsed = JSON.parse(serialized) as { shapes: Record<string, unknown> };
+      expect(Object.keys(parsed.shapes)).toHaveLength(256);
+    });
+
+    it("rejects a 20,000-level document in under 1 second", () => {
+      const shapes: Record<string, Record<string, unknown>> = {
+        "shape-1": {
+          id: "shape-1",
+          kind: "page",
+          parent: ROOT_ID,
+          boundingBox: { x: 0, y: 0, width: 100, height: 100 },
+          meta: { order: {} },
+        },
+      };
+      for (let i = 2; i <= 20000; i++) {
+        shapes[`shape-${i}`] = {
+          id: `shape-${i}`,
+          kind: "section",
+          parent: `shape-${i - 1}`,
+          direction: "column",
+          boundingBox: { x: 0, y: 0, width: 100, height: 100 },
+          meta: { order: {} },
+        };
+      }
+      const start = Date.now();
+      let thrownError: unknown;
+      try {
+        parseDocument({ schema: { version: 1 }, shapes });
+      } catch (err) {
+        thrownError = err;
+      }
+      const durationMs = Date.now() - start;
+
+      expect(thrownError).toBeInstanceOf(DocumentError);
+      expect((thrownError as DocumentError).code).toBe("documentDepthExceeded");
+      expect(durationMs).toBeLessThan(1000);
+    });
   });
 });

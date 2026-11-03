@@ -6,6 +6,7 @@ import {
   isValidCustomShapeKind,
   isValidPluginId,
   isValidSemanticId,
+  MAX_DOCUMENT_DEPTH,
   parseCustomShapeKind,
   parsePluginId,
   parseSemanticId,
@@ -106,5 +107,11 @@ describe("export-contract", () => {
     expect(isExportFormat("json")).toBe(true);
     expect(isExportFormat("markdown")).toBe(true);
     expect(isExportFormat("csv")).toBe(false);
+  });
+});
+
+describe("document-limits", () => {
+  it("exposes MAX_DOCUMENT_DEPTH as 256 per Ruling V1", () => {
+    expect(MAX_DOCUMENT_DEPTH).toBe(256);
   });
 });

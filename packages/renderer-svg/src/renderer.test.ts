@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   type CustomShapeKind,
   DEVICE_TYPES,
+  MAX_DOCUMENT_DEPTH,
   parseCustomShapeKind,
   parseShapeId,
   ROOT_ID,
@@ -268,5 +269,25 @@ describe("fallback shape escaping", () => {
 
     expect(svg).not.toContain("<script>");
     expect(svg).toContain("[vendor:&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;]");
+  });
+
+  it("safely renders document nested to MAX_DOCUMENT_DEPTH without stack overflow", () => {
+    const shapes: Shape[] = [];
+    const rootPageId = parseShapeId("page-root");
+    shapes.push(createPage(rootPageId, { x: 0, y: 0, width: 1000, height: 1000 }));
+
+    let parentId = rootPageId;
+    // We add MAX_DOCUMENT_DEPTH - 1 nested rects, so total depth is MAX_DOCUMENT_DEPTH (256)
+    for (let i = 1; i < MAX_DOCUMENT_DEPTH; i++) {
+      const childId = parseShapeId(`rect-${i}`);
+      shapes.push(createRect(childId, { x: 0, y: 0, width: 10, height: 10 }, { parent: parentId }));
+      parentId = childId;
+    }
+
+    const doc = createDocument(shapes);
+    const svg = documentToSvg(doc);
+    expect(typeof svg).toBe("string");
+    // Should render 1 page rect + 255 child rects = 256 rects
+    expect(svg.match(/<rect/g)?.length).toBe(MAX_DOCUMENT_DEPTH);
   });
 });

@@ -316,4 +316,31 @@ describe("exportMarkdown", () => {
     expect(md).not.toContain("\n# Fake Style");
     expect(md).not.toContain("\n# Injected Heading");
   });
+
+  it("exports a document at exactly the maximum depth (256 levels) without stack overflow (Task S2)", () => {
+    const shapes = [];
+    const root = createPage(
+      parseShapeId("shape-1"),
+      { x: 0, y: 0, width: 1000, height: 1000 },
+      { label: "Page 1" },
+    );
+    shapes.push(root);
+    for (let i = 2; i <= 256; i++) {
+      shapes.push(
+        createSection(
+          parseShapeId(`shape-${i}`),
+          { x: 0, y: 0, width: 100, height: 100 },
+          "column",
+          {
+            parent: parseShapeId(`shape-${i - 1}`),
+            label: `Level ${i}`,
+          },
+        ),
+      );
+    }
+    const doc = createDocument(shapes);
+    const md = exportMarkdown(doc, { includeHeader: false });
+    expect(md).toContain("## Page 1");
+    expect(md).toContain("Level 256");
+  });
 });

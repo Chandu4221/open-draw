@@ -1,6 +1,7 @@
 // Typed document errors (R-006: fail loudly with typed errors — never silent
 // fallback or coercion). One canonical registry; callers branch on `code`.
 export const DOCUMENT_ERRORS = {
+  documentDepthExceeded: "document-depth-exceeded",
   duplicateShapeId: "duplicate-shape-id",
   invalidCommand: "invalid-command",
   invalidDocument: "invalid-document",
