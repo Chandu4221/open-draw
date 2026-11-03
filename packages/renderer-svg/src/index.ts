@@ -137,6 +137,19 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
     rendered = fallbackShapeToSvg(shape, box);
   }
 
+  // Visible text on shapes (F2, ADR-0006 Option A)
+  if (shape.label !== undefined && shape.label !== null && shape.label.trim().length > 0) {
+    const clipId = `clip-${escapeXml(shape.id)}`;
+    const clip = `<clipPath id="${clipId}"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" /></clipPath>`;
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const textColor = escapeXml(
+      shape.stroke && shape.stroke !== "none" ? shape.stroke : RENDER_STYLES.contentStroke,
+    );
+    const text = `<text x="${centerX}" y="${centerY}" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="14" fill="${textColor}" clip-path="url(#${clipId})">${escapeXml(shape.label)}</text>`;
+    rendered = `${rendered}${clip}${text}`;
+  }
+
   // R-029: Presentation-only ghost rendering for shapes hidden on active device type
   if (
     options?.activeDeviceType !== undefined &&

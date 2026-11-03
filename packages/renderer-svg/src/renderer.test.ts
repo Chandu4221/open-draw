@@ -341,3 +341,48 @@ describe("shape styling (fill, stroke, strokeWidth) (F1, ADR-0006 Option A)", ()
     expect(svg).toContain('fill="#ffffff&quot; onload=&quot;alert(1)"');
   });
 });
+
+describe("visible text on shapes (F2, ADR-0006 Option A)", () => {
+  it("renders centered clipped text when shape.label is present", () => {
+    const rectId = parseShapeId("rect-with-label");
+    const doc = createDocument([
+      createRect(rectId, { x: 100, y: 200, width: 200, height: 100 }, { label: "Submit Form" }),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('<clipPath id="clip-rect-with-label">');
+    expect(svg).toContain('<rect x="100" y="200" width="200" height="100"');
+    expect(svg).toContain('x="200"'); // 100 + 200/2
+    expect(svg).toContain('y="250"'); // 200 + 100/2
+    expect(svg).toContain('dominant-baseline="central"');
+    expect(svg).toContain('text-anchor="middle"');
+    expect(svg).toContain('clip-path="url(#clip-rect-with-label)"');
+    expect(svg).toContain(">Submit Form</text>");
+  });
+
+  it("escapes hostile XML in shape.label", () => {
+    const rectId = parseShapeId("rect-xss");
+    const doc = createDocument([
+      createRect(
+        rectId,
+        { x: 50, y: 50, width: 100, height: 50 },
+        { label: '<script>alert("xss")</script> & "quotes"' },
+      ),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).not.toContain("<script>");
+    expect(svg).toContain(
+      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; &amp; &quot;quotes&quot;</text>",
+    );
+  });
+
+  it("does not render clipPath or text when shape.label is absent or empty", () => {
+    const rectId = parseShapeId("rect-no-label");
+    const doc = createDocument([createRect(rectId, { x: 10, y: 10, width: 100, height: 50 })]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).not.toContain("<clipPath");
+    expect(svg).not.toContain("<text");
+  });
+});
