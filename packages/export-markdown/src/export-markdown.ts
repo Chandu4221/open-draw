@@ -7,6 +7,7 @@ import {
   type DeviceType,
   type ExportOptions,
   type ShapeId,
+  DESIGN_STYLE_LABELS,
   DEVICE_TYPES,
   ROOT_ID,
   SEMANTIC_CONFLICTS,
@@ -14,6 +15,7 @@ import {
 } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import {
+  resolveRootDesignStyle,
   resolveRootPlatform,
   resolveRootStyle,
   walkSemanticTree,
@@ -90,6 +92,11 @@ function formatRootMeta(doc: Document, shape: Shape): string {
     tags.push(`Platform: ${escapeMarkdownText(platform)}`);
     const effectiveStyle = explicitStyle ?? resolveRootStyle(doc, shape.id);
     tags.push(`Style: ${escapeMarkdownText(effectiveStyle)}`);
+    const designStyle = resolveRootDesignStyle(doc, shape.id);
+    if (designStyle !== undefined) {
+      const designStyleLabel = DESIGN_STYLE_LABELS[designStyle] ?? designStyle;
+      tags.push(`Design Style: ${escapeMarkdownText(designStyleLabel)}`);
+    }
   } else if (explicitStyle !== undefined) {
     tags.push(`Style: ${escapeMarkdownText(explicitStyle)}`);
   }

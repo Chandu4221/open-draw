@@ -4,6 +4,7 @@ import {
   type StyleId,
   parseShapeId,
   parseSemanticId,
+  DESIGN_STYLES,
   PLATFORMS,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
@@ -57,6 +58,48 @@ describe("exportMarkdown", () => {
     const md = exportMarkdown(doc, { includeHeader: false });
 
     expect(md).toBe("## Home Screen (Platform: web, Style: crayon)\n");
+  });
+
+  it("exports a root page with platform, render style, and design style annotations for AI mockup handoff", () => {
+    const page = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        label: "Landing Page",
+        meta: {
+          platform: PLATFORMS.web,
+          style: STYLE_PROFILES.minimal,
+          designStyle: DESIGN_STYLES.neoBrutalism,
+          order: {},
+        },
+      },
+    );
+    const doc = createDocument([page]);
+    const md = exportMarkdown(doc, { includeHeader: false });
+
+    expect(md).toBe(
+      "## Landing Page (Platform: web, Style: minimal, Design Style: Neo-Brutalism)\n",
+    );
+  });
+
+  it("omits design style when platform is not set (platform-agnostic mode)", () => {
+    const page = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        label: "Agnostic Page",
+        meta: {
+          designStyle: DESIGN_STYLES.neoBrutalism,
+          order: {},
+        },
+      },
+    );
+    const doc = createDocument([page]);
+    const md = exportMarkdown(doc, { includeHeader: false });
+
+    // Under platform-agnostic mode, design style must NOT be exported
+    expect(md).toBe("## Agnostic Page\n");
+    expect(md).not.toContain("Design Style");
   });
 
   it("exports hierarchical sections and leaves with display names, semantics, and properties", () => {

@@ -5,10 +5,10 @@ import {
   type PlatformProfile,
   type StyleId,
   type StyleProfile,
-  parseSemanticId,
 } from "@open-draw/contracts";
 import { ANDROID_NATIVE_PROFILE } from "./platforms/android-native";
 import { FLUTTER_PROFILE } from "./platforms/flutter";
+import { IOS_PROFILE } from "./platforms/ios";
 import { WEB_PROFILE } from "./platforms/web";
 import { MINIMAL_STYLE_PROFILE } from "./styles/minimal";
 import { CRAYON_STYLE_PROFILE } from "./styles/crayon";
@@ -16,6 +16,7 @@ import { CRAYON_STYLE_PROFILE } from "./styles/crayon";
 export * from "./platforms/web";
 export * from "./platforms/android-native";
 export * from "./platforms/flutter";
+export * from "./platforms/ios";
 export * from "./styles/minimal";
 export * from "./styles/crayon";
 
@@ -23,12 +24,7 @@ export const PLATFORM_PROFILES: Readonly<Record<PlatformId, PlatformProfile>> = 
   web: WEB_PROFILE,
   androidNative: ANDROID_NATIVE_PROFILE,
   flutter: FLUTTER_PROFILE,
-  ios: Object.freeze({
-    id: "ios",
-    label: "iOS",
-    rootSemantic: parseSemanticId("screen"),
-    semantics: {},
-  }),
+  ios: IOS_PROFILE,
 });
 
 export const STYLE_PROFILES_REGISTRY: Readonly<Record<StyleId, StyleProfile>> = Object.freeze({

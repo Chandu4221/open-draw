@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
+import { DESIGN_STYLES, parseShapeId, ROOT_ID } from "@open-draw/contracts";
 import type { Shape } from "./shape";
 import { createEllipse, createPage, createRect, createSection } from "./shape";
 import { DocumentError } from "./errors";
@@ -181,6 +181,38 @@ describe("parseDocument", () => {
     };
     input.shapes["section-1"]!.meta = { order: {}, style: "minimal" };
     expect(() => parseDocument(input)).toThrow(/style may only be set on root shapes/);
+  });
+
+  it("accepts designStyle on root shapes and rejects on non-root shapes (R-026)", () => {
+    const rootPage = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        meta: {
+          order: {},
+          designStyle: DESIGN_STYLES.neoBrutalism,
+        },
+      },
+    );
+    const doc = parseDocument(serialize([rootPage]));
+    expect(doc.shapes[parseShapeId("page-1")]?.meta.designStyle).toBe(DESIGN_STYLES.neoBrutalism);
+
+    const nonRootInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    nonRootInput.shapes["rect-1"]!.meta = {
+      order: {},
+      designStyle: DESIGN_STYLES.neoBrutalism,
+    };
+    expect(() => parseDocument(nonRootInput)).toThrow(/designStyle may only be set on root shapes/);
+  });
+
+  it("rejects invalid designStyle", () => {
+    const input = serialize([page]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["page-1"]!.meta = { order: {}, designStyle: "invalid-design-style" };
+    expect(() => parseDocument(input)).toThrow(DocumentError);
   });
 
   it("validates semantic tag and properties envelope (R-044)", () => {

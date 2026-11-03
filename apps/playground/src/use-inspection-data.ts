@@ -1,5 +1,6 @@
 import type {
   DeviceType,
+  DesignStyleId,
   PlatformId,
   PlatformProfile,
   SemanticConflict,
@@ -12,6 +13,7 @@ import type { Document, Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
+  resolveRootDesignStyle,
   resolveRootPlatform,
   resolveRootShape,
   resolveRootStyle,
@@ -24,6 +26,7 @@ export interface InspectionData {
   readonly rootShape: Shape | undefined;
   readonly rootPlatform: PlatformId | undefined;
   readonly rootStyle: StyleId;
+  readonly rootDesignStyle: DesignStyleId | undefined;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
@@ -42,6 +45,7 @@ export function useInspectionData(
     : Object.values(doc.shapes).find((s) => isRootId(s.parent) && s.meta.platform !== undefined);
   const rootPlatform = rootShape ? resolveRootPlatform(doc, rootShape.id) : undefined;
   const rootStyle = rootShape ? resolveRootStyle(doc, rootShape.id) : STYLE_PROFILES.minimal;
+  const rootDesignStyle = rootShape ? resolveRootDesignStyle(doc, rootShape.id) : undefined;
   const activeProfile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
   const conflict = selectedShape
     ? computeSemanticConflict(doc, selectedShape, activeProfile)
@@ -58,6 +62,7 @@ export function useInspectionData(
     rootShape,
     rootPlatform,
     rootStyle,
+    rootDesignStyle,
     activeProfile,
     conflict,
     semanticDef,

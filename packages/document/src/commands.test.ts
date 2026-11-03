@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { DEVICE_TYPES, parseShapeId, PLATFORMS, STYLE_PROFILES } from "@open-draw/contracts";
+import {
+  DESIGN_STYLES,
+  DEVICE_TYPES,
+  parseShapeId,
+  PLATFORMS,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
 import {
   applyTransaction,
   COMMANDS,
@@ -130,6 +136,41 @@ describe("document commands (milestone 05)", () => {
             type: COMMANDS.setRootStyle,
             id: rectId,
             style: STYLE_PROFILES.minimal,
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+  });
+
+  it("applies SetRootDesignStyle on root pages and inverts cleanly", () => {
+    const doc = createBaseDoc();
+    const result = applyTransaction(
+      doc,
+      createTransaction([
+        {
+          type: COMMANDS.setRootDesignStyle,
+          id: pageId,
+          designStyle: DESIGN_STYLES.neoBrutalism,
+        },
+      ]),
+    );
+
+    expect(result.document.shapes[pageId]?.meta.designStyle).toBe(DESIGN_STYLES.neoBrutalism);
+
+    const undone = applyTransaction(result.document, createTransaction(result.inverse));
+    expect(undone.document.shapes[pageId]?.meta.designStyle).toBeUndefined();
+  });
+
+  it("rejects SetRootDesignStyle on non-root shapes (R-026)", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setRootDesignStyle,
+            id: rectId,
+            designStyle: DESIGN_STYLES.neoBrutalism,
           },
         ]),
       ),

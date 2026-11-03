@@ -1,6 +1,7 @@
 import React from "react";
 import {
   isRootId,
+  type DesignStyleId,
   type DeviceType,
   type PlatformId,
   type PlatformProfile,
@@ -17,6 +18,7 @@ export interface InspectorProps {
   readonly rootShape: Shape | undefined;
   readonly rootPlatform: PlatformId | undefined;
   readonly rootStyle: StyleId;
+  readonly rootDesignStyle?: DesignStyleId | undefined;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
@@ -25,6 +27,7 @@ export interface InspectorProps {
   readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
+  readonly handleSetDesignStyle?: ((designStyle: DesignStyleId | "") => void) | undefined;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
@@ -57,6 +60,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     rootShape,
     rootPlatform,
     rootStyle,
+    rootDesignStyle,
     activeProfile,
     conflict,
     semanticDef,
@@ -65,6 +69,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleSetContent,
     handleSetPlatform,
     handleSetStyle,
+    handleSetDesignStyle,
     handleSetSemantic,
     handlePropertyChange,
     handleToggleHiddenOn,
@@ -96,10 +101,12 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           selectedShape={selectedShape}
           rootPlatform={rootPlatform}
           rootStyle={rootStyle}
+          rootDesignStyle={rootDesignStyle}
           activeProfile={activeProfile}
           handleSetLabel={handleSetLabel}
           handleSetPlatform={handleSetPlatform}
           handleSetStyle={handleSetStyle}
+          handleSetDesignStyle={handleSetDesignStyle}
         />
       ) : (
         <ShapeInspector

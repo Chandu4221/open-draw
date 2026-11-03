@@ -1,4 +1,4 @@
-import type { DeviceType, PlatformId, StyleId } from "@open-draw/contracts";
+import type { DesignStyleId, DeviceType, PlatformId, StyleId } from "@open-draw/contracts";
 import { isRootId, PLATFORMS } from "@open-draw/contracts";
 import type { CanvasController } from "@open-draw/canvas";
 import { COMMANDS, type Command, type Shape } from "@open-draw/document";
@@ -21,6 +21,7 @@ export interface DocumentMutationsProps {
 export interface DocumentMutations {
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
+  readonly handleSetDesignStyle: (designStyle: DesignStyleId | "") => void;
   readonly handleSetLabel: (labelStr: string) => void;
   readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
@@ -65,7 +66,14 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const targetPlatform = platform ? platform : null;
-    commit([{ type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: targetPlatform }]);
+    if (targetPlatform === null && targetRoot.meta.designStyle !== undefined) {
+      commit([
+        { type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: null },
+        { type: COMMANDS.setRootDesignStyle, id: targetRoot.id, designStyle: null },
+      ]);
+    } else {
+      commit([{ type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: targetPlatform }]);
+    }
     const nextProfile = targetPlatform !== null ? PLATFORM_PROFILES[targetPlatform] : undefined;
     if (
       activeDeviceType !== undefined &&
@@ -82,6 +90,16 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
     if (!targetRoot) return;
     commit([{ type: COMMANDS.setRootStyle, id: targetRoot.id, style }]);
+    render();
+  }
+
+  function handleSetDesignStyle(designStyle: DesignStyleId | ""): void {
+    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
+    if (!targetRoot) return;
+    const nextDesignStyle = designStyle ? designStyle : null;
+    commit([
+      { type: COMMANDS.setRootDesignStyle, id: targetRoot.id, designStyle: nextDesignStyle },
+    ]);
     render();
   }
 
@@ -242,6 +260,7 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
   return {
     handleSetPlatform,
     handleSetStyle,
+    handleSetDesignStyle,
     handleSetLabel,
     handleSetContent,
     handleSetSemantic,

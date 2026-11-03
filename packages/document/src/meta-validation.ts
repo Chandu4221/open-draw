@@ -1,6 +1,12 @@
-// Validation for shape metadata, platform profiles, and semantic tags (R-006, R-026, R-044).
-import type { DeviceType, PlatformId, PluginId, StyleId } from "@open-draw/contracts";
+import type {
+  DesignStyleId,
+  DeviceType,
+  PlatformId,
+  PluginId,
+  StyleId,
+} from "@open-draw/contracts";
 import {
+  DESIGN_STYLE_BY_VALUE,
   DEVICE_TYPE_BY_VALUE,
   PLATFORM_BY_VALUE,
   STYLE_PROFILE_BY_VALUE,
@@ -79,6 +85,9 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     if (value.style !== undefined) {
       throw new DocumentError("invalidMeta", "style may only be set on root shapes (R-026)");
     }
+    if (value.designStyle !== undefined) {
+      throw new DocumentError("invalidMeta", "designStyle may only be set on root shapes (R-026)");
+    }
   }
 
   let platform: PlatformId | undefined;
@@ -108,6 +117,21 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
         : undefined);
     if (style === undefined) {
       throw new DocumentError("invalidMeta", `unknown style: ${value.style}`);
+    }
+  }
+
+  let designStyle: DesignStyleId | undefined;
+  if (value.designStyle !== undefined) {
+    if (typeof value.designStyle !== "string") {
+      throw new DocumentError("invalidMeta", "meta.designStyle must be a string");
+    }
+    designStyle =
+      DESIGN_STYLE_BY_VALUE[value.designStyle] ??
+      (Object.values(DESIGN_STYLE_BY_VALUE).includes(value.designStyle as DesignStyleId)
+        ? (value.designStyle as DesignStyleId)
+        : undefined);
+    if (designStyle === undefined) {
+      throw new DocumentError("invalidMeta", `unknown design style: ${value.designStyle}`);
     }
   }
 
@@ -155,5 +179,6 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     ...(pluginData === undefined ? {} : { pluginData }),
     ...(platform === undefined ? {} : { platform }),
     ...(style === undefined ? {} : { style }),
+    ...(designStyle === undefined ? {} : { designStyle }),
   };
 }

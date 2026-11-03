@@ -11,6 +11,7 @@ import type {
   ShapeId,
   ShapeKind,
   StyleId,
+  DesignStyleId,
 } from "@open-draw/contracts";
 import { ROOT_ID, SHAPE_KINDS, SHAPE_KIND_VALUES, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
@@ -34,6 +35,7 @@ export interface SemanticTag {
 // (R-028); absent order entry = 0 (one mechanism, two uses — ADR-0002 D6).
 // `pluginData`: opaque forward-compatibility namespace (R-044, ADR-0003 D4).
 // `platform` and `style`: settable on root pages only, inherited by tree position (R-026, ADR-0004 D7).
+// `designStyle`: aesthetic style specification for AI/developer handoff (R-026).
 export interface ShapeMeta {
   readonly semantic?: SemanticTag;
   readonly order: Partial<Record<DeviceType, number>>;
@@ -41,6 +43,7 @@ export interface ShapeMeta {
   readonly pluginData?: Readonly<Record<PluginId, unknown>>;
   readonly platform?: PlatformId;
   readonly style?: StyleId;
+  readonly designStyle?: DesignStyleId;
 }
 
 export interface BaseShape {

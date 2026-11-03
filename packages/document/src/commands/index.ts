@@ -6,6 +6,7 @@ import type { MoveShapes } from "./move-shapes";
 import type { ReparentShape } from "./reparent-shape";
 import type { SetRootPlatform } from "./set-root-platform";
 import type { SetRootStyle } from "./set-root-style";
+import type { SetRootDesignStyle } from "./set-root-design-style";
 import type { SetShapeBoundingBox } from "./set-shape-bounding-box";
 import type { SetShapeHiddenOn } from "./set-shape-hidden-on";
 import type { SetShapeLabel } from "./set-shape-label";
@@ -35,6 +36,8 @@ export type { SetRootPlatform } from "./set-root-platform";
 export { applySetRootPlatform } from "./set-root-platform";
 export type { SetRootStyle } from "./set-root-style";
 export { applySetRootStyle } from "./set-root-style";
+export type { SetRootDesignStyle } from "./set-root-design-style";
+export { applySetRootDesignStyle } from "./set-root-design-style";
 export type { SetShapeHiddenOn } from "./set-shape-hidden-on";
 export { applySetShapeHiddenOn } from "./set-shape-hidden-on";
 export type { SetShapeOrder } from "./set-shape-order";
@@ -56,6 +59,7 @@ export type Command =
   | SetShapeSemantic
   | SetRootPlatform
   | SetRootStyle
+  | SetRootDesignStyle
   | SetShapeHiddenOn
   | SetShapeOrder
   | SetShapeStyle
