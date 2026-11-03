@@ -174,7 +174,13 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
           const clonedShapes: Shape[] = clipboard.map((shape): Shape => {
             const isTopLevel = !clipboardIdSet.has(shape.parent);
             const newId = idMap.get(shape.id)!;
-            const newParent = isTopLevel ? ROOT_ID : (idMap.get(shape.parent) ?? ROOT_ID);
+            const parentExists =
+              shape.parent === ROOT_ID || documentRef.current.shapes[shape.parent] !== undefined;
+            const newParent = isTopLevel
+              ? parentExists
+                ? shape.parent
+                : ROOT_ID
+              : (idMap.get(shape.parent) ?? ROOT_ID);
             const newBoundingBox = isTopLevel
               ? { ...shape.boundingBox, x: shape.boundingBox.x + 20, y: shape.boundingBox.y + 20 }
               : shape.boundingBox;

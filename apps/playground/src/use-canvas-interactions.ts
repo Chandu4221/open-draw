@@ -228,14 +228,18 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     event.preventDefault();
     const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
-    const factor = Math.exp(-event.deltaY * 0.001);
-    canvas.zoomAt(screen, factor);
-    setZoomPercent(Math.round(canvas.getCamera().zoom * 100));
-    canvas.dispatch({
-      type: CANVAS_EVENTS.wheel,
-      screenPoint: screen,
-      factor,
-    });
+    if (event.ctrlKey || event.metaKey) {
+      const factor = Math.exp(-event.deltaY * 0.002);
+      canvas.zoomAt(screen, factor);
+      setZoomPercent(Math.round(canvas.getCamera().zoom * 100));
+      canvas.dispatch({
+        type: CANVAS_EVENTS.wheel,
+        screenPoint: screen,
+        factor,
+      });
+    } else {
+      canvas.panBy({ x: -event.deltaX, y: -event.deltaY });
+    }
     render();
   }
 

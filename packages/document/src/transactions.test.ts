@@ -178,4 +178,26 @@ describe("applyTransaction", () => {
       height: 30,
     });
   });
+
+  it("bounds undo history depth to prevent unbounded memory growth", () => {
+    let history = EMPTY_HISTORY;
+    for (let i = 0; i < 105; i++) {
+      history = recordHistory(history, [
+        { type: COMMANDS.moveShapes, ids: [parseShapeId("rect-1")], dx: 1, dy: 1 },
+      ]);
+    }
+    expect(history.undoStack.length).toBe(100);
+  });
+
+  it("respects custom maxDepth when specified", () => {
+    let history = EMPTY_HISTORY;
+    for (let i = 0; i < 10; i++) {
+      history = recordHistory(
+        history,
+        [{ type: COMMANDS.moveShapes, ids: [parseShapeId("rect-1")], dx: 1, dy: 1 }],
+        3,
+      );
+    }
+    expect(history.undoStack.length).toBe(3);
+  });
 });

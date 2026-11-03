@@ -7,6 +7,7 @@ import {
   isValidPluginId,
   isValidSemanticId,
   MAX_DOCUMENT_DEPTH,
+  MAX_HISTORY_DEPTH,
   parseCustomShapeKind,
   parsePluginId,
   parseSemanticId,
@@ -117,6 +118,10 @@ describe("export-contract", () => {
 describe("document-limits", () => {
   it("exposes MAX_DOCUMENT_DEPTH as 256 per Ruling V1", () => {
     expect(MAX_DOCUMENT_DEPTH).toBe(256);
+  });
+
+  it("exposes MAX_HISTORY_DEPTH as 100 to prevent unbounded history growth", () => {
+    expect(MAX_HISTORY_DEPTH).toBe(100);
   });
 });
 
