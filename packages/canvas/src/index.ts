@@ -24,6 +24,8 @@ export {
 
 export { MIN_SHAPE_SIZE, normalizeBox, resizeBox } from "./geometry";
 
+export { type GestureKind, GESTURE_KINDS } from "./gestures";
+
 export { type HandleId, HANDLES } from "./handles";
 
 export { HANDLE_PICK_RADIUS_PX, pickHandle, pickShape, pointInBox } from "./hit-test";

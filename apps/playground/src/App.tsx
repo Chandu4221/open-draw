@@ -12,7 +12,15 @@ import type {
   ShapeId,
   StyleId,
 } from "@open-draw/contracts";
-import { DEVICE_TYPES, ROOT_ID, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
+import {
+  CONTROL_TYPES,
+  DEVICE_TYPES,
+  isRootId,
+  PLATFORMS,
+  ROOT_ID,
+  SHAPE_KINDS,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   ancestorsOf,
@@ -44,6 +52,7 @@ import {
 } from "@open-draw/document";
 import {
   ACTIONS,
+  KEY_CODES,
   shouldHandleKeyEvent,
   type ActionId,
   type KeyboardEventDescriptor,
@@ -51,11 +60,13 @@ import {
 import {
   CANVAS_EVENTS,
   createCanvas,
+  GESTURE_KINDS,
   normalizeBox,
   resizeBox,
   STATES,
   TOOLS,
   type CanvasController,
+  type GestureKind,
   type HandleId,
   type ToolId,
 } from "@open-draw/canvas";
@@ -89,8 +100,6 @@ import {
   resolveShapeDisplayName,
   walkSemanticTree,
 } from "@open-draw/semantics";
-
-type GestureKind = "move" | "draw" | "resize" | "pan" | "press";
 
 interface Gesture {
   readonly kind: GestureKind;
@@ -233,7 +242,7 @@ export default function App() {
         const gesture = gestureRef.current;
         const isSelectedMoved =
           gesture !== null &&
-          gesture.kind === "move" &&
+          gesture.kind === GESTURE_KINDS.move &&
           (gesture.shapeIds.includes(selectedId) ||
             ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
         if (isSelectedMoved) {
@@ -245,7 +254,7 @@ export default function App() {
         }
         if (
           gesture !== null &&
-          gesture.kind === "resize" &&
+          gesture.kind === GESTURE_KINDS.resize &&
           gesture.originalBox !== null &&
           gesture.handleId !== null
         ) {
@@ -256,7 +265,7 @@ export default function App() {
     }
 
     const gesture = gestureRef.current;
-    if (gesture !== null && gesture.kind === "draw") {
+    if (gesture !== null && gesture.kind === GESTURE_KINDS.draw) {
       if (toolRef.current === TOOLS.drawLine) {
         overlays.push(previewLineToSvg(gesture.startWorld, lastWorldRef.current));
       } else if (toolRef.current === TOOLS.drawPenPath) {
@@ -285,7 +294,7 @@ export default function App() {
           const gesture = gestureRef.current;
           const isShapeMoved =
             gesture !== null &&
-            gesture.kind === "move" &&
+            gesture.kind === GESTURE_KINDS.move &&
             (gesture.shapeIds.includes(shape.id) ||
               ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
           if (isShapeMoved) {
@@ -418,7 +427,7 @@ export default function App() {
       });
     }
 
-    if (gesture.kind === "draw" && toolRef.current === TOOLS.drawPenPath) {
+    if (gesture.kind === GESTURE_KINDS.draw && toolRef.current === TOOLS.drawPenPath) {
       gestureRef.current = {
         ...gesture,
         points: [...gesture.points, world],
@@ -451,7 +460,7 @@ export default function App() {
       commitResize(gesture, world);
     } else if (before === STATES.drawingShape) {
       commitDraw(gesture, world);
-    } else if (before === STATES.idle && gesture.kind === "press") {
+    } else if (before === STATES.idle && gesture.kind === GESTURE_KINDS.press) {
       canvas.clearSelection();
     }
     gestureRef.current = null;
@@ -740,7 +749,7 @@ export default function App() {
       return;
     }
 
-    if (event.code === "Space") {
+    if (event.code === KEY_CODES.space) {
       spaceRef.current = true;
     }
 
@@ -752,7 +761,7 @@ export default function App() {
   }
 
   function onKeyUp(event: KeyboardEvent): void {
-    if (event.code === "Space") {
+    if (event.code === KEY_CODES.space) {
       spaceRef.current = false;
     }
   }
@@ -829,7 +838,7 @@ export default function App() {
   function handleSetPlatform(platform: PlatformId | ""): void {
     const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
     if (!targetRoot) return;
-    const targetPlatform = platform === "" ? null : platform;
+    const targetPlatform = platform ? platform : null;
     commit([{ type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: targetPlatform }]);
     const nextProfile = targetPlatform !== null ? PLATFORM_PROFILES[targetPlatform] : undefined;
     if (
@@ -852,17 +861,17 @@ export default function App() {
 
   function handleSetLabel(labelStr: string): void {
     if (!selectedShape) return;
-    const label = labelStr.trim() === "" ? null : labelStr;
+    const label = labelStr.trim().length === 0 ? null : labelStr;
     commit([{ type: COMMANDS.setShapeLabel, id: selectedShape.id, label }]);
     render();
   }
 
   function handleSetSemantic(semanticIdStr: string): void {
     if (!selectedShape) return;
-    if (semanticIdStr === "") {
+    if (semanticIdStr.length === 0) {
       commit([{ type: COMMANDS.setShapeSemantic, id: selectedShape.id, semantic: null }]);
     } else {
-      let platform = activeProfile?.id ?? "web";
+      let platform = activeProfile?.id ?? PLATFORMS.web;
       if (activeProfile && !activeProfile.semantics[semanticIdStr]) {
         for (const [pid, prof] of Object.entries(PLATFORM_PROFILES)) {
           if (prof.semantics[semanticIdStr]) {
@@ -921,7 +930,7 @@ export default function App() {
 
   function handleOrderChange(dt: DeviceType, valStr: string): void {
     if (!selectedShape) return;
-    const order = valStr.trim() === "" ? null : Number(valStr);
+    const order = valStr.trim().length === 0 ? null : Number(valStr);
     commit([
       {
         type: COMMANDS.setShapeOrder,
@@ -1340,7 +1349,7 @@ export default function App() {
                             >
                               {schema.label}
                             </label>
-                            {schema.control === "text" && (
+                            {schema.control === CONTROL_TYPES.text && (
                               <input
                                 type="text"
                                 value={val !== undefined ? String(val) : ""}
@@ -1352,7 +1361,7 @@ export default function App() {
                                 onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
                               />
                             )}
-                            {schema.control === "number" && (
+                            {schema.control === CONTROL_TYPES.number && (
                               <input
                                 type="number"
                                 value={val !== undefined ? Number(val) : ""}
@@ -1364,12 +1373,12 @@ export default function App() {
                                 onChange={(e) =>
                                   handlePropertyChange(
                                     schema.id,
-                                    e.target.value === "" ? 0 : Number(e.target.value),
+                                    e.target.value.length === 0 ? 0 : Number(e.target.value),
                                   )
                                 }
                               />
                             )}
-                            {schema.control === "toggle" && (
+                            {schema.control === CONTROL_TYPES.toggle && (
                               <label
                                 style={{
                                   display: "flex",
@@ -1387,7 +1396,7 @@ export default function App() {
                                 <span>Enabled</span>
                               </label>
                             )}
-                            {schema.control === "select" && (
+                            {schema.control === CONTROL_TYPES.select && (
                               <select
                                 value={
                                   val !== undefined

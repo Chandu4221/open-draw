@@ -2,6 +2,15 @@
 // Contains zero DOM types.
 import { ACTIONS, type ActionId } from "./actions";
 
+export const KEY_CODES = {
+  space: "Space",
+  escape: "Escape",
+  delete: "Delete",
+  backspace: "Backspace",
+} as const;
+
+export type KeyCode = (typeof KEY_CODES)[keyof typeof KEY_CODES];
+
 export interface KeyboardEventDescriptor {
   readonly code: string;
   readonly ctrlKey?: boolean;
