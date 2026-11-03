@@ -1,6 +1,6 @@
 # ADR-0006 — v1 Feature Scope & Specifications
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-03
 - **Deciders:** Chandra (Owner), Antigravity Agent
 - **Rules implemented:** R-002, R-005, R-006, R-007, R-008, R-009, R-010, R-011, R-012, R-014, R-016, R-018, R-021, R-022, R-024, R-026, R-031, R-039, R-041, R-042
@@ -262,15 +262,14 @@ Creating repeated shapes requires drawing each one from scratch. Users cannot du
 
 ---
 
-## Decision Inventory & Questions for Owner Review
+## Ratification Record
 
-Please review and confirm each of the following decisions:
+- **Outcome:** RATIFIED by Chandra on 2026-11-03 (Ruling V2).
+- **Selections:** Option A selected across all 6 features:
+  1. Edge Resizing: Option A (8 handles `nw`, `n`, `ne`, `e`, `se`, `s`, `sw`, `w` for all resizable shapes).
+  2. F1 (Shape Colors): Option A (flat optional `fill`, `stroke`, `strokeWidth` on `Shape`).
+  3. F2 (Visible Text): Option A (render existing `shape.label` centered and clipped inside the shape; zero new stored schema).
+  4. F3 (Multi-Select): Option A (marquee selects by bounding box intersection).
+  5. F4 (Image Export): Option A (SVG & PNG export buttons; optional legend expands viewBox at bottom).
+  6. F5 (Duplicate / Copy-Paste): Option A (in-memory clipboard, `Mod+D` duplicate, `Mod+C` / `Mod+V`).
 
-1. **Edge Resizing:** Confirm **Option A** (8 handles: `nw`, `n`, `ne`, `e`, `se`, `s`, `sw`, `w` for all resizable shapes)?
-2. **F1 (Shape Colors):** Confirm **Option A** (flat optional `fill`, `stroke`, `strokeWidth` on `Shape`)?
-3. **F2 (Visible Text):** Confirm **Option A** (render existing `shape.label` centered and clipped inside the shape; zero new stored schema)?
-4. **F3 (Multi-Select):** Confirm **Option A** (marquee selects by bounding box intersection)?
-5. **F4 (Image Export):** Confirm **Option A** (SVG & PNG export buttons; optional legend expands viewBox at bottom)?
-6. **F5 (Duplicate / Copy-Paste):** Confirm **Option A** (in-memory clipboard, `Mod+D` duplicate, `Mod+C` / `Mod+V`) as stretch goal?
-
-When ready, reply with **"RATIFIED: ADR-0006"** (along with any specific option choices or adjustments) to begin implementation of Phase F.
