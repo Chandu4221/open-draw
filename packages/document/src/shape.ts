@@ -11,6 +11,7 @@ import type {
   ShapeId,
   ShapeKind,
   StyleId,
+  DesignStyleId,
 } from "@open-draw/contracts";
 import { ROOT_ID, SHAPE_KINDS, SHAPE_KIND_VALUES, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
@@ -34,6 +35,7 @@ export interface SemanticTag {
 // (R-028); absent order entry = 0 (one mechanism, two uses — ADR-0002 D6).
 // `pluginData`: opaque forward-compatibility namespace (R-044, ADR-0003 D4).
 // `platform` and `style`: settable on root pages only, inherited by tree position (R-026, ADR-0004 D7).
+// `designStyle`: aesthetic style specification for AI/developer handoff (R-026).
 export interface ShapeMeta {
   readonly semantic?: SemanticTag;
   readonly order: Partial<Record<DeviceType, number>>;
@@ -41,6 +43,7 @@ export interface ShapeMeta {
   readonly pluginData?: Readonly<Record<PluginId, unknown>>;
   readonly platform?: PlatformId;
   readonly style?: StyleId;
+  readonly designStyle?: DesignStyleId;
 }
 
 export interface BaseShape {
@@ -49,6 +52,10 @@ export interface BaseShape {
   readonly parent: ShapeId;
   readonly boundingBox: BoundingBox;
   readonly label?: string;
+  readonly content?: string;
+  readonly fill?: string;
+  readonly stroke?: string;
+  readonly strokeWidth?: number;
   readonly meta: ShapeMeta;
 }
 
@@ -58,6 +65,10 @@ export const BASE_SHAPE_KEYS = {
   parent: "parent",
   boundingBox: "boundingBox",
   label: "label",
+  content: "content",
+  fill: "fill",
+  stroke: "stroke",
+  strokeWidth: "strokeWidth",
   meta: "meta",
 } as const satisfies Record<keyof BaseShape, string>;
 
@@ -108,6 +119,10 @@ export function isCustomShape(shape: Shape): shape is CustomShape {
 export interface ShapeInit {
   readonly parent?: ShapeId;
   readonly label?: string;
+  readonly content?: string;
+  readonly fill?: string;
+  readonly stroke?: string;
+  readonly strokeWidth?: number;
   readonly meta?: ShapeMeta;
 }
 
@@ -128,6 +143,10 @@ function baseInit(
     parent: init.parent ?? ROOT_ID,
     boundingBox,
     ...(init.label === undefined ? {} : { label: init.label }),
+    ...(init.content === undefined ? {} : { content: init.content }),
+    ...(init.fill === undefined ? {} : { fill: init.fill }),
+    ...(init.stroke === undefined ? {} : { stroke: init.stroke }),
+    ...(init.strokeWidth === undefined ? {} : { strokeWidth: init.strokeWidth }),
     meta: init.meta ?? DEFAULT_META,
   };
 }

@@ -2,6 +2,7 @@
 // Platform and style are properties of root shapes only; children
 // inherit both by tree position and never store either.
 import {
+  type DesignStyleId,
   type PlatformId,
   type ShapeId,
   type StyleId,
@@ -59,4 +60,17 @@ export function resolveRootPlatform(doc: Document, shapeId: ShapeId): PlatformId
 export function resolveRootStyle(doc: Document, shapeId: ShapeId): StyleId {
   const root = resolveRootShape(doc, shapeId);
   return root?.meta.style ?? STYLE_PROFILES.minimal;
+}
+
+/**
+ * Resolves the effective design style (for AI / dev mockup handoff) from its root ancestor (R-024, R-026).
+ * In platform-agnostic mode (root.meta.platform is undefined), returns undefined.
+ * Otherwise returns root.meta.designStyle.
+ */
+export function resolveRootDesignStyle(doc: Document, shapeId: ShapeId): DesignStyleId | undefined {
+  const root = resolveRootShape(doc, shapeId);
+  if (root?.meta.platform === undefined) {
+    return undefined;
+  }
+  return root.meta.designStyle;
 }

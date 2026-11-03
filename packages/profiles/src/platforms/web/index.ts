@@ -1,5 +1,5 @@
-// Web Platform Profile (ADR-0004 D5, R-023).
 import {
+  CONTROL_TYPES,
   type PlatformProfile,
   type SemanticDefinition,
   parseSemanticId,
@@ -16,7 +16,7 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "sticky",
-        control: "toggle",
+        control: CONTROL_TYPES.toggle,
         label: "Sticky",
         defaultValue: false,
       }),
@@ -32,7 +32,7 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "collapsible",
-        control: "toggle",
+        control: CONTROL_TYPES.toggle,
         label: "Collapsible",
         defaultValue: false,
       }),
@@ -44,7 +44,7 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "elevation",
-        control: "select",
+        control: CONTROL_TYPES.select,
         label: "Elevation",
         defaultValue: "none",
         options: Object.freeze([
@@ -61,7 +61,7 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "variant",
-        control: "select",
+        control: CONTROL_TYPES.select,
         label: "Variant",
         defaultValue: "primary",
         options: Object.freeze([
@@ -73,7 +73,7 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
       }),
       Object.freeze({
         id: "disabled",
-        control: "toggle",
+        control: CONTROL_TYPES.toggle,
         label: "Disabled",
         defaultValue: false,
       }),
@@ -85,13 +85,13 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "placeholder",
-        control: "text",
+        control: CONTROL_TYPES.text,
         label: "Placeholder",
         defaultValue: "",
       }),
       Object.freeze({
         id: "required",
-        control: "toggle",
+        control: CONTROL_TYPES.toggle,
         label: "Required",
         defaultValue: false,
       }),
@@ -103,7 +103,7 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "level",
-        control: "select",
+        control: CONTROL_TYPES.select,
         label: "Level",
         defaultValue: "1",
         options: Object.freeze([
@@ -120,9 +120,87 @@ export const WEB_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
     properties: Object.freeze([
       Object.freeze({
         id: "striped",
-        control: "toggle",
+        control: CONTROL_TYPES.toggle,
         label: "Striped",
         defaultValue: false,
+      }),
+    ]),
+  }),
+  image: Object.freeze({
+    id: parseSemanticId("image"),
+    displayName: "Image",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "alt",
+        control: CONTROL_TYPES.text,
+        label: "Alt Text",
+        defaultValue: "",
+      }),
+    ]),
+  }),
+  dialog: Object.freeze({
+    id: parseSemanticId("dialog"),
+    displayName: "Modal Dialog",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "dismissible",
+        control: CONTROL_TYPES.toggle,
+        label: "Dismissible",
+        defaultValue: true,
+      }),
+    ]),
+  }),
+  dropdown: Object.freeze({
+    id: parseSemanticId("dropdown"),
+    displayName: "Dropdown Menu",
+  }),
+  checkbox: Object.freeze({
+    id: parseSemanticId("checkbox"),
+    displayName: "Checkbox",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "checked",
+        control: CONTROL_TYPES.toggle,
+        label: "Checked",
+        defaultValue: false,
+      }),
+    ]),
+  }),
+  badge: Object.freeze({
+    id: parseSemanticId("badge"),
+    displayName: "Badge",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "variant",
+        control: CONTROL_TYPES.select,
+        label: "Variant",
+        defaultValue: "default",
+        options: Object.freeze([
+          Object.freeze({ value: "default", label: "Default" }),
+          Object.freeze({ value: "success", label: "Success" }),
+          Object.freeze({ value: "warning", label: "Warning" }),
+          Object.freeze({ value: "error", label: "Error" }),
+        ]),
+      }),
+    ]),
+  }),
+  tabs: Object.freeze({
+    id: parseSemanticId("tabs"),
+    displayName: "Tabs",
+  }),
+  avatar: Object.freeze({
+    id: parseSemanticId("avatar"),
+    displayName: "Avatar",
+  }),
+  link: Object.freeze({
+    id: parseSemanticId("link"),
+    displayName: "Link",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "href",
+        control: CONTROL_TYPES.text,
+        label: "Href",
+        defaultValue: "#",
       }),
     ]),
   }),

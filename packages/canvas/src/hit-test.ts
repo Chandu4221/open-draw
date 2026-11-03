@@ -17,6 +17,27 @@ export function pointInBox(box: BoundingBox, point: Point): boolean {
   );
 }
 
+export function boxIntersectsBox(a: BoundingBox, b: BoundingBox): boolean {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+export function pickShapesInBox(document: Document, marqueeBox: BoundingBox): readonly ShapeId[] {
+  const result: ShapeId[] = [];
+  for (const shape of Object.values(document.shapes)) {
+    const box = absoluteBoundingBox(document, shape);
+    const enclosesMarquee =
+      box.x <= marqueeBox.x &&
+      box.y <= marqueeBox.y &&
+      box.x + box.width >= marqueeBox.x + marqueeBox.width &&
+      box.y + box.height >= marqueeBox.y + marqueeBox.height;
+
+    if (!enclosesMarquee && boxIntersectsBox(box, marqueeBox)) {
+      result.push(shape.id);
+    }
+  }
+  return result;
+}
+
 export function pickShape(
   document: Document,
   worldPoint: Point,
@@ -43,14 +64,23 @@ export function pickHandle(
   worldBox: BoundingBox,
   screenPoint: Point,
 ): HandleId | null {
-  const corners: ReadonlyArray<readonly [HandleId, Point]> = [
+  const midX = worldBox.x + worldBox.width / 2;
+  const midY = worldBox.y + worldBox.height / 2;
+  const right = worldBox.x + worldBox.width;
+  const bottom = worldBox.y + worldBox.height;
+
+  const handles: ReadonlyArray<readonly [HandleId, Point]> = [
     [HANDLES.nw, { x: worldBox.x, y: worldBox.y }],
-    [HANDLES.ne, { x: worldBox.x + worldBox.width, y: worldBox.y }],
-    [HANDLES.se, { x: worldBox.x + worldBox.width, y: worldBox.y + worldBox.height }],
-    [HANDLES.sw, { x: worldBox.x, y: worldBox.y + worldBox.height }],
+    [HANDLES.ne, { x: right, y: worldBox.y }],
+    [HANDLES.se, { x: right, y: bottom }],
+    [HANDLES.sw, { x: worldBox.x, y: bottom }],
+    [HANDLES.n, { x: midX, y: worldBox.y }],
+    [HANDLES.s, { x: midX, y: bottom }],
+    [HANDLES.w, { x: worldBox.x, y: midY }],
+    [HANDLES.e, { x: right, y: midY }],
   ];
-  for (const [handle, corner] of corners) {
-    const onScreen = worldToScreen(camera, corner);
+  for (const [handle, position] of handles) {
+    const onScreen = worldToScreen(camera, position);
     if (
       Math.abs(onScreen.x - screenPoint.x) <= HANDLE_PICK_RADIUS_PX &&
       Math.abs(onScreen.y - screenPoint.y) <= HANDLE_PICK_RADIUS_PX

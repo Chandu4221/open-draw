@@ -6,6 +6,7 @@ import {
   isValidCustomShapeKind,
   isValidPluginId,
   isValidSemanticId,
+  MAX_DOCUMENT_DEPTH,
   parseCustomShapeKind,
   parsePluginId,
   parseSemanticId,
@@ -18,6 +19,10 @@ import {
   isExportFormat,
   STYLE_PROFILES,
   STYLE_PROFILE_BY_VALUE,
+  DESIGN_STYLES,
+  DESIGN_STYLE_BY_VALUE,
+  DESIGN_STYLE_LABELS,
+  isDesignStyle,
 } from "./index";
 
 describe("capabilities", () => {
@@ -106,5 +111,23 @@ describe("export-contract", () => {
     expect(isExportFormat("json")).toBe(true);
     expect(isExportFormat("markdown")).toBe(true);
     expect(isExportFormat("csv")).toBe(false);
+  });
+});
+
+describe("document-limits", () => {
+  it("exposes MAX_DOCUMENT_DEPTH as 256 per Ruling V1", () => {
+    expect(MAX_DOCUMENT_DEPTH).toBe(256);
+  });
+});
+
+describe("design-styles", () => {
+  it("exposes categorized design styles registry and validator", () => {
+    expect(DESIGN_STYLES.neoBrutalism).toBe("neo-brutalism");
+    expect(DESIGN_STYLES.glassmorphism).toBe("glassmorphism");
+    expect(DESIGN_STYLES.bentoGrid).toBe("bento-grid");
+    expect(DESIGN_STYLE_BY_VALUE["neo-brutalism"]).toBe(DESIGN_STYLES.neoBrutalism);
+    expect(DESIGN_STYLE_LABELS[DESIGN_STYLES.neoBrutalism]).toBe("Neo-Brutalism");
+    expect(isDesignStyle("neo-brutalism")).toBe(true);
+    expect(isDesignStyle("non-existent-style")).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   type CustomShapeKind,
   DEVICE_TYPES,
+  MAX_DOCUMENT_DEPTH,
   parseCustomShapeKind,
   parseShapeId,
   ROOT_ID,
@@ -21,6 +22,7 @@ import {
   fallbackShapeToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
+  selectionOverlayToSvg,
   type RendererFallbackEvent,
 } from "./index";
 
@@ -268,5 +270,135 @@ describe("fallback shape escaping", () => {
 
     expect(svg).not.toContain("<script>");
     expect(svg).toContain("[vendor:&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;]");
+  });
+
+  it("safely renders document nested to MAX_DOCUMENT_DEPTH without stack overflow", () => {
+    const shapes: Shape[] = [];
+    const rootPageId = parseShapeId("page-root");
+    shapes.push(createPage(rootPageId, { x: 0, y: 0, width: 1000, height: 1000 }));
+
+    let parentId = rootPageId;
+    // We add MAX_DOCUMENT_DEPTH - 1 nested rects, so total depth is MAX_DOCUMENT_DEPTH (256)
+    for (let i = 1; i < MAX_DOCUMENT_DEPTH; i++) {
+      const childId = parseShapeId(`rect-${i}`);
+      shapes.push(createRect(childId, { x: 0, y: 0, width: 10, height: 10 }, { parent: parentId }));
+      parentId = childId;
+    }
+
+    const doc = createDocument(shapes);
+    const svg = documentToSvg(doc);
+    expect(typeof svg).toBe("string");
+    // Should render 1 page rect + 255 child rects = 256 rects
+    expect(svg.match(/<rect/g)?.length).toBe(MAX_DOCUMENT_DEPTH);
+  });
+});
+
+describe("selectionOverlayToSvg", () => {
+  it("renders 1 outline rect and 8 handle rects (4 corners + 4 edge midpoints)", () => {
+    const overlay = selectionOverlayToSvg({ x: 10, y: 10, width: 100, height: 60 }, 1);
+    // 1 outline rect + 8 handle rects = 9 rects
+    expect(overlay.match(/<rect/g)?.length).toBe(9);
+  });
+});
+
+describe("shape styling (fill, stroke, strokeWidth) (F1, ADR-0006 Option A)", () => {
+  it("renders custom fill, stroke, and stroke-width on rect and ellipse", () => {
+    const rectId = parseShapeId("rect-styled");
+    const doc = createDocument([
+      createRect(
+        rectId,
+        { x: 10, y: 20, width: 100, height: 50 },
+        { fill: "#3b82f6", stroke: "#1e3a8a", strokeWidth: 4 },
+      ),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('fill="#3b82f6"');
+    expect(svg).toContain('stroke="#1e3a8a"');
+    expect(svg).toContain('stroke-width="4"');
+  });
+
+  it("renders default attributes when shape style properties are undefined", () => {
+    const rectId = parseShapeId("rect-default");
+    const doc = createDocument([createRect(rectId, { x: 10, y: 20, width: 100, height: 50 })]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('fill="#ffffff"');
+    expect(svg).toContain('stroke="#1f2933"');
+    expect(svg).not.toContain("stroke-width");
+  });
+
+  it("escapes hostile XML in color attributes", () => {
+    const hostileRect = {
+      ...createRect(parseShapeId("rect-1"), { x: 0, y: 0, width: 100, height: 100 }),
+      fill: '#ffffff" onload="alert(1)',
+      stroke: '#000000" onerror="alert(2)',
+    } as unknown as Shape;
+    const doc = createDocument([hostileRect]);
+    const svg = documentToSvg(doc);
+
+    expect(svg).not.toContain('onload="alert(1)"');
+    expect(svg).toContain('fill="#ffffff&quot; onload=&quot;alert(1)"');
+  });
+});
+
+describe("visible text on shapes (F2, ADR-0006 Option A / shape.content)", () => {
+  it("renders centered clipped text when shape.content is present", () => {
+    const rectId = parseShapeId("rect-with-content");
+    const doc = createDocument([
+      createRect(
+        rectId,
+        { x: 100, y: 200, width: 200, height: 100 },
+        { label: "Submit Button Layer", content: "Submit Form" },
+      ),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('<clipPath id="clip-rect-with-content">');
+    expect(svg).toContain('<rect x="100" y="200" width="200" height="100"');
+    expect(svg).toContain('x="200"'); // 100 + 200/2
+    expect(svg).toContain('y="250"'); // 200 + 100/2
+    expect(svg).toContain('dominant-baseline="central"');
+    expect(svg).toContain('text-anchor="middle"');
+    expect(svg).toContain('clip-path="url(#clip-rect-with-content)"');
+    expect(svg).toContain(">Submit Form</text>");
+    expect(svg).not.toContain(">Submit Button Layer</text>");
+  });
+
+  it("escapes hostile XML in shape.content", () => {
+    const rectId = parseShapeId("rect-xss");
+    const doc = createDocument([
+      createRect(
+        rectId,
+        { x: 50, y: 50, width: 100, height: 50 },
+        { content: '<script>alert("xss")</script> & "quotes"' },
+      ),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).not.toContain("<script>");
+    expect(svg).toContain(
+      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; &amp; &quot;quotes&quot;</text>",
+    );
+  });
+
+  it("does not render clipPath or text when shape has only label and no content", () => {
+    const rectId = parseShapeId("rect-label-only");
+    const doc = createDocument([
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 50 }, { label: "Profile Box" }),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).not.toContain("<clipPath");
+    expect(svg).not.toContain("<text");
+  });
+
+  it("does not render clipPath or text when shape.content is absent or empty", () => {
+    const rectId = parseShapeId("rect-no-content");
+    const doc = createDocument([createRect(rectId, { x: 10, y: 10, width: 100, height: 50 })]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).not.toContain("<clipPath");
+    expect(svg).not.toContain("<text");
   });
 });

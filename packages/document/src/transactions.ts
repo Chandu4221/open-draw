@@ -9,11 +9,15 @@ import { applyMoveShapes } from "./commands/move-shapes";
 import { applyReparentShape } from "./commands/reparent-shape";
 import { applySetRootPlatform } from "./commands/set-root-platform";
 import { applySetRootStyle } from "./commands/set-root-style";
+import { applySetRootDesignStyle } from "./commands/set-root-design-style";
 import { applySetShapeBoundingBox } from "./commands/set-shape-bounding-box";
 import { applySetShapeHiddenOn } from "./commands/set-shape-hidden-on";
 import { applySetShapeLabel } from "./commands/set-shape-label";
 import { applySetShapeOrder } from "./commands/set-shape-order";
 import { applySetShapeSemantic } from "./commands/set-shape-semantic";
+import { applySetShapeStyle } from "./commands/set-shape-style";
+import { applySetShapeContent } from "./commands/set-shape-content";
+import { applyDuplicateShapes } from "./commands/duplicate-shapes";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 
@@ -53,10 +57,18 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applySetRootPlatform(document, command);
     case COMMANDS.setRootStyle:
       return applySetRootStyle(document, command);
+    case COMMANDS.setRootDesignStyle:
+      return applySetRootDesignStyle(document, command);
     case COMMANDS.setShapeHiddenOn:
       return applySetShapeHiddenOn(document, command);
     case COMMANDS.setShapeOrder:
       return applySetShapeOrder(document, command);
+    case COMMANDS.setShapeStyle:
+      return applySetShapeStyle(document, command);
+    case COMMANDS.setShapeContent:
+      return applySetShapeContent(document, command);
+    case COMMANDS.duplicateShapes:
+      return applyDuplicateShapes(document, command);
   }
 }
 

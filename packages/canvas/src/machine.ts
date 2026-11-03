@@ -54,7 +54,11 @@ export function transition(previous: MachineState, event: CanvasEvent): MachineS
           activeShapeId: event.hit,
         };
       }
-      return INITIAL_MACHINE_STATE;
+      return {
+        ...INITIAL_MACHINE_STATE,
+        stateId: STATES.selecting,
+        drawOrigin: event.worldPoint,
+      };
     }
     case CANVAS_EVENTS.pointerMove: {
       if (previous.stateId === STATES.pointingShape) {

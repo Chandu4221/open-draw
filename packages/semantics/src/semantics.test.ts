@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DESIGN_STYLES,
   DEVICE_TYPES,
   parseShapeId,
   PLATFORMS,
@@ -10,6 +11,7 @@ import { createDocument, createPage, createRect, createSection } from "@open-dra
 import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
+  resolveRootDesignStyle,
   resolveRootPage,
   resolveRootPlatform,
   resolveRootShape,
@@ -93,6 +95,52 @@ describe("root resolution (R-026)", () => {
 
     expect(resolveRootPlatform(docWithRootRect, childButtonId)).toBe(PLATFORMS.flutter);
     expect(resolveRootShape(docWithRootRect, childButtonId)?.id).toBe(rootRectId);
+  });
+
+  it("inherits root design style when platform is set, but returns undefined in platform-agnostic mode (R-024, R-026)", () => {
+    const styledPageId = parseShapeId("styled-page");
+    const childId = parseShapeId("child-rect");
+    const styledDoc = createDocument([
+      createPage(
+        styledPageId,
+        { x: 0, y: 0, width: 1440, height: 900 },
+        {
+          meta: {
+            order: {},
+            platform: PLATFORMS.web,
+            designStyle: DESIGN_STYLES.neoBrutalism,
+          },
+        },
+      ),
+      createRect(childId, { x: 10, y: 10, width: 100, height: 50 }, { parent: styledPageId }),
+    ]);
+
+    expect(resolveRootDesignStyle(styledDoc, styledPageId)).toBe(DESIGN_STYLES.neoBrutalism);
+    expect(resolveRootDesignStyle(styledDoc, childId)).toBe(DESIGN_STYLES.neoBrutalism);
+
+    // Platform-agnostic root shape (no platform set) must yield undefined designStyle (R-024)
+    const agnosticPageId = parseShapeId("agnostic-page");
+    const agnosticChildId = parseShapeId("agnostic-child");
+    const agnosticDoc = createDocument([
+      createPage(
+        agnosticPageId,
+        { x: 0, y: 0, width: 1440, height: 900 },
+        {
+          meta: {
+            order: {},
+            designStyle: DESIGN_STYLES.neoBrutalism,
+          },
+        },
+      ),
+      createRect(
+        agnosticChildId,
+        { x: 10, y: 10, width: 100, height: 50 },
+        { parent: agnosticPageId },
+      ),
+    ]);
+
+    expect(resolveRootDesignStyle(agnosticDoc, agnosticPageId)).toBeUndefined();
+    expect(resolveRootDesignStyle(agnosticDoc, agnosticChildId)).toBeUndefined();
   });
 });
 

@@ -2,6 +2,15 @@
 // Contains zero DOM types.
 import { ACTIONS, type ActionId } from "./actions";
 
+export const KEY_CODES = {
+  space: "Space",
+  escape: "Escape",
+  delete: "Delete",
+  backspace: "Backspace",
+} as const;
+
+export type KeyCode = (typeof KEY_CODES)[keyof typeof KEY_CODES];
+
 export interface KeyboardEventDescriptor {
   readonly code: string;
   readonly ctrlKey?: boolean;
@@ -28,6 +37,9 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = [
   { code: "KeyY", ctrlOrMeta: true, action: ACTIONS.redo },
   { code: "Delete", action: ACTIONS.deleteSelected },
   { code: "Backspace", action: ACTIONS.deleteSelected },
+  { code: "KeyD", ctrlOrMeta: true, action: ACTIONS.duplicate },
+  { code: "KeyC", ctrlOrMeta: true, action: ACTIONS.copy },
+  { code: "KeyV", ctrlOrMeta: true, action: ACTIONS.paste },
   { code: "KeyV", action: ACTIONS.selectTool },
   { code: "Digit1", action: ACTIONS.selectTool },
   { code: "KeyR", action: ACTIONS.selectToolRect },

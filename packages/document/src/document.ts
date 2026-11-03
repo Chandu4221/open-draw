@@ -3,7 +3,7 @@
 // the structural invariants (parent chains, cycle check, container rules) are
 // enforced, so every document — parsed or built by commands — is valid.
 import type { ShapeId } from "@open-draw/contracts";
-import { SHAPE_KINDS, isRootId } from "@open-draw/contracts";
+import { MAX_DOCUMENT_DEPTH, SHAPE_KINDS, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
 import type { Shape } from "./shape";
 
@@ -31,7 +31,15 @@ function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
     }
     const visited = new Set<ShapeId>([shape.id]);
     let cursor = shape.parent;
+    let depth = 1;
     while (!isRootId(cursor)) {
+      depth++;
+      if (depth > MAX_DOCUMENT_DEPTH) {
+        throw new DocumentError(
+          "documentDepthExceeded",
+          `document depth exceeds maximum of ${MAX_DOCUMENT_DEPTH}`,
+        );
+      }
       if (visited.has(cursor)) {
         throw new DocumentError("parentCycle", `parent chain cycles at: ${cursor}`);
       }

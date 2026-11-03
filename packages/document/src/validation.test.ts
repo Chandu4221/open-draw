@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
+import { DESIGN_STYLES, parseShapeId, ROOT_ID } from "@open-draw/contracts";
 import type { Shape } from "./shape";
 import { createEllipse, createPage, createRect, createSection } from "./shape";
 import { DocumentError } from "./errors";
+import { serializeDocument } from "./serialize-document";
 import { parseDocument } from "./validation";
 
 function serialize(shapes: readonly Shape[]): unknown {
@@ -182,6 +183,38 @@ describe("parseDocument", () => {
     expect(() => parseDocument(input)).toThrow(/style may only be set on root shapes/);
   });
 
+  it("accepts designStyle on root shapes and rejects on non-root shapes (R-026)", () => {
+    const rootPage = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        meta: {
+          order: {},
+          designStyle: DESIGN_STYLES.neoBrutalism,
+        },
+      },
+    );
+    const doc = parseDocument(serialize([rootPage]));
+    expect(doc.shapes[parseShapeId("page-1")]?.meta.designStyle).toBe(DESIGN_STYLES.neoBrutalism);
+
+    const nonRootInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    nonRootInput.shapes["rect-1"]!.meta = {
+      order: {},
+      designStyle: DESIGN_STYLES.neoBrutalism,
+    };
+    expect(() => parseDocument(nonRootInput)).toThrow(/designStyle may only be set on root shapes/);
+  });
+
+  it("rejects invalid designStyle", () => {
+    const input = serialize([page]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["page-1"]!.meta = { order: {}, designStyle: "invalid-design-style" };
+    expect(() => parseDocument(input)).toThrow(DocumentError);
+  });
+
   it("validates semantic tag and properties envelope (R-044)", () => {
     const input = serialize([page, section, rect]) as {
       shapes: Record<string, Record<string, unknown>>;
@@ -212,5 +245,129 @@ describe("parseDocument", () => {
       },
     };
     expect(() => parseDocument(invalidInput)).toThrow(/semantic property.*must be a string/);
+  });
+
+  describe("document depth limits (Ruling V1, Task S2)", () => {
+    function createNestedChain(depth: number): Shape[] {
+      const shapes: Shape[] = [];
+      const root = createPage(parseShapeId("shape-1"), { x: 0, y: 0, width: 1000, height: 1000 });
+      shapes.push(root);
+      for (let i = 2; i <= depth; i++) {
+        const parentId = parseShapeId(`shape-${i - 1}`);
+        const shapeId = parseShapeId(`shape-${i}`);
+        shapes.push(
+          createSection(shapeId, { x: 0, y: 0, width: 100, height: 100 }, "column", {
+            parent: parentId,
+          }),
+        );
+      }
+      return shapes;
+    }
+
+    it("rejects a document nested one level over the maximum (257 levels) with documentDepthExceeded (Ruling V1, Task S2)", () => {
+      const chain = createNestedChain(257);
+      const input = serialize(chain);
+      let thrownError: unknown;
+      try {
+        parseDocument(input);
+      } catch (err) {
+        thrownError = err;
+      }
+      expect(thrownError).toBeInstanceOf(DocumentError);
+      expect((thrownError as DocumentError).code).toBe("documentDepthExceeded");
+    });
+
+    it("loads and preserves a document at exactly the maximum depth (256 levels)", () => {
+      const chain = createNestedChain(256);
+      const input = serialize(chain);
+      const doc = parseDocument(input);
+      expect(Object.keys(doc.shapes)).toHaveLength(256);
+      expect(doc.shapes[parseShapeId("shape-256")]?.parent).toBe("shape-255");
+      const serialized = serializeDocument(doc);
+      const parsed = JSON.parse(serialized) as { shapes: Record<string, unknown> };
+      expect(Object.keys(parsed.shapes)).toHaveLength(256);
+    });
+
+    it("rejects a 20,000-level document in under 1 second", () => {
+      const shapes: Record<string, Record<string, unknown>> = {
+        "shape-1": {
+          id: "shape-1",
+          kind: "page",
+          parent: ROOT_ID,
+          boundingBox: { x: 0, y: 0, width: 100, height: 100 },
+          meta: { order: {} },
+        },
+      };
+      for (let i = 2; i <= 20000; i++) {
+        shapes[`shape-${i}`] = {
+          id: `shape-${i}`,
+          kind: "section",
+          parent: `shape-${i - 1}`,
+          direction: "column",
+          boundingBox: { x: 0, y: 0, width: 100, height: 100 },
+          meta: { order: {} },
+        };
+      }
+      const start = Date.now();
+      let thrownError: unknown;
+      try {
+        parseDocument({ schema: { version: 1 }, shapes });
+      } catch (err) {
+        thrownError = err;
+      }
+      const durationMs = Date.now() - start;
+
+      expect(thrownError).toBeInstanceOf(DocumentError);
+      expect((thrownError as DocumentError).code).toBe("documentDepthExceeded");
+      expect(durationMs).toBeLessThan(1000);
+    });
+  });
+
+  describe("shape colors and stroke width validation (F1, R-006)", () => {
+    it("parses valid hex colors and positive strokeWidth", () => {
+      const shapeWithStyle = createRect(
+        parseShapeId("rect-styled"),
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: parseShapeId("page-1"), fill: "#ff0000", stroke: "#00ff00", strokeWidth: 3 },
+      );
+      const doc = parseDocument(serialize([page, shapeWithStyle]));
+      const parsedShape = doc.shapes[parseShapeId("rect-styled")];
+      expect(parsedShape?.fill).toBe("#ff0000");
+      expect(parsedShape?.stroke).toBe("#00ff00");
+      expect(parsedShape?.strokeWidth).toBe(3);
+    });
+
+    it("rejects hostile or invalid fill color", () => {
+      const input = serialize([page, rect]) as {
+        shapes: Record<string, Record<string, unknown>>;
+      };
+      input.shapes["rect-1"]!.fill = '<script>alert("xss")</script>';
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+    });
+
+    it("rejects negative stroke width", () => {
+      const input = serialize([page, rect]) as {
+        shapes: Record<string, Record<string, unknown>>;
+      };
+      input.shapes["rect-1"]!.strokeWidth = -4;
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+    });
+
+    it("parses valid string content and rejects non-string content", () => {
+      const shapeWithContent = createRect(
+        parseShapeId("rect-content"),
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: parseShapeId("page-1"), content: "Button Text" },
+      );
+      const doc = parseDocument(serialize([page, shapeWithContent]));
+      const parsedShape = doc.shapes[parseShapeId("rect-content")];
+      expect(parsedShape?.content).toBe("Button Text");
+
+      const invalidInput = serialize([page, shapeWithContent]) as {
+        shapes: Record<string, Record<string, unknown>>;
+      };
+      invalidInput.shapes["rect-content"]!.content = 12345;
+      expect(() => parseDocument(invalidInput)).toThrow(DocumentError);
+    });
   });
 });

@@ -1,5 +1,5 @@
-// Android Native (Material 3) Platform Profile (ADR-0004 D5, R-023).
 import {
+  CONTROL_TYPES,
   type PlatformProfile,
   type SemanticDefinition,
   parseSemanticId,
@@ -13,7 +13,7 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
       properties: Object.freeze([
         Object.freeze({
           id: "title",
-          control: "text",
+          control: CONTROL_TYPES.text,
           label: "Title",
           defaultValue: "Title",
         }),
@@ -29,7 +29,7 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
       properties: Object.freeze([
         Object.freeze({
           id: "extended",
-          control: "toggle",
+          control: CONTROL_TYPES.toggle,
           label: "Extended",
           defaultValue: false,
         }),
@@ -45,11 +45,81 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
       properties: Object.freeze([
         Object.freeze({
           id: "enabled",
-          control: "toggle",
+          control: CONTROL_TYPES.toggle,
           label: "Enabled",
           defaultValue: true,
         }),
       ]),
+    }),
+    dialog: Object.freeze({
+      id: parseSemanticId("dialog"),
+      displayName: "Material Dialog",
+    }),
+    "bottom-sheet": Object.freeze({
+      id: parseSemanticId("bottom-sheet"),
+      displayName: "Bottom Sheet",
+    }),
+    "text-field": Object.freeze({
+      id: parseSemanticId("text-field"),
+      displayName: "Outlined Text Field",
+      properties: Object.freeze([
+        Object.freeze({
+          id: "label",
+          control: CONTROL_TYPES.text,
+          label: "Label",
+          defaultValue: "Label",
+        }),
+        Object.freeze({
+          id: "supportingText",
+          control: CONTROL_TYPES.text,
+          label: "Supporting Text",
+          defaultValue: "",
+        }),
+      ]),
+    }),
+    switch: Object.freeze({
+      id: parseSemanticId("switch"),
+      displayName: "Switch Toggle",
+      properties: Object.freeze([
+        Object.freeze({
+          id: "checked",
+          control: CONTROL_TYPES.toggle,
+          label: "Checked",
+          defaultValue: false,
+        }),
+      ]),
+    }),
+    checkbox: Object.freeze({
+      id: parseSemanticId("checkbox"),
+      displayName: "Material Checkbox",
+      properties: Object.freeze([
+        Object.freeze({
+          id: "checked",
+          control: CONTROL_TYPES.toggle,
+          label: "Checked",
+          defaultValue: false,
+        }),
+      ]),
+    }),
+    chip: Object.freeze({
+      id: parseSemanticId("chip"),
+      displayName: "Assist / Filter Chip",
+      properties: Object.freeze([
+        Object.freeze({
+          id: "selected",
+          control: CONTROL_TYPES.toggle,
+          label: "Selected",
+          defaultValue: false,
+        }),
+      ]),
+    }),
+    "tab-row": Object.freeze({
+      id: parseSemanticId("tab-row"),
+      displayName: "Primary Tab Row",
+    }),
+    badge: Object.freeze({
+      id: parseSemanticId("badge"),
+      displayName: "Badge Indicator",
     }),
   },
 );

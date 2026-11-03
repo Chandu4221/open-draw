@@ -24,9 +24,18 @@ export {
 
 export { MIN_SHAPE_SIZE, normalizeBox, resizeBox } from "./geometry";
 
+export { type GestureKind, GESTURE_KINDS } from "./gestures";
+
 export { type HandleId, HANDLES } from "./handles";
 
-export { HANDLE_PICK_RADIUS_PX, pickHandle, pickShape, pointInBox } from "./hit-test";
+export {
+  boxIntersectsBox,
+  HANDLE_PICK_RADIUS_PX,
+  pickHandle,
+  pickShape,
+  pickShapesInBox,
+  pointInBox,
+} from "./hit-test";
 
 export { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
 
@@ -44,8 +53,11 @@ export {
   EMPTY_SELECTION,
   isSelected,
   type Selection,
+  selectMany,
   selectOne,
+  selectedIds,
   singleSelected,
+  toggleSelection,
 } from "./selection";
 
 export { type CanvasStateId, STATES } from "./states";

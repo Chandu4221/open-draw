@@ -10,8 +10,12 @@ export const COMMANDS = {
   setShapeSemantic: "SetShapeSemantic",
   setRootPlatform: "SetRootPlatform",
   setRootStyle: "SetRootStyle",
+  setRootDesignStyle: "SetRootDesignStyle",
   setShapeHiddenOn: "SetShapeHiddenOn",
   setShapeOrder: "SetShapeOrder",
+  setShapeStyle: "SetShapeStyle",
+  setShapeContent: "SetShapeContent",
+  duplicateShapes: "DuplicateShapes",
 } as const;
 
 export type CommandId = (typeof COMMANDS)[keyof typeof COMMANDS];
