@@ -160,6 +160,7 @@ export default function App() {
     handlePropertyChange,
     handleToggleHiddenOn,
     handleOrderChange,
+    handleStyleChange,
   } = useDocumentMutations({
     selectedShape: inspection.selectedShape,
     rootShape: inspection.rootShape,
@@ -272,6 +273,7 @@ export default function App() {
             handlePropertyChange={handlePropertyChange}
             handleToggleHiddenOn={handleToggleHiddenOn}
             handleOrderChange={handleOrderChange}
+            handleStyleChange={handleStyleChange}
             treeNodes={inspection.treeNodes}
             selectedShapeId={selectedShapeId}
             selectShape={selectShape}

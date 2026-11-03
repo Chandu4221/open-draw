@@ -98,6 +98,28 @@ function parseParentId(value: unknown): ShapeId | typeof ROOT_ID {
   }
 }
 
+const COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+function parseColor(value: unknown, fieldName: string): string {
+  if (
+    typeof value !== "string" ||
+    (value !== "none" && value !== "transparent" && !COLOR_REGEX.test(value))
+  ) {
+    throw new DocumentError(
+      "invalidShape",
+      `${fieldName} must be a valid hex color string or "none"/"transparent"`,
+    );
+  }
+  return value;
+}
+
+function parseStrokeWidth(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new DocumentError("invalidShape", "strokeWidth must be a non-negative finite number");
+  }
+  return value;
+}
+
 function parseShape(value: unknown): Shape {
   if (!isRecord(value)) {
     throw new DocumentError("invalidShape", "shape must be an object");
@@ -117,6 +139,18 @@ function parseShape(value: unknown): Shape {
   if (value.label !== undefined && typeof value.label !== "string") {
     throw new DocumentError("invalidShape", "label must be a string when present");
   }
+  let fill: string | undefined;
+  if (value.fill !== undefined) {
+    fill = parseColor(value.fill, "fill");
+  }
+  let stroke: string | undefined;
+  if (value.stroke !== undefined) {
+    stroke = parseColor(value.stroke, "stroke");
+  }
+  let strokeWidth: number | undefined;
+  if (value.strokeWidth !== undefined) {
+    strokeWidth = parseStrokeWidth(value.strokeWidth);
+  }
   const isRootShape = isRootId(parent);
   const meta = parseMeta(value.meta, isRootShape);
   const base = {
@@ -125,6 +159,9 @@ function parseShape(value: unknown): Shape {
     parent,
     boundingBox,
     ...(value.label === undefined ? {} : { label: value.label }),
+    ...(fill === undefined ? {} : { fill }),
+    ...(stroke === undefined ? {} : { stroke }),
+    ...(strokeWidth === undefined ? {} : { strokeWidth }),
     meta,
   };
 

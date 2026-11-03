@@ -75,18 +75,33 @@ export const DEFAULT_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>>
     `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.pageFill}" stroke="${RENDER_STYLES.pageStroke}" stroke-dasharray="${RENDER_STYLES.pageDasharray}" />`,
   [SHAPE_KINDS.section]: (_shape, box) =>
     `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.sectionFill}" stroke="${RENDER_STYLES.sectionStroke}" />`,
-  [SHAPE_KINDS.rect]: (_shape, box) =>
-    `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.contentFill}" stroke="${RENDER_STYLES.contentStroke}" />`,
-  [SHAPE_KINDS.ellipse]: (_shape, box) =>
-    `<ellipse cx="${box.x + box.width / 2}" cy="${box.y + box.height / 2}" rx="${box.width / 2}" ry="${box.height / 2}" fill="${RENDER_STYLES.contentFill}" stroke="${RENDER_STYLES.contentStroke}" />`,
+  [SHAPE_KINDS.rect]: (shape, box) => {
+    const fill = escapeXml(shape.fill ?? RENDER_STYLES.contentFill);
+    const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
+    const strokeWidthAttr =
+      shape.strokeWidth !== undefined ? ` stroke-width="${shape.strokeWidth}"` : "";
+    return `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${fill}" stroke="${stroke}"${strokeWidthAttr} />`;
+  },
+  [SHAPE_KINDS.ellipse]: (shape, box) => {
+    const fill = escapeXml(shape.fill ?? RENDER_STYLES.contentFill);
+    const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
+    const strokeWidthAttr =
+      shape.strokeWidth !== undefined ? ` stroke-width="${shape.strokeWidth}"` : "";
+    return `<ellipse cx="${box.x + box.width / 2}" cy="${box.y + box.height / 2}" rx="${box.width / 2}" ry="${box.height / 2}" fill="${fill}" stroke="${stroke}"${strokeWidthAttr} />`;
+  },
   [SHAPE_KINDS.line]: (shape, box) => {
     const line = shape as LineShape;
-    return `<line x1="${box.x + line.start.x}" y1="${box.y + line.start.y}" x2="${box.x + line.end.x}" y2="${box.y + line.end.y}" stroke="${RENDER_STYLES.contentStroke}" stroke-width="2" />`;
+    const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
+    const strokeWidth = shape.strokeWidth ?? 2;
+    return `<line x1="${box.x + line.start.x}" y1="${box.y + line.start.y}" x2="${box.x + line.end.x}" y2="${box.y + line.end.y}" stroke="${stroke}" stroke-width="${strokeWidth}" />`;
   },
   [SHAPE_KINDS.penPath]: (shape, box) => {
     const pen = shape as PenPathShape;
     const pointsStr = pen.points.map((p) => `${box.x + p.x},${box.y + p.y}`).join(" ");
-    return `<polyline points="${pointsStr}" fill="none" stroke="${RENDER_STYLES.contentStroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
+    const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
+    const strokeWidth = shape.strokeWidth ?? 2;
+    const fill = escapeXml(shape.fill ?? "none");
+    return `<polyline points="${pointsStr}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
 });
 

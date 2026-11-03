@@ -3,6 +3,7 @@
 import type { BoundingBox } from "@open-draw/contracts";
 import { SHAPE_KINDS } from "@open-draw/contracts";
 import type { LineShape, PenPathShape, Shape } from "@open-draw/document";
+import { escapeXml } from "../../escape-xml";
 import { hashShapeId, wobbleEllipse, wobbleLine, wobbleOffset, wobbleRect } from "./wobble";
 
 const CRAYON_COLORS = {
@@ -30,7 +31,10 @@ export const CRAYON_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>> 
   [SHAPE_KINDS.rect]: (shape, box) => {
     const seed = hashShapeId(shape.id);
     const d = wobbleRect(box.x, box.y, box.width, box.height, seed, 2.0);
-    return `<path d="${d}" fill="${CRAYON_COLORS.fill}" stroke="${CRAYON_COLORS.stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
+    const fill = escapeXml(shape.fill ?? CRAYON_COLORS.fill);
+    const stroke = escapeXml(shape.stroke ?? CRAYON_COLORS.stroke);
+    const strokeWidth = shape.strokeWidth ?? 2;
+    return `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
   [SHAPE_KINDS.ellipse]: (shape, box) => {
     const seed = hashShapeId(shape.id);
@@ -39,7 +43,10 @@ export const CRAYON_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>> 
     const rx = box.width / 2;
     const ry = box.height / 2;
     const d = wobbleEllipse(cx, cy, rx, ry, seed, 2.0);
-    return `<path d="${d}" fill="${CRAYON_COLORS.fill}" stroke="${CRAYON_COLORS.stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
+    const fill = escapeXml(shape.fill ?? CRAYON_COLORS.fill);
+    const stroke = escapeXml(shape.stroke ?? CRAYON_COLORS.stroke);
+    const strokeWidth = shape.strokeWidth ?? 2;
+    return `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
   [SHAPE_KINDS.line]: (shape, box) => {
     const seed = hashShapeId(shape.id);
@@ -49,7 +56,9 @@ export const CRAYON_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>> 
     const x2 = box.x + line.end.x;
     const y2 = box.y + line.end.y;
     const d = wobbleLine(x1, y1, x2, y2, seed, 0, 2.0);
-    return `<path d="${d}" fill="none" stroke="${CRAYON_COLORS.stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />`;
+    const stroke = escapeXml(shape.stroke ?? CRAYON_COLORS.stroke);
+    const strokeWidth = shape.strokeWidth ?? 2.5;
+    return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
   [SHAPE_KINDS.penPath]: (shape, box) => {
     const seed = hashShapeId(shape.id);
@@ -64,6 +73,9 @@ export const CRAYON_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>> 
         return `${(box.x + p.x + wx).toFixed(1)},${(box.y + p.y + wy).toFixed(1)}`;
       })
       .join(" ");
-    return `<polyline points="${wobbledPoints}" fill="none" stroke="${CRAYON_COLORS.stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />`;
+    const stroke = escapeXml(shape.stroke ?? CRAYON_COLORS.stroke);
+    const strokeWidth = shape.strokeWidth ?? 2.5;
+    const fill = escapeXml(shape.fill ?? "none");
+    return `<polyline points="${wobbledPoints}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
 });

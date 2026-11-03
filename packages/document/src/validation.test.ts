@@ -290,4 +290,35 @@ describe("parseDocument", () => {
       expect(durationMs).toBeLessThan(1000);
     });
   });
+
+  describe("shape colors and stroke width validation (F1, R-006)", () => {
+    it("parses valid hex colors and positive strokeWidth", () => {
+      const shapeWithStyle = createRect(
+        parseShapeId("rect-styled"),
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: parseShapeId("page-1"), fill: "#ff0000", stroke: "#00ff00", strokeWidth: 3 },
+      );
+      const doc = parseDocument(serialize([page, shapeWithStyle]));
+      const parsedShape = doc.shapes[parseShapeId("rect-styled")];
+      expect(parsedShape?.fill).toBe("#ff0000");
+      expect(parsedShape?.stroke).toBe("#00ff00");
+      expect(parsedShape?.strokeWidth).toBe(3);
+    });
+
+    it("rejects hostile or invalid fill color", () => {
+      const input = serialize([page, rect]) as {
+        shapes: Record<string, Record<string, unknown>>;
+      };
+      input.shapes["rect-1"]!.fill = '<script>alert("xss")</script>';
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+    });
+
+    it("rejects negative stroke width", () => {
+      const input = serialize([page, rect]) as {
+        shapes: Record<string, Record<string, unknown>>;
+      };
+      input.shapes["rect-1"]!.strokeWidth = -4;
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+    });
+  });
 });

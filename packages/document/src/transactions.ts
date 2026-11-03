@@ -14,6 +14,7 @@ import { applySetShapeHiddenOn } from "./commands/set-shape-hidden-on";
 import { applySetShapeLabel } from "./commands/set-shape-label";
 import { applySetShapeOrder } from "./commands/set-shape-order";
 import { applySetShapeSemantic } from "./commands/set-shape-semantic";
+import { applySetShapeStyle } from "./commands/set-shape-style";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 
@@ -57,6 +58,8 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applySetShapeHiddenOn(document, command);
     case COMMANDS.setShapeOrder:
       return applySetShapeOrder(document, command);
+    case COMMANDS.setShapeStyle:
+      return applySetShapeStyle(document, command);
   }
 }
 

@@ -300,3 +300,44 @@ describe("selectionOverlayToSvg", () => {
     expect(overlay.match(/<rect/g)?.length).toBe(9);
   });
 });
+
+describe("shape styling (fill, stroke, strokeWidth) (F1, ADR-0006 Option A)", () => {
+  it("renders custom fill, stroke, and stroke-width on rect and ellipse", () => {
+    const rectId = parseShapeId("rect-styled");
+    const doc = createDocument([
+      createRect(
+        rectId,
+        { x: 10, y: 20, width: 100, height: 50 },
+        { fill: "#3b82f6", stroke: "#1e3a8a", strokeWidth: 4 },
+      ),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('fill="#3b82f6"');
+    expect(svg).toContain('stroke="#1e3a8a"');
+    expect(svg).toContain('stroke-width="4"');
+  });
+
+  it("renders default attributes when shape style properties are undefined", () => {
+    const rectId = parseShapeId("rect-default");
+    const doc = createDocument([createRect(rectId, { x: 10, y: 20, width: 100, height: 50 })]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('fill="#ffffff"');
+    expect(svg).toContain('stroke="#1f2933"');
+    expect(svg).not.toContain("stroke-width");
+  });
+
+  it("escapes hostile XML in color attributes", () => {
+    const hostileRect = {
+      ...createRect(parseShapeId("rect-1"), { x: 0, y: 0, width: 100, height: 100 }),
+      fill: '#ffffff" onload="alert(1)',
+      stroke: '#000000" onerror="alert(2)',
+    } as unknown as Shape;
+    const doc = createDocument([hostileRect]);
+    const svg = documentToSvg(doc);
+
+    expect(svg).not.toContain('onload="alert(1)"');
+    expect(svg).toContain('fill="#ffffff&quot; onload=&quot;alert(1)"');
+  });
+});

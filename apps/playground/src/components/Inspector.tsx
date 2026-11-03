@@ -28,6 +28,11 @@ export interface InspectorProps {
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
   readonly handleOrderChange: (dt: DeviceType, valStr: string) => void;
+  readonly handleStyleChange: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
 }
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
@@ -47,6 +52,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handlePropertyChange,
     handleToggleHiddenOn,
     handleOrderChange,
+    handleStyleChange,
   } = props;
 
   return (
@@ -89,6 +95,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           handlePropertyChange={handlePropertyChange}
           handleToggleHiddenOn={handleToggleHiddenOn}
           handleOrderChange={handleOrderChange}
+          handleStyleChange={handleStyleChange}
         />
       )}
     </div>

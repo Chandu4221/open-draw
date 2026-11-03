@@ -177,4 +177,29 @@ describe("document commands (milestone 05)", () => {
     const undone = applyTransaction(result.document, createTransaction(result.inverse));
     expect(undone.document.shapes[rectId]?.meta.order[DEVICE_TYPES.mobile]).toBeUndefined();
   });
+
+  it("applies SetShapeStyle and inverts cleanly (F1)", () => {
+    const doc = createBaseDoc();
+    const result = applyTransaction(
+      doc,
+      createTransaction([
+        {
+          type: COMMANDS.setShapeStyle,
+          id: rectId,
+          fill: "#e0f2fe",
+          stroke: "#0284c7",
+          strokeWidth: 2,
+        },
+      ]),
+    );
+
+    expect(result.document.shapes[rectId]?.fill).toBe("#e0f2fe");
+    expect(result.document.shapes[rectId]?.stroke).toBe("#0284c7");
+    expect(result.document.shapes[rectId]?.strokeWidth).toBe(2);
+
+    const undone = applyTransaction(result.document, createTransaction(result.inverse));
+    expect(undone.document.shapes[rectId]?.fill).toBeUndefined();
+    expect(undone.document.shapes[rectId]?.stroke).toBeUndefined();
+    expect(undone.document.shapes[rectId]?.strokeWidth).toBeUndefined();
+  });
 });

@@ -49,6 +49,9 @@ export interface BaseShape {
   readonly parent: ShapeId;
   readonly boundingBox: BoundingBox;
   readonly label?: string;
+  readonly fill?: string;
+  readonly stroke?: string;
+  readonly strokeWidth?: number;
   readonly meta: ShapeMeta;
 }
 
@@ -58,6 +61,9 @@ export const BASE_SHAPE_KEYS = {
   parent: "parent",
   boundingBox: "boundingBox",
   label: "label",
+  fill: "fill",
+  stroke: "stroke",
+  strokeWidth: "strokeWidth",
   meta: "meta",
 } as const satisfies Record<keyof BaseShape, string>;
 
@@ -108,6 +114,9 @@ export function isCustomShape(shape: Shape): shape is CustomShape {
 export interface ShapeInit {
   readonly parent?: ShapeId;
   readonly label?: string;
+  readonly fill?: string;
+  readonly stroke?: string;
+  readonly strokeWidth?: number;
   readonly meta?: ShapeMeta;
 }
 
@@ -128,6 +137,9 @@ function baseInit(
     parent: init.parent ?? ROOT_ID,
     boundingBox,
     ...(init.label === undefined ? {} : { label: init.label }),
+    ...(init.fill === undefined ? {} : { fill: init.fill }),
+    ...(init.stroke === undefined ? {} : { stroke: init.stroke }),
+    ...(init.strokeWidth === undefined ? {} : { strokeWidth: init.strokeWidth }),
     meta: init.meta ?? DEFAULT_META,
   };
 }

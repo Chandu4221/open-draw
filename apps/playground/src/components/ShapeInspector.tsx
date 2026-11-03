@@ -1,14 +1,15 @@
 import React from "react";
-import {
-  CONTROL_TYPES,
-  DEVICE_TYPES,
-  type DeviceType,
-  type PlatformProfile,
-  type SemanticConflict,
-  type SemanticDefinition,
+import type {
+  DeviceType,
+  PlatformProfile,
+  SemanticConflict,
+  SemanticDefinition,
 } from "@open-draw/contracts";
+import { CONTROL_TYPES } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
+import { ResponsiveControls } from "./ResponsiveControls";
+import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
 export interface ShapeInspectorProps {
   readonly selectedShape: Shape;
@@ -22,6 +23,11 @@ export interface ShapeInspectorProps {
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
   readonly handleOrderChange: (dt: DeviceType, valStr: string) => void;
+  readonly handleStyleChange: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
 }
 
 export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
@@ -37,6 +43,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     handlePropertyChange,
     handleToggleHiddenOn,
     handleOrderChange,
+    handleStyleChange,
   } = props;
 
   return (
@@ -220,71 +227,14 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         </div>
       )}
 
-      {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
-        <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-            Responsive Visibility (hiddenOn)
-          </label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {activeProfile.deviceTypes.map((dt) => {
-              const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
-              return (
-                <label
-                  key={dt}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "12px",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isHidden}
-                    onChange={() => handleToggleHiddenOn(dt)}
-                  />
-                  <span>{DEVICE_TYPES[dt]}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <ShapeStyleInspector selectedShape={selectedShape} handleStyleChange={handleStyleChange} />
 
-      {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
-        <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-            Responsive Order (order)
-          </label>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "6px",
-            }}
-          >
-            {activeProfile.deviceTypes.map((dt) => {
-              const orderVal = selectedShape.meta.order[dt];
-              return (
-                <div key={dt} style={{ fontSize: "12px" }}>
-                  <label style={{ display: "block", color: "#64748b" }}>{DEVICE_TYPES[dt]}:</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={orderVal !== undefined ? orderVal : ""}
-                    style={{
-                      width: "100%",
-                      padding: "3px 6px",
-                      boxSizing: "border-box",
-                    }}
-                    onChange={(e) => handleOrderChange(dt, e.target.value)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <ResponsiveControls
+        selectedShape={selectedShape}
+        activeProfile={activeProfile}
+        handleToggleHiddenOn={handleToggleHiddenOn}
+        handleOrderChange={handleOrderChange}
+      />
     </div>
   );
 }

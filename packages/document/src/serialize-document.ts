@@ -86,6 +86,18 @@ export function serializeDocument(doc: Document): string {
       shapeRecord.label = shape.label;
     }
 
+    if (shape.fill !== undefined) {
+      shapeRecord.fill = shape.fill;
+    }
+
+    if (shape.stroke !== undefined) {
+      shapeRecord.stroke = shape.stroke;
+    }
+
+    if (shape.strokeWidth !== undefined) {
+      shapeRecord.strokeWidth = shape.strokeWidth;
+    }
+
     if (isCustomShape(shape)) {
       if (shape.customData !== undefined) {
         for (const [k, v] of Object.entries(shape.customData)) {

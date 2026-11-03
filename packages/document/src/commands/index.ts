@@ -11,6 +11,7 @@ import type { SetShapeHiddenOn } from "./set-shape-hidden-on";
 import type { SetShapeLabel } from "./set-shape-label";
 import type { SetShapeOrder } from "./set-shape-order";
 import type { SetShapeSemantic } from "./set-shape-semantic";
+import type { SetShapeStyle } from "./set-shape-style";
 
 export { COMMANDS } from "./registry";
 export type { CommandId } from "./registry";
@@ -36,6 +37,8 @@ export type { SetShapeHiddenOn } from "./set-shape-hidden-on";
 export { applySetShapeHiddenOn } from "./set-shape-hidden-on";
 export type { SetShapeOrder } from "./set-shape-order";
 export { applySetShapeOrder } from "./set-shape-order";
+export type { SetShapeStyle } from "./set-shape-style";
+export { applySetShapeStyle } from "./set-shape-style";
 
 export type Command =
   | CreateShape
@@ -48,7 +51,8 @@ export type Command =
   | SetRootPlatform
   | SetRootStyle
   | SetShapeHiddenOn
-  | SetShapeOrder;
+  | SetShapeOrder
+  | SetShapeStyle;
 
 export interface CommandResult {
   readonly document: Document;

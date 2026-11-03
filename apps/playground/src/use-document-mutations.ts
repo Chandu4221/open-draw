@@ -23,6 +23,11 @@ export interface DocumentMutations {
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
   readonly handleOrderChange: (dt: DeviceType, valStr: string) => void;
+  readonly handleStyleChange: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
 }
 
 export function useDocumentMutations(props: DocumentMutationsProps): DocumentMutations {
@@ -134,6 +139,24 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     render();
   }
 
+  function handleStyleChange(
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ): void {
+    if (!selectedShape) return;
+    commit([
+      {
+        type: COMMANDS.setShapeStyle,
+        id: selectedShape.id,
+        fill,
+        stroke,
+        strokeWidth,
+      },
+    ]);
+    render();
+  }
+
   return {
     handleSetPlatform,
     handleSetStyle,
@@ -142,5 +165,6 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     handlePropertyChange,
     handleToggleHiddenOn,
     handleOrderChange,
+    handleStyleChange,
   };
 }
