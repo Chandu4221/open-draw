@@ -40,6 +40,20 @@ export function escapeMarkdownText(text: string): string {
     .trim();
 }
 
+/**
+ * Safely escapes strings rendered inside a Markdown backtick code span (`...`) (R-006, R-008).
+ * Neutralizes newlines so they cannot start a new line, and replaces backticks so they cannot close the code span early.
+ */
+export function escapeCodeSpan(text: string): string {
+  if (text === "") {
+    return "";
+  }
+  return text
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/`/g, "'")
+    .trim();
+}
+
 function formatProperties(properties: Readonly<Record<string, string | number | boolean>>): string {
   const entries = Object.entries(properties);
   if (entries.length === 0) {
@@ -57,14 +71,14 @@ function formatHiddenOn(hiddenOn: readonly DeviceType[] | undefined): string {
     return "";
   }
   const sorted = [...hiddenOn].map((d) => DEVICE_TYPES[d] ?? d).sort((a, b) => a.localeCompare(b));
-  return ` _(hidden on ${sorted.join(", ")})_`;
+  return ` _(hidden on ${sorted.map(escapeMarkdownText).join(", ")})_`;
 }
 
 function formatConflict(node: SemanticTreeNode): string {
   if (node.conflict?.status !== SEMANTIC_CONFLICTS.conflicted) {
     return "";
   }
-  const reason = node.conflict.reason ?? "conflicted semantic tag";
+  const reason = escapeMarkdownText(node.conflict.reason ?? "conflicted semantic tag");
   return ` ⚠️ _[CONFLICT: ${reason}]_`;
 }
 
@@ -73,11 +87,11 @@ function formatRootMeta(doc: Document, shape: Shape): string {
   const explicitStyle = shape.meta.style;
   const tags: string[] = [];
   if (platform !== undefined) {
-    tags.push(`Platform: ${platform}`);
+    tags.push(`Platform: ${escapeMarkdownText(platform)}`);
     const effectiveStyle = explicitStyle ?? resolveRootStyle(doc, shape.id);
-    tags.push(`Style: ${effectiveStyle}`);
+    tags.push(`Style: ${escapeMarkdownText(effectiveStyle)}`);
   } else if (explicitStyle !== undefined) {
-    tags.push(`Style: ${explicitStyle}`);
+    tags.push(`Style: ${escapeMarkdownText(explicitStyle)}`);
   }
   return tags.length > 0 ? ` (${tags.join(", ")})` : "";
 }
@@ -105,7 +119,9 @@ function renderNode(doc: Document, node: SemanticTreeNode): string {
   // Leaf content shapes
   const indent = "  ".repeat(Math.max(0, node.depth - 1));
   const semanticTag =
-    node.shape.meta.semantic !== undefined ? ` — \`${node.shape.meta.semantic.id}\`` : "";
+    node.shape.meta.semantic !== undefined
+      ? ` — \`${escapeCodeSpan(node.shape.meta.semantic.id)}\``
+      : "";
   const properties =
     node.shape.meta.semantic?.properties !== undefined
       ? formatProperties(node.shape.meta.semantic.properties)

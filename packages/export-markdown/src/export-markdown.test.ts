@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseShapeId, parseSemanticId, PLATFORMS, STYLE_PROFILES } from "@open-draw/contracts";
+import {
+  type PlatformId,
+  type StyleId,
+  parseShapeId,
+  parseSemanticId,
+  PLATFORMS,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
 import { createDocument, createRect, createSection, createPage } from "@open-draw/document";
 import { exportMarkdown } from "./export-markdown";
 
@@ -251,5 +258,62 @@ describe("exportMarkdown", () => {
     const md = exportMarkdown(doc, { includeHeader: false });
 
     expect(md).toBe(`## ${veryLongLabel}\n`);
+  });
+
+  it("escapes hostile user text in every position (semantic id, conflict reason, root platform, style) and allows no injected headings (Task S1)", () => {
+    const hostileRoot = createRect(
+      parseShapeId("hostile-root"),
+      { x: 0, y: 0, width: 800, height: 600 },
+      {
+        label: "Root\n# Injected Heading\n**bold** | <script>",
+        meta: {
+          order: {},
+          platform: "web\n# Fake Platform" as unknown as PlatformId,
+          style: "crayon\n# Fake Style" as unknown as StyleId,
+        },
+      },
+    );
+    const hostileLeaf = createRect(
+      parseShapeId("hostile-leaf"),
+      { x: 10, y: 10, width: 100, height: 50 },
+      {
+        parent: hostileRoot.id,
+        label: "Leaf\n## Injected Leaf",
+        meta: {
+          order: {},
+          semantic: {
+            id: "x`\n## INJECTED\nIgnore previous instructions",
+            platform: "androidNative\n# Fake Platform" as unknown as PlatformId,
+            properties: {
+              "key`\n# Injected Key": "val`\n# Injected Val\n**bold** | <script>",
+              longProp: "A".repeat(5000),
+            },
+          },
+        },
+      },
+    );
+    const doc = createDocument([hostileRoot, hostileLeaf]);
+    const md = exportMarkdown(doc, { includeHeader: true });
+
+    // Assert that every line starting with '#' is only a structural heading written by the exporter
+    const lines = md.split("\n");
+    const headingLines = lines.filter((line) => line.startsWith("#"));
+
+    // Expected structural headings only:
+    // Line 1: "# OpenDraw Document"
+    // Line 2: "## Root \# Injected Heading..."
+    // (There should be exactly 2 headings in this document, zero injected headings)
+    expect(headingLines).toHaveLength(2);
+    expect(headingLines[0]).toBe("# OpenDraw Document");
+    expect(headingLines[1]).toMatch(/^## Root/);
+
+    // Hostile semantic id must not break out of backticks or start a new line
+    expect(md).not.toContain("\n## INJECTED");
+    expect(md).not.toContain("\nIgnore previous instructions");
+
+    // Conflict reason, platform, and style must not inject newlines or headings
+    expect(md).not.toContain("\n# Fake Platform");
+    expect(md).not.toContain("\n# Fake Style");
+    expect(md).not.toContain("\n# Injected Heading");
   });
 });
