@@ -47,6 +47,18 @@ describe("pickHandle", () => {
     expect(pickHandle(DEFAULT_CAMERA, box, { x: 12, y: 8 })).toBe(HANDLES.nw);
   });
 
+  it("picks an edge handle within the screen radius", () => {
+    const box = { x: 10, y: 10, width: 50, height: 50 };
+    // midX = 35, minY = 10 -> north handle
+    expect(pickHandle(DEFAULT_CAMERA, box, { x: 35, y: 10 })).toBe(HANDLES.n);
+    // midX = 35, maxY = 60 -> south handle
+    expect(pickHandle(DEFAULT_CAMERA, box, { x: 35, y: 60 })).toBe(HANDLES.s);
+    // minX = 10, midY = 35 -> west handle
+    expect(pickHandle(DEFAULT_CAMERA, box, { x: 10, y: 35 })).toBe(HANDLES.w);
+    // maxX = 60, midY = 35 -> east handle
+    expect(pickHandle(DEFAULT_CAMERA, box, { x: 60, y: 35 })).toBe(HANDLES.e);
+  });
+
   it("returns null outside the radius", () => {
     const box = { x: 10, y: 10, width: 50, height: 50 };
     expect(pickHandle(DEFAULT_CAMERA, box, { x: 40, y: 40 })).toBe(null);

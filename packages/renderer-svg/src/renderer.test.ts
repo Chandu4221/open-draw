@@ -22,6 +22,7 @@ import {
   fallbackShapeToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
+  selectionOverlayToSvg,
   type RendererFallbackEvent,
 } from "./index";
 
@@ -289,5 +290,13 @@ describe("fallback shape escaping", () => {
     expect(typeof svg).toBe("string");
     // Should render 1 page rect + 255 child rects = 256 rects
     expect(svg.match(/<rect/g)?.length).toBe(MAX_DOCUMENT_DEPTH);
+  });
+});
+
+describe("selectionOverlayToSvg", () => {
+  it("renders 1 outline rect and 8 handle rects (4 corners + 4 edge midpoints)", () => {
+    const overlay = selectionOverlayToSvg({ x: 10, y: 10, width: 100, height: 60 }, 1);
+    // 1 outline rect + 8 handle rects = 9 rects
+    expect(overlay.match(/<rect/g)?.length).toBe(9);
   });
 });

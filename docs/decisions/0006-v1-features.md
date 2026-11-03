@@ -272,4 +272,3 @@ Creating repeated shapes requires drawing each one from scratch. Users cannot du
   4. F3 (Multi-Select): Option A (marquee selects by bounding box intersection).
   5. F4 (Image Export): Option A (SVG & PNG export buttons; optional legend expands viewBox at bottom).
   6. F5 (Duplicate / Copy-Paste): Option A (in-memory clipboard, `Mod+D` duplicate, `Mod+C` / `Mod+V`).
-

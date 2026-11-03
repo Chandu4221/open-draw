@@ -148,18 +148,27 @@ export function documentToSvg(document: Document, options?: RenderOptions): stri
     .join("");
 }
 
-// Selection outline + corner handles, in world space. Handle size is divided
-// by zoom so overlays counter-scale and never detach (R-031).
+// Selection outline + 8 handles (4 corners + 4 edge midpoints), in world space.
+// Handle size is divided by zoom so overlays counter-scale and never detach (R-031, ADR-0006 Option A).
 export function selectionOverlayToSvg(box: BoundingBox, zoom: number): string {
   const outline = `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="${RENDER_STYLES.selectionStroke}" stroke-dasharray="${RENDER_STYLES.selectionDasharray}" />`;
   const half = HANDLE_SIZE_PX / zoom / 2;
-  const corners: ReadonlyArray<readonly [number, number]> = [
+  const midX = box.x + box.width / 2;
+  const midY = box.y + box.height / 2;
+  const right = box.x + box.width;
+  const bottom = box.y + box.height;
+
+  const positions: ReadonlyArray<readonly [number, number]> = [
     [box.x, box.y],
-    [box.x + box.width, box.y],
-    [box.x + box.width, box.y + box.height],
-    [box.x, box.y + box.height],
+    [midX, box.y],
+    [right, box.y],
+    [right, midY],
+    [right, bottom],
+    [midX, bottom],
+    [box.x, bottom],
+    [box.x, midY],
   ];
-  const handles = corners
+  const handles = positions
     .map(
       ([x, y]) =>
         `<rect x="${x - half}" y="${y - half}" width="${half * 2}" height="${half * 2}" fill="${RENDER_STYLES.handleFill}" />`,

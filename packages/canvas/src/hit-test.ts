@@ -43,14 +43,23 @@ export function pickHandle(
   worldBox: BoundingBox,
   screenPoint: Point,
 ): HandleId | null {
-  const corners: ReadonlyArray<readonly [HandleId, Point]> = [
+  const midX = worldBox.x + worldBox.width / 2;
+  const midY = worldBox.y + worldBox.height / 2;
+  const right = worldBox.x + worldBox.width;
+  const bottom = worldBox.y + worldBox.height;
+
+  const handles: ReadonlyArray<readonly [HandleId, Point]> = [
     [HANDLES.nw, { x: worldBox.x, y: worldBox.y }],
-    [HANDLES.ne, { x: worldBox.x + worldBox.width, y: worldBox.y }],
-    [HANDLES.se, { x: worldBox.x + worldBox.width, y: worldBox.y + worldBox.height }],
-    [HANDLES.sw, { x: worldBox.x, y: worldBox.y + worldBox.height }],
+    [HANDLES.ne, { x: right, y: worldBox.y }],
+    [HANDLES.se, { x: right, y: bottom }],
+    [HANDLES.sw, { x: worldBox.x, y: bottom }],
+    [HANDLES.n, { x: midX, y: worldBox.y }],
+    [HANDLES.s, { x: midX, y: bottom }],
+    [HANDLES.w, { x: worldBox.x, y: midY }],
+    [HANDLES.e, { x: right, y: midY }],
   ];
-  for (const [handle, corner] of corners) {
-    const onScreen = worldToScreen(camera, corner);
+  for (const [handle, position] of handles) {
+    const onScreen = worldToScreen(camera, position);
     if (
       Math.abs(onScreen.x - screenPoint.x) <= HANDLE_PICK_RADIUS_PX &&
       Math.abs(onScreen.y - screenPoint.y) <= HANDLE_PICK_RADIUS_PX

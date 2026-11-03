@@ -16,9 +16,8 @@ export function normalizeBox(start: Point, end: Point): BoundingBox {
   };
 }
 
-// Resizes from a corner handle. The anchored edges NEVER move — only the
-// dragged edge does (review Bug 3 fix). Never below MIN_SHAPE_SIZE; no flip
-// this milestone.
+// Resizes from a corner or edge handle (ADR-0006 Option A). The anchored edges
+// NEVER move — only the dragged edge does. Never below MIN_SHAPE_SIZE; no flip.
 export function resizeBox(original: BoundingBox, handle: HandleId, worldPoint: Point): BoundingBox {
   const right = original.x + original.width;
   const bottom = original.y + original.height;
@@ -52,6 +51,40 @@ export function resizeBox(original: BoundingBox, handle: HandleId, worldPoint: P
       const x = Math.min(worldPoint.x, right - MIN_SHAPE_SIZE);
       const y = Math.min(worldPoint.y, bottom - MIN_SHAPE_SIZE);
       return { x, y, width: right - x, height: bottom - y };
+    }
+    case HANDLES.n: {
+      const y = Math.min(worldPoint.y, bottom - MIN_SHAPE_SIZE);
+      return {
+        x: original.x,
+        y,
+        width: original.width,
+        height: bottom - y,
+      };
+    }
+    case HANDLES.s: {
+      return {
+        x: original.x,
+        y: original.y,
+        width: original.width,
+        height: Math.max(MIN_SHAPE_SIZE, worldPoint.y - original.y),
+      };
+    }
+    case HANDLES.w: {
+      const x = Math.min(worldPoint.x, right - MIN_SHAPE_SIZE);
+      return {
+        x,
+        y: original.y,
+        width: right - x,
+        height: original.height,
+      };
+    }
+    case HANDLES.e: {
+      return {
+        x: original.x,
+        y: original.y,
+        width: Math.max(MIN_SHAPE_SIZE, worldPoint.x - original.x),
+        height: original.height,
+      };
     }
   }
 }

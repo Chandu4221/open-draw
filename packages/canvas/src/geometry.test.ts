@@ -69,4 +69,42 @@ describe("resizeBox", () => {
     expect(resized.y + resized.height).toBe(60); // bottom stays anchored
     expect(resized.height).toBe(MIN_SHAPE_SIZE);
   });
+
+  it("grows/shrinks height from the north handle while keeping bottom and x anchored", () => {
+    // original: { x: 10, y: 10, width: 100, height: 50 }, bottom = 60
+    expect(resizeBox(original, HANDLES.n, { x: 50, y: 30 })).toEqual({
+      x: 10,
+      y: 30,
+      width: 100,
+      height: 30,
+    });
+  });
+
+  it("grows/shrinks height from the south handle while keeping top and x anchored", () => {
+    expect(resizeBox(original, HANDLES.s, { x: 50, y: 90 })).toEqual({
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 80,
+    });
+  });
+
+  it("grows/shrinks width from the west handle while keeping right and y anchored", () => {
+    // original: { x: 10, y: 10, width: 100, height: 50 }, right = 110
+    expect(resizeBox(original, HANDLES.w, { x: 40, y: 30 })).toEqual({
+      x: 40,
+      y: 10,
+      width: 70,
+      height: 50,
+    });
+  });
+
+  it("grows/shrinks width from the east handle while keeping left and y anchored", () => {
+    expect(resizeBox(original, HANDLES.e, { x: 160, y: 30 })).toEqual({
+      x: 10,
+      y: 10,
+      width: 150,
+      height: 50,
+    });
+  });
 });
