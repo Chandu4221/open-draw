@@ -34,6 +34,21 @@ export interface InspectorProps {
     stroke?: string | null,
     strokeWidth?: number | null,
   ) => void;
+  readonly handleStylePreview: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
+  readonly handleStyleCommit: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+    startStyle?: {
+      fill?: string | null;
+      stroke?: string | null;
+      strokeWidth?: number | null;
+    },
+  ) => void;
 }
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
@@ -55,6 +70,8 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleToggleHiddenOn,
     handleOrderChange,
     handleStyleChange,
+    handleStylePreview,
+    handleStyleCommit,
   } = props;
 
   return (
@@ -99,6 +116,8 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           handleToggleHiddenOn={handleToggleHiddenOn}
           handleOrderChange={handleOrderChange}
           handleStyleChange={handleStyleChange}
+          handleStylePreview={handleStylePreview}
+          handleStyleCommit={handleStyleCommit}
         />
       )}
     </div>

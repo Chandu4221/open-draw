@@ -54,18 +54,16 @@ export default function App() {
   const showTagChipsRef = useRef<boolean>(false);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
 
-  function chooseTool(next: ToolId): void {
+  const chooseTool = (next: ToolId): void => {
     toolRef.current = next;
     setTool(next);
-  }
-
-  function handleDeviceChange(deviceType?: DeviceType): void {
+  };
+  const handleDeviceChange = (deviceType?: DeviceType): void => {
     canvasRef.current.setActiveDeviceType(deviceType);
     setActiveDeviceType(deviceType);
     render();
-  }
-
-  function handleZoom(factor: number): void {
+  };
+  const handleZoom = (factor: number): void => {
     const svg = svgRef.current;
     if (svg === null) return;
     const rect = svg.getBoundingClientRect();
@@ -73,19 +71,17 @@ export default function App() {
     canvasRef.current.zoomAt(center, factor);
     setZoomPercent(Math.round(canvasRef.current.getCamera().zoom * 100));
     render();
-  }
-
-  function handleResetZoom(): void {
+  };
+  const handleResetZoom = (): void => {
     canvasRef.current.setCamera({ x: 0, y: 0, zoom: 1 });
     setZoomPercent(100);
     render();
-  }
-
-  function selectShape(id: ShapeId): void {
+  };
+  const selectShape = (id: ShapeId): void => {
     canvasRef.current.select(id);
     setSelectedShapeId(id);
     render();
-  }
+  };
 
   function render(): void {
     const svg = svgRef.current;
@@ -102,10 +98,16 @@ export default function App() {
     });
   }
 
-  function commit(commands: readonly Command[]): void {
+  function commit(
+    commands: readonly Command[],
+    options?: { record?: boolean; customInverse?: readonly Command[] },
+  ): void {
     const result = applyTransaction(documentRef.current, createTransaction(commands));
     documentRef.current = result.document;
-    historyRef.current = recordHistory(historyRef.current, result.inverse);
+    if (options?.record !== false) {
+      const inv = options?.customInverse ?? result.inverse;
+      historyRef.current = recordHistory(historyRef.current, inv);
+    }
     setDoc(result.document);
   }
 

@@ -29,6 +29,21 @@ export interface ShapeInspectorProps {
     stroke?: string | null,
     strokeWidth?: number | null,
   ) => void;
+  readonly handleStylePreview: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
+  readonly handleStyleCommit: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+    startStyle?: {
+      fill?: string | null;
+      stroke?: string | null;
+      strokeWidth?: number | null;
+    },
+  ) => void;
 }
 
 export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
@@ -46,6 +61,8 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     handleToggleHiddenOn,
     handleOrderChange,
     handleStyleChange,
+    handleStylePreview,
+    handleStyleCommit,
   } = props;
 
   return (
@@ -247,7 +264,12 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         </div>
       )}
 
-      <ShapeStyleInspector selectedShape={selectedShape} handleStyleChange={handleStyleChange} />
+      <ShapeStyleInspector
+        selectedShape={selectedShape}
+        handleStyleChange={handleStyleChange}
+        handleStylePreview={handleStylePreview}
+        handleStyleCommit={handleStyleCommit}
+      />
 
       <ResponsiveControls
         selectedShape={selectedShape}

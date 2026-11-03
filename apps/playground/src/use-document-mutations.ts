@@ -11,7 +11,10 @@ export interface DocumentMutationsProps {
   readonly activeDeviceType: DeviceType | undefined;
   readonly canvasRef: React.MutableRefObject<CanvasController>;
   readonly setActiveDeviceType: (dt: DeviceType | undefined) => void;
-  readonly commit: (commands: readonly Command[]) => void;
+  readonly commit: (
+    commands: readonly Command[],
+    options?: { record?: boolean; customInverse?: readonly Command[] },
+  ) => void;
   readonly render: () => void;
 }
 
@@ -28,6 +31,21 @@ export interface DocumentMutations {
     fill?: string | null,
     stroke?: string | null,
     strokeWidth?: number | null,
+  ) => void;
+  readonly handleStylePreview: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
+  readonly handleStyleCommit: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+    startStyle?: {
+      fill?: string | null;
+      stroke?: string | null;
+      strokeWidth?: number | null;
+    },
   ) => void;
 }
 
@@ -165,6 +183,62 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     render();
   }
 
+  function handleStylePreview(
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ): void {
+    if (!selectedShape) return;
+    commit(
+      [
+        {
+          type: COMMANDS.setShapeStyle,
+          id: selectedShape.id,
+          fill,
+          stroke,
+          strokeWidth,
+        },
+      ],
+      { record: false },
+    );
+    render();
+  }
+
+  function handleStyleCommit(
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+    startStyle?: {
+      fill?: string | null;
+      stroke?: string | null;
+      strokeWidth?: number | null;
+    },
+  ): void {
+    if (!selectedShape) return;
+    const customInverse: readonly Command[] = [
+      {
+        type: COMMANDS.setShapeStyle,
+        id: selectedShape.id,
+        fill: fill !== undefined ? (startStyle?.fill ?? null) : undefined,
+        stroke: stroke !== undefined ? (startStyle?.stroke ?? null) : undefined,
+        strokeWidth: strokeWidth !== undefined ? (startStyle?.strokeWidth ?? null) : undefined,
+      },
+    ];
+    commit(
+      [
+        {
+          type: COMMANDS.setShapeStyle,
+          id: selectedShape.id,
+          fill,
+          stroke,
+          strokeWidth,
+        },
+      ],
+      { record: true, customInverse },
+    );
+    render();
+  }
+
   return {
     handleSetPlatform,
     handleSetStyle,
@@ -175,5 +249,7 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     handleToggleHiddenOn,
     handleOrderChange,
     handleStyleChange,
+    handleStylePreview,
+    handleStyleCommit,
   };
 }
