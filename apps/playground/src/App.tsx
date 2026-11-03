@@ -19,7 +19,13 @@ import { TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
 import { CANVAS_WIRE_STYLE, type Gesture } from "./types";
 import { initCanvas } from "./canvas-init";
 import { renderCanvasSvg } from "./canvas-render";
-import { exportDocumentJson, exportDocumentMarkdown, promptLoadDocumentJson } from "./document-io";
+import {
+  exportDocumentJson,
+  exportDocumentMarkdown,
+  exportDocumentPng,
+  exportDocumentSvg,
+  promptLoadDocumentJson,
+} from "./document-io";
 import { Toolbar } from "./components/Toolbar";
 import { Sidebar } from "./components/Sidebar";
 import { useCanvasInteractions } from "./use-canvas-interactions";
@@ -46,6 +52,7 @@ export default function App() {
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [showTagChips, setShowTagChips] = useState<boolean>(false);
   const showTagChipsRef = useRef<boolean>(false);
+  const [includeLegend, setIncludeLegend] = useState<boolean>(false);
 
   function chooseTool(next: ToolId): void {
     toolRef.current = next;
@@ -120,6 +127,26 @@ export default function App() {
     }
   }
 
+  function handleExportSvg(): void {
+    try {
+      exportDocumentSvg(documentRef.current, includeLegend);
+      setStatusMessage("Exported SVG successfully");
+    } catch (err) {
+      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  function handleExportPng(): void {
+    try {
+      exportDocumentPng(documentRef.current, includeLegend, (err) => {
+        setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
+      });
+      setStatusMessage("Exported PNG successfully");
+    } catch (err) {
+      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   function toggleShowTagChips(): void {
     setShowTagChips((prev) => {
       const next = !prev;
@@ -152,17 +179,7 @@ export default function App() {
 
   const inspection = useInspectionData(doc, selectedShapeId, activeDeviceType);
 
-  const {
-    handleSetPlatform,
-    handleSetStyle,
-    handleSetLabel,
-    handleSetContent,
-    handleSetSemantic,
-    handlePropertyChange,
-    handleToggleHiddenOn,
-    handleOrderChange,
-    handleStyleChange,
-  } = useDocumentMutations({
+  const mutations = useDocumentMutations({
     selectedShape: inspection.selectedShape,
     rootShape: inspection.rootShape,
     activeProfile: inspection.activeProfile,
@@ -218,6 +235,10 @@ export default function App() {
         tool={tool}
         chooseTool={chooseTool}
         handleExportMarkdown={handleExportMarkdown}
+        handleExportSvg={handleExportSvg}
+        handleExportPng={handleExportPng}
+        includeLegend={includeLegend}
+        setIncludeLegend={setIncludeLegend}
         handleSave={handleSave}
         handleLoad={handleLoad}
         activeProfile={inspection.activeProfile}
@@ -259,24 +280,8 @@ export default function App() {
 
         {showSidebar && (
           <Sidebar
-            selectedShape={inspection.selectedShape}
-            rootShape={inspection.rootShape}
-            rootPlatform={inspection.rootPlatform}
-            rootStyle={inspection.rootStyle}
-            activeProfile={inspection.activeProfile}
-            conflict={inspection.conflict}
-            semanticDef={inspection.semanticDef}
-            semanticProps={inspection.semanticProps}
-            handleSetLabel={handleSetLabel}
-            handleSetContent={handleSetContent}
-            handleSetPlatform={handleSetPlatform}
-            handleSetStyle={handleSetStyle}
-            handleSetSemantic={handleSetSemantic}
-            handlePropertyChange={handlePropertyChange}
-            handleToggleHiddenOn={handleToggleHiddenOn}
-            handleOrderChange={handleOrderChange}
-            handleStyleChange={handleStyleChange}
-            treeNodes={inspection.treeNodes}
+            {...inspection}
+            {...mutations}
             selectedShapeId={selectedShapeId}
             selectShape={selectShape}
           />

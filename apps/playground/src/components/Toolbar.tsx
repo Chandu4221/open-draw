@@ -7,6 +7,10 @@ export interface ToolbarProps {
   readonly tool: ToolId;
   readonly chooseTool: (tool: ToolId) => void;
   readonly handleExportMarkdown: () => void;
+  readonly handleExportSvg: () => void;
+  readonly handleExportPng: () => void;
+  readonly includeLegend: boolean;
+  readonly setIncludeLegend: (include: boolean) => void;
   readonly handleSave: () => void;
   readonly handleLoad: () => void;
   readonly activeProfile: PlatformProfile | undefined;
@@ -27,6 +31,10 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
     tool,
     chooseTool,
     handleExportMarkdown,
+    handleExportSvg,
+    handleExportPng,
+    includeLegend,
+    setIncludeLegend,
     handleSave,
     handleLoad,
     activeProfile,
@@ -80,6 +88,28 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
         <button type="button" onClick={handleExportMarkdown}>
           Export Markdown
         </button>
+        <button type="button" onClick={handleExportSvg}>
+          Export SVG
+        </button>
+        <button type="button" onClick={handleExportPng}>
+          Export PNG
+        </button>
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            cursor: "pointer",
+            fontSize: "12px",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={includeLegend}
+            onChange={(e) => setIncludeLegend(e.target.checked)}
+          />
+          Include Legend
+        </label>
         <button type="button" onClick={handleSave}>
           Export JSON
         </button>
