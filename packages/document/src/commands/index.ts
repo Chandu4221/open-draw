@@ -12,6 +12,7 @@ import type { SetShapeLabel } from "./set-shape-label";
 import type { SetShapeOrder } from "./set-shape-order";
 import type { SetShapeSemantic } from "./set-shape-semantic";
 import type { SetShapeStyle } from "./set-shape-style";
+import type { SetShapeContent } from "./set-shape-content";
 
 export { COMMANDS } from "./registry";
 export type { CommandId } from "./registry";
@@ -39,6 +40,8 @@ export type { SetShapeOrder } from "./set-shape-order";
 export { applySetShapeOrder } from "./set-shape-order";
 export type { SetShapeStyle } from "./set-shape-style";
 export { applySetShapeStyle } from "./set-shape-style";
+export type { SetShapeContent } from "./set-shape-content";
+export { applySetShapeContent } from "./set-shape-content";
 
 export type Command =
   | CreateShape
@@ -52,7 +55,8 @@ export type Command =
   | SetRootStyle
   | SetShapeHiddenOn
   | SetShapeOrder
-  | SetShapeStyle;
+  | SetShapeStyle
+  | SetShapeContent;
 
 export interface CommandResult {
   readonly document: Document;

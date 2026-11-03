@@ -202,4 +202,48 @@ describe("document commands (milestone 05)", () => {
     expect(undone.document.shapes[rectId]?.stroke).toBeUndefined();
     expect(undone.document.shapes[rectId]?.strokeWidth).toBeUndefined();
   });
+
+  it("updates and clears shape content with clean inverse (SetShapeContent)", () => {
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 800, height: 600 }),
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    // Set content
+    const result = applyTransaction(
+      doc,
+      createTransaction([
+        {
+          type: COMMANDS.setShapeContent,
+          id: rectId,
+          content: "Hello World",
+        },
+      ]),
+    );
+
+    expect(result.document.shapes[rectId]?.content).toBe("Hello World");
+
+    // Inverse restores undefined
+    const undone = applyTransaction(result.document, createTransaction(result.inverse));
+    expect(undone.document.shapes[rectId]?.content).toBeUndefined();
+
+    // Clear content with null
+    const cleared = applyTransaction(
+      result.document,
+      createTransaction([
+        {
+          type: COMMANDS.setShapeContent,
+          id: rectId,
+          content: null,
+        },
+      ]),
+    );
+    expect(cleared.document.shapes[rectId]?.content).toBeUndefined();
+
+    // Inverse of clear restores "Hello World"
+    const restored = applyTransaction(cleared.document, createTransaction(cleared.inverse));
+    expect(restored.document.shapes[rectId]?.content).toBe("Hello World");
+  });
 });

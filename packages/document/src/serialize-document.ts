@@ -86,6 +86,10 @@ export function serializeDocument(doc: Document): string {
       shapeRecord.label = shape.label;
     }
 
+    if (shape.content !== undefined) {
+      shapeRecord.content = shape.content;
+    }
+
     if (shape.fill !== undefined) {
       shapeRecord.fill = shape.fill;
     }

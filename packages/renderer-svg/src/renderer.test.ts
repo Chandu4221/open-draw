@@ -342,31 +342,36 @@ describe("shape styling (fill, stroke, strokeWidth) (F1, ADR-0006 Option A)", ()
   });
 });
 
-describe("visible text on shapes (F2, ADR-0006 Option A)", () => {
-  it("renders centered clipped text when shape.label is present", () => {
-    const rectId = parseShapeId("rect-with-label");
+describe("visible text on shapes (F2, ADR-0006 Option A / shape.content)", () => {
+  it("renders centered clipped text when shape.content is present", () => {
+    const rectId = parseShapeId("rect-with-content");
     const doc = createDocument([
-      createRect(rectId, { x: 100, y: 200, width: 200, height: 100 }, { label: "Submit Form" }),
+      createRect(
+        rectId,
+        { x: 100, y: 200, width: 200, height: 100 },
+        { label: "Submit Button Layer", content: "Submit Form" },
+      ),
     ]);
 
     const svg = documentToSvg(doc);
-    expect(svg).toContain('<clipPath id="clip-rect-with-label">');
+    expect(svg).toContain('<clipPath id="clip-rect-with-content">');
     expect(svg).toContain('<rect x="100" y="200" width="200" height="100"');
     expect(svg).toContain('x="200"'); // 100 + 200/2
     expect(svg).toContain('y="250"'); // 200 + 100/2
     expect(svg).toContain('dominant-baseline="central"');
     expect(svg).toContain('text-anchor="middle"');
-    expect(svg).toContain('clip-path="url(#clip-rect-with-label)"');
+    expect(svg).toContain('clip-path="url(#clip-rect-with-content)"');
     expect(svg).toContain(">Submit Form</text>");
+    expect(svg).not.toContain(">Submit Button Layer</text>");
   });
 
-  it("escapes hostile XML in shape.label", () => {
+  it("escapes hostile XML in shape.content", () => {
     const rectId = parseShapeId("rect-xss");
     const doc = createDocument([
       createRect(
         rectId,
         { x: 50, y: 50, width: 100, height: 50 },
-        { label: '<script>alert("xss")</script> & "quotes"' },
+        { content: '<script>alert("xss")</script> & "quotes"' },
       ),
     ]);
 
@@ -377,8 +382,19 @@ describe("visible text on shapes (F2, ADR-0006 Option A)", () => {
     );
   });
 
-  it("does not render clipPath or text when shape.label is absent or empty", () => {
-    const rectId = parseShapeId("rect-no-label");
+  it("does not render clipPath or text when shape has only label and no content", () => {
+    const rectId = parseShapeId("rect-label-only");
+    const doc = createDocument([
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 50 }, { label: "Profile Box" }),
+    ]);
+
+    const svg = documentToSvg(doc);
+    expect(svg).not.toContain("<clipPath");
+    expect(svg).not.toContain("<text");
+  });
+
+  it("does not render clipPath or text when shape.content is absent or empty", () => {
+    const rectId = parseShapeId("rect-no-content");
     const doc = createDocument([createRect(rectId, { x: 10, y: 10, width: 100, height: 50 })]);
 
     const svg = documentToSvg(doc);

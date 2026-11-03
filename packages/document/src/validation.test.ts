@@ -320,5 +320,22 @@ describe("parseDocument", () => {
       input.shapes["rect-1"]!.strokeWidth = -4;
       expect(() => parseDocument(input)).toThrow(DocumentError);
     });
+
+    it("parses valid string content and rejects non-string content", () => {
+      const shapeWithContent = createRect(
+        parseShapeId("rect-content"),
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: parseShapeId("page-1"), content: "Button Text" },
+      );
+      const doc = parseDocument(serialize([page, shapeWithContent]));
+      const parsedShape = doc.shapes[parseShapeId("rect-content")];
+      expect(parsedShape?.content).toBe("Button Text");
+
+      const invalidInput = serialize([page, shapeWithContent]) as {
+        shapes: Record<string, Record<string, unknown>>;
+      };
+      invalidInput.shapes["rect-content"]!.content = 12345;
+      expect(() => parseDocument(invalidInput)).toThrow(DocumentError);
+    });
   });
 });

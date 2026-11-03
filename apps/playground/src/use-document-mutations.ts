@@ -19,6 +19,7 @@ export interface DocumentMutations {
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
   readonly handleSetLabel: (labelStr: string) => void;
+  readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
@@ -70,6 +71,13 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     if (!selectedShape) return;
     const label = labelStr.trim().length === 0 ? null : labelStr;
     commit([{ type: COMMANDS.setShapeLabel, id: selectedShape.id, label }]);
+    render();
+  }
+
+  function handleSetContent(contentStr: string): void {
+    if (!selectedShape) return;
+    const content = contentStr.trim().length === 0 ? null : contentStr;
+    commit([{ type: COMMANDS.setShapeContent, id: selectedShape.id, content }]);
     render();
   }
 
@@ -161,6 +169,7 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     handleSetPlatform,
     handleSetStyle,
     handleSetLabel,
+    handleSetContent,
     handleSetSemantic,
     handlePropertyChange,
     handleToggleHiddenOn,

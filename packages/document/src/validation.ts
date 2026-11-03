@@ -139,6 +139,9 @@ function parseShape(value: unknown): Shape {
   if (value.label !== undefined && typeof value.label !== "string") {
     throw new DocumentError("invalidShape", "label must be a string when present");
   }
+  if (value.content !== undefined && typeof value.content !== "string") {
+    throw new DocumentError("invalidShape", "content must be a string when present");
+  }
   let fill: string | undefined;
   if (value.fill !== undefined) {
     fill = parseColor(value.fill, "fill");
@@ -159,6 +162,7 @@ function parseShape(value: unknown): Shape {
     parent,
     boundingBox,
     ...(value.label === undefined ? {} : { label: value.label }),
+    ...(value.content === undefined ? {} : { content: value.content }),
     ...(fill === undefined ? {} : { fill }),
     ...(stroke === undefined ? {} : { stroke }),
     ...(strokeWidth === undefined ? {} : { strokeWidth }),

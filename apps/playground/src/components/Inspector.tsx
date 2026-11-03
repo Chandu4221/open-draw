@@ -22,6 +22,7 @@ export interface InspectorProps {
   readonly semanticDef: SemanticDefinition | undefined;
   readonly semanticProps: Record<string, string | number | boolean>;
   readonly handleSetLabel: (labelStr: string) => void;
+  readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
@@ -46,6 +47,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     semanticDef,
     semanticProps,
     handleSetLabel,
+    handleSetContent,
     handleSetPlatform,
     handleSetStyle,
     handleSetSemantic,
@@ -91,6 +93,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           semanticDef={semanticDef}
           semanticProps={semanticProps}
           handleSetLabel={handleSetLabel}
+          handleSetContent={handleSetContent}
           handleSetSemantic={handleSetSemantic}
           handlePropertyChange={handlePropertyChange}
           handleToggleHiddenOn={handleToggleHiddenOn}

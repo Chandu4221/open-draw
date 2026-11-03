@@ -272,3 +272,7 @@ Creating repeated shapes requires drawing each one from scratch. Users cannot du
   4. F3 (Multi-Select): Option A (marquee selects by bounding box intersection).
   5. F4 (Image Export): Option A (SVG & PNG export buttons; optional legend expands viewBox at bottom).
   6. F5 (Duplicate / Copy-Paste): Option A (in-memory clipboard, `Mod+D` duplicate, `Mod+C` / `Mod+V`).
+
+### Amendments
+
+- **2026-11-03 — F2 Text Decoupling (`shape.content`):** Ratified by Chandra. Reusing `shape.label` coupled the shape's layer/tag name with the visible text inside the shape. Decoupled by adding optional `shape.content?: string` to `BaseShape` for inner text rendered by SVG, keeping `shape.label` strictly for user-defined naming, tree outline, and tag chips (R-042). Added typed command `SetShapeContent`. 100% backward compatible.

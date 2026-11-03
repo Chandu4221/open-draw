@@ -156,6 +156,7 @@ export default function App() {
     handleSetPlatform,
     handleSetStyle,
     handleSetLabel,
+    handleSetContent,
     handleSetSemantic,
     handlePropertyChange,
     handleToggleHiddenOn,
@@ -267,6 +268,7 @@ export default function App() {
             semanticDef={inspection.semanticDef}
             semanticProps={inspection.semanticProps}
             handleSetLabel={handleSetLabel}
+            handleSetContent={handleSetContent}
             handleSetPlatform={handleSetPlatform}
             handleSetStyle={handleSetStyle}
             handleSetSemantic={handleSetSemantic}

@@ -19,6 +19,7 @@ export interface ShapeInspectorProps {
   readonly semanticDef: SemanticDefinition | undefined;
   readonly semanticProps: Record<string, string | number | boolean>;
   readonly handleSetLabel: (labelStr: string) => void;
+  readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
@@ -39,6 +40,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     semanticDef,
     semanticProps,
     handleSetLabel,
+    handleSetContent,
     handleSetSemantic,
     handlePropertyChange,
     handleToggleHiddenOn,
@@ -64,6 +66,24 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
             boxSizing: "border-box",
           }}
           onChange={(e) => handleSetLabel(e.target.value)}
+        />
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+          Text Content
+        </label>
+        <input
+          type="text"
+          placeholder="Text displayed inside shape..."
+          value={selectedShape.content ?? ""}
+          style={{
+            width: "100%",
+            padding: "6px 8px",
+            borderRadius: "4px",
+            border: "1px solid #cbd5e1",
+            boxSizing: "border-box",
+          }}
+          onChange={(e) => handleSetContent(e.target.value)}
         />
       </div>
       <div style={{ marginBottom: "6px", color: "#64748b" }}>
