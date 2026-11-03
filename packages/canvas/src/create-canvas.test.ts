@@ -23,6 +23,30 @@ describe("createCanvas", () => {
     expect(canvas.getSelectedId()).toBeNull();
   });
 
+  it("supports multi-selection with selectMany and toggleSelection (F3, ADR-0006 Option A)", () => {
+    const canvas = createCanvas();
+    const id1 = parseShapeId("shape-1");
+    const id2 = parseShapeId("shape-2");
+    const id3 = parseShapeId("shape-3");
+
+    canvas.selectMany([id1, id2]);
+    expect(canvas.getSelectedIds()).toEqual([id1, id2]);
+    expect(canvas.getSelectedId()).toBeNull();
+    expect(canvas.isSelected(id1)).toBe(true);
+    expect(canvas.isSelected(id2)).toBe(true);
+    expect(canvas.isSelected(id3)).toBe(false);
+
+    // Toggle on
+    canvas.toggleSelection(id3);
+    expect(canvas.isSelected(id3)).toBe(true);
+    expect(canvas.getSelectedIds()).toContain(id3);
+
+    // Toggle off
+    canvas.toggleSelection(id1);
+    expect(canvas.isSelected(id1)).toBe(false);
+    expect(canvas.getSelectedIds()).not.toContain(id1);
+  });
+
   it("delegates action resolution to @open-draw/input", () => {
     const canvas = createCanvas();
     expect(canvas.resolveAction({ code: "Escape" })).toBe("cancel");

@@ -4,6 +4,8 @@ import { SHAPE_KINDS } from "@open-draw/contracts";
 import {
   CANVAS_EVENTS,
   GESTURE_KINDS,
+  normalizeBox,
+  pickShapesInBox,
   STATES,
   TOOLS,
   type CanvasController,
@@ -85,12 +87,19 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
       panRequested,
     });
 
-    if (handle === null && hit !== null && toolRef.current === TOOLS.select) {
-      canvas.select(hit);
-      setSelectedShapeId(hit);
-    } else if (handle === null && hit === null && toolRef.current === TOOLS.select) {
-      canvas.clearSelection();
-      setSelectedShapeId(null);
+    if (handle === null && toolRef.current === TOOLS.select) {
+      if (event.shiftKey && hit !== null) {
+        canvas.toggleSelection(hit);
+        setSelectedShapeId(canvas.getSelectedId());
+      } else if (hit !== null) {
+        if (!canvas.isSelected(hit)) {
+          canvas.select(hit);
+          setSelectedShapeId(hit);
+        }
+      } else if (!event.shiftKey) {
+        canvas.clearSelection();
+        setSelectedShapeId(null);
+      }
     }
 
     svgRef.current?.setPointerCapture(event.pointerId);
@@ -104,11 +113,15 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
             ? GESTURE_KINDS.resize
             : state.stateId === STATES.pointingShape
               ? GESTURE_KINDS.move
-              : GESTURE_KINDS.press;
+              : state.stateId === STATES.selecting
+                ? GESTURE_KINDS.select
+                : GESTURE_KINDS.press;
 
     let shapeIds: readonly ShapeId[] = [];
     if (state.stateId === STATES.pointingShape && state.activeShapeId !== null) {
-      shapeIds = [state.activeShapeId];
+      shapeIds = canvas.isSelected(state.activeShapeId)
+        ? canvas.getSelectedIds()
+        : [state.activeShapeId];
     }
 
     gestureRef.current = {
@@ -186,6 +199,23 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
       commitResizeGesture(documentRef.current, canvas, gesture, world, commit);
     } else if (before === STATES.drawingShape) {
       commitDrawGesture(documentRef.current, canvas, gesture, world, toolRef.current, commit);
+    } else if (before === STATES.selecting || gesture.kind === GESTURE_KINDS.select) {
+      const marqueeBox = normalizeBox(gesture.startWorld, world);
+      if (marqueeBox.width > 2 || marqueeBox.height > 2) {
+        const picked = pickShapesInBox(documentRef.current, marqueeBox);
+        if (event.shiftKey) {
+          const combined = new Set([...canvas.getSelectedIds(), ...picked]);
+          canvas.selectMany(Array.from(combined));
+        } else {
+          canvas.selectMany(picked);
+        }
+      } else if (!event.shiftKey) {
+        canvas.clearSelection();
+      }
+    } else if (before === STATES.pointingShape && !event.shiftKey && gesture.parentHit !== null) {
+      if (canvas.getSelectedIds().length > 1) {
+        canvas.select(gesture.parentHit);
+      }
     } else if (before === STATES.idle && gesture.kind === GESTURE_KINDS.press) {
       canvas.clearSelection();
     }

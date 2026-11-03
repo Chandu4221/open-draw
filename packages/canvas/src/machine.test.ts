@@ -69,9 +69,10 @@ describe("interaction machine", () => {
     expect(next.stateId).toBe(STATES.drawingShape);
   });
 
-  it("stays idle on pointer down over empty space with the select tool", () => {
+  it("enters selecting on pointer down over empty space with the select tool", () => {
     const next = transition(INITIAL_MACHINE_STATE, { ...downOnShape, hit: null });
-    expect(next.stateId).toBe(STATES.idle);
+    expect(next.stateId).toBe(STATES.selecting);
+    expect(next.drawOrigin).toEqual({ x: 10, y: 10 });
   });
 
   it("enters panning when pan is requested", () => {

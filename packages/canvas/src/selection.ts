@@ -11,6 +11,20 @@ export function selectOne(id: ShapeId): Selection {
   return new Set([id]);
 }
 
+export function selectMany(ids: readonly ShapeId[] | ReadonlySet<ShapeId>): Selection {
+  return new Set(ids);
+}
+
+export function toggleSelection(selection: Selection, id: ShapeId): Selection {
+  const next = new Set(selection);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+}
+
 export function clearSelection(): Selection {
   return EMPTY_SELECTION;
 }
@@ -20,8 +34,15 @@ export function isSelected(selection: Selection, id: ShapeId): boolean {
 }
 
 export function singleSelected(selection: Selection): ShapeId | null {
+  if (selection.size !== 1) {
+    return null;
+  }
   for (const id of selection) {
     return id;
   }
   return null;
+}
+
+export function selectedIds(selection: Selection): readonly ShapeId[] {
+  return Array.from(selection);
 }

@@ -21,8 +21,11 @@ import {
   EMPTY_SELECTION,
   isSelected,
   type Selection,
+  selectMany,
   selectOne,
+  selectedIds,
   singleSelected,
+  toggleSelection,
 } from "./selection";
 
 export interface CanvasOptions {
@@ -42,7 +45,10 @@ export interface CanvasController {
 
   getSelection(): Selection;
   getSelectedId(): ShapeId | null;
+  getSelectedIds(): readonly ShapeId[];
   select(id: ShapeId): void;
+  selectMany(ids: readonly ShapeId[]): void;
+  toggleSelection(id: ShapeId): void;
   clearSelection(): void;
   isSelected(id: ShapeId): boolean;
 
@@ -90,8 +96,15 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
 
     getSelection: () => selection,
     getSelectedId: () => singleSelected(selection),
+    getSelectedIds: () => selectedIds(selection),
     select: (id) => {
       selection = selectOne(id);
+    },
+    selectMany: (ids) => {
+      selection = selectMany(ids);
+    },
+    toggleSelection: (id) => {
+      selection = toggleSelection(selection, id);
     },
     clearSelection: () => {
       selection = clearSelection();

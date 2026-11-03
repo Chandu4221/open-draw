@@ -15,6 +15,7 @@ import type { Gesture } from "./types";
 export interface OverlayOptions {
   readonly doc: Document;
   readonly selectedId: ShapeId | null;
+  readonly selectedIds?: readonly ShapeId[];
   readonly gesture: Gesture | null;
   readonly tool: ToolId;
   readonly lastWorld: Point;
@@ -23,17 +24,20 @@ export interface OverlayOptions {
 }
 
 export function computeCanvasOverlays(options: OverlayOptions): string[] {
-  const { doc, selectedId, gesture, tool, lastWorld, zoom, showTagChips } = options;
+  const { doc, selectedId, selectedIds, gesture, tool, lastWorld, zoom, showTagChips } = options;
   const overlays: string[] = [];
 
-  if (selectedId !== null) {
-    const shape = doc.shapes[selectedId];
+  const activeSelectedIds = selectedIds ?? (selectedId !== null ? [selectedId] : []);
+
+  if (activeSelectedIds.length === 1) {
+    const singleId = activeSelectedIds[0]!;
+    const shape = doc.shapes[singleId];
     if (shape !== undefined) {
       let box = absoluteBoundingBox(doc, shape);
       const isSelectedMoved =
         gesture !== null &&
         gesture.kind === GESTURE_KINDS.move &&
-        (gesture.shapeIds.includes(selectedId) ||
+        (gesture.shapeIds.includes(singleId) ||
           ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
       if (isSelectedMoved) {
         box = {
@@ -52,6 +56,35 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
       }
       overlays.push(selectionOverlayToSvg(box, zoom));
     }
+  } else if (activeSelectedIds.length > 1) {
+    for (const id of activeSelectedIds) {
+      const shape = doc.shapes[id];
+      if (shape !== undefined) {
+        let box = absoluteBoundingBox(doc, shape);
+        const isSelectedMoved =
+          gesture !== null &&
+          gesture.kind === GESTURE_KINDS.move &&
+          (gesture.shapeIds.includes(id) ||
+            ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
+        if (isSelectedMoved) {
+          box = {
+            ...box,
+            x: box.x + (lastWorld.x - gesture.startWorld.x),
+            y: box.y + (lastWorld.y - gesture.startWorld.y),
+          };
+        }
+        overlays.push(
+          `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="#2563eb" stroke-dasharray="4 4" />`,
+        );
+      }
+    }
+  }
+
+  if (gesture !== null && gesture.kind === GESTURE_KINDS.select) {
+    const box = normalizeBox(gesture.startWorld, lastWorld);
+    overlays.push(
+      `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="rgba(37, 99, 235, 0.08)" stroke="#2563eb" stroke-dasharray="4 4" />`,
+    );
   }
 
   if (gesture !== null && gesture.kind === GESTURE_KINDS.draw) {

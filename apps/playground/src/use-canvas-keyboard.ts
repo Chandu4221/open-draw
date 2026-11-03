@@ -85,12 +85,14 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
         break;
       }
       case ACTIONS.deleteSelected: {
-        const selectedId = canvas.getSelectedId();
-        if (selectedId !== null) {
-          commit([{ type: COMMANDS.deleteShape, id: selectedId }]);
+        const ids = canvas.getSelectedIds();
+        if (ids.length > 0) {
+          commit(ids.map((id) => ({ type: COMMANDS.deleteShape, id })));
           canvas.clearSelection();
           setSelectedShapeId(null);
-          setStatusMessage(`Deleted shape: ${selectedId}`);
+          setStatusMessage(
+            ids.length === 1 ? `Deleted shape: ${ids[0]}` : `Deleted ${ids.length} shapes`,
+          );
           render();
         }
         break;

@@ -17,6 +17,27 @@ export function pointInBox(box: BoundingBox, point: Point): boolean {
   );
 }
 
+export function boxIntersectsBox(a: BoundingBox, b: BoundingBox): boolean {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+export function pickShapesInBox(document: Document, marqueeBox: BoundingBox): readonly ShapeId[] {
+  const result: ShapeId[] = [];
+  for (const shape of Object.values(document.shapes)) {
+    const box = absoluteBoundingBox(document, shape);
+    const enclosesMarquee =
+      box.x <= marqueeBox.x &&
+      box.y <= marqueeBox.y &&
+      box.x + box.width >= marqueeBox.x + marqueeBox.width &&
+      box.y + box.height >= marqueeBox.y + marqueeBox.height;
+
+    if (!enclosesMarquee && boxIntersectsBox(box, marqueeBox)) {
+      result.push(shape.id);
+    }
+  }
+  return result;
+}
+
 export function pickShape(
   document: Document,
   worldPoint: Point,

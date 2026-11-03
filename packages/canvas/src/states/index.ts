@@ -7,6 +7,7 @@ import { PANNING } from "./panning";
 import { POINTING_HANDLE } from "./pointing-handle";
 import { POINTING_SHAPE } from "./pointing-shape";
 import { RESIZING_SHAPE } from "./resizing-shape";
+import { SELECTING } from "./selecting";
 
 export const STATES = {
   idle: IDLE,
@@ -16,6 +17,7 @@ export const STATES = {
   resizingShape: RESIZING_SHAPE,
   drawingShape: DRAWING_SHAPE,
   panning: PANNING,
+  selecting: SELECTING,
 } as const;
 
 export type CanvasStateId = (typeof STATES)[keyof typeof STATES];

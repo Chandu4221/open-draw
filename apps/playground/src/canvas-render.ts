@@ -23,6 +23,7 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
   const overlays = computeCanvasOverlays({
     doc,
     selectedId: canvas.getSelectedId(),
+    selectedIds: canvas.getSelectedIds(),
     gesture,
     tool,
     lastWorld,

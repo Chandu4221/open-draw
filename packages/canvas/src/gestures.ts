@@ -5,6 +5,7 @@ export const GESTURE_KINDS = {
   resize: "resize",
   pan: "pan",
   press: "press",
+  select: "select",
 } as const;
 
 export type GestureKind = (typeof GESTURE_KINDS)[keyof typeof GESTURE_KINDS];
