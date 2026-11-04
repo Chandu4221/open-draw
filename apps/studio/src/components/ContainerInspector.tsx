@@ -84,38 +84,7 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      {/* IDENTITY SECTION */}
-      <span className="od-label">Identity</span>
-
-      <OdField label="Name">
-        <input
-          type="text"
-          className="od-input"
-          style={{ width: "100%" }}
-          placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
-          value={selectedShape.label ?? ""}
-          onChange={(e) => handleSetLabel(e.target.value)}
-        />
-      </OdField>
-
-      <span className="od-meta">ID: {selectedShape.id}</span>
-
-      {handleSetRole && (
-        <OdField label="Role">
-          <select
-            className="od-select"
-            style={{ width: "100%" }}
-            value={rootRole ?? ROOT_ROLES.screen}
-            onChange={(e) => handleSetRole((e.target.value as RootRole) || ROOT_ROLES.screen)}
-          >
-            <option value={ROOT_ROLES.screen}>Screen / Page</option>
-            <option value={ROOT_ROLES.component}>Standalone Component</option>
-          </select>
-        </OdField>
-      )}
-
       {/* PLATFORM & STYLE SECTION */}
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
       <span className="od-label">Platform & Style</span>
 
       <OdField label="Platform Profile">
@@ -137,7 +106,14 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
         </select>
       </OdField>
 
-      <OdField label="Render Style">
+      {rootPlatform !== undefined && handleSetDesignStyle && (
+        <DesignStyleSelect
+          rootDesignStyle={rootDesignStyle}
+          handleSetDesignStyle={handleSetDesignStyle}
+        />
+      )}
+
+      <OdField label="Canvas Render Style">
         <select
           className="od-select"
           style={{ width: "100%" }}
@@ -149,12 +125,36 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
         </select>
       </OdField>
 
-      {rootPlatform !== undefined && handleSetDesignStyle && (
-        <DesignStyleSelect
-          rootDesignStyle={rootDesignStyle}
-          handleSetDesignStyle={handleSetDesignStyle}
-        />
+      {handleSetRole && (
+        <OdField label="Role">
+          <select
+            className="od-select"
+            style={{ width: "100%" }}
+            value={rootRole ?? ROOT_ROLES.screen}
+            onChange={(e) => handleSetRole((e.target.value as RootRole) || ROOT_ROLES.screen)}
+          >
+            <option value={ROOT_ROLES.screen}>Screen / Page</option>
+            <option value={ROOT_ROLES.component}>Standalone Component</option>
+          </select>
+        </OdField>
       )}
+
+      {/* IDENTITY SECTION */}
+      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
+      <span className="od-label">Identity</span>
+
+      <OdField label="Name">
+        <input
+          type="text"
+          className="od-input"
+          style={{ width: "100%" }}
+          placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+          value={selectedShape.label ?? ""}
+          onChange={(e) => handleSetLabel(e.target.value)}
+        />
+      </OdField>
+
+      <span className="od-meta">ID: {selectedShape.id}</span>
 
       {rootRole === ROOT_ROLES.component &&
         handleSetSemantic &&
