@@ -3,6 +3,7 @@ import { GESTURE_KINDS, normalizeBox, resizeBox, TOOLS, type ToolId } from "@ope
 import { absoluteBoundingBox, ancestorsOf, type Document } from "@open-draw/document";
 import {
   chipOverlayToSvg,
+  pickChip,
   pickRootDeviceButton,
   previewBoxToSvg,
   previewLineToSvg,
@@ -23,12 +24,13 @@ export interface OverlayOptions {
   readonly tool: ToolId;
   readonly lastWorld: Point;
   readonly zoom: number;
-  readonly showTagChips: boolean;
+  readonly visibleChipRootIds?: ReadonlySet<ShapeId> | undefined;
   readonly activeDeviceType?: DeviceType | undefined;
 }
 
 export function computeCanvasOverlays(options: OverlayOptions): string[] {
-  const { doc, selectedId, selectedIds, gesture, tool, lastWorld, zoom, showTagChips } = options;
+  const { doc, selectedId, selectedIds, gesture, tool, lastWorld, zoom, visibleChipRootIds } =
+    options;
   const overlays: string[] = [];
 
   const activeSelectedIds = selectedIds ?? (selectedId !== null ? [selectedId] : []);
@@ -101,36 +103,50 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
     }
   }
 
-  if (showTagChips) {
-    for (const shape of Object.values(doc.shapes)) {
-      let chipLabel: string | undefined;
-      if (isRootId(shape.parent)) {
-        const platform = shape.meta.platform;
-        if (platform !== undefined) {
-          chipLabel = PLATFORM_PROFILES[platform]?.label ?? platform;
-        }
-      } else if (shape.meta.semantic !== undefined) {
+  // Render root and child semantic chips (R-023, R-026, R-031)
+  for (const shape of Object.values(doc.shapes)) {
+    let chipLabel: string | undefined;
+    let isInteractive = false;
+    let isActive = false;
+
+    if (isRootId(shape.parent)) {
+      const platform = shape.meta.platform;
+      chipLabel =
+        platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : "Container";
+      isInteractive = true;
+      isActive = visibleChipRootIds?.has(shape.id) ?? false;
+    } else if (shape.meta.semantic !== undefined) {
+      const root = ancestorsOf(doc, shape).find((a) => isRootId(a.parent));
+      const isRootChipsVisible = root !== undefined && (visibleChipRootIds?.has(root.id) ?? false);
+      const isSelected = activeSelectedIds.includes(shape.id);
+
+      if (isRootChipsVisible || isSelected) {
         const rootPlatform = resolveRootPlatform(doc, shape.id);
         const profile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
         chipLabel = resolveShapeDisplayName(shape, profile);
       }
+    }
 
-      if (chipLabel !== undefined) {
-        let box = absoluteBoundingBox(doc, shape);
-        const isShapeMoved =
-          gesture !== null &&
-          gesture.kind === GESTURE_KINDS.move &&
-          (gesture.shapeIds.includes(shape.id) ||
-            ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
-        if (isShapeMoved) {
-          box = {
-            ...box,
-            x: box.x + (lastWorld.x - gesture.startWorld.x),
-            y: box.y + (lastWorld.y - gesture.startWorld.y),
-          };
-        }
-        overlays.push(chipOverlayToSvg(chipLabel, box, zoom));
+    if (chipLabel !== undefined) {
+      let box = absoluteBoundingBox(doc, shape);
+      const isShapeMoved =
+        gesture !== null &&
+        gesture.kind === GESTURE_KINDS.move &&
+        (gesture.shapeIds.includes(shape.id) ||
+          ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
+      if (isShapeMoved) {
+        box = {
+          ...box,
+          x: box.x + (lastWorld.x - gesture.startWorld.x),
+          y: box.y + (lastWorld.y - gesture.startWorld.y),
+        };
       }
+      overlays.push(
+        chipOverlayToSvg(chipLabel, box, zoom, {
+          interactive: isInteractive,
+          active: isActive,
+        }),
+      );
     }
   }
 
@@ -155,6 +171,21 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
   }
 
   return overlays;
+}
+
+export function pickAnyRootChip(doc: Document, world: Point, zoom: number): ShapeId | null {
+  for (const shape of Object.values(doc.shapes)) {
+    if (isRootId(shape.parent)) {
+      const platform = shape.meta.platform;
+      const chipLabel =
+        platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : "Container";
+      const box = absoluteBoundingBox(doc, shape);
+      if (pickChip(chipLabel, box, world, zoom)) {
+        return shape.id;
+      }
+    }
+  }
+  return null;
 }
 
 export function pickAnyRootDeviceButton(

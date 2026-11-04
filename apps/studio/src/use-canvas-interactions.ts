@@ -16,7 +16,7 @@ import {
 import { absoluteBoundingBox, type Command, type Document } from "@open-draw/document";
 import type { Gesture } from "./types";
 import { commitDragGesture, commitDrawGesture, commitResizeGesture } from "./canvas-gestures";
-import { pickAnyRootDeviceButton } from "./canvas-overlays";
+import { pickAnyRootChip, pickAnyRootDeviceButton } from "./canvas-overlays";
 
 export interface CanvasInteractionsProps {
   readonly svgRef: React.RefObject<SVGSVGElement | null>;
@@ -67,11 +67,16 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     const world = canvas.screenToWorld(screen);
     const doc = documentRef.current;
 
-    // Check if clicked a device button on a web root container (R-023, R-028, R-031)
-    const hitDevice = pickAnyRootDeviceButton(doc, world, canvas.getCamera().zoom);
+    const zoom = canvas.getCamera().zoom;
+    const hitDevice = pickAnyRootDeviceButton(doc, world, zoom);
     if (hitDevice !== null) {
-      const next = hitDevice === "all" ? undefined : hitDevice;
-      handleDeviceChange(next);
+      handleDeviceChange(hitDevice === "all" ? undefined : hitDevice);
+      return;
+    }
+    const hitRootChip = pickAnyRootChip(doc, world, zoom);
+    if (hitRootChip !== null) {
+      canvas.toggleRootChipsVisible(hitRootChip);
+      render();
       return;
     }
 
@@ -162,13 +167,11 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     const world = canvas.screenToWorld(screen);
 
     if (gesture === null) {
-      const hitDevice = pickAnyRootDeviceButton(
-        documentRef.current,
-        world,
-        canvas.getCamera().zoom,
-      );
+      const zoom = canvas.getCamera().zoom;
+      const hitDevice = pickAnyRootDeviceButton(documentRef.current, world, zoom);
+      const hitChip = pickAnyRootChip(documentRef.current, world, zoom);
       if (svgRef.current) {
-        if (hitDevice !== null) {
+        if (hitDevice !== null || hitChip !== null) {
           svgRef.current.style.cursor = "pointer";
         } else if (svgRef.current.style.cursor === "pointer") {
           svgRef.current.style.cursor = "";

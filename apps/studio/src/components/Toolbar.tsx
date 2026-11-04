@@ -8,8 +8,6 @@ export interface ToolbarProps {
   readonly includeLegend?: boolean;
   readonly setIncludeLegend?: (include: boolean) => void;
   readonly handleLoad?: () => void;
-  readonly showTagChips: boolean;
-  readonly toggleShowTagChips: () => void;
   readonly showSidebar: boolean;
   readonly setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -22,8 +20,6 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
     includeLegend,
     setIncludeLegend,
     handleLoad,
-    showTagChips,
-    toggleShowTagChips,
     showSidebar,
     setShowSidebar,
   } = props;
@@ -101,14 +97,6 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
         {(handleLoad || handleExportSvg || handleExportPng) && <div className="od-divider" />}
 
         {/* View toggles */}
-        <OdTooltip text={showTagChips ? "Hide Semantic Chips" : "Show Semantic Chips"}>
-          <OdIconButton
-            name="help"
-            aria-label="Toggle Semantic Chips"
-            active={showTagChips}
-            onClick={toggleShowTagChips}
-          />
-        </OdTooltip>
         <OdTooltip text={showSidebar ? "Hide Sidebar" : "Show Sidebar"}>
           <OdIconButton
             name="panel"

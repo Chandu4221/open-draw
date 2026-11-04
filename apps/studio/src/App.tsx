@@ -47,8 +47,6 @@ function StudioShell() {
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
-  const [showTagChips, setShowTagChips] = useState<boolean>(false);
-  const showTagChipsRef = useRef<boolean>(false);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
@@ -65,6 +63,10 @@ function StudioShell() {
   const handleDeviceChange = (deviceType?: DeviceType): void => {
     canvasRef.current.setActiveDeviceType(deviceType);
     setActiveDeviceType(deviceType);
+    render();
+  };
+  const handleToggleChildChips = (rootId: ShapeId): void => {
+    canvasRef.current.toggleRootChipsVisible(rootId);
     render();
   };
   const handleZoom = (factor: number): void => {
@@ -96,7 +98,6 @@ function StudioShell() {
       gesture: gestureRef.current,
       tool: toolRef.current,
       lastWorld: lastWorldRef.current,
-      showTagChips: showTagChipsRef.current,
       onFallback: (msg) => toast.push({ type: "info", text: msg }),
     });
   }
@@ -114,15 +115,6 @@ function StudioShell() {
       );
     }
     setDoc(result.document);
-  }
-
-  function toggleShowTagChips(): void {
-    setShowTagChips((prev) => {
-      const next = !prev;
-      showTagChipsRef.current = next;
-      render();
-      return next;
-    });
   }
 
   const toolbarActions = useToolbarActions({
@@ -199,8 +191,6 @@ function StudioShell() {
         handleExportPng={toolbarActions.handleExportPng}
         includeLegend={includeLegend}
         setIncludeLegend={setIncludeLegend}
-        showTagChips={showTagChips}
-        toggleShowTagChips={toggleShowTagChips}
         showSidebar={showSidebar}
         setShowSidebar={setShowSidebar}
       />
@@ -240,6 +230,10 @@ function StudioShell() {
             {...mutations}
             selectedShapeId={selectedShapeId}
             selectShape={selectShape}
+            showChildChips={
+              selectedShapeId ? canvasRef.current.isRootChipsVisible(selectedShapeId) : false
+            }
+            handleToggleChildChips={handleToggleChildChips}
           />
         )}
       </div>
