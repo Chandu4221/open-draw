@@ -1,5 +1,5 @@
 import React from "react";
-import { OdIconButton, OdSegmentedControl, OdTooltip } from "@open-draw/ui";
+import { OdIcon, OdSegmentedControl } from "@open-draw/ui";
 
 export interface CanvasZoomControlsProps {
   readonly zoomPercent: number;
@@ -25,19 +25,23 @@ export function CanvasZoomControls(props: CanvasZoomControlsProps): React.JSX.El
     else if (id === "percent" || id === "fit-all") handleResetZoom();
   };
 
+  const isSidebarVisible = showSidebar ?? false;
+  const labelText = isSidebarVisible ? "Hide Inspector" : "Show Inspector";
+
   return (
     <div className="od-canvas-overlay-bottom-right">
       {setShowSidebar && (
-        <OdTooltip text={showSidebar ? "Hide Sidebar" : "Show Sidebar"}>
-          <OdIconButton
-            name="panel"
-            aria-label="Toggle Sidebar"
-            active={showSidebar ?? false}
-            className="od-panel-toggle-btn"
-            onClick={() => setShowSidebar((prev) => !prev)}
-          />
-        </OdTooltip>
+        <button
+          type="button"
+          aria-label={labelText}
+          className={`od-panel-toggle-btn ${isSidebarVisible ? "od-panel-toggle-btn--active" : ""}`}
+          onClick={() => setShowSidebar((prev) => !prev)}
+        >
+          <span>{labelText}</span>
+          <OdIcon name="panel" size={16} />
+        </button>
       )}
+
       <div className="od-zoom-controls">
         <OdSegmentedControl
           items={zoomItems}

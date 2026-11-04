@@ -23,7 +23,7 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
       <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-4)" }}>
           Visibility (Hidden On)
         </span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--od-8)" }}>
@@ -57,7 +57,7 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
       </div>
 
       <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-4)" }}>
           Flex Order
         </span>
         <div
