@@ -47,7 +47,7 @@ function StudioShell() {
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
-  const [includeLegend, setIncludeLegend] = useState<boolean>(false);
+  const [includeLegend, setIncludeLegend] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
 
@@ -189,8 +189,7 @@ function StudioShell() {
         handleLoad={toolbarActions.handleLoad}
         handleExportSvg={toolbarActions.handleExportSvg}
         handleExportPng={toolbarActions.handleExportPng}
-        includeLegend={includeLegend}
-        setIncludeLegend={setIncludeLegend}
+        onOpenExportModal={() => handleOpenExportModal("markdown")}
         showSidebar={showSidebar}
         setShowSidebar={setShowSidebar}
       />
@@ -242,6 +241,8 @@ function StudioShell() {
         onClose={() => setIsExportModalOpen(false)}
         doc={doc}
         initialFormat={exportInitialFormat}
+        includeLegend={includeLegend}
+        setIncludeLegend={setIncludeLegend}
       />
       <OdToastHost />
     </main>

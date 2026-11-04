@@ -5,9 +5,8 @@ export interface ToolbarProps {
   readonly brandLabel?: string;
   readonly handleExportSvg?: () => void;
   readonly handleExportPng?: () => void;
-  readonly includeLegend?: boolean;
-  readonly setIncludeLegend?: (include: boolean) => void;
   readonly handleLoad?: () => void;
+  readonly onOpenExportModal?: () => void;
   readonly showSidebar: boolean;
   readonly setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -17,9 +16,8 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
     brandLabel = "OpenDraw Studio",
     handleExportSvg,
     handleExportPng,
-    includeLegend,
-    setIncludeLegend,
     handleLoad,
+    onOpenExportModal,
     showSidebar,
     setShowSidebar,
   } = props;
@@ -56,45 +54,37 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
         </span>
       </div>
 
-      {/* Top Right: Secondary view controls and image export */}
+      {/* Top Right: File actions [open icon] [save svg] [save png] [save icon] and sidebar toggle */}
       <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
         {handleLoad && (
-          <OdButton variant="ghost" onClick={handleLoad}>
-            Open
-          </OdButton>
+          <OdTooltip text="Open document">
+            <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />
+          </OdTooltip>
         )}
         {handleExportSvg && (
           <OdButton variant="ghost" onClick={handleExportSvg}>
-            SVG
+            Save SVG
           </OdButton>
         )}
         {handleExportPng && (
           <OdButton variant="ghost" onClick={handleExportPng}>
-            PNG
+            Save PNG
           </OdButton>
         )}
-        {setIncludeLegend && includeLegend !== undefined && (
-          <label
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "var(--od-4)",
-              cursor: "pointer",
-              fontSize: "var(--od-text-xs)",
-              color: "var(--od-text-secondary)",
-              marginLeft: "var(--od-4)",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={includeLegend}
-              onChange={(e) => setIncludeLegend(e.target.checked)}
+        {onOpenExportModal && (
+          <OdTooltip text="Save / Export wireframe">
+            <OdIconButton
+              name="save"
+              aria-label="Save or export wireframe"
+              ghost
+              onClick={onOpenExportModal}
             />
-            Legend
-          </label>
+          </OdTooltip>
         )}
 
-        {(handleLoad || handleExportSvg || handleExportPng) && <div className="od-divider" />}
+        {(handleLoad || handleExportSvg || handleExportPng || onOpenExportModal) && (
+          <div className="od-divider" />
+        )}
 
         {/* View toggles */}
         <OdTooltip text={showSidebar ? "Hide Sidebar" : "Show Sidebar"}>

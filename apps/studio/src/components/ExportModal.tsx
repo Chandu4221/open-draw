@@ -18,6 +18,8 @@ export interface ExportModalProps {
   readonly onClose: () => void;
   readonly doc: Document;
   readonly initialFormat?: "markdown" | "json" | undefined;
+  readonly includeLegend?: boolean;
+  readonly setIncludeLegend?: (include: boolean) => void;
 }
 
 const FORMAT_OPTIONS = [
@@ -25,17 +27,21 @@ const FORMAT_OPTIONS = [
   { id: "json", label: "JSON (.json)" },
 ] as const;
 
-function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.Element {
-  const { onClose, doc, initialFormat = "markdown" } = props;
+function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
+  const {
+    onClose,
+    doc,
+    initialFormat = "markdown",
+    includeLegend = true,
+    setIncludeLegend,
+  } = props;
   const [format, setFormat] = useState<"markdown" | "json">(initialFormat);
   const [creativityLevel, setCreativityLevel] = useState<CreativityLevel>(DEFAULT_CREATIVITY_LEVEL);
   const [copied, setCopied] = useState<boolean>(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -52,8 +58,6 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(preview);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       const textArea = document.createElement("textarea");
       textArea.value = preview;
@@ -61,17 +65,14 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
       textArea.select();
       document.execCommand("copy");
       document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
-    if (format === "markdown") {
-      exportDocumentMarkdown(doc, creativityLevel);
-    } else {
-      exportDocumentJson(doc, creativityLevel);
-    }
+    if (format === "markdown") exportDocumentMarkdown(doc, creativityLevel);
+    else exportDocumentJson(doc, creativityLevel);
   };
   const handleMeterKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
@@ -111,7 +112,28 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
         <div className="od-modal__body">
           {/* Format Selector */}
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-            <span className="od-section-header">Export Format</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="od-section-header">Export Format</span>
+              {setIncludeLegend && (
+                <label
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "var(--od-4)",
+                    cursor: "pointer",
+                    fontSize: "var(--od-text-xs)",
+                    color: "var(--od-text-secondary)",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={includeLegend}
+                    onChange={(e) => setIncludeLegend(e.target.checked)}
+                  />
+                  <span>Include Legend</span>
+                </label>
+              )}
+            </div>
             <OdSegmentedControl
               items={FORMAT_OPTIONS}
               value={format}
@@ -148,7 +170,7 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => setCreativityLevel(level)}
                     className={`od-meter-segment${isActive ? " od-meter-segment--active" : ""}`}
-                    aria-label={`Level ${level}: ${def.name}. ${def.description}`}
+                    aria-label={`Level ${level} ${def.name}: ${def.description}`}
                   >
                     <span className="od-meter-segment__title">{def.name}</span>
                     <span className="od-meter-segment__level">Level {level}</span>
@@ -263,11 +285,5 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
 
 export function ExportModal(props: ExportModalProps): React.JSX.Element | null {
   if (!props.isOpen) return null;
-  return (
-    <ExportModalDialog
-      onClose={props.onClose}
-      doc={props.doc}
-      initialFormat={props.initialFormat ?? "markdown"}
-    />
-  );
+  return <ExportModalDialog {...props} initialFormat={props.initialFormat ?? "markdown"} />;
 }

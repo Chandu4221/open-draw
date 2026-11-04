@@ -4,6 +4,8 @@ import { OdField, OdIcon } from "@open-draw/ui";
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
+type EditSession<T> = { start: T | null; active: boolean };
+
 function toColorInputValue(val: string | undefined | null, fallback: string): string {
   if (val && HEX_COLOR_RE.test(val)) return val;
   return fallback;
@@ -25,10 +27,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
   const hexInputId = `shape-${shapeId}-${fieldKey}-hex`;
   const colorPickerId = `shape-${shapeId}-${fieldKey}-color`;
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const sessionRef = useRef<{ start: string | null; active: boolean }>({
-    start: null,
-    active: false,
-  });
+  const sessionRef = useRef<EditSession<string>>({ start: null, active: false });
 
   useEffect(() => {
     sessionRef.current = { start: null, active: false };
@@ -116,6 +115,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
           style={{
             flex: 1,
             minWidth: 0,
+            width: 0,
             padding: "0 var(--od-4)",
             fontSize: "var(--od-text-xs)",
           }}
@@ -154,10 +154,7 @@ interface StrokeWidthRowProps {
 function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
   const { value, shapeId, onPreview, onCommit, onReset } = props;
   const strokeInputId = `shape-${shapeId}-stroke-width`;
-  const sessionRef = useRef<{ start: number | null; active: boolean }>({
-    start: null,
-    active: false,
-  });
+  const sessionRef = useRef<EditSession<number>>({ start: null, active: false });
 
   useEffect(() => {
     sessionRef.current = { start: null, active: false };
@@ -205,6 +202,7 @@ function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
           style={{
             flex: 1,
             minWidth: 0,
+            width: 0,
             height: "var(--od-control-height)",
             padding: "0 var(--od-4)",
             fontSize: "var(--od-text-xs)",
@@ -233,27 +231,21 @@ function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
   );
 }
 
+type StyleChangeHandler = (
+  fill?: string | null,
+  stroke?: string | null,
+  strokeWidth?: number | null,
+) => void;
+
 export interface ShapeStyleInspectorProps {
   readonly selectedShape: Shape;
-  readonly handleStyleChange: (
-    fill?: string | null,
-    stroke?: string | null,
-    strokeWidth?: number | null,
-  ) => void;
-  readonly handleStylePreview: (
-    fill?: string | null,
-    stroke?: string | null,
-    strokeWidth?: number | null,
-  ) => void;
+  readonly handleStyleChange: StyleChangeHandler;
+  readonly handleStylePreview: StyleChangeHandler;
   readonly handleStyleCommit: (
     fill?: string | null,
     stroke?: string | null,
     strokeWidth?: number | null,
-    startStyle?: {
-      fill?: string | null;
-      stroke?: string | null;
-      strokeWidth?: number | null;
-    },
+    startStyle?: { fill?: string | null; stroke?: string | null; strokeWidth?: number | null },
   ) => void;
 }
 
@@ -272,7 +264,13 @@ export function ShapeStyleInspector(props: ShapeStyleInspectorProps): React.JSX.
         onCommit={(val, start) => handleStyleCommit(val, undefined, undefined, { fill: start })}
         onReset={() => handleStyleChange(null, undefined, undefined)}
       />
-      <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr", gap: "var(--od-8)" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 0.85fr)",
+          gap: "var(--od-8)",
+        }}
+      >
         <ColorPickerRow
           label="Stroke"
           fieldKey="stroke"
