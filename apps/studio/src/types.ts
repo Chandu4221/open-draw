@@ -32,17 +32,6 @@ export const CANVAS_CONTAINER_STYLE: React.CSSProperties = {
   overflow: "hidden",
 };
 
-export const EMPTY_HINT_STYLE: React.CSSProperties = {
-  position: "absolute",
-  top: "var(--od-16)",
-  left: "50%",
-  transform: "translateX(-50%)",
-  padding: "var(--od-6) var(--od-12)",
-  fontSize: "var(--od-text-xs)",
-  color: "var(--od-text-secondary)",
-  pointerEvents: "none",
-};
-
 export const LEFT_ASIDE_STYLE: React.CSSProperties = {
   width: "240px",
   height: "100%",

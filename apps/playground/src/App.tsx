@@ -229,21 +229,7 @@ function PlaygroundApp() {
         >
           <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
           {emptyDoc && (
-            <div
-              className="od-panel"
-              style={{
-                position: "absolute",
-                top: "var(--od-16)",
-                left: "50%",
-                transform: "translateX(-50%)",
-                padding: "var(--od-6) var(--od-12)",
-                fontSize: "var(--od-text-xs)",
-                color: "var(--od-text-secondary)",
-                pointerEvents: "none",
-              }}
-            >
-              R rect · O ellipse · L line · P pen — wheel to pan
-            </div>
+            <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
           )}
           <CanvasDock
             tool={tool}

@@ -300,7 +300,7 @@
 
 /* Canvas background */
 .od-canvas-bg {
-  background-color: var(--od-bg);
+  background-color: var(--od-canvas-bg, var(--od-bg));
   background-image: radial-gradient(
     circle,
     var(--od-border-strong) var(--od-border-width),
@@ -373,12 +373,12 @@
   gap: var(--od-4);
   padding: var(--od-4) var(--od-8);
   background-color: var(--od-surface);
-  border: var(--od-border-width) solid var(--od-border);
+  border: var(--od-border-width) solid var(--od-border-strong);
   border-radius: var(--od-radius);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--od-shadow-floating);
 }
 
-/* Canvas Floating Overlays */
+/* Canvas Floating Overlays (Zoom Controls) */
 .od-canvas-overlay-bottom-right {
   position: absolute;
   bottom: var(--od-16);
@@ -387,6 +387,30 @@
   display: flex;
   align-items: center;
   gap: var(--od-6);
+  background-color: var(--od-surface);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-radius);
+  padding: 2px;
+  box-shadow: var(--od-shadow-floating);
+}
+
+/* Canvas Floating Empty Hint */
+.od-canvas-hint {
+  position: absolute;
+  top: var(--od-16);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--od-6) var(--od-12);
+  font-size: var(--od-text-xs);
+  color: var(--od-text-secondary);
+  background-color: var(--od-surface);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-radius-sm);
+  box-shadow: var(--od-shadow-floating);
+  pointer-events: none;
+  font-family: var(--od-font);
+  white-space: nowrap;
+  user-select: none;
 }
 
 /* Code Preview */

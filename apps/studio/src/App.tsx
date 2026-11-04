@@ -19,7 +19,6 @@ import { OdToastHost, OdToastProvider, useToast } from "@open-draw/ui";
 import {
   CANVAS_CONTAINER_STYLE,
   CANVAS_WIRE_STYLE,
-  EMPTY_HINT_STYLE,
   LEFT_ASIDE_STYLE,
   RIGHT_ASIDE_STYLE,
   type Gesture,
@@ -236,9 +235,7 @@ function StudioShell() {
         <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
           <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
           {emptyDoc && (
-            <div className="od-panel" style={EMPTY_HINT_STYLE}>
-              R rect · O ellipse · L line · P pen — wheel to pan
-            </div>
+            <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
           )}
           <CanvasDock
             tool={tool}

@@ -12,11 +12,12 @@
   color-scheme: light dark;
 
   /* Neutral scale (monochromatic light) */
-  --od-bg: #f4f4f5; /* canvas backdrop / app bg */
+  --od-bg: #f4f4f5; /* general app bg */
+  --od-canvas-bg: #e5e5e8; /* darker neutral workbench for strong canvas contrast */
   --od-surface: #ffffff; /* panels, toolbar, sidebar */
   --od-surface-raised: #ffffff;
   --od-border: #e4e4e7;
-  --od-border-strong: #d4d4d8;
+  --od-border-strong: #c4c4c8;
   --od-text: #09090b;
   --od-text-secondary: #52525b;
   --od-text-tertiary: #71717a;
@@ -50,6 +51,8 @@
   --od-radius-sm: 4px;
   --od-radius: 6px;
   --od-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 12px rgb(0 0 0 / 0.08);
+  --od-shadow-floating:
+    0 2px 8px rgb(0 0 0 / 0.08), 0 8px 24px rgb(0 0 0 / 0.12), 0 0 0 1px rgb(0 0 0 / 0.04);
 
   /* Type */
   --od-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -61,6 +64,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --od-bg: #09090b;
+    --od-canvas-bg: #09090b;
     --od-surface: #141416;
     --od-surface-raised: #1c1c1f;
     --od-border: #27272a;
@@ -76,5 +80,7 @@
     --od-danger: #ef4444;
     --od-danger-soft: #261416;
     --od-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.7);
+    --od-shadow-floating:
+      0 2px 8px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.08);
   }
 }
