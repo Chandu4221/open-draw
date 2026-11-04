@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import type { Shape } from "@open-draw/document";
-import { OdField } from "@open-draw/ui";
+import { OdField, OdIcon } from "@open-draw/ui";
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -65,7 +65,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
 
   return (
     <OdField label={label} htmlFor={hexInputId}>
-      <div style={{ display: "flex", gap: "var(--od-8)", alignItems: "center", width: "100%" }}>
+      <div style={{ display: "flex", gap: "var(--od-4)", alignItems: "center", width: "100%" }}>
         <input
           ref={inputRef}
           id={colorPickerId}
@@ -87,7 +87,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
             }
           }}
           style={{
-            width: "32px",
+            width: "26px",
             height: "var(--od-control-height)",
             padding: 0,
             cursor: "pointer",
@@ -98,7 +98,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
           id={hexInputId}
           type="text"
           className="od-input"
-          placeholder={`${fallbackHex} or none`}
+          placeholder={fallbackHex}
           aria-label={`${label} hex code or none`}
           value={value ?? ""}
           onFocus={startSession}
@@ -113,21 +113,30 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
             }
           }}
           onBlur={(e) => commitValue(e.target.value)}
-          style={{ flex: 1, minWidth: 0 }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: "0 var(--od-4)",
+            fontSize: "var(--od-text-xs)",
+          }}
         />
         <button
           type="button"
           onClick={onReset}
           className="od-btn od-btn--ghost"
           aria-label={`Reset ${label.toLowerCase()} to default`}
+          title={`Reset ${label.toLowerCase()} to default`}
           style={{
             height: "var(--od-control-height)",
-            padding: "0 var(--od-8)",
-            fontSize: "var(--od-text-xs)",
+            width: "24px",
+            padding: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          Reset
+          <OdIcon name="undo" />
         </button>
       </div>
     </OdField>
@@ -243,26 +252,28 @@ export function ShapeStyleInspector(props: ShapeStyleInspectorProps): React.JSX.
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      <ColorPickerRow
-        label="Fill Color"
-        fieldKey="fill"
-        value={selectedShape.fill}
-        fallbackHex="#ffffff"
-        shapeId={selectedShape.id}
-        onPreview={(val) => handleStylePreview(val, undefined, undefined)}
-        onCommit={(val, start) => handleStyleCommit(val, undefined, undefined, { fill: start })}
-        onReset={() => handleStyleChange(null, undefined, undefined)}
-      />
-      <ColorPickerRow
-        label="Stroke Color"
-        fieldKey="stroke"
-        value={selectedShape.stroke}
-        fallbackHex="#1f2933"
-        shapeId={selectedShape.id}
-        onPreview={(val) => handleStylePreview(undefined, val, undefined)}
-        onCommit={(val, start) => handleStyleCommit(undefined, val, undefined, { stroke: start })}
-        onReset={() => handleStyleChange(undefined, null, undefined)}
-      />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--od-8)" }}>
+        <ColorPickerRow
+          label="Fill"
+          fieldKey="fill"
+          value={selectedShape.fill}
+          fallbackHex="#ffffff"
+          shapeId={selectedShape.id}
+          onPreview={(val) => handleStylePreview(val, undefined, undefined)}
+          onCommit={(val, start) => handleStyleCommit(val, undefined, undefined, { fill: start })}
+          onReset={() => handleStyleChange(null, undefined, undefined)}
+        />
+        <ColorPickerRow
+          label="Stroke"
+          fieldKey="stroke"
+          value={selectedShape.stroke}
+          fallbackHex="#1f2933"
+          shapeId={selectedShape.id}
+          onPreview={(val) => handleStylePreview(undefined, val, undefined)}
+          onCommit={(val, start) => handleStyleCommit(undefined, val, undefined, { stroke: start })}
+          onReset={() => handleStyleChange(undefined, null, undefined)}
+        />
+      </div>
       <StrokeWidthRow
         value={selectedShape.strokeWidth}
         shapeId={selectedShape.id}

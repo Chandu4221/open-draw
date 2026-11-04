@@ -160,6 +160,7 @@ function PlaygroundApp() {
     toolRef,
     setSelectedShapeId,
     setZoomPercent,
+    handleDeviceChange,
     commit,
     render,
   });
@@ -198,9 +199,6 @@ function PlaygroundApp() {
         handleExportPng={toolbarActions.handleExportPng}
         includeLegend={includeLegend}
         setIncludeLegend={setIncludeLegend}
-        activeProfile={inspection.activeProfile}
-        activeDeviceType={activeDeviceType}
-        handleDeviceChange={handleDeviceChange}
         showTagChips={showTagChips}
         toggleShowTagChips={toggleShowTagChips}
         showSidebar={showSidebar}

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Point, ShapeId } from "@open-draw/contracts";
+import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import { SHAPE_KINDS } from "@open-draw/contracts";
 import {
   CANVAS_EVENTS,
@@ -16,6 +16,7 @@ import {
 import { absoluteBoundingBox, type Command, type Document } from "@open-draw/document";
 import type { Gesture } from "./types";
 import { commitDragGesture, commitDrawGesture, commitResizeGesture } from "./canvas-gestures";
+import { pickAnyRootDeviceButton } from "./canvas-overlays";
 
 export interface CanvasInteractionsProps {
   readonly svgRef: React.RefObject<SVGSVGElement | null>;
@@ -28,6 +29,7 @@ export interface CanvasInteractionsProps {
   readonly toolRef: React.MutableRefObject<ToolId>;
   readonly setSelectedShapeId: (id: ShapeId | null) => void;
   readonly setZoomPercent: (pct: number) => void;
+  readonly handleDeviceChange: (deviceType?: DeviceType) => void;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }
@@ -44,6 +46,7 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     toolRef,
     setSelectedShapeId,
     setZoomPercent,
+    handleDeviceChange,
     commit,
     render,
   } = props;
@@ -63,6 +66,15 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     const screen = screenPointFrom(event);
     const world = canvas.screenToWorld(screen);
     const doc = documentRef.current;
+
+    // Check if clicked a device button on a web root container (R-023, R-028, R-031)
+    const hitDevice = pickAnyRootDeviceButton(doc, world, canvas.getCamera().zoom);
+    if (hitDevice !== null) {
+      const next = hitDevice === "all" ? undefined : hitDevice;
+      handleDeviceChange(next);
+      return;
+    }
+
     const selectedId = canvas.getSelectedId();
 
     let handle: HandleId | null = null;
@@ -145,12 +157,25 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
 
   function onPointerMove(event: PointerEvent): void {
     const gesture = gestureRef.current;
-    if (gesture === null) {
-      return;
-    }
     const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
     const world = canvas.screenToWorld(screen);
+
+    if (gesture === null) {
+      const hitDevice = pickAnyRootDeviceButton(
+        documentRef.current,
+        world,
+        canvas.getCamera().zoom,
+      );
+      if (svgRef.current) {
+        if (hitDevice !== null) {
+          svgRef.current.style.cursor = "pointer";
+        } else if (svgRef.current.style.cursor === "pointer") {
+          svgRef.current.style.cursor = "";
+        }
+      }
+      return;
+    }
 
     canvas.dispatch({
       type: CANVAS_EVENTS.pointerMove,

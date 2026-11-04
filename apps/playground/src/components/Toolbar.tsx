@@ -1,13 +1,5 @@
 import React from "react";
-import { DEVICE_TYPES, type DeviceType, type PlatformProfile } from "@open-draw/contracts";
-import {
-  OdButton,
-  OdIconButton,
-  OdSegmentedControl,
-  OdTooltip,
-  type IconId,
-  type OdSegmentedItem,
-} from "@open-draw/ui";
+import { OdButton, OdIconButton, OdTooltip } from "@open-draw/ui";
 
 export interface ToolbarProps {
   readonly brandLabel?: string;
@@ -16,22 +8,11 @@ export interface ToolbarProps {
   readonly includeLegend?: boolean;
   readonly setIncludeLegend?: (include: boolean) => void;
   readonly handleLoad?: () => void;
-  readonly activeProfile: PlatformProfile | undefined;
-  readonly activeDeviceType: DeviceType | undefined;
-  readonly handleDeviceChange: (deviceType?: DeviceType) => void;
   readonly showTagChips: boolean;
   readonly toggleShowTagChips: () => void;
   readonly showSidebar: boolean;
   readonly setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
-const DEVICE_ICON_MAP: Record<DeviceType, IconId> = {
-  mobile: "smartphone",
-  tablet: "tablet",
-  laptop: "laptop",
-  desktop: "desktop",
-  largeScreen: "monitor",
-};
 
 export function Toolbar(props: ToolbarProps): React.JSX.Element {
   const {
@@ -41,24 +22,11 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
     includeLegend,
     setIncludeLegend,
     handleLoad,
-    activeProfile,
-    activeDeviceType,
-    handleDeviceChange,
     showTagChips,
     toggleShowTagChips,
     showSidebar,
     setShowSidebar,
   } = props;
-
-  const deviceItems: readonly OdSegmentedItem<string>[] = [
-    { id: "all", label: "All", tooltip: "All device types" },
-    ...(activeProfile?.deviceTypes ?? []).map((dt) => ({
-      id: dt,
-      icon: DEVICE_ICON_MAP[dt] ?? "monitor",
-      tooltip: DEVICE_TYPES[dt],
-      "aria-label": DEVICE_TYPES[dt],
-    })),
-  ];
 
   return (
     <header
@@ -131,16 +99,6 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
         )}
 
         {(handleLoad || handleExportSvg || handleExportPng) && <div className="od-divider" />}
-
-        {/* Device form factor */}
-        {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
-          <OdSegmentedControl
-            items={deviceItems}
-            value={activeDeviceType ?? "all"}
-            aria-label="Device form factor"
-            onSelect={(id) => handleDeviceChange(id === "all" ? undefined : (id as DeviceType))}
-          />
-        )}
 
         {/* View toggles */}
         <OdTooltip text={showTagChips ? "Hide Semantic Chips" : "Show Semantic Chips"}>

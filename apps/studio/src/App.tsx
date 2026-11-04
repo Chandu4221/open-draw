@@ -160,6 +160,7 @@ function StudioShell() {
     toolRef,
     setSelectedShapeId,
     setZoomPercent,
+    handleDeviceChange,
     commit,
     render,
   });
@@ -198,9 +199,6 @@ function StudioShell() {
         handleExportPng={toolbarActions.handleExportPng}
         includeLegend={includeLegend}
         setIncludeLegend={setIncludeLegend}
-        activeProfile={inspection.activeProfile}
-        activeDeviceType={activeDeviceType}
-        handleDeviceChange={handleDeviceChange}
         showTagChips={showTagChips}
         toggleShowTagChips={toggleShowTagChips}
         showSidebar={showSidebar}

@@ -29,6 +29,7 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
     lastWorld,
     zoom: camera.zoom,
     showTagChips,
+    activeDeviceType: canvas.getActiveDeviceType(),
   });
 
   const world =
