@@ -12,6 +12,7 @@ import {
 } from "@open-draw/ui";
 
 export interface ToolbarProps {
+  readonly brandLabel?: string;
   readonly tool: ToolId;
   readonly chooseTool: (tool: ToolId) => void;
   readonly handleExportMarkdown: () => void;
@@ -117,7 +118,7 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
           className="od-label"
           style={{ fontSize: "var(--od-text-sm)", fontWeight: 700, marginRight: "var(--od-8)" }}
         >
-          OpenDraw
+          {props.brandLabel ?? "OpenDraw"}
         </span>
 
         {/* Group 1: Tools */}
