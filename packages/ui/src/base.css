@@ -406,3 +406,95 @@
   word-break: break-word;
   user-select: text;
 }
+
+/* Contiguous Pill Meter (Creativity Gauge) */
+.od-meter-track {
+  display: flex;
+  align-items: stretch;
+  background-color: var(--od-border);
+  border: var(--od-border-width) solid var(--od-border);
+  border-radius: var(--od-radius-full);
+  padding: 2px;
+  gap: 2px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.od-meter-segment {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--od-8) var(--od-4);
+  font-family: var(--od-font);
+  border: none;
+  cursor: pointer;
+  background-color: var(--od-surface);
+  color: var(--od-text-secondary);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+  user-select: none;
+  min-height: 40px;
+}
+
+.od-meter-segment:first-child {
+  border-top-left-radius: var(--od-radius-full);
+  border-bottom-left-radius: var(--od-radius-full);
+}
+
+.od-meter-segment:last-child {
+  border-top-right-radius: var(--od-radius-full);
+  border-bottom-right-radius: var(--od-radius-full);
+}
+
+.od-meter-segment:hover:not(.od-meter-segment--active) {
+  background-color: var(--od-accent-soft);
+  color: var(--od-text);
+}
+
+.od-meter-segment--active {
+  background-color: var(--od-accent);
+  color: var(--od-text-on-accent);
+}
+
+.od-meter-segment__title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.od-meter-segment__level {
+  font-size: 9px;
+  opacity: 0.8;
+  line-height: 1;
+}
+
+.od-meter-pointer-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 2px;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+
+.od-meter-pointer-col {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 8px;
+}
+
+.od-meter-pointer-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 7px solid var(--od-accent);
+}

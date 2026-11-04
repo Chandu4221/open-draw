@@ -120,10 +120,8 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
               <span className="od-meta">Defines AI implementation freedom</span>
             </div>
 
-            {/* 5-Level Buttons */}
-            <div
-              style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "var(--od-6)" }}
-            >
+            {/* Contiguous Pill Meter */}
+            <div className="od-meter-track" role="radiogroup" aria-label="AI Creativity Level">
               {([1, 2, 3, 4, 5] as const).map((level) => {
                 const def = CREATIVITY_LEVEL_DEFINITIONS[level];
                 const isActive = creativityLevel === level;
@@ -131,29 +129,26 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
                   <button
                     key={level}
                     type="button"
+                    role="radio"
+                    aria-checked={isActive}
                     onClick={() => setCreativityLevel(level)}
-                    className="od-btn"
-                    style={{
-                      height: "36px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "2px",
-                      padding: "var(--od-4)",
-                      backgroundColor: isActive ? "var(--od-accent)" : "var(--od-surface)",
-                      color: isActive ? "var(--od-text-on-accent)" : "var(--od-text)",
-                      borderColor: isActive ? "var(--od-accent)" : "var(--od-border)",
-                      fontWeight: isActive ? 600 : 500,
-                    }}
+                    className={`od-meter-segment${isActive ? " od-meter-segment--active" : ""}`}
+                    aria-label={`Level ${level} ${def.name}: ${def.description}`}
                   >
-                    <span style={{ fontSize: "11px", lineHeight: 1 }}>Level {level}</span>
-                    <span style={{ fontSize: "9px", opacity: 0.85, lineHeight: 1 }}>
-                      {def.name}
-                    </span>
+                    <span className="od-meter-segment__title">{def.name}</span>
+                    <span className="od-meter-segment__level">Level {level}</span>
                   </button>
                 );
               })}
+            </div>
+
+            {/* Indicator Pointer Row */}
+            <div className="od-meter-pointer-row" aria-hidden="true">
+              {([1, 2, 3, 4, 5] as const).map((level) => (
+                <div key={level} className="od-meter-pointer-col">
+                  {creativityLevel === level && <div className="od-meter-pointer-arrow" />}
+                </div>
+              ))}
             </div>
 
             {/* Level Description Card */}
