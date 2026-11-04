@@ -4,12 +4,14 @@ import type {
   PlatformId,
   PluginId,
   StyleId,
+  RootRole,
 } from "@open-draw/contracts";
 import {
   DESIGN_STYLE_BY_VALUE,
   DEVICE_TYPE_BY_VALUE,
   PLATFORM_BY_VALUE,
   STYLE_PROFILE_BY_VALUE,
+  ROOT_ROLE_BY_VALUE,
   isValidPluginId,
 } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
@@ -88,6 +90,9 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     if (value.designStyle !== undefined) {
       throw new DocumentError("invalidMeta", "designStyle may only be set on root shapes (R-026)");
     }
+    if (value.role !== undefined) {
+      throw new DocumentError("invalidMeta", "role may only be set on root shapes (R-026)");
+    }
   }
 
   let platform: PlatformId | undefined;
@@ -132,6 +137,21 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
         : undefined);
     if (designStyle === undefined) {
       throw new DocumentError("invalidMeta", `unknown design style: ${value.designStyle}`);
+    }
+  }
+
+  let role: RootRole | undefined;
+  if (value.role !== undefined) {
+    if (typeof value.role !== "string") {
+      throw new DocumentError("invalidMeta", "meta.role must be a string");
+    }
+    role =
+      ROOT_ROLE_BY_VALUE[value.role] ??
+      (Object.values(ROOT_ROLE_BY_VALUE).includes(value.role as RootRole)
+        ? (value.role as RootRole)
+        : undefined);
+    if (role === undefined) {
+      throw new DocumentError("invalidMeta", `unknown role: ${value.role}`);
     }
   }
 
@@ -180,5 +200,6 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     ...(platform === undefined ? {} : { platform }),
     ...(style === undefined ? {} : { style }),
     ...(designStyle === undefined ? {} : { designStyle }),
+    ...(role === undefined ? {} : { role }),
   };
 }

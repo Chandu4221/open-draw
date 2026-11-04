@@ -1,4 +1,10 @@
-import type { DesignStyleId, DeviceType, PlatformId, StyleId } from "@open-draw/contracts";
+import type {
+  DesignStyleId,
+  DeviceType,
+  PlatformId,
+  RootRole,
+  StyleId,
+} from "@open-draw/contracts";
 import { isRootId, PLATFORMS } from "@open-draw/contracts";
 import type { CanvasController } from "@open-draw/canvas";
 import { COMMANDS, type Command, type Shape } from "@open-draw/document";
@@ -22,6 +28,7 @@ export interface DocumentMutations {
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
   readonly handleSetDesignStyle: (designStyle: DesignStyleId | "") => void;
+  readonly handleSetRole: (role: RootRole | "") => void;
   readonly handleSetLabel: (labelStr: string) => void;
   readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
@@ -100,6 +107,14 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     commit([
       { type: COMMANDS.setRootDesignStyle, id: targetRoot.id, designStyle: nextDesignStyle },
     ]);
+    render();
+  }
+
+  function handleSetRole(role: RootRole | ""): void {
+    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
+    if (!targetRoot) return;
+    const nextRole = role ? (role as RootRole) : null;
+    commit([{ type: COMMANDS.setRootRole, id: targetRoot.id, role: nextRole }]);
     render();
   }
 
@@ -261,6 +276,7 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     handleSetPlatform,
     handleSetStyle,
     handleSetDesignStyle,
+    handleSetRole,
     handleSetLabel,
     handleSetContent,
     handleSetSemantic,

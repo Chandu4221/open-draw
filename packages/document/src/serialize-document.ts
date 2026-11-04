@@ -1,7 +1,7 @@
 // Pure document serializer (R-008, R-014, R-041, R-044). Emits version-only
 // schema without timestamps. Sibling z-order is preserved by maintaining map
 // iteration order. ROOT_ID is strictly excluded.
-import { PLATFORMS, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
+import { PLATFORMS, ROOT_ROLES, SHAPE_KINDS, STYLE_PROFILES, isRootId } from "@open-draw/contracts";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 import { isCustomShape } from "./shape";
@@ -154,6 +154,9 @@ export function serializeDocument(doc: Document): string {
     }
     if (shape.meta.style !== undefined) {
       meta.style = STYLE_PROFILES[shape.meta.style] ?? shape.meta.style;
+    }
+    if (shape.meta.role !== undefined) {
+      meta.role = ROOT_ROLES[shape.meta.role] ?? shape.meta.role;
     }
     if (shape.meta.pluginData !== undefined) {
       if (!isJsonSerializable(shape.meta.pluginData)) {

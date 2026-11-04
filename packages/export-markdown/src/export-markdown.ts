@@ -10,6 +10,7 @@ import {
   DESIGN_STYLE_LABELS,
   DEVICE_TYPES,
   ROOT_ID,
+  ROOT_ROLES,
   SEMANTIC_CONFLICTS,
   SHAPE_KINDS,
 } from "@open-draw/contracts";
@@ -88,6 +89,9 @@ function formatRootMeta(doc: Document, shape: Shape): string {
   const platform = resolveRootPlatform(doc, shape.id);
   const explicitStyle = shape.meta.style;
   const tags: string[] = [];
+  if (shape.meta.role !== undefined) {
+    tags.push(`Role: ${escapeMarkdownText(shape.meta.role)}`);
+  }
   if (platform !== undefined) {
     tags.push(`Platform: ${escapeMarkdownText(platform)}`);
     const effectiveStyle = explicitStyle ?? resolveRootStyle(doc, shape.id);
@@ -111,7 +115,16 @@ function renderNode(doc: Document, node: SemanticTreeNode): string {
     const metaStr = formatRootMeta(doc, node.shape);
     const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
     const conflictStr = formatConflict(node);
-    return `## ${safeDisplayName}${metaStr}${hiddenStr}${conflictStr}`;
+    const semanticTag =
+      node.shape.meta.role === ROOT_ROLES.component && node.shape.meta.semantic !== undefined
+        ? ` — \`${escapeCodeSpan(node.shape.meta.semantic.id)}\``
+        : "";
+    const properties =
+      node.shape.meta.role === ROOT_ROLES.component &&
+      node.shape.meta.semantic?.properties !== undefined
+        ? formatProperties(node.shape.meta.semantic.properties)
+        : "";
+    return `## ${safeDisplayName}${semanticTag}${properties}${metaStr}${hiddenStr}${conflictStr}`;
   }
 
   // Nested container section

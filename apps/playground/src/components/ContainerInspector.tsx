@@ -1,27 +1,59 @@
 import {
-  DESIGN_STYLE_LABELS,
-  DESIGN_STYLES,
   PLATFORM_BY_VALUE,
   PLATFORMS,
+  ROOT_ROLES,
   STYLE_PROFILES,
   type DesignStyleId,
   type PlatformId,
   type PlatformProfile,
+  type RootRole,
+  type SemanticConflict,
+  type SemanticDefinition,
   type StyleId,
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
+import { ComponentSemanticSection } from "./ComponentSemanticSection";
+import { DesignStyleSelect } from "./DesignStyleSelect";
 
 export interface ContainerInspectorProps {
   readonly selectedShape: Shape;
   readonly rootPlatform: PlatformId | undefined;
   readonly rootStyle: StyleId;
   readonly rootDesignStyle?: DesignStyleId | undefined;
+  readonly rootRole?: RootRole | undefined;
   readonly activeProfile: PlatformProfile | undefined;
+  readonly conflict?: SemanticConflict | undefined;
+  readonly semanticDef?: SemanticDefinition | undefined;
+  readonly semanticProps?: Record<string, string | number | boolean>;
   readonly handleSetLabel: (labelStr: string) => void;
+  readonly handleSetContent?: (contentStr: string) => void;
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
   readonly handleSetDesignStyle?: ((designStyle: DesignStyleId | "") => void) | undefined;
+  readonly handleSetRole?: ((role: RootRole | "") => void) | undefined;
+  readonly handleSetSemantic?: (semanticIdStr: string) => void;
+  readonly handlePropertyChange?: (propId: string, val: string | number | boolean) => void;
+  readonly handleStyleChange?: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
+  readonly handleStylePreview?: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+  ) => void;
+  readonly handleStyleCommit?: (
+    fill?: string | null,
+    stroke?: string | null,
+    strokeWidth?: number | null,
+    startStyle?: {
+      fill?: string | null;
+      stroke?: string | null;
+      strokeWidth?: number | null;
+    },
+  ) => void;
 }
 
 export function ContainerInspector(props: ContainerInspectorProps): React.JSX.Element {
@@ -30,11 +62,22 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     rootPlatform,
     rootStyle,
     rootDesignStyle,
+    rootRole,
     activeProfile,
+    conflict,
+    semanticDef,
+    semanticProps,
     handleSetLabel,
+    handleSetContent,
     handleSetPlatform,
     handleSetStyle,
     handleSetDesignStyle,
+    handleSetRole,
+    handleSetSemantic,
+    handlePropertyChange,
+    handleStyleChange,
+    handleStylePreview,
+    handleStyleCommit,
   } = props;
 
   return (
@@ -60,6 +103,27 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
       <div style={{ marginBottom: "12px", color: "#64748b" }}>
         <strong>Shape ID:</strong> {selectedShape.id}
       </div>
+
+      {handleSetRole && (
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
+            Container Role (R-026)
+          </label>
+          <select
+            value={rootRole ?? ROOT_ROLES.screen}
+            style={{
+              width: "100%",
+              padding: "6px 8px",
+              borderRadius: "4px",
+              border: "1px solid #cbd5e1",
+            }}
+            onChange={(e) => handleSetRole((e.target.value as RootRole) || ROOT_ROLES.screen)}
+          >
+            <option value={ROOT_ROLES.screen}>Screen / Page</option>
+            <option value={ROOT_ROLES.component}>Standalone Component</option>
+          </select>
+        </div>
+      )}
 
       <div style={{ marginBottom: "10px" }}>
         <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
@@ -107,129 +171,33 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
       </div>
 
       {rootPlatform !== undefined && handleSetDesignStyle && (
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-            Design Style (AI Prompt / Mockup)
-          </label>
-          <select
-            value={rootDesignStyle ?? ""}
-            style={{
-              width: "100%",
-              padding: "6px 8px",
-              borderRadius: "4px",
-              border: "1px solid #cbd5e1",
-            }}
-            onChange={(e) => handleSetDesignStyle(e.target.value as DesignStyleId | "")}
-          >
-            <option value="">(None / Default)</option>
-            <optgroup label="Modern & Contemporary">
-              <option value={DESIGN_STYLES.minimalism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.minimalism]}
-              </option>
-              <option value={DESIGN_STYLES.modernMinimalism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.modernMinimalism]}
-              </option>
-              <option value={DESIGN_STYLES.flatDesign}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.flatDesign]}
-              </option>
-              <option value={DESIGN_STYLES.cleanCorporate}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.cleanCorporate]}
-              </option>
-              <option value={DESIGN_STYLES.editorial}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.editorial]}
-              </option>
-              <option value={DESIGN_STYLES.swissStyle}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.swissStyle]}
-              </option>
-            </optgroup>
-            <optgroup label="Depth & Surface">
-              <option value={DESIGN_STYLES.glassmorphism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.glassmorphism]}
-              </option>
-              <option value={DESIGN_STYLES.neumorphism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.neumorphism]}
-              </option>
-              <option value={DESIGN_STYLES.claymorphism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.claymorphism]}
-              </option>
-              <option value={DESIGN_STYLES.frostedGlass}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.frostedGlass]}
-              </option>
-              <option value={DESIGN_STYLES.softShadows}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.softShadows]}
-              </option>
-            </optgroup>
-            <optgroup label="Bold & Experimental">
-              <option value={DESIGN_STYLES.brutalism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.brutalism]}
-              </option>
-              <option value={DESIGN_STYLES.neoBrutalism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.neoBrutalism]}
-              </option>
-              <option value={DESIGN_STYLES.antiDesign}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.antiDesign]}
-              </option>
-              <option value={DESIGN_STYLES.maximalism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.maximalism]}
-              </option>
-              <option value={DESIGN_STYLES.deconstructivism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.deconstructivism]}
-              </option>
-            </optgroup>
-            <optgroup label="Retro & Nostalgic">
-              <option value={DESIGN_STYLES.retro90s}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.retro90s]}
-              </option>
-              <option value={DESIGN_STYLES.y2k}>{DESIGN_STYLE_LABELS[DESIGN_STYLES.y2k]}</option>
-              <option value={DESIGN_STYLES.cyberpunk}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.cyberpunk]}
-              </option>
-              <option value={DESIGN_STYLES.synthwave}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.synthwave]}
-              </option>
-              <option value={DESIGN_STYLES.pixelArt}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.pixelArt]}
-              </option>
-            </optgroup>
-            <optgroup label="Layout & Content">
-              <option value={DESIGN_STYLES.bentoGrid}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.bentoGrid]}
-              </option>
-              <option value={DESIGN_STYLES.cardBased}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.cardBased]}
-              </option>
-              <option value={DESIGN_STYLES.dashboardFirst}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.dashboardFirst]}
-              </option>
-              <option value={DESIGN_STYLES.modularGrid}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.modularGrid]}
-              </option>
-            </optgroup>
-            <optgroup label="Luxury & Premium">
-              <option value={DESIGN_STYLES.luxuryMinimalism}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.luxuryMinimalism]}
-              </option>
-              <option value={DESIGN_STYLES.darkLuxury}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.darkLuxury]}
-              </option>
-              <option value={DESIGN_STYLES.artDeco}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.artDeco]}
-              </option>
-            </optgroup>
-            <optgroup label="Technical & Specialized">
-              <option value={DESIGN_STYLES.terminalMonospace}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.terminalMonospace]}
-              </option>
-              <option value={DESIGN_STYLES.blueprint}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.blueprint]}
-              </option>
-              <option value={DESIGN_STYLES.monochrome}>
-                {DESIGN_STYLE_LABELS[DESIGN_STYLES.monochrome]}
-              </option>
-            </optgroup>
-          </select>
-        </div>
+        <DesignStyleSelect
+          rootDesignStyle={rootDesignStyle}
+          handleSetDesignStyle={handleSetDesignStyle}
+        />
       )}
+
+      {rootRole === ROOT_ROLES.component &&
+        handleSetSemantic &&
+        handlePropertyChange &&
+        handleSetContent &&
+        handleStyleChange &&
+        handleStylePreview &&
+        handleStyleCommit && (
+          <ComponentSemanticSection
+            selectedShape={selectedShape}
+            activeProfile={activeProfile}
+            conflict={conflict}
+            semanticDef={semanticDef}
+            semanticProps={semanticProps ?? {}}
+            handleSetContent={handleSetContent}
+            handleSetSemantic={handleSetSemantic}
+            handlePropertyChange={handlePropertyChange}
+            handleStyleChange={handleStyleChange}
+            handleStylePreview={handleStylePreview}
+            handleStyleCommit={handleStyleCommit}
+          />
+        )}
     </div>
   );
 }

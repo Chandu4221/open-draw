@@ -4,9 +4,11 @@
 import {
   type DesignStyleId,
   type PlatformId,
+  type RootRole,
   type ShapeId,
   type StyleId,
   isRootId,
+  ROOT_ROLES,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
@@ -73,4 +75,13 @@ export function resolveRootDesignStyle(doc: Document, shapeId: ShapeId): DesignS
     return undefined;
   }
   return root.meta.designStyle;
+}
+
+/**
+ * Resolves the root role (screen vs component) from its root ancestor (R-024, R-026).
+ * Defaults to "screen" if no root shape is found or if root has no explicit role.
+ */
+export function resolveRootRole(doc: Document, shapeId: ShapeId): RootRole {
+  const root = resolveRootShape(doc, shapeId);
+  return root?.meta.role ?? ROOT_ROLES.screen;
 }
