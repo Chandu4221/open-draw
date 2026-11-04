@@ -1,14 +1,16 @@
 import React from "react";
-import { OdSegmentedControl } from "@open-draw/ui";
+import { OdIconButton, OdSegmentedControl, OdTooltip } from "@open-draw/ui";
 
 export interface CanvasZoomControlsProps {
   readonly zoomPercent: number;
   readonly handleZoom: (factor: number) => void;
   readonly handleResetZoom: () => void;
+  readonly showSidebar?: boolean;
+  readonly setShowSidebar?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function CanvasZoomControls(props: CanvasZoomControlsProps): React.JSX.Element {
-  const { zoomPercent, handleZoom, handleResetZoom } = props;
+  const { zoomPercent, handleZoom, handleResetZoom, showSidebar, setShowSidebar } = props;
 
   const zoomItems = [
     { id: "zoom-out", icon: "zoom-out" as const, label: "-" },
@@ -25,12 +27,25 @@ export function CanvasZoomControls(props: CanvasZoomControlsProps): React.JSX.El
 
   return (
     <div className="od-canvas-overlay-bottom-right">
-      <OdSegmentedControl
-        items={zoomItems}
-        value="percent"
-        aria-label="Canvas zoom controls"
-        onSelect={handleZoomSelect}
-      />
+      {setShowSidebar && (
+        <OdTooltip text={showSidebar ? "Hide Sidebar" : "Show Sidebar"}>
+          <OdIconButton
+            name="panel"
+            aria-label="Toggle Sidebar"
+            active={showSidebar ?? false}
+            className="od-panel-toggle-btn"
+            onClick={() => setShowSidebar((prev) => !prev)}
+          />
+        </OdTooltip>
+      )}
+      <div className="od-zoom-controls">
+        <OdSegmentedControl
+          items={zoomItems}
+          value="percent"
+          aria-label="Canvas zoom controls"
+          onSelect={handleZoomSelect}
+        />
+      </div>
     </div>
   );
 }

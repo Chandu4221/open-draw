@@ -19,7 +19,7 @@ import { OdToastHost, OdToastProvider, useToast } from "@open-draw/ui";
 import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, type Gesture } from "./types";
 import { initCanvas } from "./canvas-init";
 import { renderCanvasSvg } from "./canvas-render";
-import { Toolbar } from "./components/Toolbar";
+
 import { Sidebar } from "./components/Sidebar";
 import { CanvasDock } from "./components/CanvasDock";
 import { CanvasZoomControls } from "./components/CanvasZoomControls";
@@ -179,62 +179,63 @@ function StudioShell() {
         height: "100%",
         width: "100%",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "row",
         minHeight: 0,
+        minWidth: 0,
         overflow: "hidden",
       }}
     >
-      <Toolbar
-        brandLabel="OpenDraw Studio"
-        showSidebar={showSidebar}
-        setShowSidebar={setShowSidebar}
-      />
-      <div
-        style={{
-          flex: 1,
-          height: "100%",
-          minHeight: 0,
-          minWidth: 0,
-          display: "flex",
-          overflow: "hidden",
-        }}
-      >
-        <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
-          <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
-          {emptyDoc && (
-            <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
-          )}
-          <CanvasDock
-            tool={tool}
-            chooseTool={chooseTool}
-            handleUndo={toolbarActions.handleUndo}
-            handleRedo={toolbarActions.handleRedo}
-            handleDuplicate={toolbarActions.handleDuplicate}
-            handleDelete={toolbarActions.handleDelete}
-            handleLoad={toolbarActions.handleLoad}
-            handleExportSvg={toolbarActions.handleExportSvg}
-            handleExportPng={toolbarActions.handleExportPng}
-            onOpenExportModal={() => handleOpenExportModal("markdown")}
-          />
-          <CanvasZoomControls
-            zoomPercent={zoomPercent}
-            handleZoom={handleZoom}
-            handleResetZoom={handleResetZoom}
-          />
+      <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
+        <div className="od-canvas-brand">
+          <span
+            className="od-label"
+            style={{
+              fontSize: "var(--od-text-sm)",
+              fontWeight: 700,
+              color: "var(--od-text)",
+              letterSpacing: "0.02em",
+            }}
+          >
+            OpenDraw Studio
+          </span>
         </div>
-        {showSidebar && (
-          <Sidebar
-            {...inspection}
-            {...mutations}
-            selectedShapeId={selectedShapeId}
-            selectShape={selectShape}
-            showChildChips={
-              selectedShapeId ? canvasRef.current.isRootChipsVisible(selectedShapeId) : false
-            }
-            handleToggleChildChips={handleToggleChildChips}
-          />
+        <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
+        {emptyDoc && (
+          <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
         )}
+        <CanvasDock
+          tool={tool}
+          chooseTool={chooseTool}
+          handleUndo={toolbarActions.handleUndo}
+          handleRedo={toolbarActions.handleRedo}
+          handleDuplicate={toolbarActions.handleDuplicate}
+          handleDelete={toolbarActions.handleDelete}
+          handleLoad={toolbarActions.handleLoad}
+          handleExportSvg={toolbarActions.handleExportSvg}
+          handleExportPng={toolbarActions.handleExportPng}
+          onOpenExportModal={() => handleOpenExportModal("markdown")}
+        />
+        <CanvasZoomControls
+          zoomPercent={zoomPercent}
+          handleZoom={handleZoom}
+          handleResetZoom={handleResetZoom}
+          showSidebar={showSidebar}
+          setShowSidebar={setShowSidebar}
+        />
       </div>
+      {showSidebar && (
+        <Sidebar
+          {...inspection}
+          {...mutations}
+          selectedShapeId={selectedShapeId}
+          selectShape={selectShape}
+          showChildChips={
+            selectedShapeId ? canvasRef.current.isRootChipsVisible(selectedShapeId) : false
+          }
+          handleToggleChildChips={handleToggleChildChips}
+        />
+      )}
+
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
