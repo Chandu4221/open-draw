@@ -73,6 +73,15 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
       exportDocumentJson(doc, creativityLevel);
     }
   };
+  const handleMeterKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+      e.preventDefault();
+      setCreativityLevel((prev) => Math.max(1, prev - 1) as CreativityLevel);
+    } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setCreativityLevel((prev) => Math.min(5, prev + 1) as CreativityLevel);
+    }
+  };
 
   const lineCount = preview.split("\n").length;
   const charCount = preview.length;
@@ -101,7 +110,7 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
         {/* Body */}
         <div className="od-modal__body">
           {/* Format Selector */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-6)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
             <span className="od-section-header">Export Format</span>
             <OdSegmentedControl
               items={FORMAT_OPTIONS}
@@ -112,7 +121,7 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
           </div>
 
           {/* Creativity Meter */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-6)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
             <div
               style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}
             >
@@ -121,7 +130,12 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
             </div>
 
             {/* Contiguous Pill Meter */}
-            <div className="od-meter-track" role="radiogroup" aria-label="AI Creativity Level">
+            <div
+              className="od-meter-track"
+              role="radiogroup"
+              aria-label="AI Creativity Level"
+              onKeyDown={handleMeterKeyDown}
+            >
               {([1, 2, 3, 4, 5] as const).map((level) => {
                 const def = CREATIVITY_LEVEL_DEFINITIONS[level];
                 const isActive = creativityLevel === level;
@@ -131,9 +145,10 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
                     type="button"
                     role="radio"
                     aria-checked={isActive}
+                    tabIndex={isActive ? 0 : -1}
                     onClick={() => setCreativityLevel(level)}
                     className={`od-meter-segment${isActive ? " od-meter-segment--active" : ""}`}
-                    aria-label={`Level ${level} ${def.name}: ${def.description}`}
+                    aria-label={`Level ${level}: ${def.name}. ${def.description}`}
                   >
                     <span className="od-meter-segment__title">{def.name}</span>
                     <span className="od-meter-segment__level">Level {level}</span>
@@ -157,7 +172,7 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
                 backgroundColor: "var(--od-bg)",
                 border: "var(--od-border-width) solid var(--od-border)",
                 borderRadius: "var(--od-radius-sm)",
-                padding: "var(--od-8) var(--od-12)",
+                padding: "var(--od-12) var(--od-16)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "var(--od-4)",
@@ -180,7 +195,7 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
                   margin: 0,
                   fontSize: "var(--od-text-xs)",
                   color: "var(--od-text-secondary)",
-                  lineHeight: 1.4,
+                  lineHeight: 1.5,
                 }}
               >
                 {currentDef.description}
@@ -189,7 +204,7 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
           </div>
 
           {/* Preview Area */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-6)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
             <div
               style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}
             >
@@ -198,7 +213,12 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
                 {charCount} chars • {lineCount} lines
               </span>
             </div>
-            <pre className="od-code-preview">
+            <pre
+              className="od-code-preview"
+              tabIndex={0}
+              role="region"
+              aria-label="Live export output preview"
+            >
               <code>{preview}</code>
             </pre>
           </div>
@@ -209,6 +229,22 @@ function ExportModalDialog(props: Omit<ExportModalProps, "isOpen">): React.JSX.E
           <span className="od-meta">
             Ready for AI handoff ({format === "markdown" ? "Markdown" : "JSON"})
           </span>
+          <div
+            aria-live="polite"
+            style={{
+              position: "absolute",
+              width: "1px",
+              height: "1px",
+              padding: 0,
+              margin: "-1px",
+              overflow: "hidden",
+              clip: "rect(0, 0, 0, 0)",
+              whiteSpace: "nowrap",
+              border: 0,
+            }}
+          >
+            {copied ? "Copied output to clipboard" : ""}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
             <OdButton variant="ghost" onClick={handleCopy}>
               <OdIcon name={copied ? "check" : "copy"} size={16} />

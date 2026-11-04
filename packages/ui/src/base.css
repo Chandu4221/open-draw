@@ -401,10 +401,15 @@
   line-height: 1.5;
   color: var(--od-text);
   overflow: auto;
-  max-height: 260px;
+  height: 240px;
+  box-sizing: border-box;
   white-space: pre-wrap;
   word-break: break-word;
   user-select: text;
+}
+.od-code-preview:focus-visible {
+  outline: 2px solid var(--od-accent);
+  outline-offset: -1px;
 }
 
 /* Contiguous Pill Meter (Creativity Gauge) */
@@ -455,6 +460,12 @@
   color: var(--od-text);
 }
 
+.od-meter-segment:focus-visible {
+  outline: 2px solid var(--od-accent);
+  outline-offset: 2px;
+  z-index: 2;
+}
+
 .od-meter-segment--active {
   background-color: var(--od-accent);
   color: var(--od-text-on-accent);
@@ -470,8 +481,13 @@
 
 .od-meter-segment__level {
   font-size: 9px;
-  opacity: 0.8;
+  color: var(--od-text-tertiary);
   line-height: 1;
+}
+
+.od-meter-segment--active .od-meter-segment__level {
+  color: var(--od-text-on-accent);
+  opacity: 0.9;
 }
 
 .od-meter-pointer-row {
@@ -480,7 +496,8 @@
   width: 100%;
   padding: 0 2px;
   box-sizing: border-box;
-  margin-top: 4px;
+  margin-top: var(--od-4);
+  margin-bottom: var(--od-4);
 }
 
 .od-meter-pointer-col {
