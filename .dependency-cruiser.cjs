@@ -91,6 +91,20 @@ module.exports = {
       },
     },
     {
+      name: "ui-boundary",
+      severity: "error",
+      comment: "@open-draw/ui must not depend on any other package",
+      from: { path: "^packages/ui/" },
+      to: { path: "^packages/(?!ui/)|^@open-draw/" },
+    },
+    {
+      name: "only-apps-may-import-ui",
+      severity: "error",
+      comment: "Only apps/ may import from @open-draw/ui",
+      from: { path: "^packages/(?!ui/)" },
+      to: { path: "^packages/ui/|^@open-draw/ui" },
+    },
+    {
       name: "no-deep-cross-package-imports",
       severity: "error",
       comment: "Cross-package imports must use package entrypoint, not internal src/ paths",
