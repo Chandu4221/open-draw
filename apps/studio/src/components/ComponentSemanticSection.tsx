@@ -106,6 +106,7 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
             <option value="">(None / Baseline)</option>
             {Object.values(activeProfile.semantics)
               .filter((def) => def.id !== activeProfile.rootSemantic)
+              .sort((a, b) => a.displayName.localeCompare(b.displayName))
               .map((def) => (
                 <option key={def.id} value={def.id}>
                   {def.displayName} ({def.id})
@@ -129,10 +130,12 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
           </span>
           {semanticDef.properties.map((schema) => {
             const val = semanticProps[schema.id];
+            const propInputId = `component-prop-${selectedShape.id}-${schema.id}`;
             return (
-              <OdField key={schema.id} label={schema.label}>
+              <OdField key={schema.id} label={schema.label} htmlFor={propInputId}>
                 {schema.control === CONTROL_TYPES.text && (
                   <input
+                    id={propInputId}
                     type="text"
                     className="od-input"
                     style={{ width: "100%" }}
@@ -142,6 +145,7 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                 )}
                 {schema.control === CONTROL_TYPES.number && (
                   <input
+                    id={propInputId}
                     type="number"
                     className="od-input"
                     style={{ width: "100%" }}
@@ -155,8 +159,17 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                   />
                 )}
                 {schema.control === CONTROL_TYPES.toggle && (
-                  <label style={{ display: "flex", alignItems: "center", gap: "var(--od-4)" }}>
+                  <label
+                    htmlFor={propInputId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--od-4)",
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
+                      id={propInputId}
                       type="checkbox"
                       checked={Boolean(val)}
                       onChange={(e) => handlePropertyChange(schema.id, e.target.checked)}
@@ -166,6 +179,7 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                 )}
                 {schema.control === CONTROL_TYPES.select && (
                   <select
+                    id={propInputId}
                     className="od-select"
                     style={{ width: "100%" }}
                     value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}

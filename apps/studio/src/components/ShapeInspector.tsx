@@ -66,45 +66,15 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     handleStyleCommit,
   } = props;
 
+  const sortedSemantics = activeProfile
+    ? Object.values(activeProfile.semantics).sort((a, b) =>
+        a.displayName.localeCompare(b.displayName),
+      )
+    : [];
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      {/* IDENTITY */}
-      <h3 className="od-section-header">Identity</h3>
-
-      <OdField label="Name" htmlFor="shape-name">
-        <input
-          id="shape-name"
-          type="text"
-          className="od-input"
-          style={{ width: "100%" }}
-          placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
-          value={selectedShape.label ?? ""}
-          onChange={(e) => handleSetLabel(e.target.value)}
-        />
-      </OdField>
-
-      <OdField label="Content" htmlFor="shape-content">
-        <input
-          id="shape-content"
-          type="text"
-          className="od-input"
-          style={{ width: "100%" }}
-          placeholder="Text displayed inside shape..."
-          value={selectedShape.content ?? ""}
-          onChange={(e) => handleSetContent(e.target.value)}
-        />
-      </OdField>
-
-      <span className="od-meta">ID: {selectedShape.id}</span>
-      <span className="od-meta">
-        Container:{" "}
-        {rootShape
-          ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
-          : "Canvas"}
-      </span>
-
-      {/* SEMANTICS */}
-      <div className="od-divider od-divider--horizontal" />
+      {/* 1. SEMANTICS */}
       <h3 className="od-section-header">Semantics</h3>
 
       {conflict && (
@@ -133,7 +103,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         </div>
       )}
 
-      {activeProfile && (
+      {activeProfile ? (
         <OdField label="Semantic Tag" htmlFor="shape-semantic-tag">
           <select
             id="shape-semantic-tag"
@@ -143,7 +113,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
             onChange={(e) => handleSetSemantic(e.target.value)}
           >
             <option value="">(None / Baseline)</option>
-            {Object.values(activeProfile.semantics).map((def) => (
+            {sortedSemantics.map((def) => (
               <option key={def.id} value={def.id}>
                 {def.displayName} ({def.id})
               </option>
@@ -157,6 +127,23 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
               )}
           </select>
         </OdField>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-4)" }}>
+          <OdField label="Semantic Tag" htmlFor="shape-semantic-tag">
+            <select
+              id="shape-semantic-tag"
+              className="od-select"
+              style={{ width: "100%" }}
+              disabled
+              value=""
+            >
+              <option value="">(None / Platform-Agnostic)</option>
+            </select>
+          </OdField>
+          <span className="od-meta" style={{ fontStyle: "italic" }}>
+            Set a platform profile on container to enable platform semantics.
+          </span>
+        </div>
       )}
 
       {semanticDef?.properties && semanticDef.properties.length > 0 && (
@@ -166,10 +153,12 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
           </span>
           {semanticDef.properties.map((schema) => {
             const val = semanticProps[schema.id];
+            const propInputId = `shape-prop-${selectedShape.id}-${schema.id}`;
             return (
-              <OdField key={schema.id} label={schema.label}>
+              <OdField key={schema.id} label={schema.label} htmlFor={propInputId}>
                 {schema.control === CONTROL_TYPES.text && (
                   <input
+                    id={propInputId}
                     type="text"
                     className="od-input"
                     style={{ width: "100%" }}
@@ -179,6 +168,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
                 )}
                 {schema.control === CONTROL_TYPES.number && (
                   <input
+                    id={propInputId}
                     type="number"
                     className="od-input"
                     style={{ width: "100%" }}
@@ -192,8 +182,17 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
                   />
                 )}
                 {schema.control === CONTROL_TYPES.toggle && (
-                  <label style={{ display: "flex", alignItems: "center", gap: "var(--od-4)" }}>
+                  <label
+                    htmlFor={propInputId}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--od-4)",
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
+                      id={propInputId}
                       type="checkbox"
                       checked={Boolean(val)}
                       onChange={(e) => handlePropertyChange(schema.id, e.target.checked)}
@@ -203,6 +202,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
                 )}
                 {schema.control === CONTROL_TYPES.select && (
                   <select
+                    id={propInputId}
                     className="od-select"
                     style={{ width: "100%" }}
                     value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}
@@ -221,7 +221,45 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         </div>
       )}
 
-      {/* STYLE */}
+      {/* 2. IDENTITY */}
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Identity</h3>
+
+      <OdField label="Name" htmlFor="shape-name">
+        <input
+          id="shape-name"
+          type="text"
+          className="od-input"
+          style={{ width: "100%" }}
+          placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+          value={selectedShape.label ?? ""}
+          onChange={(e) => handleSetLabel(e.target.value)}
+        />
+      </OdField>
+
+      <OdField label="Content" htmlFor="shape-content">
+        <input
+          id="shape-content"
+          type="text"
+          className="od-input"
+          style={{ width: "100%" }}
+          placeholder="Text displayed inside shape..."
+          value={selectedShape.content ?? ""}
+          onChange={(e) => handleSetContent(e.target.value)}
+        />
+      </OdField>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-2)" }}>
+        <span className="od-meta">ID: {selectedShape.id}</span>
+        <span className="od-meta">
+          Container:{" "}
+          {rootShape
+            ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
+            : "Canvas"}
+        </span>
+      </div>
+
+      {/* 3. STYLE */}
       <div className="od-divider od-divider--horizontal" />
       <h3 className="od-section-header">Style</h3>
       <ShapeStyleInspector
@@ -231,7 +269,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         handleStyleCommit={handleStyleCommit}
       />
 
-      {/* RESPONSIVE */}
+      {/* 4. RESPONSIVE */}
       <div className="od-divider od-divider--horizontal" />
       <h3 className="od-section-header">Responsive</h3>
       <ResponsiveControls
