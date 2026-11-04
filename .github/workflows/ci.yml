@@ -17,7 +17,7 @@ jobs:
   branch-name:
     name: "Branch name (R-032)"
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Enforce conventional branch naming
         run: |
@@ -28,7 +28,7 @@ jobs:
 
   check:
     name: "format → lint → typecheck → test → build"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
