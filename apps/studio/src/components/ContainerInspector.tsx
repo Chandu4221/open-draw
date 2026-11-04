@@ -85,10 +85,11 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
       {/* PLATFORM & STYLE SECTION */}
-      <span className="od-label">Platform & Style</span>
+      <h3 className="od-section-header">Platform & Style</h3>
 
-      <OdField label="Platform Profile">
+      <OdField label="Platform Profile" htmlFor="container-platform-profile">
         <select
+          id="container-platform-profile"
           className="od-select"
           style={{ width: "100%" }}
           value={rootPlatform ? (PLATFORMS[rootPlatform] ?? rootPlatform) : ""}
@@ -113,8 +114,9 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
         />
       )}
 
-      <OdField label="Canvas Render Style">
+      <OdField label="Canvas Render Style" htmlFor="container-canvas-render-style">
         <select
+          id="container-canvas-render-style"
           className="od-select"
           style={{ width: "100%" }}
           value={rootStyle}
@@ -126,8 +128,9 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
       </OdField>
 
       {handleSetRole && (
-        <OdField label="Role">
+        <OdField label="Role" htmlFor="container-role">
           <select
+            id="container-role"
             className="od-select"
             style={{ width: "100%" }}
             value={rootRole ?? ROOT_ROLES.screen}
@@ -140,11 +143,12 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
       )}
 
       {/* IDENTITY SECTION */}
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
-      <span className="od-label">Identity</span>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Identity</h3>
 
-      <OdField label="Name">
+      <OdField label="Name" htmlFor="container-name">
         <input
+          id="container-name"
           type="text"
           className="od-input"
           style={{ width: "100%" }}

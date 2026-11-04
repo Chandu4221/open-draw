@@ -11,8 +11,9 @@ export function DesignStyleSelect(props: DesignStyleSelectProps): React.JSX.Elem
   const { rootDesignStyle, handleSetDesignStyle } = props;
 
   return (
-    <OdField label="Design Style">
+    <OdField label="Design Style" htmlFor="container-design-style">
       <select
+        id="container-design-style"
         className="od-select"
         style={{ width: "100%" }}
         value={rootDesignStyle ?? ""}

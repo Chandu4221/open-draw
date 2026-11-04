@@ -19,7 +19,7 @@
   --od-border-strong: #d4d4d8;
   --od-text: #09090b;
   --od-text-secondary: #52525b;
-  --od-text-tertiary: #a1a1aa;
+  --od-text-tertiary: #71717a;
 
   /* Accent — monochromatic black */
   --od-accent: #09090b;
@@ -67,7 +67,7 @@
     --od-border-strong: #3f3f46;
     --od-text: #fafafa;
     --od-text-secondary: #a1a1aa;
-    --od-text-tertiary: #71717a;
+    --od-text-tertiary: #a1a1aa;
     --od-accent: #fafafa;
     --od-accent-soft: #27272a;
     --od-accent-border: #fafafa;

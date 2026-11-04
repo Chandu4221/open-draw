@@ -53,11 +53,12 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
-      <span className="od-label">Component Semantics</span>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Component Semantics</h3>
 
-      <OdField label="Content">
+      <OdField label="Content" htmlFor="component-content">
         <input
+          id="component-content"
           type="text"
           className="od-input"
           style={{ width: "100%" }}
@@ -94,8 +95,9 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
       )}
 
       {activeProfile && (
-        <OdField label="Semantic Tag">
+        <OdField label="Semantic Tag" htmlFor="component-semantic-tag">
           <select
+            id="component-semantic-tag"
             className="od-select"
             style={{ width: "100%" }}
             value={selectedShape.meta.semantic?.id ?? ""}
@@ -182,8 +184,8 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
         </div>
       )}
 
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
-      <span className="od-label">Style</span>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Style</h3>
       <ShapeStyleInspector
         selectedShape={selectedShape}
         handleStyleChange={handleStyleChange}

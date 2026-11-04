@@ -82,6 +82,12 @@
   margin-inline: var(--od-8);
   flex-shrink: 0;
 }
+.od-divider--horizontal {
+  width: 100%;
+  height: var(--od-border-width);
+  margin: var(--od-8) 0;
+  margin-inline: 0;
+}
 
 /* Segmented Control */
 .od-segmented {
@@ -151,12 +157,26 @@
 }
 
 /* Typography & metadata */
-.od-label {
+.od-panel-title {
+  font-size: var(--od-text-sm);
+  font-weight: 600;
+  color: var(--od-text);
+  margin: 0;
+  font-family: var(--od-font);
+}
+.od-section-header {
   font-size: var(--od-text-xs);
   color: var(--od-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   font-weight: 600;
+  font-family: var(--od-font);
+  margin: 0;
+}
+.od-label {
+  font-size: var(--od-text-xs);
+  color: var(--od-text-secondary);
+  font-weight: 500;
   font-family: var(--od-font);
 }
 .od-meta {

@@ -69,10 +69,11 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
       {/* IDENTITY */}
-      <span className="od-label">Identity</span>
+      <h3 className="od-section-header">Identity</h3>
 
-      <OdField label="Name">
+      <OdField label="Name" htmlFor="shape-name">
         <input
+          id="shape-name"
           type="text"
           className="od-input"
           style={{ width: "100%" }}
@@ -82,8 +83,9 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         />
       </OdField>
 
-      <OdField label="Content">
+      <OdField label="Content" htmlFor="shape-content">
         <input
+          id="shape-content"
           type="text"
           className="od-input"
           style={{ width: "100%" }}
@@ -102,8 +104,8 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
       </span>
 
       {/* SEMANTICS */}
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
-      <span className="od-label">Semantics</span>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Semantics</h3>
 
       {conflict && (
         <div
@@ -132,8 +134,9 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
       )}
 
       {activeProfile && (
-        <OdField label="Semantic Tag">
+        <OdField label="Semantic Tag" htmlFor="shape-semantic-tag">
           <select
+            id="shape-semantic-tag"
             className="od-select"
             style={{ width: "100%" }}
             value={selectedShape.meta.semantic?.id ?? ""}
@@ -219,8 +222,8 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
       )}
 
       {/* STYLE */}
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
-      <span className="od-label">Style</span>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Style</h3>
       <ShapeStyleInspector
         selectedShape={selectedShape}
         handleStyleChange={handleStyleChange}
@@ -229,8 +232,8 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
       />
 
       {/* RESPONSIVE */}
-      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
-      <span className="od-label">Responsive</span>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Responsive</h3>
       <ResponsiveControls
         selectedShape={selectedShape}
         activeProfile={activeProfile}

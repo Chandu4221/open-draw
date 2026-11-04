@@ -15,17 +15,9 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
 
   return (
     <div>
-      <span
-        className="od-label"
-        style={{
-          display: "block",
-          fontSize: "var(--od-text-sm)",
-          color: "var(--od-text)",
-          marginBottom: "var(--od-8)",
-        }}
-      >
+      <h2 className="od-panel-title" style={{ marginBottom: "var(--od-8)" }}>
         Tree Outline
-      </span>
+      </h2>
       <div
         style={{
           maxHeight: "220px",

@@ -99,16 +99,13 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           marginBottom: "var(--od-12)",
         }}
       >
-        <span
-          className="od-label"
-          style={{ fontSize: "var(--od-text-sm)", color: "var(--od-text)" }}
-        >
+        <h2 className="od-panel-title">
           {!selectedShape
             ? "Inspector"
             : isRootId(selectedShape.parent)
               ? "Container Inspector"
               : "Shape Inspector"}
-        </span>
+        </h2>
       </div>
       {!selectedShape ? (
         <div className="od-empty">
