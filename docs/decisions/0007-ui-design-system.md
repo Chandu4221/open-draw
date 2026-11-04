@@ -38,8 +38,7 @@ This ADR specifies the rulings, architecture, package boundaries, token specific
 4. **Modular & Composable Shell Architecture (R-004, R-034):**
    - `@open-draw/ui` provides un-opinionated primitives (`OdButton`, `OdIconButton`, `OdSegmentedControl`, `OdField`, `OdToastHost`).
    - Domain components (`Inspector`, `Toolbar`, `TreeOutline`) compose `@open-draw/document`, `@open-draw/semantics`, and `@open-draw/ui` at the app layer.
-   - `apps/playground` functions as the rapid dev server with development experimentation.
-   - `apps/studio` mounts the production wireframing layout (brand label "OpenDraw Studio", left tree outline, center canvas with dot grid, right inspector).
+   - `apps/studio` mounts the production wireframing layout in parity with `apps/playground` (brand label "OpenDraw Studio", center canvas with dot grid, floating bottom dock & zoom controls, right sidebar embedding Inspector & Tree Outline).
 
 5. **Keyboard-First & Accessible (R-008, R-014):**
    - All interactive controls receive distinct `:focus-visible` styling with 2px accent outlines.

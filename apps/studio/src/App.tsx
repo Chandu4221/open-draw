@@ -16,18 +16,11 @@ import {
 } from "@open-draw/document";
 import { TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
 import { OdToastHost, OdToastProvider, useToast } from "@open-draw/ui";
-import {
-  CANVAS_CONTAINER_STYLE,
-  CANVAS_WIRE_STYLE,
-  LEFT_ASIDE_STYLE,
-  RIGHT_ASIDE_STYLE,
-  type Gesture,
-} from "./types";
+import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, type Gesture } from "./types";
 import { initCanvas } from "./canvas-init";
 import { renderCanvasSvg } from "./canvas-render";
 import { Toolbar } from "./components/Toolbar";
-import { TreeOutline } from "./components/TreeOutline";
-import { Inspector } from "./components/Inspector";
+import { Sidebar } from "./components/Sidebar";
 import { CanvasDock } from "./components/CanvasDock";
 import { CanvasZoomControls } from "./components/CanvasZoomControls";
 import { ExportModal } from "./components/ExportModal";
@@ -223,15 +216,6 @@ function StudioShell() {
           overflow: "hidden",
         }}
       >
-        {showSidebar && (
-          <aside className="od-panel" style={LEFT_ASIDE_STYLE}>
-            <TreeOutline
-              treeNodes={inspection.treeNodes}
-              selectedShapeId={selectedShapeId}
-              selectShape={selectShape}
-            />
-          </aside>
-        )}
         <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
           <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
           {emptyDoc && (
@@ -253,9 +237,12 @@ function StudioShell() {
           />
         </div>
         {showSidebar && (
-          <aside className="od-panel" style={RIGHT_ASIDE_STYLE}>
-            <Inspector {...inspection} {...mutations} />
-          </aside>
+          <Sidebar
+            {...inspection}
+            {...mutations}
+            selectedShapeId={selectedShapeId}
+            selectShape={selectShape}
+          />
         )}
       </div>
       <ExportModal
