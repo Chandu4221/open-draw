@@ -1,5 +1,5 @@
 :root {
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--od-font, "Inter", system-ui, "Segoe UI", Roboto, sans-serif);
   color-scheme: light dark;
 }
 

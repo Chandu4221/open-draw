@@ -1,3 +1,13 @@
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    url("./fonts/inter-variable.woff2") format("woff2-variations"),
+    url("./fonts/inter-variable.woff2") format("woff2");
+}
+
 :root {
   color-scheme: light dark;
 
@@ -42,7 +52,7 @@
   --od-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
 
   /* Type */
-  --od-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --od-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --od-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --od-text-sm: 12px; /* UI default */
   --od-text-xs: 11px; /* meta, shortcuts, tooltips */
