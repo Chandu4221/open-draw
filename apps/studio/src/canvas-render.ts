@@ -12,12 +12,11 @@ export interface RenderCanvasSvgOptions {
   readonly gesture: Gesture | null;
   readonly tool: ToolId;
   readonly lastWorld: Point;
-  readonly showTagChips: boolean;
   readonly onFallback: (msg: string) => void;
 }
 
 export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
-  const { svg, canvas, doc, gesture, tool, lastWorld, showTagChips, onFallback } = options;
+  const { svg, canvas, doc, gesture, tool, lastWorld, onFallback } = options;
   const camera = canvas.getCamera();
 
   const overlays = computeCanvasOverlays({
@@ -28,7 +27,8 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
     tool,
     lastWorld,
     zoom: camera.zoom,
-    showTagChips,
+    visibleChipRootIds: canvas.getVisibleChipRootIds(),
+    activeDeviceType: canvas.getActiveDeviceType(),
   });
 
   const world =

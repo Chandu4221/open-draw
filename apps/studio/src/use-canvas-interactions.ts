@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Point, ShapeId } from "@open-draw/contracts";
+import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import { SHAPE_KINDS } from "@open-draw/contracts";
 import {
   CANVAS_EVENTS,
@@ -16,6 +16,7 @@ import {
 import { absoluteBoundingBox, type Command, type Document } from "@open-draw/document";
 import type { Gesture } from "./types";
 import { commitDragGesture, commitDrawGesture, commitResizeGesture } from "./canvas-gestures";
+import { pickAnyRootChip, pickAnyRootDeviceButton } from "./canvas-overlays";
 
 export interface CanvasInteractionsProps {
   readonly svgRef: React.RefObject<SVGSVGElement | null>;
@@ -26,8 +27,10 @@ export interface CanvasInteractionsProps {
   readonly lastWorldRef: React.MutableRefObject<Point>;
   readonly spaceRef: React.MutableRefObject<boolean>;
   readonly toolRef: React.MutableRefObject<ToolId>;
+  readonly chooseTool: (tool: ToolId) => void;
   readonly setSelectedShapeId: (id: ShapeId | null) => void;
   readonly setZoomPercent: (pct: number) => void;
+  readonly handleDeviceChange: (deviceType?: DeviceType) => void;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }
@@ -42,8 +45,10 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     lastWorldRef,
     spaceRef,
     toolRef,
+    chooseTool,
     setSelectedShapeId,
     setZoomPercent,
+    handleDeviceChange,
     commit,
     render,
   } = props;
@@ -63,6 +68,20 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     const screen = screenPointFrom(event);
     const world = canvas.screenToWorld(screen);
     const doc = documentRef.current;
+
+    const zoom = canvas.getCamera().zoom;
+    const hitDevice = pickAnyRootDeviceButton(doc, world, zoom);
+    if (hitDevice !== null) {
+      handleDeviceChange(hitDevice === "all" ? undefined : hitDevice);
+      return;
+    }
+    const hitRootChip = pickAnyRootChip(doc, world, zoom);
+    if (hitRootChip !== null) {
+      canvas.toggleRootChipsVisible(hitRootChip);
+      render();
+      return;
+    }
+
     const selectedId = canvas.getSelectedId();
 
     let handle: HandleId | null = null;
@@ -145,12 +164,23 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
 
   function onPointerMove(event: PointerEvent): void {
     const gesture = gestureRef.current;
-    if (gesture === null) {
-      return;
-    }
     const canvas = canvasRef.current;
     const screen = screenPointFrom(event);
     const world = canvas.screenToWorld(screen);
+
+    if (gesture === null) {
+      const zoom = canvas.getCamera().zoom;
+      const hitDevice = pickAnyRootDeviceButton(documentRef.current, world, zoom);
+      const hitChip = pickAnyRootChip(documentRef.current, world, zoom);
+      if (svgRef.current) {
+        if (hitDevice !== null || hitChip !== null) {
+          svgRef.current.style.cursor = "pointer";
+        } else if (svgRef.current.style.cursor === "pointer") {
+          svgRef.current.style.cursor = "";
+        }
+      }
+      return;
+    }
 
     canvas.dispatch({
       type: CANVAS_EVENTS.pointerMove,
@@ -199,6 +229,7 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
       commitResizeGesture(documentRef.current, canvas, gesture, world, commit);
     } else if (before === STATES.drawingShape) {
       commitDrawGesture(documentRef.current, canvas, gesture, world, toolRef.current, commit);
+      chooseTool(TOOLS.select);
     } else if (before === STATES.selecting || gesture.kind === GESTURE_KINDS.select) {
       const marqueeBox = normalizeBox(gesture.startWorld, world);
       if (marqueeBox.width > 2 || marqueeBox.height > 2) {

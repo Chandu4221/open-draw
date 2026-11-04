@@ -9,6 +9,9 @@ export interface CanvasDockProps {
   readonly handleRedo?: () => void;
   readonly handleDuplicate?: () => void;
   readonly handleDelete?: () => void;
+  readonly handleLoad?: () => void;
+  readonly handleExportSvg?: () => void;
+  readonly handleExportPng?: () => void;
   readonly onOpenExportModal: () => void;
 }
 
@@ -20,6 +23,9 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
     handleRedo,
     handleDuplicate,
     handleDelete,
+    handleLoad,
+    handleExportSvg,
+    handleExportPng,
     onOpenExportModal,
   } = props;
 
@@ -97,12 +103,49 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
 
       <div className="od-divider" />
 
-      {/* Group 3: Save / Export */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <OdTooltip text="Export & Save (Preview before export)">
+      {/* Group 3: File & Export actions */}
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--od-2)" }}>
+        {handleLoad && (
+          <OdTooltip text="Open document">
+            <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />
+          </OdTooltip>
+        )}
+        {handleExportSvg && (
+          <OdTooltip text="Save SVG">
+            <OdIconButton aria-label="Save SVG" ghost onClick={handleExportSvg}>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                SVG
+              </span>
+            </OdIconButton>
+          </OdTooltip>
+        )}
+        {handleExportPng && (
+          <OdTooltip text="Save PNG">
+            <OdIconButton aria-label="Save PNG" ghost onClick={handleExportPng}>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                PNG
+              </span>
+            </OdIconButton>
+          </OdTooltip>
+        )}
+        <OdTooltip text="Save / Export wireframe">
           <OdIconButton
             name="save"
-            aria-label="Export or save wireframe"
+            aria-label="Save or export wireframe"
             ghost
             onClick={onOpenExportModal}
           />

@@ -5,7 +5,7 @@ import type {
   SemanticConflict,
   SemanticDefinition,
 } from "@open-draw/contracts";
-import { CONTROL_TYPES } from "@open-draw/contracts";
+import { CONTROL_TYPES, PLATFORMS } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdField } from "@open-draw/ui";
@@ -71,6 +71,9 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         a.displayName.localeCompare(b.displayName),
       )
     : [];
+
+  const isWebRoot =
+    rootShape?.meta.platform === PLATFORMS.web || activeProfile?.id === PLATFORMS.web;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
@@ -270,14 +273,18 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
       />
 
       {/* 4. RESPONSIVE */}
-      <div className="od-divider od-divider--horizontal" />
-      <h3 className="od-section-header">Responsive</h3>
-      <ResponsiveControls
-        selectedShape={selectedShape}
-        activeProfile={activeProfile}
-        handleToggleHiddenOn={handleToggleHiddenOn}
-        handleOrderChange={handleOrderChange}
-      />
+      {isWebRoot && (
+        <>
+          <div className="od-divider od-divider--horizontal" />
+          <h3 className="od-section-header">Responsive</h3>
+          <ResponsiveControls
+            selectedShape={selectedShape}
+            activeProfile={activeProfile}
+            handleToggleHiddenOn={handleToggleHiddenOn}
+            handleOrderChange={handleOrderChange}
+          />
+        </>
+      )}
     </div>
   );
 }

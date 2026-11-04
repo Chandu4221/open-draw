@@ -33,6 +33,7 @@ export interface CanvasOptions {
   readonly selection?: Selection;
   readonly shapeKinds?: ShapeKindRegistry | readonly ShapeKindRegistration[];
   readonly activeDeviceType?: DeviceType;
+  readonly visibleChipRootIds?: readonly ShapeId[] | ReadonlySet<ShapeId>;
 }
 
 export interface CanvasController {
@@ -66,12 +67,18 @@ export interface CanvasController {
 
   getActiveDeviceType(): DeviceType | undefined;
   setActiveDeviceType(deviceType?: DeviceType): void;
+
+  getVisibleChipRootIds(): ReadonlySet<ShapeId>;
+  isRootChipsVisible(rootId: ShapeId): boolean;
+  toggleRootChipsVisible(rootId: ShapeId): void;
+  setRootChipsVisible(rootId: ShapeId, visible: boolean): void;
 }
 
 export function createCanvas(options: CanvasOptions = {}): CanvasController {
   let camera = options.camera ?? DEFAULT_CAMERA;
   let selection = options.selection ?? EMPTY_SELECTION;
   let activeDeviceType = options.activeDeviceType;
+  const visibleChipRootIds = new Set<ShapeId>(options.visibleChipRootIds ?? []);
   let machine = INITIAL_MACHINE_STATE;
   let shapeKindRegistry: ShapeKindRegistry =
     options.shapeKinds === undefined
@@ -133,6 +140,23 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     getActiveDeviceType: () => activeDeviceType,
     setActiveDeviceType: (deviceType) => {
       activeDeviceType = deviceType;
+    },
+
+    getVisibleChipRootIds: () => visibleChipRootIds,
+    isRootChipsVisible: (rootId) => visibleChipRootIds.has(rootId),
+    toggleRootChipsVisible: (rootId) => {
+      if (visibleChipRootIds.has(rootId)) {
+        visibleChipRootIds.delete(rootId);
+      } else {
+        visibleChipRootIds.add(rootId);
+      }
+    },
+    setRootChipsVisible: (rootId, visible) => {
+      if (visible) {
+        visibleChipRootIds.add(rootId);
+      } else {
+        visibleChipRootIds.delete(rootId);
+      }
     },
   };
 }

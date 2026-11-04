@@ -23,6 +23,8 @@ import {
   previewLineToSvg,
   previewPenPathToSvg,
   selectionOverlayToSvg,
+  computeChipBounds,
+  pickChip,
   type RendererFallbackEvent,
 } from "./index";
 
@@ -253,6 +255,35 @@ describe("chip overlay (ADR-0005 D5, R-031)", () => {
     expect(hostileChip).toContain('fill="#2563eb&quot; onload=&quot;alert(1)"');
     expect(hostileChip).not.toContain('onerror="alert(2)"');
     expect(hostileChip).toContain('fill="#ffffff&quot; onerror=&quot;alert(2)">');
+  });
+
+  it("computes bounds and hit-tests chip overlay (R-031)", () => {
+    const box = { x: 100, y: 200, width: 300, height: 150 };
+    const bounds = computeChipBounds("Web", box, 1.0);
+
+    expect(bounds.x).toBe(100);
+    expect(bounds.y).toBe(182); // 200 - 18
+    expect(bounds.height).toBe(16);
+    expect(bounds.width).toBeGreaterThan(20);
+
+    // Hit-testing inside
+    expect(pickChip("Web", box, { x: 105, y: 190 }, 1.0)).toBe(true);
+    // Hit-testing outside
+    expect(pickChip("Web", box, { x: 50, y: 190 }, 1.0)).toBe(false);
+    expect(pickChip("Web", box, { x: 105, y: 250 }, 1.0)).toBe(false);
+  });
+
+  it("renders interactive and active chip styles", () => {
+    const box = { x: 100, y: 200, width: 300, height: 150 };
+    const activeChip = chipOverlayToSvg("Web", box, 1.0, { interactive: true, active: true });
+    expect(activeChip).toContain('data-interactive="true"');
+    expect(activeChip).toContain("cursor: pointer");
+    expect(activeChip).toContain('fill="#09090b"');
+
+    const inactiveChip = chipOverlayToSvg("Web", box, 1.0, { interactive: true, active: false });
+    expect(inactiveChip).toContain('data-interactive="true"');
+    expect(inactiveChip).toContain("cursor: pointer");
+    expect(inactiveChip).toContain('fill="#ffffff"');
   });
 });
 

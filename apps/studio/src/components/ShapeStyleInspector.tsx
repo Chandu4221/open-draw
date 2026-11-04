@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import type { Shape } from "@open-draw/document";
-import { OdField } from "@open-draw/ui";
+import { OdField, OdIcon } from "@open-draw/ui";
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
+type EditSession<T> = { start: T | null; active: boolean };
 
 function toColorInputValue(val: string | undefined | null, fallback: string): string {
   if (val && HEX_COLOR_RE.test(val)) return val;
@@ -25,10 +27,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
   const hexInputId = `shape-${shapeId}-${fieldKey}-hex`;
   const colorPickerId = `shape-${shapeId}-${fieldKey}-color`;
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const sessionRef = useRef<{ start: string | null; active: boolean }>({
-    start: null,
-    active: false,
-  });
+  const sessionRef = useRef<EditSession<string>>({ start: null, active: false });
 
   useEffect(() => {
     sessionRef.current = { start: null, active: false };
@@ -65,7 +64,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
 
   return (
     <OdField label={label} htmlFor={hexInputId}>
-      <div style={{ display: "flex", gap: "var(--od-8)", alignItems: "center", width: "100%" }}>
+      <div style={{ display: "flex", gap: "var(--od-4)", alignItems: "center", width: "100%" }}>
         <input
           ref={inputRef}
           id={colorPickerId}
@@ -87,7 +86,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
             }
           }}
           style={{
-            width: "32px",
+            width: "26px",
             height: "var(--od-control-height)",
             padding: 0,
             cursor: "pointer",
@@ -98,7 +97,7 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
           id={hexInputId}
           type="text"
           className="od-input"
-          placeholder={`${fallbackHex} or none`}
+          placeholder={fallbackHex}
           aria-label={`${label} hex code or none`}
           value={value ?? ""}
           onFocus={startSession}
@@ -113,21 +112,31 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
             }
           }}
           onBlur={(e) => commitValue(e.target.value)}
-          style={{ flex: 1, minWidth: 0 }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            width: 0,
+            padding: "0 var(--od-4)",
+            fontSize: "var(--od-text-xs)",
+          }}
         />
         <button
           type="button"
           onClick={onReset}
           className="od-btn od-btn--ghost"
           aria-label={`Reset ${label.toLowerCase()} to default`}
+          title={`Reset ${label.toLowerCase()} to default`}
           style={{
             height: "var(--od-control-height)",
-            padding: "0 var(--od-8)",
-            fontSize: "var(--od-text-xs)",
+            width: "24px",
+            padding: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          Reset
+          <OdIcon name="undo" />
         </button>
       </div>
     </OdField>
@@ -145,10 +154,7 @@ interface StrokeWidthRowProps {
 function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
   const { value, shapeId, onPreview, onCommit, onReset } = props;
   const strokeInputId = `shape-${shapeId}-stroke-width`;
-  const sessionRef = useRef<{ start: number | null; active: boolean }>({
-    start: null,
-    active: false,
-  });
+  const sessionRef = useRef<EditSession<number>>({ start: null, active: false });
 
   useEffect(() => {
     sessionRef.current = { start: null, active: false };
@@ -171,7 +177,7 @@ function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
 
   return (
     <OdField label="Stroke Width" htmlFor={strokeInputId}>
-      <div style={{ display: "flex", gap: "var(--od-8)", alignItems: "center", width: "100%" }}>
+      <div style={{ display: "flex", gap: "var(--od-4)", alignItems: "center", width: "100%" }}>
         <input
           id={strokeInputId}
           type="number"
@@ -193,48 +199,53 @@ function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
             }
           }}
           onBlur={(e) => commitValue(e.target.value)}
-          style={{ width: "80px", height: "var(--od-control-height)" }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            width: 0,
+            height: "var(--od-control-height)",
+            padding: "0 var(--od-4)",
+            fontSize: "var(--od-text-xs)",
+          }}
         />
         <button
           type="button"
           onClick={onReset}
           className="od-btn od-btn--ghost"
           aria-label="Reset stroke width to default"
+          title="Reset stroke width to default"
           style={{
             height: "var(--od-control-height)",
-            padding: "0 var(--od-8)",
-            fontSize: "var(--od-text-xs)",
+            width: "24px",
+            padding: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          Default
+          <OdIcon name="undo" />
         </button>
       </div>
     </OdField>
   );
 }
 
+type StyleChangeHandler = (
+  fill?: string | null,
+  stroke?: string | null,
+  strokeWidth?: number | null,
+) => void;
+
 export interface ShapeStyleInspectorProps {
   readonly selectedShape: Shape;
-  readonly handleStyleChange: (
-    fill?: string | null,
-    stroke?: string | null,
-    strokeWidth?: number | null,
-  ) => void;
-  readonly handleStylePreview: (
-    fill?: string | null,
-    stroke?: string | null,
-    strokeWidth?: number | null,
-  ) => void;
+  readonly handleStyleChange: StyleChangeHandler;
+  readonly handleStylePreview: StyleChangeHandler;
   readonly handleStyleCommit: (
     fill?: string | null,
     stroke?: string | null,
     strokeWidth?: number | null,
-    startStyle?: {
-      fill?: string | null;
-      stroke?: string | null;
-      strokeWidth?: number | null;
-    },
+    startStyle?: { fill?: string | null; stroke?: string | null; strokeWidth?: number | null },
   ) => void;
 }
 
@@ -244,7 +255,7 @@ export function ShapeStyleInspector(props: ShapeStyleInspectorProps): React.JSX.
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
       <ColorPickerRow
-        label="Fill Color"
+        label="Fill"
         fieldKey="fill"
         value={selectedShape.fill}
         fallbackHex="#ffffff"
@@ -253,25 +264,33 @@ export function ShapeStyleInspector(props: ShapeStyleInspectorProps): React.JSX.
         onCommit={(val, start) => handleStyleCommit(val, undefined, undefined, { fill: start })}
         onReset={() => handleStyleChange(null, undefined, undefined)}
       />
-      <ColorPickerRow
-        label="Stroke Color"
-        fieldKey="stroke"
-        value={selectedShape.stroke}
-        fallbackHex="#1f2933"
-        shapeId={selectedShape.id}
-        onPreview={(val) => handleStylePreview(undefined, val, undefined)}
-        onCommit={(val, start) => handleStyleCommit(undefined, val, undefined, { stroke: start })}
-        onReset={() => handleStyleChange(undefined, null, undefined)}
-      />
-      <StrokeWidthRow
-        value={selectedShape.strokeWidth}
-        shapeId={selectedShape.id}
-        onPreview={(val) => handleStylePreview(undefined, undefined, val)}
-        onCommit={(val, start) =>
-          handleStyleCommit(undefined, undefined, val, { strokeWidth: start })
-        }
-        onReset={() => handleStyleChange(undefined, undefined, null)}
-      />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 0.85fr)",
+          gap: "var(--od-8)",
+        }}
+      >
+        <ColorPickerRow
+          label="Stroke"
+          fieldKey="stroke"
+          value={selectedShape.stroke}
+          fallbackHex="#1f2933"
+          shapeId={selectedShape.id}
+          onPreview={(val) => handleStylePreview(undefined, val, undefined)}
+          onCommit={(val, start) => handleStyleCommit(undefined, val, undefined, { stroke: start })}
+          onReset={() => handleStyleChange(undefined, null, undefined)}
+        />
+        <StrokeWidthRow
+          value={selectedShape.strokeWidth}
+          shapeId={selectedShape.id}
+          onPreview={(val) => handleStylePreview(undefined, undefined, val)}
+          onCommit={(val, start) =>
+            handleStyleCommit(undefined, undefined, val, { strokeWidth: start })
+          }
+          onReset={() => handleStyleChange(undefined, undefined, null)}
+        />
+      </div>
     </div>
   );
 }

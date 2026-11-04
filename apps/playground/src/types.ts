@@ -22,3 +22,12 @@ export const CANVAS_WIRE_STYLE = {
   display: "block",
   touchAction: "none",
 };
+
+export const CANVAS_CONTAINER_STYLE: React.CSSProperties = {
+  flex: 1,
+  height: "100%",
+  minHeight: 0,
+  minWidth: 0,
+  position: "relative",
+  overflow: "hidden",
+};

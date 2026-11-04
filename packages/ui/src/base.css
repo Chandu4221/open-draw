@@ -378,20 +378,77 @@
   box-shadow: var(--od-shadow-floating);
 }
 
-/* Canvas Floating Overlays (Zoom Controls) */
+/* Canvas Floating Overlays (Zoom Controls & Inspector Toggle) */
 .od-canvas-overlay-bottom-right {
   position: absolute;
   bottom: var(--od-16);
   right: var(--od-16);
   z-index: 20;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--od-8);
+}
+
+.od-zoom-controls {
+  display: flex;
   align-items: center;
-  gap: var(--od-6);
+  gap: var(--od-4);
   background-color: var(--od-surface);
   border: var(--od-border-width) solid var(--od-border-strong);
   border-radius: var(--od-radius);
   padding: 2px;
   box-shadow: var(--od-shadow-floating);
+}
+
+.od-panel-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--od-8);
+  height: var(--od-control-height);
+  padding: 0 var(--od-12);
+  font-family: var(--od-font);
+  font-size: var(--od-text-xs);
+  font-weight: 500;
+  color: var(--od-text-secondary);
+  background-color: var(--od-surface);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-radius);
+  box-shadow: var(--od-shadow-floating);
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.od-panel-toggle-btn:hover {
+  border-color: var(--od-border-strong);
+  color: var(--od-text);
+}
+
+.od-panel-toggle-btn:active {
+  background-color: var(--od-accent-soft);
+}
+
+.od-panel-toggle-btn:focus-visible {
+  outline: var(--od-focus-ring) solid var(--od-accent);
+  outline-offset: var(--od-border-width);
+}
+
+.od-panel-toggle-btn--active {
+  background-color: var(--od-accent-soft);
+  border-color: var(--od-accent-border);
+  color: var(--od-accent);
+}
+
+/* Canvas Floating Brand Logo */
+.od-canvas-brand {
+  position: absolute;
+  top: var(--od-16);
+  left: var(--od-16);
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Canvas Floating Empty Hint */
@@ -400,7 +457,7 @@
   top: var(--od-16);
   left: 50%;
   transform: translateX(-50%);
-  padding: var(--od-6) var(--od-12);
+  padding: var(--od-4) var(--od-12);
   font-size: var(--od-text-xs);
   color: var(--od-text-secondary);
   background-color: var(--od-surface);

@@ -26,6 +26,7 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         borderRight: "none",
         borderRadius: 0,
         overflowY: "auto",
+        overflowX: "hidden",
         padding: "var(--od-16)",
         flexShrink: 0,
       }}

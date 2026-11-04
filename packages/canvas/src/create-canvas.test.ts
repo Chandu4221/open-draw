@@ -142,4 +142,30 @@ describe("createCanvas", () => {
     const canvasWithInit = createCanvas({ activeDeviceType: DEVICE_TYPES.tablet });
     expect(canvasWithInit.getActiveDeviceType()).toBe(DEVICE_TYPES.tablet);
   });
+
+  it("manages visible root chip state as transient view state (R-016, R-031)", () => {
+    const canvas = createCanvas();
+    expect(canvas.getVisibleChipRootIds().size).toBe(0);
+
+    const rootA = parseShapeId("root-a");
+    const rootB = parseShapeId("root-b");
+
+    expect(canvas.isRootChipsVisible(rootA)).toBe(false);
+
+    canvas.toggleRootChipsVisible(rootA);
+    expect(canvas.isRootChipsVisible(rootA)).toBe(true);
+    expect(canvas.getVisibleChipRootIds().has(rootA)).toBe(true);
+
+    canvas.toggleRootChipsVisible(rootA);
+    expect(canvas.isRootChipsVisible(rootA)).toBe(false);
+
+    canvas.setRootChipsVisible(rootB, true);
+    expect(canvas.isRootChipsVisible(rootB)).toBe(true);
+
+    canvas.setRootChipsVisible(rootB, false);
+    expect(canvas.isRootChipsVisible(rootB)).toBe(false);
+
+    const canvasWithInit = createCanvas({ visibleChipRootIds: [rootA] });
+    expect(canvasWithInit.isRootChipsVisible(rootA)).toBe(true);
+  });
 });

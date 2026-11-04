@@ -10,6 +10,7 @@ import {
   type RootRole,
   type SemanticConflict,
   type SemanticDefinition,
+  type ShapeId,
   type StyleId,
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
@@ -56,6 +57,8 @@ export interface ContainerInspectorProps {
       strokeWidth?: number | null;
     },
   ) => void;
+  readonly showChildChips?: boolean | undefined;
+  readonly handleToggleChildChips?: ((rootId: ShapeId) => void) | undefined;
 }
 
 export function ContainerInspector(props: ContainerInspectorProps): React.JSX.Element {
@@ -80,6 +83,8 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     handleStyleChange,
     handleStylePreview,
     handleStyleCommit,
+    showChildChips,
+    handleToggleChildChips,
   } = props;
 
   return (
@@ -139,6 +144,29 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
             <option value={ROOT_ROLES.screen}>Screen / Page</option>
             <option value={ROOT_ROLES.component}>Standalone Component</option>
           </select>
+        </OdField>
+      )}
+
+      {handleToggleChildChips && (
+        <OdField label="Semantic Chips" htmlFor="container-show-chips">
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "var(--od-8)",
+              cursor: "pointer",
+              fontSize: "var(--od-text-xs)",
+              color: "var(--od-text-secondary)",
+            }}
+          >
+            <input
+              id="container-show-chips"
+              type="checkbox"
+              checked={showChildChips ?? false}
+              onChange={() => handleToggleChildChips(selectedShape.id)}
+            />
+            Show tags on child components
+          </label>
         </OdField>
       )}
 

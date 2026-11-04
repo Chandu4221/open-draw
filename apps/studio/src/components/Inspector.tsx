@@ -7,6 +7,7 @@ import {
   type RootRole,
   type SemanticConflict,
   type SemanticDefinition,
+  type ShapeId,
   type StyleId,
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
@@ -54,6 +55,8 @@ export interface InspectorProps {
       strokeWidth?: number | null;
     },
   ) => void;
+  readonly showChildChips?: boolean | undefined;
+  readonly handleToggleChildChips?: ((rootId: ShapeId) => void) | undefined;
 }
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
@@ -81,6 +84,8 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleStyleChange,
     handleStylePreview,
     handleStyleCommit,
+    showChildChips,
+    handleToggleChildChips,
   } = props;
 
   return (
@@ -133,6 +138,8 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           handleStyleChange={handleStyleChange}
           handleStylePreview={handleStylePreview}
           handleStyleCommit={handleStyleCommit}
+          showChildChips={showChildChips}
+          handleToggleChildChips={handleToggleChildChips}
         />
       ) : (
         <ShapeInspector
