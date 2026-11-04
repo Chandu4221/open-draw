@@ -1,0 +1,86 @@
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src:
+    url("./fonts/inter-variable.woff2") format("woff2-variations"),
+    url("./fonts/inter-variable.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Neutral scale (monochromatic light) */
+  --od-bg: #f4f4f5; /* general app bg */
+  --od-canvas-bg: #e5e5e8; /* darker neutral workbench for strong canvas contrast */
+  --od-surface: #ffffff; /* panels, toolbar, sidebar */
+  --od-surface-raised: #ffffff;
+  --od-border: #e4e4e7;
+  --od-border-strong: #c4c4c8;
+  --od-text: #09090b;
+  --od-text-secondary: #52525b;
+  --od-text-tertiary: #71717a;
+
+  /* Accent — monochromatic black */
+  --od-accent: #09090b;
+  --od-accent-soft: #e4e4e7; /* active-tool tint */
+  --od-accent-border: #09090b;
+
+  /* Semantic */
+  --od-success: #16a34a;
+  --od-danger: #dc2626;
+  --od-danger-soft: #fef2f2;
+  --od-text-on-accent: #ffffff;
+
+  /* Sizing & Controls */
+  --od-control-height: 28px;
+  --od-border-width: 1px;
+  --od-focus-ring: 2px;
+  --od-grid-size: 16px;
+
+  /* Spacing scale */
+  --od-2: 2px;
+  --od-4: 4px;
+  --od-8: 8px;
+  --od-12: 12px;
+  --od-16: 16px;
+  --od-24: 24px;
+
+  /* Radii + strokes */
+  --od-radius-sm: 4px;
+  --od-radius: 6px;
+  --od-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 12px rgb(0 0 0 / 0.08);
+  --od-shadow-floating:
+    0 2px 8px rgb(0 0 0 / 0.08), 0 8px 24px rgb(0 0 0 / 0.12), 0 0 0 1px rgb(0 0 0 / 0.04);
+
+  /* Type */
+  --od-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --od-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --od-text-sm: 12px; /* UI default */
+  --od-text-xs: 11px; /* meta, shortcuts, tooltips */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --od-bg: #09090b;
+    --od-canvas-bg: #09090b;
+    --od-surface: #141416;
+    --od-surface-raised: #1c1c1f;
+    --od-border: #27272a;
+    --od-border-strong: #3f3f46;
+    --od-text: #fafafa;
+    --od-text-secondary: #a1a1aa;
+    --od-text-tertiary: #a1a1aa;
+    --od-accent: #fafafa;
+    --od-accent-soft: #27272a;
+    --od-accent-border: #fafafa;
+    --od-text-on-accent: #09090b;
+    --od-success: #22c55e;
+    --od-danger: #ef4444;
+    --od-danger-soft: #261416;
+    --od-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.7);
+    --od-shadow-floating:
+      0 2px 8px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.08);
+  }
+}

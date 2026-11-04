@@ -1,4 +1,4 @@
-// Playground shell for milestone 5: wires DOM events and UI controls to
+// Playground shell: wires DOM events and UI controls to
 // the createCanvas controller, @open-draw/input action resolution, @open-draw/shapes
 // extensions, @open-draw/profiles, @open-draw/semantics, and document serialization/parsing
 // (R-004, R-008, R-010, R-011, R-018, R-024, R-025, R-026, R-027, R-028, R-029, R-041, R-044).
@@ -8,7 +8,6 @@ import {
   applyTransaction,
   createDocument,
   createTransaction,
-  DocumentError,
   EMPTY_HISTORY,
   recordHistory,
   type Command,
@@ -16,24 +15,23 @@ import {
   type HistoryState,
 } from "@open-draw/document";
 import { TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
+import { OdToastHost, OdToastProvider, useToast } from "@open-draw/ui";
 import { CANVAS_WIRE_STYLE, type Gesture } from "./types";
 import { initCanvas } from "./canvas-init";
 import { renderCanvasSvg } from "./canvas-render";
-import {
-  exportDocumentJson,
-  exportDocumentMarkdown,
-  exportDocumentPng,
-  exportDocumentSvg,
-  promptLoadDocumentJson,
-} from "./document-io";
 import { Toolbar } from "./components/Toolbar";
 import { Sidebar } from "./components/Sidebar";
+import { CanvasDock } from "./components/CanvasDock";
+import { CanvasZoomControls } from "./components/CanvasZoomControls";
+import { ExportModal } from "./components/ExportModal";
 import { useCanvasInteractions } from "./use-canvas-interactions";
 import { useCanvasKeyboard } from "./use-canvas-keyboard";
 import { useDocumentMutations } from "./use-document-mutations";
 import { useInspectionData } from "./use-inspection-data";
+import { useToolbarActions } from "./use-toolbar-actions";
 
-export default function App() {
+function PlaygroundApp() {
+  const toast = useToast();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<CanvasController>(initCanvas());
   const [doc, setDoc] = useState<Document>(() => createDocument([]));
@@ -45,7 +43,6 @@ export default function App() {
   const spaceRef = useRef(false);
   const toolRef = useRef<ToolId>(TOOLS.select);
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
-  const [statusMessage, setStatusMessage] = useState<string>("");
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
@@ -53,6 +50,13 @@ export default function App() {
   const [showTagChips, setShowTagChips] = useState<boolean>(false);
   const showTagChipsRef = useRef<boolean>(false);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
+
+  const handleOpenExportModal = (initial: "markdown" | "json" = "markdown") => {
+    setExportInitialFormat(initial);
+    setIsExportModalOpen(true);
+  };
 
   const chooseTool = (next: ToolId): void => {
     toolRef.current = next;
@@ -67,8 +71,7 @@ export default function App() {
     const svg = svgRef.current;
     if (svg === null) return;
     const rect = svg.getBoundingClientRect();
-    const center: Point = { x: rect.width / 2, y: rect.height / 2 };
-    canvasRef.current.zoomAt(center, factor);
+    canvasRef.current.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, factor);
     setZoomPercent(Math.round(canvasRef.current.getCamera().zoom * 100));
     render();
   };
@@ -94,7 +97,7 @@ export default function App() {
       tool: toolRef.current,
       lastWorld: lastWorldRef.current,
       showTagChips: showTagChipsRef.current,
-      onFallback: (msg) => setStatusMessage(msg),
+      onFallback: (msg) => toast.push({ type: "info", text: msg }),
     });
   }
 
@@ -105,48 +108,12 @@ export default function App() {
     const result = applyTransaction(documentRef.current, createTransaction(commands));
     documentRef.current = result.document;
     if (options?.record !== false) {
-      const inv = options?.customInverse ?? result.inverse;
-      historyRef.current = recordHistory(historyRef.current, inv);
+      historyRef.current = recordHistory(
+        historyRef.current,
+        options?.customInverse ?? result.inverse,
+      );
     }
     setDoc(result.document);
-  }
-
-  function handleSave(): void {
-    try {
-      exportDocumentJson(documentRef.current);
-      setStatusMessage("Document saved successfully");
-    } catch (err) {
-      setStatusMessage(`Save error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  function handleExportMarkdown(): void {
-    try {
-      exportDocumentMarkdown(documentRef.current);
-      setStatusMessage("Exported Markdown successfully");
-    } catch (err) {
-      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  function handleExportSvg(): void {
-    try {
-      exportDocumentSvg(documentRef.current, includeLegend);
-      setStatusMessage("Exported SVG successfully");
-    } catch (err) {
-      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  function handleExportPng(): void {
-    try {
-      exportDocumentPng(documentRef.current, includeLegend, (err) => {
-        setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
-      });
-      setStatusMessage("Exported PNG successfully");
-    } catch (err) {
-      setStatusMessage(`Export error: ${err instanceof Error ? err.message : String(err)}`);
-    }
   }
 
   function toggleShowTagChips(): void {
@@ -158,29 +125,19 @@ export default function App() {
     });
   }
 
-  function handleLoad(): void {
-    promptLoadDocumentJson(
-      (loaded) => {
-        documentRef.current = loaded;
-        historyRef.current = EMPTY_HISTORY;
-        canvasRef.current.clearSelection();
-        setSelectedShapeId(null);
-        setDoc(loaded);
-        setStatusMessage("Document loaded successfully");
-        render();
-      },
-      (err) => {
-        if (err instanceof DocumentError) {
-          setStatusMessage(`Load error (${err.code}): ${err.message}`);
-        } else {
-          setStatusMessage(`Load error: ${err instanceof Error ? err.message : String(err)}`);
-        }
-      },
-    );
-  }
+  const toolbarActions = useToolbarActions({
+    documentRef,
+    historyRef,
+    canvasRef,
+    includeLegend,
+    toast,
+    setDoc,
+    setSelectedShapeId,
+    commit,
+    render,
+  });
 
   const inspection = useInspectionData(doc, selectedShapeId, activeDeviceType);
-
   const mutations = useDocumentMutations({
     selectedShape: inspection.selectedShape,
     rootShape: inspection.rootShape,
@@ -214,12 +171,14 @@ export default function App() {
     gestureRef,
     spaceRef,
     setSelectedShapeId,
-    setStatusMessage,
+    setStatusMessage: (msg) => toast.push({ type: "info", text: msg }),
     setDoc,
     chooseTool,
     commit,
     render,
   });
+
+  const emptyDoc = Object.keys(doc.shapes).length === 0;
 
   return (
     <main
@@ -230,32 +189,23 @@ export default function App() {
         flexDirection: "column",
         minHeight: 0,
         overflow: "hidden",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       <Toolbar
-        tool={tool}
-        chooseTool={chooseTool}
-        handleExportMarkdown={handleExportMarkdown}
-        handleExportSvg={handleExportSvg}
-        handleExportPng={handleExportPng}
+        brandLabel="OpenDraw"
+        handleLoad={toolbarActions.handleLoad}
+        handleExportSvg={toolbarActions.handleExportSvg}
+        handleExportPng={toolbarActions.handleExportPng}
         includeLegend={includeLegend}
         setIncludeLegend={setIncludeLegend}
-        handleSave={handleSave}
-        handleLoad={handleLoad}
         activeProfile={inspection.activeProfile}
         activeDeviceType={activeDeviceType}
         handleDeviceChange={handleDeviceChange}
-        handleZoom={handleZoom}
-        handleResetZoom={handleResetZoom}
-        zoomPercent={zoomPercent}
         showTagChips={showTagChips}
         toggleShowTagChips={toggleShowTagChips}
         showSidebar={showSidebar}
         setShowSidebar={setShowSidebar}
-        statusMessage={statusMessage}
       />
-
       <div
         style={{
           flex: 1,
@@ -267,6 +217,7 @@ export default function App() {
         }}
       >
         <div
+          className="od-canvas-bg"
           style={{
             flex: 1,
             height: "100%",
@@ -274,12 +225,27 @@ export default function App() {
             minWidth: 0,
             position: "relative",
             overflow: "hidden",
-            backgroundColor: "#f8fafc",
           }}
         >
           <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
+          {emptyDoc && (
+            <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
+          )}
+          <CanvasDock
+            tool={tool}
+            chooseTool={chooseTool}
+            handleUndo={toolbarActions.handleUndo}
+            handleRedo={toolbarActions.handleRedo}
+            handleDuplicate={toolbarActions.handleDuplicate}
+            handleDelete={toolbarActions.handleDelete}
+            onOpenExportModal={() => handleOpenExportModal("markdown")}
+          />
+          <CanvasZoomControls
+            zoomPercent={zoomPercent}
+            handleZoom={handleZoom}
+            handleResetZoom={handleResetZoom}
+          />
         </div>
-
         {showSidebar && (
           <Sidebar
             {...inspection}
@@ -289,6 +255,21 @@ export default function App() {
           />
         )}
       </div>
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        doc={doc}
+        initialFormat={exportInitialFormat}
+      />
+      <OdToastHost />
     </main>
+  );
+}
+
+export default function App() {
+  return (
+    <OdToastProvider>
+      <PlaygroundApp />
+    </OdToastProvider>
   );
 }

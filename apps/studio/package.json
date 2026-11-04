@@ -5,18 +5,27 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@open-draw/canvas": "workspace:*",
+    "@open-draw/contracts": "workspace:*",
+    "@open-draw/document": "workspace:*",
+    "@open-draw/export-markdown": "workspace:*",
+    "@open-draw/input": "workspace:*",
+    "@open-draw/profiles": "workspace:*",
+    "@open-draw/renderer-svg": "workspace:*",
+    "@open-draw/semantics": "workspace:*",
+    "@open-draw/shapes": "workspace:*",
+    "@open-draw/ui": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

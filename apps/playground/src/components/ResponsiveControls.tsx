@@ -9,33 +9,42 @@ export interface ResponsiveControlsProps {
   readonly handleOrderChange: (dt: DeviceType, valStr: string) => void;
 }
 
-export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.Element | null {
+export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.Element {
   const { selectedShape, activeProfile, handleToggleHiddenOn, handleOrderChange } = props;
 
   if (!activeProfile?.deviceTypes || activeProfile.deviceTypes.length === 0) {
-    return null;
+    return (
+      <span className="od-meta" style={{ fontStyle: "italic" }}>
+        Responsive device controls apply to Web platform profiles.
+      </span>
+    );
   }
 
   return (
-    <>
-      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-          Responsive Visibility (hiddenOn)
-        </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      <div>
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+          Visibility (Hidden On)
+        </span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--od-8)" }}>
           {activeProfile.deviceTypes.map((dt) => {
             const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
+            const inputId = `responsive-hidden-${selectedShape.id}-${dt}`;
             return (
               <label
                 key={dt}
+                htmlFor={inputId}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
-                  fontSize: "12px",
+                  gap: "var(--od-4)",
+                  fontSize: "var(--od-text-xs)",
+                  color: "var(--od-text-secondary)",
+                  cursor: "pointer",
                 }}
               >
                 <input
+                  id={inputId}
                   type="checkbox"
                   checked={isHidden}
                   onChange={() => handleToggleHiddenOn(dt)}
@@ -47,31 +56,35 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
         </div>
       </div>
 
-      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-          Responsive Order (order)
-        </label>
+      <div>
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+          Flex Order
+        </span>
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: "6px",
+            gap: "var(--od-8)",
           }}
         >
           {activeProfile.deviceTypes.map((dt) => {
             const orderVal = selectedShape.meta.order[dt];
+            const inputId = `responsive-order-${selectedShape.id}-${dt}`;
             return (
-              <div key={dt} style={{ fontSize: "12px" }}>
-                <label style={{ display: "block", color: "#64748b" }}>{DEVICE_TYPES[dt]}:</label>
+              <div
+                key={dt}
+                style={{ display: "flex", flexDirection: "column", gap: "var(--od-2)" }}
+              >
+                <label htmlFor={inputId} className="od-meta">
+                  {DEVICE_TYPES[dt]}
+                </label>
                 <input
+                  id={inputId}
                   type="number"
+                  className="od-input"
                   placeholder="0"
+                  aria-label={`Flex order for ${DEVICE_TYPES[dt]}`}
                   value={orderVal !== undefined ? orderVal : ""}
-                  style={{
-                    width: "100%",
-                    padding: "3px 6px",
-                    boxSizing: "border-box",
-                  }}
                   onChange={(e) => handleOrderChange(dt, e.target.value)}
                 />
               </div>
@@ -79,6 +92,6 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

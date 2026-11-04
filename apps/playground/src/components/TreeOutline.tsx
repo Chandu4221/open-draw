@@ -15,67 +15,74 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
 
   return (
     <div>
-      <h2 style={{ fontSize: "15px", margin: "0 0 8px 0", color: "#0f172a" }}>Tree Outline</h2>
+      <h2 className="od-panel-title" style={{ marginBottom: "var(--od-8)" }}>
+        Tree Outline
+      </h2>
       <div
         style={{
           maxHeight: "220px",
           overflowY: "auto",
-          border: "1px solid #cbd5e1",
-          borderRadius: "4px",
-          padding: "6px",
-          backgroundColor: "#f8fafc",
+          border: "var(--od-border-width) solid var(--od-border)",
+          borderRadius: "var(--od-radius-sm)",
+          padding: "var(--od-4)",
+          backgroundColor: "var(--od-bg)",
         }}
       >
         {treeNodes.length === 0 ? (
-          <span style={{ color: "#94a3b8", fontSize: "12px" }}>Empty tree</span>
+          <div className="od-empty" style={{ padding: "var(--od-12)" }}>
+            <span>Empty tree</span>
+          </div>
         ) : (
-          treeNodes.map((node) => (
-            <div
-              key={node.shape.id}
-              style={{
-                paddingLeft: `${node.depth * 14 + 4}px`,
-                paddingTop: "3px",
-                paddingBottom: "3px",
-                paddingRight: "6px",
-                fontSize: "12px",
-                cursor: "pointer",
-                borderRadius: "3px",
-                backgroundColor: node.shape.id === selectedShapeId ? "#dbeafe" : "transparent",
-                color: node.shape.id === selectedShapeId ? "#1d4ed8" : "#334155",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-              onClick={() => selectShape(node.shape.id)}
-            >
-              <span
+          treeNodes.map((node) => {
+            const isSelected = node.shape.id === selectedShapeId;
+            return (
+              <div
+                key={node.shape.id}
                 style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
+                  paddingLeft: `calc(${node.depth} * var(--od-12) + var(--od-4))`,
+                  paddingTop: "var(--od-2)",
+                  paddingBottom: "var(--od-2)",
+                  paddingRight: "var(--od-4)",
+                  fontSize: "var(--od-text-xs)",
+                  cursor: "pointer",
+                  borderRadius: "var(--od-radius-sm)",
+                  backgroundColor: isSelected ? "var(--od-accent-soft)" : "transparent",
+                  color: isSelected ? "var(--od-accent)" : "var(--od-text)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                 }}
+                onClick={() => selectShape(node.shape.id)}
               >
-                {node.displayName}
-              </span>
-              {node.conflict && (
                 <span
                   style={{
-                    backgroundColor: "#fee2e2",
-                    color: "#dc2626",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    padding: "1px 4px",
-                    borderRadius: "2px",
-                    marginLeft: "4px",
-                    flexShrink: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
-                  title={node.conflict.reason}
                 >
-                  conflict
+                  {node.displayName}
                 </span>
-              )}
-            </div>
-          ))
+                {node.conflict && (
+                  <span
+                    style={{
+                      backgroundColor: "var(--od-danger-soft)",
+                      color: "var(--od-danger)",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      padding: "1px 4px",
+                      borderRadius: "var(--od-radius-sm)",
+                      marginLeft: "var(--od-4)",
+                      flexShrink: 0,
+                    }}
+                    title={node.conflict.reason}
+                  >
+                    conflict
+                  </span>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

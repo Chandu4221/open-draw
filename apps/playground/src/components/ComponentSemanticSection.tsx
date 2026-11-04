@@ -2,6 +2,7 @@ import React from "react";
 import type { PlatformProfile, SemanticConflict, SemanticDefinition } from "@open-draw/contracts";
 import { CONTROL_TYPES } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
+import { OdField } from "@open-draw/ui";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
 export interface ComponentSemanticSectionProps {
@@ -51,77 +52,61 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
   } = props;
 
   return (
-    <div style={{ marginTop: "12px", borderTop: "1px solid #e2e8f0", paddingTop: "12px" }}>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-          Text Content
-        </label>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Component Semantics</h3>
+
+      <OdField label="Content" htmlFor="component-content">
         <input
+          id="component-content"
           type="text"
+          className="od-input"
+          style={{ width: "100%" }}
           placeholder="Text displayed inside component..."
           value={selectedShape.content ?? ""}
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-            boxSizing: "border-box",
-          }}
           onChange={(e) => handleSetContent(e.target.value)}
         />
-      </div>
+      </OdField>
 
       {conflict && (
         <div
           style={{
-            backgroundColor: "#fef2f2",
-            border: "1px solid #f87171",
-            borderRadius: "4px",
-            padding: "8px 12px",
-            marginBottom: "12px",
-            color: "#991b1b",
+            backgroundColor: "var(--od-danger-soft)",
+            border: "var(--od-border-width) solid var(--od-danger)",
+            borderRadius: "var(--od-radius-sm)",
+            padding: "var(--od-8)",
+            color: "var(--od-danger)",
+            fontSize: "var(--od-text-xs)",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: "2px" }}>
-            Semantic Conflict ({conflict.status})
+          <div style={{ fontWeight: 600, marginBottom: "var(--od-2)" }}>
+            Conflict: {conflict.status}
           </div>
-          <div style={{ fontSize: "12px", marginBottom: "6px" }}>{conflict.reason}</div>
+          <div style={{ marginBottom: "var(--od-4)" }}>{conflict.reason}</div>
           <button
             type="button"
-            style={{
-              fontSize: "11px",
-              padding: "2px 6px",
-              cursor: "pointer",
-              backgroundColor: "#ffffff",
-              border: "1px solid #f87171",
-              borderRadius: "3px",
-              color: "#991b1b",
-            }}
+            className="od-btn od-btn--ghost"
+            style={{ height: "22px", padding: "0 6px", fontSize: "11px" }}
             onClick={() => handleSetSemantic("")}
           >
-            Clear Tag to Baseline (NONE)
+            Clear Tag
           </button>
         </div>
       )}
 
       {activeProfile && (
-        <div style={{ marginBottom: "12px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-            Component Semantic Tag (R-024)
-          </label>
+        <OdField label="Semantic Tag" htmlFor="component-semantic-tag">
           <select
+            id="component-semantic-tag"
+            className="od-select"
+            style={{ width: "100%" }}
             value={selectedShape.meta.semantic?.id ?? ""}
-            style={{
-              width: "100%",
-              padding: "6px 8px",
-              borderRadius: "4px",
-              border: "1px solid #cbd5e1",
-            }}
             onChange={(e) => handleSetSemantic(e.target.value)}
           >
             <option value="">(None / Baseline)</option>
             {Object.values(activeProfile.semantics)
               .filter((def) => def.id !== activeProfile.rootSemantic)
+              .sort((a, b) => a.displayName.localeCompare(b.displayName))
               .map((def) => (
                 <option key={def.id} value={def.id}>
                   {def.displayName} ({def.id})
@@ -135,49 +120,36 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                 </option>
               )}
           </select>
-        </div>
+        </OdField>
       )}
 
       {semanticDef?.properties && semanticDef.properties.length > 0 && (
-        <div style={{ marginBottom: "12px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
+          <span className="od-label" style={{ fontSize: "10px" }}>
             Properties ({semanticDef.displayName})
-          </label>
+          </span>
           {semanticDef.properties.map((schema) => {
             const val = semanticProps[schema.id];
+            const propInputId = `component-prop-${selectedShape.id}-${schema.id}`;
             return (
-              <div key={schema.id} style={{ marginBottom: "8px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    marginBottom: "2px",
-                  }}
-                >
-                  {schema.label}
-                </label>
+              <OdField key={schema.id} label={schema.label} htmlFor={propInputId}>
                 {schema.control === CONTROL_TYPES.text && (
                   <input
+                    id={propInputId}
                     type="text"
+                    className="od-input"
+                    style={{ width: "100%" }}
                     value={val !== undefined ? String(val) : ""}
-                    style={{
-                      width: "100%",
-                      padding: "4px 8px",
-                      boxSizing: "border-box",
-                    }}
                     onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
                   />
                 )}
                 {schema.control === CONTROL_TYPES.number && (
                   <input
+                    id={propInputId}
                     type="number"
+                    className="od-input"
+                    style={{ width: "100%" }}
                     value={val !== undefined ? Number(val) : ""}
-                    style={{
-                      width: "100%",
-                      padding: "4px 8px",
-                      boxSizing: "border-box",
-                    }}
                     onChange={(e) =>
                       handlePropertyChange(
                         schema.id,
@@ -188,28 +160,29 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                 )}
                 {schema.control === CONTROL_TYPES.toggle && (
                   <label
+                    htmlFor={propInputId}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "6px",
+                      gap: "var(--od-4)",
+                      cursor: "pointer",
                     }}
                   >
                     <input
+                      id={propInputId}
                       type="checkbox"
                       checked={Boolean(val)}
                       onChange={(e) => handlePropertyChange(schema.id, e.target.checked)}
                     />
-                    <span>Enabled</span>
+                    <span style={{ fontSize: "var(--od-text-sm)" }}>Enabled</span>
                   </label>
                 )}
                 {schema.control === CONTROL_TYPES.select && (
                   <select
+                    id={propInputId}
+                    className="od-select"
+                    style={{ width: "100%" }}
                     value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}
-                    style={{
-                      width: "100%",
-                      padding: "4px 8px",
-                      boxSizing: "border-box",
-                    }}
                     onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
                   >
                     {schema.options?.map((opt) => (
@@ -219,12 +192,14 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                     ))}
                   </select>
                 )}
-              </div>
+              </OdField>
             );
           })}
         </div>
       )}
 
+      <div className="od-divider od-divider--horizontal" />
+      <h3 className="od-section-header">Style</h3>
       <ShapeStyleInspector
         selectedShape={selectedShape}
         handleStyleChange={handleStyleChange}

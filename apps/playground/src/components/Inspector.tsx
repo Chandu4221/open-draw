@@ -86,20 +86,31 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   return (
     <div
       style={{
-        marginBottom: "20px",
-        borderBottom: "1px solid #e2e8f0",
-        paddingBottom: "16px",
+        marginBottom: "var(--od-16)",
+        borderBottom: "var(--od-border-width) solid var(--od-border)",
+        paddingBottom: "var(--od-16)",
       }}
     >
-      <h2 style={{ fontSize: "15px", margin: "0 0 12px 0", color: "#0f172a" }}>
-        {!selectedShape
-          ? "Inspector"
-          : isRootId(selectedShape.parent)
-            ? "Container Inspector"
-            : "Shape Inspector"}
-      </h2>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "var(--od-12)",
+        }}
+      >
+        <h2 className="od-panel-title">
+          {!selectedShape
+            ? "Inspector"
+            : isRootId(selectedShape.parent)
+              ? "Container Inspector"
+              : "Shape Inspector"}
+        </h2>
+      </div>
       {!selectedShape ? (
-        <p style={{ color: "#64748b", margin: 0 }}>Select a shape to inspect.</p>
+        <div className="od-empty">
+          <span>Select a shape to inspect</span>
+        </div>
       ) : isRootId(selectedShape.parent) ? (
         <ContainerInspector
           selectedShape={selectedShape}

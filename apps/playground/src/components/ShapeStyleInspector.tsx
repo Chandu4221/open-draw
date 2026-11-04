@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import type { Shape } from "@open-draw/document";
+import { OdField } from "@open-draw/ui";
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -8,23 +9,9 @@ function toColorInputValue(val: string | undefined | null, fallback: string): st
   return fallback;
 }
 
-const LABEL_STYLE: React.CSSProperties = {
-  display: "block",
-  fontSize: "12px",
-  color: "#64748b",
-  marginBottom: "2px",
-};
-const BTN_STYLE: React.CSSProperties = {
-  fontSize: "11px",
-  padding: "4px 6px",
-  cursor: "pointer",
-  border: "1px solid #cbd5e1",
-  borderRadius: "4px",
-  background: "#f8fafc",
-};
-
 interface ColorPickerRowProps {
   readonly label: string;
+  readonly fieldKey: "fill" | "stroke";
   readonly value: string | undefined | null;
   readonly fallbackHex: string;
   readonly shapeId: string;
@@ -34,7 +21,9 @@ interface ColorPickerRowProps {
 }
 
 function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
-  const { label, value, fallbackHex, shapeId, onPreview, onCommit, onReset } = props;
+  const { label, fieldKey, value, fallbackHex, shapeId, onPreview, onCommit, onReset } = props;
+  const hexInputId = `shape-${shapeId}-${fieldKey}-hex`;
+  const colorPickerId = `shape-${shapeId}-${fieldKey}-color`;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const sessionRef = useRef<{ start: string | null; active: boolean }>({
     start: null,
@@ -75,12 +64,14 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
   };
 
   return (
-    <div>
-      <label style={LABEL_STYLE}>{label}:</label>
-      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+    <OdField label={label} htmlFor={hexInputId}>
+      <div style={{ display: "flex", gap: "var(--od-8)", alignItems: "center", width: "100%" }}>
         <input
           ref={inputRef}
+          id={colorPickerId}
           type="color"
+          className="od-input"
+          aria-label={`${label} color picker`}
           value={toColorInputValue(value, fallbackHex)}
           onFocus={startSession}
           onChange={(e) => {
@@ -97,16 +88,18 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
           }}
           style={{
             width: "32px",
-            height: "28px",
+            height: "var(--od-control-height)",
             padding: 0,
             cursor: "pointer",
-            border: "1px solid #cbd5e1",
-            borderRadius: "4px",
+            flexShrink: 0,
           }}
         />
         <input
+          id={hexInputId}
           type="text"
+          className="od-input"
           placeholder={`${fallbackHex} or none`}
+          aria-label={`${label} hex code or none`}
           value={value ?? ""}
           onFocus={startSession}
           onChange={(e) => {
@@ -120,13 +113,24 @@ function ColorPickerRow(props: ColorPickerRowProps): React.JSX.Element {
             }
           }}
           onBlur={(e) => commitValue(e.target.value)}
-          style={{ flex: 1, padding: "4px 8px", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+          style={{ flex: 1, minWidth: 0 }}
         />
-        <button type="button" onClick={onReset} style={BTN_STYLE}>
+        <button
+          type="button"
+          onClick={onReset}
+          className="od-btn od-btn--ghost"
+          aria-label={`Reset ${label.toLowerCase()} to default`}
+          style={{
+            height: "var(--od-control-height)",
+            padding: "0 var(--od-8)",
+            fontSize: "var(--od-text-xs)",
+            flexShrink: 0,
+          }}
+        >
           Reset
         </button>
       </div>
-    </div>
+    </OdField>
   );
 }
 
@@ -140,6 +144,7 @@ interface StrokeWidthRowProps {
 
 function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
   const { value, shapeId, onPreview, onCommit, onReset } = props;
+  const strokeInputId = `shape-${shapeId}-stroke-width`;
   const sessionRef = useRef<{ start: number | null; active: boolean }>({
     start: null,
     active: false,
@@ -165,13 +170,15 @@ function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
   };
 
   return (
-    <div>
-      <label style={LABEL_STYLE}>Stroke Width:</label>
-      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+    <OdField label="Stroke Width" htmlFor={strokeInputId}>
+      <div style={{ display: "flex", gap: "var(--od-8)", alignItems: "center", width: "100%" }}>
         <input
+          id={strokeInputId}
           type="number"
           min="0"
           max="64"
+          className="od-input"
+          aria-label="Stroke width in pixels"
           value={value ?? ""}
           placeholder="1"
           onFocus={startSession}
@@ -186,18 +193,24 @@ function StrokeWidthRow(props: StrokeWidthRowProps): React.JSX.Element {
             }
           }}
           onBlur={(e) => commitValue(e.target.value)}
-          style={{
-            width: "80px",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-          }}
+          style={{ width: "80px", height: "var(--od-control-height)" }}
         />
-        <button type="button" onClick={onReset} style={BTN_STYLE}>
+        <button
+          type="button"
+          onClick={onReset}
+          className="od-btn od-btn--ghost"
+          aria-label="Reset stroke width to default"
+          style={{
+            height: "var(--od-control-height)",
+            padding: "0 var(--od-8)",
+            fontSize: "var(--od-text-xs)",
+            flexShrink: 0,
+          }}
+        >
           Default
         </button>
       </div>
-    </div>
+    </OdField>
   );
 }
 
@@ -229,39 +242,36 @@ export function ShapeStyleInspector(props: ShapeStyleInspectorProps): React.JSX.
   const { selectedShape, handleStyleChange, handleStylePreview, handleStyleCommit } = props;
 
   return (
-    <div style={{ marginTop: "16px", marginBottom: "16px" }}>
-      <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-        Shape Styling (F1)
-      </label>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <ColorPickerRow
-          label="Fill Color"
-          value={selectedShape.fill}
-          fallbackHex="#ffffff"
-          shapeId={selectedShape.id}
-          onPreview={(val) => handleStylePreview(val, undefined, undefined)}
-          onCommit={(val, start) => handleStyleCommit(val, undefined, undefined, { fill: start })}
-          onReset={() => handleStyleChange(null, undefined, undefined)}
-        />
-        <ColorPickerRow
-          label="Stroke Color"
-          value={selectedShape.stroke}
-          fallbackHex="#1f2933"
-          shapeId={selectedShape.id}
-          onPreview={(val) => handleStylePreview(undefined, val, undefined)}
-          onCommit={(val, start) => handleStyleCommit(undefined, val, undefined, { stroke: start })}
-          onReset={() => handleStyleChange(undefined, null, undefined)}
-        />
-        <StrokeWidthRow
-          value={selectedShape.strokeWidth}
-          shapeId={selectedShape.id}
-          onPreview={(val) => handleStylePreview(undefined, undefined, val)}
-          onCommit={(val, start) =>
-            handleStyleCommit(undefined, undefined, val, { strokeWidth: start })
-          }
-          onReset={() => handleStyleChange(undefined, undefined, null)}
-        />
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      <ColorPickerRow
+        label="Fill Color"
+        fieldKey="fill"
+        value={selectedShape.fill}
+        fallbackHex="#ffffff"
+        shapeId={selectedShape.id}
+        onPreview={(val) => handleStylePreview(val, undefined, undefined)}
+        onCommit={(val, start) => handleStyleCommit(val, undefined, undefined, { fill: start })}
+        onReset={() => handleStyleChange(null, undefined, undefined)}
+      />
+      <ColorPickerRow
+        label="Stroke Color"
+        fieldKey="stroke"
+        value={selectedShape.stroke}
+        fallbackHex="#1f2933"
+        shapeId={selectedShape.id}
+        onPreview={(val) => handleStylePreview(undefined, val, undefined)}
+        onCommit={(val, start) => handleStyleCommit(undefined, val, undefined, { stroke: start })}
+        onReset={() => handleStyleChange(undefined, null, undefined)}
+      />
+      <StrokeWidthRow
+        value={selectedShape.strokeWidth}
+        shapeId={selectedShape.id}
+        onPreview={(val) => handleStylePreview(undefined, undefined, val)}
+        onCommit={(val, start) =>
+          handleStyleCommit(undefined, undefined, val, { strokeWidth: start })
+        }
+        onReset={() => handleStyleChange(undefined, undefined, null)}
+      />
     </div>
   );
 }

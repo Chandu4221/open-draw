@@ -1,192 +1,164 @@
 import React from "react";
-import { DEVICE_TYPES, type DeviceType } from "@open-draw/contracts";
-import { TOOLS, type ToolId } from "@open-draw/canvas";
-import type { PlatformProfile } from "@open-draw/contracts";
+import { DEVICE_TYPES, type DeviceType, type PlatformProfile } from "@open-draw/contracts";
+import {
+  OdButton,
+  OdIconButton,
+  OdSegmentedControl,
+  OdTooltip,
+  type IconId,
+  type OdSegmentedItem,
+} from "@open-draw/ui";
 
 export interface ToolbarProps {
-  readonly tool: ToolId;
-  readonly chooseTool: (tool: ToolId) => void;
-  readonly handleExportMarkdown: () => void;
-  readonly handleExportSvg: () => void;
-  readonly handleExportPng: () => void;
-  readonly includeLegend: boolean;
-  readonly setIncludeLegend: (include: boolean) => void;
-  readonly handleSave: () => void;
-  readonly handleLoad: () => void;
+  readonly brandLabel?: string;
+  readonly handleExportSvg?: () => void;
+  readonly handleExportPng?: () => void;
+  readonly includeLegend?: boolean;
+  readonly setIncludeLegend?: (include: boolean) => void;
+  readonly handleLoad?: () => void;
   readonly activeProfile: PlatformProfile | undefined;
   readonly activeDeviceType: DeviceType | undefined;
   readonly handleDeviceChange: (deviceType?: DeviceType) => void;
-  readonly handleZoom: (factor: number) => void;
-  readonly handleResetZoom: () => void;
-  readonly zoomPercent: number;
   readonly showTagChips: boolean;
   readonly toggleShowTagChips: () => void;
   readonly showSidebar: boolean;
   readonly setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
-  readonly statusMessage: string;
 }
+
+const DEVICE_ICON_MAP: Record<DeviceType, IconId> = {
+  mobile: "smartphone",
+  tablet: "tablet",
+  laptop: "laptop",
+  desktop: "desktop",
+  largeScreen: "monitor",
+};
 
 export function Toolbar(props: ToolbarProps): React.JSX.Element {
   const {
-    tool,
-    chooseTool,
-    handleExportMarkdown,
+    brandLabel = "OpenDraw",
     handleExportSvg,
     handleExportPng,
     includeLegend,
     setIncludeLegend,
-    handleSave,
     handleLoad,
     activeProfile,
     activeDeviceType,
     handleDeviceChange,
-    handleZoom,
-    handleResetZoom,
-    zoomPercent,
     showTagChips,
     toggleShowTagChips,
     showSidebar,
     setShowSidebar,
-    statusMessage,
   } = props;
+
+  const deviceItems: readonly OdSegmentedItem<string>[] = [
+    { id: "all", label: "All", tooltip: "All device types" },
+    ...(activeProfile?.deviceTypes ?? []).map((dt) => ({
+      id: dt,
+      icon: DEVICE_ICON_MAP[dt] ?? "monitor",
+      tooltip: DEVICE_TYPES[dt],
+      "aria-label": DEVICE_TYPES[dt],
+    })),
+  ];
 
   return (
     <header
+      className="od-panel"
       style={{
-        padding: "8px 16px",
-        borderBottom: "1px solid #e2e8f0",
-        backgroundColor: "#ffffff",
-        flexShrink: 0,
+        borderRadius: 0,
+        borderTop: "none",
+        borderLeft: "none",
+        borderRight: "none",
+        padding: "var(--od-8) var(--od-16)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "var(--od-12)",
+        flexWrap: "wrap",
+        zIndex: 10,
       }}
     >
-      <h1 style={{ fontSize: "18px", margin: "0 0 8px 0" }}>OpenDraw Playground</h1>
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          alignItems: "center",
-          flexWrap: "wrap",
-          fontSize: "13px",
-        }}
-      >
-        <button type="button" onClick={() => chooseTool(TOOLS.select)}>
-          Select (V)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawRect)}>
-          Draw rect (R)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawEllipse)}>
-          Draw ellipse (O)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawLine)}>
-          Draw line (L)
-        </button>
-        <button type="button" onClick={() => chooseTool(TOOLS.drawPenPath)}>
-          Draw pen (P)
-        </button>
-        <span>|</span>
-        <button type="button" onClick={handleExportMarkdown}>
-          Export Markdown
-        </button>
-        <button type="button" onClick={handleExportSvg}>
-          Export SVG
-        </button>
-        <button type="button" onClick={handleExportPng}>
-          Export PNG
-        </button>
-        <label
+      {/* Top Left: ONLY LOGO */}
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <span
+          className="od-label"
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            cursor: "pointer",
-            fontSize: "12px",
+            fontSize: "var(--od-text-sm)",
+            fontWeight: 700,
+            color: "var(--od-text)",
+            letterSpacing: "0.02em",
           }}
         >
-          <input
-            type="checkbox"
-            checked={includeLegend}
-            onChange={(e) => setIncludeLegend(e.target.checked)}
-          />
-          Include Legend
-        </label>
-        <button type="button" onClick={handleSave}>
-          Export JSON
-        </button>
-        <button type="button" onClick={handleLoad}>
-          Load JSON
-        </button>
-        <span>|</span>
-        <span>Tool: {tool}</span>
+          {brandLabel}
+        </span>
+      </div>
+
+      {/* Top Right: Secondary view controls and image export */}
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
+        {handleLoad && (
+          <OdButton variant="ghost" onClick={handleLoad}>
+            Open
+          </OdButton>
+        )}
+        {handleExportSvg && (
+          <OdButton variant="ghost" onClick={handleExportSvg}>
+            SVG
+          </OdButton>
+        )}
+        {handleExportPng && (
+          <OdButton variant="ghost" onClick={handleExportPng}>
+            PNG
+          </OdButton>
+        )}
+        {setIncludeLegend && includeLegend !== undefined && (
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "var(--od-4)",
+              cursor: "pointer",
+              fontSize: "var(--od-text-xs)",
+              color: "var(--od-text-secondary)",
+              marginLeft: "var(--od-4)",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={includeLegend}
+              onChange={(e) => setIncludeLegend(e.target.checked)}
+            />
+            Legend
+          </label>
+        )}
+
+        {(handleLoad || handleExportSvg || handleExportPng) && <div className="od-divider" />}
+
+        {/* Device form factor */}
         {activeProfile?.deviceTypes && activeProfile.deviceTypes.length > 0 && (
-          <>
-            <span>|</span>
-            <span style={{ fontWeight: 600 }}>Device:</span>
-            <button
-              type="button"
-              style={{
-                fontWeight: activeDeviceType === undefined ? 700 : 400,
-                backgroundColor: activeDeviceType === undefined ? "#2563eb" : undefined,
-                color: activeDeviceType === undefined ? "#ffffff" : undefined,
-              }}
-              onClick={() => handleDeviceChange(undefined)}
-            >
-              All
-            </button>
-            {activeProfile.deviceTypes.map((dt) => (
-              <button
-                key={dt}
-                type="button"
-                style={{
-                  fontWeight: activeDeviceType === dt ? 700 : 400,
-                  backgroundColor: activeDeviceType === dt ? "#2563eb" : undefined,
-                  color: activeDeviceType === dt ? "#ffffff" : undefined,
-                }}
-                onClick={() => handleDeviceChange(dt)}
-              >
-                {DEVICE_TYPES[dt]}
-              </button>
-            ))}
-          </>
+          <OdSegmentedControl
+            items={deviceItems}
+            value={activeDeviceType ?? "all"}
+            aria-label="Device form factor"
+            onSelect={(id) => handleDeviceChange(id === "all" ? undefined : (id as DeviceType))}
+          />
         )}
-        <span>|</span>
-        <span style={{ fontWeight: 600 }}>Zoom:</span>
-        <button type="button" onClick={() => handleZoom(0.8)} title="Zoom Out">
-          -
-        </button>
-        <span style={{ minWidth: "38px", textAlign: "center" }}>{zoomPercent}%</span>
-        <button type="button" onClick={() => handleZoom(1.25)} title="Zoom In">
-          +
-        </button>
-        <button type="button" onClick={handleResetZoom} title="Reset to 100%">
-          Reset
-        </button>
-        <span>|</span>
-        <button
-          type="button"
-          onClick={toggleShowTagChips}
-          style={{
-            fontWeight: 600,
-            backgroundColor: showTagChips ? "#2563eb" : undefined,
-            color: showTagChips ? "#ffffff" : undefined,
-          }}
-        >
-          {showTagChips ? "Hide Chips" : "Show Chips"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowSidebar((prev) => !prev)}
-          style={{
-            fontWeight: 600,
-            backgroundColor: showSidebar ? undefined : "#e0e7ff",
-            borderColor: showSidebar ? undefined : "#6366f1",
-          }}
-        >
-          {showSidebar ? "Hide Sidebar" : "Show Sidebar"}
-        </button>
-        {statusMessage && (
-          <span style={{ color: "#2563eb", marginLeft: "8px" }}>[{statusMessage}]</span>
-        )}
+
+        {/* View toggles */}
+        <OdTooltip text={showTagChips ? "Hide Semantic Chips" : "Show Semantic Chips"}>
+          <OdIconButton
+            name="help"
+            aria-label="Toggle Semantic Chips"
+            active={showTagChips}
+            onClick={toggleShowTagChips}
+          />
+        </OdTooltip>
+        <OdTooltip text={showSidebar ? "Hide Sidebar" : "Show Sidebar"}>
+          <OdIconButton
+            name="panel"
+            aria-label="Toggle Sidebar"
+            active={showSidebar}
+            onClick={() => setShowSidebar((prev) => !prev)}
+          />
+        </OdTooltip>
       </div>
     </header>
   );

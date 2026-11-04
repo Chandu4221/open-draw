@@ -386,4 +386,19 @@ describe("exportMarkdown", () => {
     expect(md).toContain("## Page 1");
     expect(md).toContain("Level 256");
   });
+
+  it("exports AI Implementation Guidance when creativityLevel is specified", () => {
+    const rect = createRect(
+      parseShapeId("rect-1"),
+      { x: 0, y: 0, width: 100, height: 100 },
+      { label: "My Box" },
+    );
+    const doc = createDocument([rect]);
+    const md = exportMarkdown(doc, { creativityLevel: 3 });
+
+    expect(md).toContain("## AI Implementation Guidance");
+    expect(md).toContain("- **Creativity Level**: Level 3 — Balanced");
+    expect(md).toContain("- **Directive**:");
+    expect(md).toContain("## My Box");
+  });
 });
