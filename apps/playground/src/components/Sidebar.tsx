@@ -15,16 +15,18 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
 
   return (
     <aside
+      className="od-panel"
       style={{
         width: "360px",
         height: "100%",
         minHeight: 0,
         boxSizing: "border-box",
-        borderLeft: "1px solid #cbd5e1",
+        borderTop: "none",
+        borderBottom: "none",
+        borderRight: "none",
+        borderRadius: 0,
         overflowY: "auto",
-        padding: "16px",
-        backgroundColor: "#ffffff",
-        fontSize: "13px",
+        padding: "var(--od-16)",
         flexShrink: 0,
       }}
     >

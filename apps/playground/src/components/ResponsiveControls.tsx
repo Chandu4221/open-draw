@@ -17,12 +17,12 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
   }
 
   return (
-    <>
-      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-          Responsive Visibility (hiddenOn)
-        </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      <div>
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+          Visibility (Hidden On)
+        </span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--od-8)" }}>
           {activeProfile.deviceTypes.map((dt) => {
             const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
             return (
@@ -31,8 +31,10 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
-                  fontSize: "12px",
+                  gap: "var(--od-4)",
+                  fontSize: "var(--od-text-xs)",
+                  color: "var(--od-text-secondary)",
+                  cursor: "pointer",
                 }}
               >
                 <input
@@ -47,31 +49,30 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
         </div>
       </div>
 
-      <div style={{ marginTop: "16px", marginBottom: "12px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
-          Responsive Order (order)
-        </label>
+      <div>
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+          Flex Order
+        </span>
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: "6px",
+            gap: "var(--od-8)",
           }}
         >
           {activeProfile.deviceTypes.map((dt) => {
             const orderVal = selectedShape.meta.order[dt];
             return (
-              <div key={dt} style={{ fontSize: "12px" }}>
-                <label style={{ display: "block", color: "#64748b" }}>{DEVICE_TYPES[dt]}:</label>
+              <div
+                key={dt}
+                style={{ display: "flex", flexDirection: "column", gap: "var(--od-2)" }}
+              >
+                <span className="od-meta">{DEVICE_TYPES[dt]}</span>
                 <input
                   type="number"
+                  className="od-input"
                   placeholder="0"
                   value={orderVal !== undefined ? orderVal : ""}
-                  style={{
-                    width: "100%",
-                    padding: "3px 6px",
-                    boxSizing: "border-box",
-                  }}
                   onChange={(e) => handleOrderChange(dt, e.target.value)}
                 />
               </div>
@@ -79,6 +80,6 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
           })}
         </div>
       </div>
-    </>
+    </div>
   );
 }

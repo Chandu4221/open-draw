@@ -1,3 +1,4 @@
+import React from "react";
 import {
   PLATFORM_BY_VALUE,
   PLATFORMS,
@@ -13,6 +14,7 @@ import {
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
+import { OdField } from "@open-draw/ui";
 import { ComponentSemanticSection } from "./ComponentSemanticSection";
 import { DesignStyleSelect } from "./DesignStyleSelect";
 
@@ -81,62 +83,46 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
   } = props;
 
   return (
-    <div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-          Name (R-042)
-        </label>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      {/* IDENTITY SECTION */}
+      <span className="od-label">Identity</span>
+
+      <OdField label="Name">
         <input
           type="text"
+          className="od-input"
+          style={{ width: "100%" }}
           placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
           value={selectedShape.label ?? ""}
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-            boxSizing: "border-box",
-          }}
           onChange={(e) => handleSetLabel(e.target.value)}
         />
-      </div>
-      <div style={{ marginBottom: "12px", color: "#64748b" }}>
-        <strong>Shape ID:</strong> {selectedShape.id}
-      </div>
+      </OdField>
+
+      <span className="od-meta">ID: {selectedShape.id}</span>
 
       {handleSetRole && (
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-            Container Role (R-026)
-          </label>
+        <OdField label="Role">
           <select
+            className="od-select"
+            style={{ width: "100%" }}
             value={rootRole ?? ROOT_ROLES.screen}
-            style={{
-              width: "100%",
-              padding: "6px 8px",
-              borderRadius: "4px",
-              border: "1px solid #cbd5e1",
-            }}
             onChange={(e) => handleSetRole((e.target.value as RootRole) || ROOT_ROLES.screen)}
           >
             <option value={ROOT_ROLES.screen}>Screen / Page</option>
             <option value={ROOT_ROLES.component}>Standalone Component</option>
           </select>
-        </div>
+        </OdField>
       )}
 
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-          Platform Profile (R-026)
-        </label>
+      {/* PLATFORM & STYLE SECTION */}
+      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
+      <span className="od-label">Platform & Style</span>
+
+      <OdField label="Platform Profile">
         <select
+          className="od-select"
+          style={{ width: "100%" }}
           value={rootPlatform ? (PLATFORMS[rootPlatform] ?? rootPlatform) : ""}
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-          }}
           onChange={(e) => {
             const val = e.target.value;
             const platform = val ? (PLATFORM_BY_VALUE[val] ?? (val as PlatformId)) : "";
@@ -149,26 +135,19 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
           <option value={PLATFORMS.flutter}>Flutter</option>
           <option value={PLATFORMS.ios}>iOS (Apple HIG)</option>
         </select>
-      </div>
+      </OdField>
 
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-          Render Style (R-021)
-        </label>
+      <OdField label="Render Style">
         <select
+          className="od-select"
+          style={{ width: "100%" }}
           value={rootStyle}
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-          }}
           onChange={(e) => handleSetStyle(e.target.value as StyleId)}
         >
           <option value={STYLE_PROFILES.minimal}>Minimal Wireframe</option>
           <option value={STYLE_PROFILES.crayon}>Crayon / Hand-drawn</option>
         </select>
-      </div>
+      </OdField>
 
       {rootPlatform !== undefined && handleSetDesignStyle && (
         <DesignStyleSelect

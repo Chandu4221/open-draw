@@ -1,5 +1,6 @@
 import React from "react";
 import { DESIGN_STYLES, DESIGN_STYLE_LABELS, type DesignStyleId } from "@open-draw/contracts";
+import { OdField } from "@open-draw/ui";
 
 export interface DesignStyleSelectProps {
   readonly rootDesignStyle: DesignStyleId | undefined;
@@ -10,18 +11,11 @@ export function DesignStyleSelect(props: DesignStyleSelectProps): React.JSX.Elem
   const { rootDesignStyle, handleSetDesignStyle } = props;
 
   return (
-    <div style={{ marginBottom: "10px" }}>
-      <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-        Design Style (AI Prompt / Mockup)
-      </label>
+    <OdField label="Design Style">
       <select
+        className="od-select"
+        style={{ width: "100%" }}
         value={rootDesignStyle ?? ""}
-        style={{
-          width: "100%",
-          padding: "6px 8px",
-          borderRadius: "4px",
-          border: "1px solid #cbd5e1",
-        }}
         onChange={(e) => handleSetDesignStyle(e.target.value as DesignStyleId | "")}
       >
         <option value="">(None / Default)</option>
@@ -131,6 +125,6 @@ export function DesignStyleSelect(props: DesignStyleSelectProps): React.JSX.Elem
           </option>
         </optgroup>
       </select>
-    </div>
+    </OdField>
   );
 }

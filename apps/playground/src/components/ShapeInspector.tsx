@@ -8,6 +8,7 @@ import type {
 import { CONTROL_TYPES } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
+import { OdField } from "@open-draw/ui";
 import { ResponsiveControls } from "./ResponsiveControls";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
@@ -66,98 +67,76 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
   } = props;
 
   return (
-    <div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-          Name (R-042)
-        </label>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      {/* IDENTITY */}
+      <span className="od-label">Identity</span>
+
+      <OdField label="Name">
         <input
           type="text"
+          className="od-input"
+          style={{ width: "100%" }}
           placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
           value={selectedShape.label ?? ""}
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-            boxSizing: "border-box",
-          }}
           onChange={(e) => handleSetLabel(e.target.value)}
         />
-      </div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-          Text Content
-        </label>
+      </OdField>
+
+      <OdField label="Content">
         <input
           type="text"
+          className="od-input"
+          style={{ width: "100%" }}
           placeholder="Text displayed inside shape..."
           value={selectedShape.content ?? ""}
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            borderRadius: "4px",
-            border: "1px solid #cbd5e1",
-            boxSizing: "border-box",
-          }}
           onChange={(e) => handleSetContent(e.target.value)}
         />
-      </div>
-      <div style={{ marginBottom: "6px", color: "#64748b" }}>
-        <strong>Shape ID:</strong> {selectedShape.id}
-      </div>
-      <div style={{ marginBottom: "12px", fontSize: "12px", color: "#64748b" }}>
-        <strong>Container:</strong>{" "}
+      </OdField>
+
+      <span className="od-meta">ID: {selectedShape.id}</span>
+      <span className="od-meta">
+        Container:{" "}
         {rootShape
           ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
-          : "Canvas (Root)"}
-      </div>
+          : "Canvas"}
+      </span>
+
+      {/* SEMANTICS */}
+      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
+      <span className="od-label">Semantics</span>
+
       {conflict && (
         <div
           style={{
-            backgroundColor: "#fef2f2",
-            border: "1px solid #f87171",
-            borderRadius: "4px",
-            padding: "8px 12px",
-            marginBottom: "12px",
-            color: "#991b1b",
+            backgroundColor: "var(--od-danger-soft)",
+            border: "var(--od-border-width) solid var(--od-danger)",
+            borderRadius: "var(--od-radius-sm)",
+            padding: "var(--od-8)",
+            color: "var(--od-danger)",
+            fontSize: "var(--od-text-xs)",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: "2px" }}>
-            Semantic Conflict ({conflict.status})
+          <div style={{ fontWeight: 600, marginBottom: "var(--od-2)" }}>
+            Conflict: {conflict.status}
           </div>
-          <div style={{ fontSize: "12px", marginBottom: "6px" }}>{conflict.reason}</div>
+          <div style={{ marginBottom: "var(--od-4)" }}>{conflict.reason}</div>
           <button
             type="button"
-            style={{
-              fontSize: "11px",
-              padding: "2px 6px",
-              cursor: "pointer",
-              backgroundColor: "#ffffff",
-              border: "1px solid #f87171",
-              borderRadius: "3px",
-              color: "#991b1b",
-            }}
+            className="od-btn od-btn--ghost"
+            style={{ height: "22px", padding: "0 6px", fontSize: "11px" }}
             onClick={() => handleSetSemantic("")}
           >
-            Clear Tag to Baseline (NONE)
+            Clear Tag
           </button>
         </div>
       )}
 
       {activeProfile && (
-        <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "4px" }}>
-            Semantic Tag (R-024)
-          </label>
+        <OdField label="Semantic Tag">
           <select
+            className="od-select"
+            style={{ width: "100%" }}
             value={selectedShape.meta.semantic?.id ?? ""}
-            style={{
-              width: "100%",
-              padding: "6px 8px",
-              borderRadius: "4px",
-              border: "1px solid #cbd5e1",
-            }}
             onChange={(e) => handleSetSemantic(e.target.value)}
           >
             <option value="">(None / Baseline)</option>
@@ -174,49 +153,33 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
                 </option>
               )}
           </select>
-        </div>
+        </OdField>
       )}
 
       {semanticDef?.properties && semanticDef.properties.length > 0 && (
-        <div style={{ marginTop: "12px", marginBottom: "12px" }}>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "6px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
+          <span className="od-label" style={{ fontSize: "10px" }}>
             Properties ({semanticDef.displayName})
-          </label>
+          </span>
           {semanticDef.properties.map((schema) => {
             const val = semanticProps[schema.id];
             return (
-              <div key={schema.id} style={{ marginBottom: "8px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    marginBottom: "2px",
-                  }}
-                >
-                  {schema.label}
-                </label>
+              <OdField key={schema.id} label={schema.label}>
                 {schema.control === CONTROL_TYPES.text && (
                   <input
                     type="text"
+                    className="od-input"
+                    style={{ width: "100%" }}
                     value={val !== undefined ? String(val) : ""}
-                    style={{
-                      width: "100%",
-                      padding: "4px 8px",
-                      boxSizing: "border-box",
-                    }}
                     onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
                   />
                 )}
                 {schema.control === CONTROL_TYPES.number && (
                   <input
                     type="number"
+                    className="od-input"
+                    style={{ width: "100%" }}
                     value={val !== undefined ? Number(val) : ""}
-                    style={{
-                      width: "100%",
-                      padding: "4px 8px",
-                      boxSizing: "border-box",
-                    }}
                     onChange={(e) =>
                       handlePropertyChange(
                         schema.id,
@@ -226,29 +189,20 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
                   />
                 )}
                 {schema.control === CONTROL_TYPES.toggle && (
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
+                  <label style={{ display: "flex", alignItems: "center", gap: "var(--od-4)" }}>
                     <input
                       type="checkbox"
                       checked={Boolean(val)}
                       onChange={(e) => handlePropertyChange(schema.id, e.target.checked)}
                     />
-                    <span>Enabled</span>
+                    <span style={{ fontSize: "var(--od-text-sm)" }}>Enabled</span>
                   </label>
                 )}
                 {schema.control === CONTROL_TYPES.select && (
                   <select
+                    className="od-select"
+                    style={{ width: "100%" }}
                     value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}
-                    style={{
-                      width: "100%",
-                      padding: "4px 8px",
-                      boxSizing: "border-box",
-                    }}
                     onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
                   >
                     {schema.options?.map((opt) => (
@@ -258,12 +212,15 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
                     ))}
                   </select>
                 )}
-              </div>
+              </OdField>
             );
           })}
         </div>
       )}
 
+      {/* STYLE */}
+      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
+      <span className="od-label">Style</span>
       <ShapeStyleInspector
         selectedShape={selectedShape}
         handleStyleChange={handleStyleChange}
@@ -271,6 +228,9 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
         handleStyleCommit={handleStyleCommit}
       />
 
+      {/* RESPONSIVE */}
+      <div className="od-divider" style={{ width: "100%", margin: "var(--od-4) 0" }} />
+      <span className="od-label">Responsive</span>
       <ResponsiveControls
         selectedShape={selectedShape}
         activeProfile={activeProfile}
