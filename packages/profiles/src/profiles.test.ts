@@ -108,6 +108,13 @@ describe("profile registry lookup", () => {
     expect(PLATFORM_PROFILES.ios).toBe(IOS_PROFILE);
   });
 
+  it("resolves android profile by both PlatformId and serialized value", () => {
+    expect(getPlatformProfile("android-native")).toBe(ANDROID_NATIVE_PROFILE);
+    expect(PLATFORM_PROFILES["android-native" as keyof typeof PLATFORM_PROFILES]).toBe(
+      ANDROID_NATIVE_PROFILE,
+    );
+  });
+
   it("returns style profile by style id", () => {
     expect(getStyleProfile("minimal")).toBe(MINIMAL_STYLE_PROFILE);
     expect(getStyleProfile("crayon")).toBe(CRAYON_STYLE_PROFILE);
