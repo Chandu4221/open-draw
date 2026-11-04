@@ -150,6 +150,7 @@ function PlaygroundApp() {
     lastWorldRef,
     spaceRef,
     toolRef,
+    chooseTool,
     setSelectedShapeId,
     setZoomPercent,
     handleDeviceChange,

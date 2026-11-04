@@ -27,6 +27,7 @@ export interface CanvasInteractionsProps {
   readonly lastWorldRef: React.MutableRefObject<Point>;
   readonly spaceRef: React.MutableRefObject<boolean>;
   readonly toolRef: React.MutableRefObject<ToolId>;
+  readonly chooseTool: (tool: ToolId) => void;
   readonly setSelectedShapeId: (id: ShapeId | null) => void;
   readonly setZoomPercent: (pct: number) => void;
   readonly handleDeviceChange: (deviceType?: DeviceType) => void;
@@ -44,6 +45,7 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     lastWorldRef,
     spaceRef,
     toolRef,
+    chooseTool,
     setSelectedShapeId,
     setZoomPercent,
     handleDeviceChange,
@@ -227,6 +229,7 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
       commitResizeGesture(documentRef.current, canvas, gesture, world, commit);
     } else if (before === STATES.drawingShape) {
       commitDrawGesture(documentRef.current, canvas, gesture, world, toolRef.current, commit);
+      chooseTool(TOOLS.select);
     } else if (before === STATES.selecting || gesture.kind === GESTURE_KINDS.select) {
       const marqueeBox = normalizeBox(gesture.startWorld, world);
       if (marqueeBox.width > 2 || marqueeBox.height > 2) {
