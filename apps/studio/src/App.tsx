@@ -186,10 +186,6 @@ function StudioShell() {
     >
       <Toolbar
         brandLabel="OpenDraw Studio"
-        handleLoad={toolbarActions.handleLoad}
-        handleExportSvg={toolbarActions.handleExportSvg}
-        handleExportPng={toolbarActions.handleExportPng}
-        onOpenExportModal={() => handleOpenExportModal("markdown")}
         showSidebar={showSidebar}
         setShowSidebar={setShowSidebar}
       />
@@ -215,6 +211,9 @@ function StudioShell() {
             handleRedo={toolbarActions.handleRedo}
             handleDuplicate={toolbarActions.handleDuplicate}
             handleDelete={toolbarActions.handleDelete}
+            handleLoad={toolbarActions.handleLoad}
+            handleExportSvg={toolbarActions.handleExportSvg}
+            handleExportPng={toolbarActions.handleExportPng}
             onOpenExportModal={() => handleOpenExportModal("markdown")}
           />
           <CanvasZoomControls

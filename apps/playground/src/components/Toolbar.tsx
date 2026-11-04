@@ -1,26 +1,14 @@
 import React from "react";
-import { OdButton, OdIconButton, OdTooltip } from "@open-draw/ui";
+import { OdIconButton, OdTooltip } from "@open-draw/ui";
 
 export interface ToolbarProps {
   readonly brandLabel?: string;
-  readonly handleExportSvg?: () => void;
-  readonly handleExportPng?: () => void;
-  readonly handleLoad?: () => void;
-  readonly onOpenExportModal?: () => void;
   readonly showSidebar: boolean;
   readonly setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function Toolbar(props: ToolbarProps): React.JSX.Element {
-  const {
-    brandLabel = "OpenDraw",
-    handleExportSvg,
-    handleExportPng,
-    handleLoad,
-    onOpenExportModal,
-    showSidebar,
-    setShowSidebar,
-  } = props;
+  const { brandLabel = "OpenDraw", showSidebar, setShowSidebar } = props;
 
   return (
     <header
@@ -54,39 +42,8 @@ export function Toolbar(props: ToolbarProps): React.JSX.Element {
         </span>
       </div>
 
-      {/* Top Right: File actions [open icon] [save svg] [save png] [save icon] and sidebar toggle */}
+      {/* Top Right: View toggles */}
       <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-        {handleLoad && (
-          <OdTooltip text="Open document">
-            <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />
-          </OdTooltip>
-        )}
-        {handleExportSvg && (
-          <OdButton variant="ghost" onClick={handleExportSvg}>
-            Save SVG
-          </OdButton>
-        )}
-        {handleExportPng && (
-          <OdButton variant="ghost" onClick={handleExportPng}>
-            Save PNG
-          </OdButton>
-        )}
-        {onOpenExportModal && (
-          <OdTooltip text="Save / Export wireframe">
-            <OdIconButton
-              name="save"
-              aria-label="Save or export wireframe"
-              ghost
-              onClick={onOpenExportModal}
-            />
-          </OdTooltip>
-        )}
-
-        {(handleLoad || handleExportSvg || handleExportPng || onOpenExportModal) && (
-          <div className="od-divider" />
-        )}
-
-        {/* View toggles */}
         <OdTooltip text={showSidebar ? "Hide Sidebar" : "Show Sidebar"}>
           <OdIconButton
             name="panel"

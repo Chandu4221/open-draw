@@ -184,15 +184,7 @@ function PlaygroundApp() {
         overflow: "hidden",
       }}
     >
-      <Toolbar
-        brandLabel="OpenDraw"
-        handleLoad={toolbarActions.handleLoad}
-        handleExportSvg={toolbarActions.handleExportSvg}
-        handleExportPng={toolbarActions.handleExportPng}
-        onOpenExportModal={() => handleOpenExportModal("markdown")}
-        showSidebar={showSidebar}
-        setShowSidebar={setShowSidebar}
-      />
+      <Toolbar brandLabel="OpenDraw" showSidebar={showSidebar} setShowSidebar={setShowSidebar} />
       <div
         style={{
           flex: 1,
@@ -225,6 +217,9 @@ function PlaygroundApp() {
             handleRedo={toolbarActions.handleRedo}
             handleDuplicate={toolbarActions.handleDuplicate}
             handleDelete={toolbarActions.handleDelete}
+            handleLoad={toolbarActions.handleLoad}
+            handleExportSvg={toolbarActions.handleExportSvg}
+            handleExportPng={toolbarActions.handleExportPng}
             onOpenExportModal={() => handleOpenExportModal("markdown")}
           />
           <CanvasZoomControls
