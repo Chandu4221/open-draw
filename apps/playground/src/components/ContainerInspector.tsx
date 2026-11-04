@@ -1,7 +1,7 @@
-import React from "react";
 import {
   DESIGN_STYLE_LABELS,
   DESIGN_STYLES,
+  PLATFORM_BY_VALUE,
   PLATFORMS,
   STYLE_PROFILES,
   type DesignStyleId,
@@ -66,14 +66,18 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
           Platform Profile (R-026)
         </label>
         <select
-          value={rootPlatform ?? ""}
+          value={rootPlatform ? (PLATFORMS[rootPlatform] ?? rootPlatform) : ""}
           style={{
             width: "100%",
             padding: "6px 8px",
             borderRadius: "4px",
             border: "1px solid #cbd5e1",
           }}
-          onChange={(e) => handleSetPlatform(e.target.value as PlatformId | "")}
+          onChange={(e) => {
+            const val = e.target.value;
+            const platform = val ? (PLATFORM_BY_VALUE[val] ?? (val as PlatformId)) : "";
+            handleSetPlatform(platform);
+          }}
         >
           <option value="">(None / Platform-Agnostic)</option>
           <option value={PLATFORMS.web}>Web</option>
