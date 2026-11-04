@@ -24,6 +24,9 @@ import {
   DESIGN_STYLE_BY_VALUE,
   DESIGN_STYLE_LABELS,
   isDesignStyle,
+  ROOT_ROLES,
+  ROOT_ROLE_BY_VALUE,
+  isRootRole,
 } from "./index";
 
 describe("capabilities", () => {
@@ -134,5 +137,19 @@ describe("design-styles", () => {
     expect(DESIGN_STYLE_LABELS[DESIGN_STYLES.neoBrutalism]).toBe("Neo-Brutalism");
     expect(isDesignStyle("neo-brutalism")).toBe(true);
     expect(isDesignStyle("non-existent-style")).toBe(false);
+  });
+});
+
+describe("root-roles", () => {
+  it("exposes root roles registry and validator", () => {
+    expect(ROOT_ROLES.screen).toBe("screen");
+    expect(ROOT_ROLES.component).toBe("component");
+    expect(ROOT_ROLE_BY_VALUE.screen).toBe(ROOT_ROLES.screen);
+    expect(ROOT_ROLE_BY_VALUE.component).toBe(ROOT_ROLES.component);
+    expect(isRootRole("screen")).toBe(true);
+    expect(isRootRole("component")).toBe(true);
+    expect(isRootRole("modal")).toBe(false);
+    expect(isRootRole(123)).toBe(false);
+    expect(isRootRole(null)).toBe(false);
   });
 });

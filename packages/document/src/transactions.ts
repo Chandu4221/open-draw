@@ -10,6 +10,7 @@ import { applyReparentShape } from "./commands/reparent-shape";
 import { applySetRootPlatform } from "./commands/set-root-platform";
 import { applySetRootStyle } from "./commands/set-root-style";
 import { applySetRootDesignStyle } from "./commands/set-root-design-style";
+import { applySetRootRole } from "./commands/set-root-role";
 import { applySetShapeBoundingBox } from "./commands/set-shape-bounding-box";
 import { applySetShapeHiddenOn } from "./commands/set-shape-hidden-on";
 import { applySetShapeLabel } from "./commands/set-shape-label";
@@ -59,6 +60,8 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applySetRootStyle(document, command);
     case COMMANDS.setRootDesignStyle:
       return applySetRootDesignStyle(document, command);
+    case COMMANDS.setRootRole:
+      return applySetRootRole(document, command);
     case COMMANDS.setShapeHiddenOn:
       return applySetShapeHiddenOn(document, command);
     case COMMANDS.setShapeOrder:

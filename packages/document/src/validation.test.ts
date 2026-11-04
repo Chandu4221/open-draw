@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DESIGN_STYLES, parseShapeId, ROOT_ID } from "@open-draw/contracts";
+import { DESIGN_STYLES, parseShapeId, ROOT_ID, ROOT_ROLES } from "@open-draw/contracts";
 import type { Shape } from "./shape";
 import { createEllipse, createPage, createRect, createSection } from "./shape";
 import { DocumentError } from "./errors";
@@ -212,6 +212,45 @@ describe("parseDocument", () => {
       shapes: Record<string, Record<string, unknown>>;
     };
     input.shapes["page-1"]!.meta = { order: {}, designStyle: "invalid-design-style" };
+    expect(() => parseDocument(input)).toThrow(DocumentError);
+  });
+
+  it("accepts role on root shapes and rejects on non-root shapes (R-026)", () => {
+    const rootComponent = createRect(
+      parseShapeId("rect-comp-1"),
+      { x: 0, y: 0, width: 300, height: 200 },
+      {
+        parent: ROOT_ID,
+        meta: {
+          order: {},
+          role: ROOT_ROLES.component,
+        },
+      },
+    );
+    const doc = parseDocument(serialize([rootComponent]));
+    expect(doc.shapes[parseShapeId("rect-comp-1")]?.meta.role).toBe(ROOT_ROLES.component);
+
+    // Serialization round-trip
+    const serialized = serializeDocument(doc);
+    expect(serialized).toContain('"role": "component"');
+    const roundTripped = parseDocument(JSON.parse(serialized));
+    expect(roundTripped.shapes[parseShapeId("rect-comp-1")]?.meta.role).toBe(ROOT_ROLES.component);
+
+    const nonRootInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    nonRootInput.shapes["rect-1"]!.meta = {
+      order: {},
+      role: ROOT_ROLES.component,
+    };
+    expect(() => parseDocument(nonRootInput)).toThrow(/role may only be set on root shapes/);
+  });
+
+  it("rejects invalid role in meta", () => {
+    const input = serialize([page]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["page-1"]!.meta = { order: {}, role: "invalid-role" };
     expect(() => parseDocument(input)).toThrow(DocumentError);
   });
 

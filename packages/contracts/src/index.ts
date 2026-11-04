@@ -14,3 +14,4 @@ export * from "./semantic-contract";
 export * from "./shape-kinds";
 export * from "./style-render-contract";
 export * from "./design-styles";
+export * from "./root-roles";

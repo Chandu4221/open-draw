@@ -1,0 +1,79 @@
+import { describe, expect, it } from "vitest";
+import {
+  parseShapeId,
+  parseSemanticId,
+  PLATFORMS,
+  ROOT_ID,
+  ROOT_ROLES,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
+import { createDocument, createRect } from "@open-draw/document";
+import { exportMarkdown } from "./export-markdown";
+
+describe("exportMarkdown with root roles (R-024, R-026)", () => {
+  it("exports standalone root component with role, semantic tag, and child elements", () => {
+    const cardRoot = createRect(
+      parseShapeId("card-root"),
+      { x: 0, y: 0, width: 400, height: 300 },
+      {
+        parent: ROOT_ID,
+        meta: {
+          order: {},
+          role: ROOT_ROLES.component,
+          platform: PLATFORMS.web,
+          style: STYLE_PROFILES.minimal,
+          semantic: {
+            id: parseSemanticId("card"),
+            platform: PLATFORMS.web,
+            properties: { elevated: true },
+          },
+        },
+      },
+    );
+    const cardButton = createRect(
+      parseShapeId("card-btn"),
+      { x: 20, y: 220, width: 100, height: 40 },
+      {
+        parent: cardRoot.id,
+        label: "Confirm Action",
+        meta: {
+          order: {},
+          semantic: {
+            id: parseSemanticId("button"),
+            platform: PLATFORMS.web,
+            properties: { variant: "primary" },
+          },
+        },
+      },
+    );
+
+    const doc = createDocument([cardRoot, cardButton]);
+    const md = exportMarkdown(doc, { includeHeader: false });
+
+    expect(md).toContain(
+      "## Card — `card` (elevated: true) (Role: component, Platform: web, Style: minimal)\n\n",
+    );
+    expect(md).toContain("- **Confirm Action** — `button` (variant: primary)\n");
+  });
+
+  it("exports root screen shape without role tag when default", () => {
+    const screenRoot = createRect(
+      parseShapeId("screen-root"),
+      { x: 0, y: 0, width: 1200, height: 800 },
+      {
+        parent: ROOT_ID,
+        meta: {
+          order: {},
+          platform: PLATFORMS.web,
+          style: STYLE_PROFILES.minimal,
+        },
+      },
+    );
+    const doc = createDocument([screenRoot]);
+    const md = exportMarkdown(doc, { includeHeader: false });
+
+    // When role is not explicitly set, Role tag is omitted
+    expect(md).toBe("## Page (Platform: web, Style: minimal)\n");
+    expect(md).not.toContain("Role:");
+  });
+});

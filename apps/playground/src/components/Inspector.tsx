@@ -1,10 +1,10 @@
-import React from "react";
 import {
   isRootId,
   type DesignStyleId,
   type DeviceType,
   type PlatformId,
   type PlatformProfile,
+  type RootRole,
   type SemanticConflict,
   type SemanticDefinition,
   type StyleId,
@@ -19,6 +19,7 @@ export interface InspectorProps {
   readonly rootPlatform: PlatformId | undefined;
   readonly rootStyle: StyleId;
   readonly rootDesignStyle?: DesignStyleId | undefined;
+  readonly rootRole?: RootRole;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
@@ -28,6 +29,7 @@ export interface InspectorProps {
   readonly handleSetPlatform: (platform: PlatformId | "") => void;
   readonly handleSetStyle: (style: StyleId) => void;
   readonly handleSetDesignStyle?: ((designStyle: DesignStyleId | "") => void) | undefined;
+  readonly handleSetRole?: ((role: RootRole | "") => void) | undefined;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
@@ -61,6 +63,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     rootPlatform,
     rootStyle,
     rootDesignStyle,
+    rootRole,
     activeProfile,
     conflict,
     semanticDef,
@@ -70,6 +73,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleSetPlatform,
     handleSetStyle,
     handleSetDesignStyle,
+    handleSetRole,
     handleSetSemantic,
     handlePropertyChange,
     handleToggleHiddenOn,
@@ -102,11 +106,22 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           rootPlatform={rootPlatform}
           rootStyle={rootStyle}
           rootDesignStyle={rootDesignStyle}
+          rootRole={rootRole}
           activeProfile={activeProfile}
+          conflict={conflict}
+          semanticDef={semanticDef}
+          semanticProps={semanticProps}
           handleSetLabel={handleSetLabel}
+          handleSetContent={handleSetContent}
           handleSetPlatform={handleSetPlatform}
           handleSetStyle={handleSetStyle}
           handleSetDesignStyle={handleSetDesignStyle}
+          handleSetRole={handleSetRole}
+          handleSetSemantic={handleSetSemantic}
+          handlePropertyChange={handlePropertyChange}
+          handleStyleChange={handleStyleChange}
+          handleStylePreview={handleStylePreview}
+          handleStyleCommit={handleStyleCommit}
         />
       ) : (
         <ShapeInspector

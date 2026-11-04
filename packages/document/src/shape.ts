@@ -12,6 +12,7 @@ import type {
   ShapeKind,
   StyleId,
   DesignStyleId,
+  RootRole,
 } from "@open-draw/contracts";
 import { ROOT_ID, SHAPE_KINDS, SHAPE_KIND_VALUES, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
@@ -44,6 +45,7 @@ export interface ShapeMeta {
   readonly platform?: PlatformId;
   readonly style?: StyleId;
   readonly designStyle?: DesignStyleId;
+  readonly role?: RootRole;
 }
 
 export interface BaseShape {

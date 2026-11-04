@@ -11,6 +11,7 @@ export const COMMANDS = {
   setRootPlatform: "SetRootPlatform",
   setRootStyle: "SetRootStyle",
   setRootDesignStyle: "SetRootDesignStyle",
+  setRootRole: "SetRootRole",
   setShapeHiddenOn: "SetShapeHiddenOn",
   setShapeOrder: "SetShapeOrder",
   setShapeStyle: "SetShapeStyle",

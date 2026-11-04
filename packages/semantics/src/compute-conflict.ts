@@ -3,6 +3,7 @@
 // Foreign tags stay stored; switching page platforms computes conflict dynamically.
 import {
   isRootId,
+  ROOT_ROLES,
   SEMANTIC_CONFLICTS,
   type PlatformProfile,
   type SemanticConflict,
@@ -48,6 +49,19 @@ export function computeSemanticConflict(
       expectedPlatform: rootPlatform,
       actualPlatform: semantic.platform,
       reason: `Root semantic "${semantic.id}" cannot be assigned to child shapes.`,
+    };
+  }
+
+  if (
+    shape.meta.role === ROOT_ROLES.component &&
+    profile !== undefined &&
+    semantic.id === profile.rootSemantic
+  ) {
+    return {
+      status: SEMANTIC_CONFLICTS.conflicted,
+      expectedPlatform: rootPlatform,
+      actualPlatform: semantic.platform,
+      reason: `Root semantic "${semantic.id}" cannot be assigned to a component.`,
     };
   }
 

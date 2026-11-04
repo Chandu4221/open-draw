@@ -7,14 +7,16 @@ import type {
   SemanticDefinition,
   ShapeId,
   StyleId,
+  RootRole,
 } from "@open-draw/contracts";
-import { isRootId, ROOT_ID, STYLE_PROFILES } from "@open-draw/contracts";
+import { isRootId, ROOT_ID, ROOT_ROLES, STYLE_PROFILES } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
   resolveRootDesignStyle,
   resolveRootPlatform,
+  resolveRootRole,
   resolveRootShape,
   resolveRootStyle,
   walkSemanticTree,
@@ -27,6 +29,7 @@ export interface InspectionData {
   readonly rootPlatform: PlatformId | undefined;
   readonly rootStyle: StyleId;
   readonly rootDesignStyle: DesignStyleId | undefined;
+  readonly rootRole: RootRole;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
@@ -46,6 +49,7 @@ export function useInspectionData(
   const rootPlatform = rootShape ? resolveRootPlatform(doc, rootShape.id) : undefined;
   const rootStyle = rootShape ? resolveRootStyle(doc, rootShape.id) : STYLE_PROFILES.minimal;
   const rootDesignStyle = rootShape ? resolveRootDesignStyle(doc, rootShape.id) : undefined;
+  const rootRole = rootShape ? resolveRootRole(doc, rootShape.id) : ROOT_ROLES.screen;
   const activeProfile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
   const conflict = selectedShape
     ? computeSemanticConflict(doc, selectedShape, activeProfile)
@@ -63,6 +67,7 @@ export function useInspectionData(
     rootPlatform,
     rootStyle,
     rootDesignStyle,
+    rootRole,
     activeProfile,
     conflict,
     semanticDef,
