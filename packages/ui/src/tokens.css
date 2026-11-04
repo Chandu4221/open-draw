@@ -11,20 +11,20 @@
 :root {
   color-scheme: light dark;
 
-  /* Neutral scale (light values) */
-  --od-bg: #f8fafc; /* canvas backdrop / app bg */
+  /* Neutral scale (monochromatic light) */
+  --od-bg: #f4f4f5; /* canvas backdrop / app bg */
   --od-surface: #ffffff; /* panels, toolbar, sidebar */
   --od-surface-raised: #ffffff;
-  --od-border: #e2e8f0;
-  --od-border-strong: #cbd5e1;
-  --od-text: #0f172a;
-  --od-text-secondary: #475569;
-  --od-text-tertiary: #94a3b8;
+  --od-border: #e4e4e7;
+  --od-border-strong: #d4d4d8;
+  --od-text: #09090b;
+  --od-text-secondary: #52525b;
+  --od-text-tertiary: #a1a1aa;
 
-  /* Accent — single accent only */
-  --od-accent: #2563eb;
-  --od-accent-soft: #eff6ff; /* active-tool tint */
-  --od-accent-border: #93c5fd;
+  /* Accent — monochromatic black */
+  --od-accent: #09090b;
+  --od-accent-soft: #e4e4e7; /* active-tool tint */
+  --od-accent-border: #09090b;
 
   /* Semantic */
   --od-success: #16a34a;
@@ -49,7 +49,7 @@
   /* Radii + strokes */
   --od-radius-sm: 4px;
   --od-radius: 6px;
-  --od-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 4px 12px rgb(15 23 42 / 0.08);
+  --od-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 12px rgb(0 0 0 / 0.08);
 
   /* Type */
   --od-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -60,19 +60,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --od-bg: #111418;
-    --od-surface: #1a1f26;
-    --od-surface-raised: #212730;
-    --od-border: #2a3038;
-    --od-border-strong: #3d4652;
-    --od-text: #e6e9ed;
-    --od-text-secondary: #9aa3ad;
-    --od-text-tertiary: #5d6670;
-    --od-accent: #3b82f6;
-    --od-accent-soft: #16233a;
-    --od-accent-border: #1d4ed8;
+    --od-bg: #09090b;
+    --od-surface: #141416;
+    --od-surface-raised: #1c1c1f;
+    --od-border: #27272a;
+    --od-border-strong: #3f3f46;
+    --od-text: #fafafa;
+    --od-text-secondary: #a1a1aa;
+    --od-text-tertiary: #71717a;
+    --od-accent: #fafafa;
+    --od-accent-soft: #27272a;
+    --od-accent-border: #fafafa;
+    --od-text-on-accent: #09090b;
+    --od-success: #22c55e;
     --od-danger: #ef4444;
-    --od-danger-soft: #2a1518;
-    --od-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px rgb(0 0 0 / 0.5);
+    --od-danger-soft: #261416;
+    --od-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.7);
   }
 }

@@ -57,20 +57,21 @@ All colors, spacing, borders, radii, and typography are centralized in `tokens.c
 
 | Category       | Token                 | Light Value | Dark Value | Purpose                        |
 | -------------- | --------------------- | ----------- | ---------- | ------------------------------ |
-| Background     | `--od-bg`             | `#f8fafc`   | `#111418`  | App & canvas backdrop          |
-| Surface        | `--od-surface`        | `#ffffff`   | `#1a1f26`  | Panels, toolbars, sidebars     |
-| Raised         | `--od-surface-raised` | `#ffffff`   | `#212730`  | Popovers, tooltips, toasts     |
-| Border         | `--od-border`         | `#e2e8f0`   | `#2a3038`  | Default panel/control border   |
-| Border Strong  | `--od-border-strong`  | `#cbd5e1`   | `#3d4652`  | Hovered/active borders         |
-| Text Primary   | `--od-text`           | `#0f172a`   | `#e6e9ed`  | Primary typography             |
-| Text Secondary | `--od-text-secondary` | `#475569`   | `#9aa3ad`  | Subdued text, icons, labels    |
-| Text Tertiary  | `--od-text-tertiary`  | `#94a3b8`   | `#5d6670`  | Empty states, metadata, hints  |
-| Accent         | `--od-accent`         | `#2563eb`   | `#3b82f6`  | Brand accent & selection ring  |
-| Accent Soft    | `--od-accent-soft`    | `#eff6ff`   | `#16233a`  | Active tool background tint    |
-| Accent Border  | `--od-accent-border`  | `#93c5fd`   | `#1d4ed8`  | Active tool border stroke      |
-| Semantic       | `--od-success`        | `#16a34a`   | `#16a34a`  | Success toasts                 |
+| Background     | `--od-bg`             | `#f4f4f5`   | `#09090b`  | App & canvas backdrop          |
+| Surface        | `--od-surface`        | `#ffffff`   | `#141416`  | Panels, toolbars, sidebars     |
+| Raised         | `--od-surface-raised` | `#ffffff`   | `#1c1c1f`  | Popovers, tooltips, toasts     |
+| Border         | `--od-border`         | `#e4e4e7`   | `#27272a`  | Default panel/control border   |
+| Border Strong  | `--od-border-strong`  | `#d4d4d8`   | `#3f3f46`  | Hovered/active borders         |
+| Text Primary   | `--od-text`           | `#09090b`   | `#fafafa`  | Primary typography             |
+| Text Secondary | `--od-text-secondary` | `#52525b`   | `#a1a1aa`  | Subdued text, icons, labels    |
+| Text Tertiary  | `--od-text-tertiary`  | `#a1a1aa`   | `#71717a`  | Empty states, metadata, hints  |
+| Accent         | `--od-accent`         | `#09090b`   | `#fafafa`  | Monochromatic brand accent     |
+| Accent Soft    | `--od-accent-soft`    | `#e4e4e7`   | `#27272a`  | Active tool background tint    |
+| Accent Border  | `--od-accent-border`  | `#09090b`   | `#fafafa`  | Active tool border stroke      |
+| Text on Accent | `--od-text-on-accent` | `#ffffff`   | `#09090b`  | Text on primary buttons        |
+| Semantic       | `--od-success`        | `#16a34a`   | `#22c55e`  | Success toasts                 |
 | Semantic       | `--od-danger`         | `#dc2626`   | `#ef4444`  | Errors and destructive buttons |
-| Semantic       | `--od-danger-soft`    | `#fef2f2`   | `#2a1518`  | Error toast background         |
+| Semantic       | `--od-danger-soft`    | `#fef2f2`   | `#261416`  | Error toast background         |
 | Radius         | `--od-radius-sm`      | `4px`       | `4px`      | Controls, inputs, buttons      |
 | Radius         | `--od-radius`         | `6px`       | `6px`      | Panels, toasts                 |
 | Typography     | `--od-text-sm`        | `12px`      | `12px`     | UI default size                |

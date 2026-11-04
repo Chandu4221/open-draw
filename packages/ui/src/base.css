@@ -55,7 +55,7 @@
   color: var(--od-text-on-accent);
 }
 .od-btn--primary:hover {
-  filter: brightness(1.08);
+  opacity: 0.88;
   color: var(--od-text-on-accent);
 }
 .od-btn--ghost,
