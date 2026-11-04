@@ -27,6 +27,9 @@ import {
   ROOT_ROLES,
   ROOT_ROLE_BY_VALUE,
   isRootRole,
+  CREATIVITY_LEVELS,
+  CREATIVITY_LEVEL_DEFINITIONS,
+  DEFAULT_CREATIVITY_LEVEL,
 } from "./index";
 
 describe("capabilities", () => {
@@ -151,5 +154,30 @@ describe("root-roles", () => {
     expect(isRootRole("modal")).toBe(false);
     expect(isRootRole(123)).toBe(false);
     expect(isRootRole(null)).toBe(false);
+  });
+});
+
+describe("creativity-levels", () => {
+  it("exposes 5 creativity levels with definitions and default", () => {
+    expect(CREATIVITY_LEVELS[1]).toBe(1);
+    expect(CREATIVITY_LEVELS[2]).toBe(2);
+    expect(CREATIVITY_LEVELS[3]).toBe(3);
+    expect(CREATIVITY_LEVELS[4]).toBe(4);
+    expect(CREATIVITY_LEVELS[5]).toBe(5);
+
+    expect(DEFAULT_CREATIVITY_LEVEL).toBe(3);
+
+    expect(CREATIVITY_LEVEL_DEFINITIONS[1].name).toBe("Strict");
+    expect(CREATIVITY_LEVEL_DEFINITIONS[2].name).toBe("Precise");
+    expect(CREATIVITY_LEVEL_DEFINITIONS[3].name).toBe("Balanced");
+    expect(CREATIVITY_LEVEL_DEFINITIONS[4].name).toBe("Exploratory");
+    expect(CREATIVITY_LEVEL_DEFINITIONS[5].name).toBe("Imaginative");
+
+    for (let level = 1; level <= 5; level++) {
+      const def = CREATIVITY_LEVEL_DEFINITIONS[level as keyof typeof CREATIVITY_LEVELS];
+      expect(def).toBeDefined();
+      expect(def.description.length).toBeGreaterThan(0);
+      expect(def.promptDirective.length).toBeGreaterThan(0);
+    }
   });
 });

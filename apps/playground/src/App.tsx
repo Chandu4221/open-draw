@@ -21,6 +21,9 @@ import { initCanvas } from "./canvas-init";
 import { renderCanvasSvg } from "./canvas-render";
 import { Toolbar } from "./components/Toolbar";
 import { Sidebar } from "./components/Sidebar";
+import { CanvasDock } from "./components/CanvasDock";
+import { CanvasZoomControls } from "./components/CanvasZoomControls";
+import { ExportModal } from "./components/ExportModal";
 import { useCanvasInteractions } from "./use-canvas-interactions";
 import { useCanvasKeyboard } from "./use-canvas-keyboard";
 import { useDocumentMutations } from "./use-document-mutations";
@@ -47,6 +50,13 @@ function PlaygroundApp() {
   const [showTagChips, setShowTagChips] = useState<boolean>(false);
   const showTagChipsRef = useRef<boolean>(false);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
+
+  const handleOpenExportModal = (initial: "markdown" | "json" = "markdown") => {
+    setExportInitialFormat(initial);
+    setIsExportModalOpen(true);
+  };
 
   const chooseTool = (next: ToolId): void => {
     toolRef.current = next;
@@ -182,17 +192,15 @@ function PlaygroundApp() {
       }}
     >
       <Toolbar
-        tool={tool}
-        chooseTool={chooseTool}
+        brandLabel="OpenDraw"
+        handleLoad={toolbarActions.handleLoad}
+        handleExportSvg={toolbarActions.handleExportSvg}
+        handleExportPng={toolbarActions.handleExportPng}
         includeLegend={includeLegend}
         setIncludeLegend={setIncludeLegend}
-        {...toolbarActions}
         activeProfile={inspection.activeProfile}
         activeDeviceType={activeDeviceType}
         handleDeviceChange={handleDeviceChange}
-        handleZoom={handleZoom}
-        handleResetZoom={handleResetZoom}
-        zoomPercent={zoomPercent}
         showTagChips={showTagChips}
         toggleShowTagChips={toggleShowTagChips}
         showSidebar={showSidebar}
@@ -237,6 +245,20 @@ function PlaygroundApp() {
               R rect · O ellipse · L line · P pen — wheel to pan
             </div>
           )}
+          <CanvasDock
+            tool={tool}
+            chooseTool={chooseTool}
+            handleUndo={toolbarActions.handleUndo}
+            handleRedo={toolbarActions.handleRedo}
+            handleDuplicate={toolbarActions.handleDuplicate}
+            handleDelete={toolbarActions.handleDelete}
+            onOpenExportModal={() => handleOpenExportModal("markdown")}
+          />
+          <CanvasZoomControls
+            zoomPercent={zoomPercent}
+            handleZoom={handleZoom}
+            handleResetZoom={handleResetZoom}
+          />
         </div>
         {showSidebar && (
           <Sidebar
@@ -247,6 +269,12 @@ function PlaygroundApp() {
           />
         )}
       </div>
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        doc={doc}
+        initialFormat={exportInitialFormat}
+      />
       <OdToastHost />
     </main>
   );

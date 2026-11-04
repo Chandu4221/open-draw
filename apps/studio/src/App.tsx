@@ -16,45 +16,27 @@ import {
 } from "@open-draw/document";
 import { TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
 import { OdToastHost, OdToastProvider, useToast } from "@open-draw/ui";
-import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, EMPTY_HINT_STYLE, type Gesture } from "./types";
+import {
+  CANVAS_CONTAINER_STYLE,
+  CANVAS_WIRE_STYLE,
+  EMPTY_HINT_STYLE,
+  LEFT_ASIDE_STYLE,
+  RIGHT_ASIDE_STYLE,
+  type Gesture,
+} from "./types";
 import { initCanvas } from "./canvas-init";
 import { renderCanvasSvg } from "./canvas-render";
 import { Toolbar } from "./components/Toolbar";
 import { TreeOutline } from "./components/TreeOutline";
 import { Inspector } from "./components/Inspector";
+import { CanvasDock } from "./components/CanvasDock";
+import { CanvasZoomControls } from "./components/CanvasZoomControls";
+import { ExportModal } from "./components/ExportModal";
 import { useCanvasInteractions } from "./use-canvas-interactions";
 import { useCanvasKeyboard } from "./use-canvas-keyboard";
 import { useDocumentMutations } from "./use-document-mutations";
 import { useInspectionData } from "./use-inspection-data";
 import { useToolbarActions } from "./use-toolbar-actions";
-
-const LEFT_ASIDE_STYLE: React.CSSProperties = {
-  width: "240px",
-  height: "100%",
-  minHeight: 0,
-  boxSizing: "border-box",
-  borderTop: "none",
-  borderBottom: "none",
-  borderLeft: "none",
-  borderRadius: 0,
-  overflowY: "auto",
-  padding: "var(--od-12)",
-  flexShrink: 0,
-};
-
-const RIGHT_ASIDE_STYLE: React.CSSProperties = {
-  width: "320px",
-  height: "100%",
-  minHeight: 0,
-  boxSizing: "border-box",
-  borderTop: "none",
-  borderBottom: "none",
-  borderRight: "none",
-  borderRadius: 0,
-  overflowY: "auto",
-  padding: "var(--od-16)",
-  flexShrink: 0,
-};
 
 function StudioShell() {
   const toast = useToast();
@@ -76,6 +58,13 @@ function StudioShell() {
   const [showTagChips, setShowTagChips] = useState<boolean>(false);
   const showTagChipsRef = useRef<boolean>(false);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
+
+  const handleOpenExportModal = (initial: "markdown" | "json" = "markdown") => {
+    setExportInitialFormat(initial);
+    setIsExportModalOpen(true);
+  };
 
   const chooseTool = (next: ToolId): void => {
     toolRef.current = next;
@@ -212,17 +201,14 @@ function StudioShell() {
     >
       <Toolbar
         brandLabel="OpenDraw Studio"
-        tool={tool}
-        chooseTool={chooseTool}
+        handleLoad={toolbarActions.handleLoad}
+        handleExportSvg={toolbarActions.handleExportSvg}
+        handleExportPng={toolbarActions.handleExportPng}
         includeLegend={includeLegend}
         setIncludeLegend={setIncludeLegend}
-        {...toolbarActions}
         activeProfile={inspection.activeProfile}
         activeDeviceType={activeDeviceType}
         handleDeviceChange={handleDeviceChange}
-        handleZoom={handleZoom}
-        handleResetZoom={handleResetZoom}
-        zoomPercent={zoomPercent}
         showTagChips={showTagChips}
         toggleShowTagChips={toggleShowTagChips}
         showSidebar={showSidebar}
@@ -254,6 +240,20 @@ function StudioShell() {
               R rect · O ellipse · L line · P pen — wheel to pan
             </div>
           )}
+          <CanvasDock
+            tool={tool}
+            chooseTool={chooseTool}
+            handleUndo={toolbarActions.handleUndo}
+            handleRedo={toolbarActions.handleRedo}
+            handleDuplicate={toolbarActions.handleDuplicate}
+            handleDelete={toolbarActions.handleDelete}
+            onOpenExportModal={() => handleOpenExportModal("markdown")}
+          />
+          <CanvasZoomControls
+            zoomPercent={zoomPercent}
+            handleZoom={handleZoom}
+            handleResetZoom={handleResetZoom}
+          />
         </div>
         {showSidebar && (
           <aside className="od-panel" style={RIGHT_ASIDE_STYLE}>
@@ -261,6 +261,12 @@ function StudioShell() {
           </aside>
         )}
       </div>
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        doc={doc}
+        initialFormat={exportInitialFormat}
+      />
       <OdToastHost />
     </main>
   );

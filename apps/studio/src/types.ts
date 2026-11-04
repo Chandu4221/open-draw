@@ -42,3 +42,31 @@ export const EMPTY_HINT_STYLE: React.CSSProperties = {
   color: "var(--od-text-secondary)",
   pointerEvents: "none",
 };
+
+export const LEFT_ASIDE_STYLE: React.CSSProperties = {
+  width: "240px",
+  height: "100%",
+  minHeight: 0,
+  boxSizing: "border-box",
+  borderTop: "none",
+  borderBottom: "none",
+  borderLeft: "none",
+  borderRadius: 0,
+  overflowY: "auto",
+  padding: "var(--od-12)",
+  flexShrink: 0,
+};
+
+export const RIGHT_ASIDE_STYLE: React.CSSProperties = {
+  width: "320px",
+  height: "100%",
+  minHeight: 0,
+  boxSizing: "border-box",
+  borderTop: "none",
+  borderBottom: "none",
+  borderRight: "none",
+  borderRadius: 0,
+  overflowY: "auto",
+  padding: "var(--od-16)",
+  flexShrink: 0,
+};

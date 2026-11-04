@@ -308,3 +308,101 @@
   );
   background-size: var(--od-grid-size) var(--od-grid-size);
 }
+
+/* Modal Dialog */
+.od-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--od-16);
+}
+
+.od-modal {
+  background-color: var(--od-surface);
+  border: var(--od-border-width) solid var(--od-border);
+  border-radius: var(--od-radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  overflow: hidden;
+}
+
+.od-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--od-12) var(--od-16);
+  border-bottom: var(--od-border-width) solid var(--od-border);
+}
+
+.od-modal__body {
+  padding: var(--od-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--od-16);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.od-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--od-12) var(--od-16);
+  border-top: var(--od-border-width) solid var(--od-border);
+  background-color: var(--od-bg);
+}
+
+/* Floating Canvas Dock */
+.od-dock {
+  position: absolute;
+  bottom: var(--od-16);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--od-4);
+  padding: var(--od-4) var(--od-8);
+  background-color: var(--od-surface);
+  border: var(--od-border-width) solid var(--od-border);
+  border-radius: var(--od-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Canvas Floating Overlays */
+.od-canvas-overlay-bottom-right {
+  position: absolute;
+  bottom: var(--od-16);
+  right: var(--od-16);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--od-6);
+}
+
+/* Code Preview */
+.od-code-preview {
+  margin: 0;
+  padding: var(--od-12);
+  background-color: var(--od-bg);
+  border: var(--od-border-width) solid var(--od-border);
+  border-radius: var(--od-radius-sm);
+  font-family: monospace;
+  font-size: var(--od-text-xs);
+  line-height: 1.5;
+  color: var(--od-text);
+  overflow: auto;
+  max-height: 260px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}

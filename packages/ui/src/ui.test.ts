@@ -26,6 +26,8 @@ describe("icons registry", () => {
       "save",
       "open",
       "export",
+      "copy",
+      "check",
       "delete",
       "duplicate",
       "paste",

@@ -3,6 +3,11 @@ import { exportMarkdown } from "@open-draw/export-markdown";
 import { documentToSvgWithLegend, type LegendItem } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
+import {
+  type CreativityLevel,
+  CREATIVITY_LEVEL_DEFINITIONS,
+  DEFAULT_CREATIVITY_LEVEL,
+} from "@open-draw/contracts";
 
 export function extractDocumentLegendItems(doc: Document): readonly LegendItem[] {
   const seen = new Set<string>();
@@ -79,8 +84,38 @@ export function exportDocumentPng(
   img.src = url;
 }
 
-export function exportDocumentJson(doc: Document): void {
-  const json = serializeDocument(doc);
+export function generateExportJson(
+  doc: Document,
+  creativityLevel: CreativityLevel = DEFAULT_CREATIVITY_LEVEL,
+): string {
+  const raw = serializeDocument(doc);
+  const parsed = JSON.parse(raw) as {
+    schema: { version: number };
+    shapes: Record<string, unknown>;
+  };
+  const def = CREATIVITY_LEVEL_DEFINITIONS[creativityLevel];
+  const withGuidance = {
+    schema: parsed.schema,
+    aiGuidance: {
+      creativityLevel: def.level,
+      name: def.name,
+      description: def.description,
+      directive: def.promptDirective,
+    },
+    shapes: parsed.shapes,
+  };
+  return JSON.stringify(withGuidance, null, 2);
+}
+
+export function generateExportMarkdown(
+  doc: Document,
+  creativityLevel: CreativityLevel = DEFAULT_CREATIVITY_LEVEL,
+): string {
+  return exportMarkdown(doc, { creativityLevel });
+}
+
+export function exportDocumentJson(doc: Document, creativityLevel?: CreativityLevel): void {
+  const json = generateExportJson(doc, creativityLevel);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -90,8 +125,8 @@ export function exportDocumentJson(doc: Document): void {
   URL.revokeObjectURL(url);
 }
 
-export function exportDocumentMarkdown(doc: Document): void {
-  const md = exportMarkdown(doc);
+export function exportDocumentMarkdown(doc: Document, creativityLevel?: CreativityLevel): void {
+  const md = generateExportMarkdown(doc, creativityLevel);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

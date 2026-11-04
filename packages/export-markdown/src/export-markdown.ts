@@ -13,6 +13,7 @@ import {
   ROOT_ROLES,
   SEMANTIC_CONFLICTS,
   SHAPE_KINDS,
+  CREATIVITY_LEVEL_DEFINITIONS,
 } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import {
@@ -166,6 +167,17 @@ export function exportMarkdown(doc: Document, options?: MarkdownExportOptions): 
   if (includeHeader) {
     lines.push("# OpenDraw Document");
     lines.push("");
+  }
+
+  if (options?.creativityLevel !== undefined) {
+    const def = CREATIVITY_LEVEL_DEFINITIONS[options.creativityLevel];
+    if (def) {
+      lines.push("## AI Implementation Guidance");
+      lines.push("");
+      lines.push(`- **Creativity Level**: Level ${def.level} — ${escapeMarkdownText(def.name)}`);
+      lines.push(`- **Directive**: ${escapeMarkdownText(def.promptDirective)}`);
+      lines.push("");
+    }
   }
 
   if (nodes.length === 0) {
