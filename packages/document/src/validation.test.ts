@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DESIGN_STYLES, parseShapeId, ROOT_ID, ROOT_ROLES } from "@open-draw/contracts";
 import type { Shape } from "./shape";
-import { createEllipse, createPage, createRect, createSection } from "./shape";
+import { createEllipse, createPage, createRect, createSection, createText } from "./shape";
 import { DocumentError } from "./errors";
 import { serializeDocument } from "./serialize-document";
 import { parseDocument } from "./validation";
@@ -408,6 +408,38 @@ describe("parseDocument", () => {
       };
       invalidInput.shapes["rect-content"]!.content = 12345;
       expect(() => parseDocument(invalidInput)).toThrow(DocumentError);
+    });
+  });
+
+  describe("text shape validation", () => {
+    it("parses valid text shape with default placeholder content", () => {
+      const textShape = createText(
+        parseShapeId("text-1"),
+        { x: 100, y: 150, width: 120, height: 32 },
+        { parentId: parseShapeId("page-1") },
+      );
+      expect(textShape.kind).toBe("text");
+      expect(textShape.content).toBe("TEXT");
+
+      const doc = parseDocument(serialize([page, textShape]));
+      const parsed = doc.shapes[parseShapeId("text-1")];
+      expect(parsed?.kind).toBe("text");
+      expect(parsed?.content).toBe("TEXT");
+      expect(parsed?.boundingBox).toEqual({ x: 100, y: 150, width: 120, height: 32 });
+    });
+
+    it("parses text shape with custom content and styling", () => {
+      const textShape = createText(
+        parseShapeId("text-custom"),
+        { x: 50, y: 50, width: 200, height: 40 },
+        { parentId: parseShapeId("page-1"), content: "Custom Title", stroke: "#2563eb" },
+      );
+      expect(textShape.content).toBe("Custom Title");
+
+      const doc = parseDocument(serialize([page, textShape]));
+      const parsed = doc.shapes[parseShapeId("text-custom")];
+      expect(parsed?.content).toBe("Custom Title");
+      expect(parsed?.stroke).toBe("#2563eb");
     });
   });
 });

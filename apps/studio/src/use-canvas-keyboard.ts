@@ -243,6 +243,10 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
         chooseTool(TOOLS.drawPenPath);
         break;
       }
+      case ACTIONS.selectToolText: {
+        chooseTool(TOOLS.drawText);
+        break;
+      }
     }
   }
 

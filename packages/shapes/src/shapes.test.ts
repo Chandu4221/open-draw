@@ -14,6 +14,8 @@ import {
   RECT_CAPABILITIES,
   scaleLineEndpointsForBox,
   scalePenPathPointsForBox,
+  TEXT_CAPABILITIES,
+  hitTestText,
 } from "./index";
 
 describe("rect shape module", () => {
@@ -146,5 +148,21 @@ describe("pen-path shape module", () => {
   it("provides builtin capabilities mapping", () => {
     expect(BUILTIN_SHAPE_CAPABILITIES.rect).toBe(RECT_CAPABILITIES);
     expect(BUILTIN_SHAPE_CAPABILITIES["pen-path"]).toBe(PEN_PATH_CAPABILITIES);
+    expect(BUILTIN_SHAPE_CAPABILITIES.text).toBe(TEXT_CAPABILITIES);
+  });
+});
+
+describe("text shape module", () => {
+  it("declares resizable, movable, and textLabel capabilities", () => {
+    expect(TEXT_CAPABILITIES).toContain(CAPABILITIES.resizable);
+    expect(TEXT_CAPABILITIES).toContain(CAPABILITIES.movable);
+    expect(TEXT_CAPABILITIES).toContain(CAPABILITIES.textLabel);
+  });
+
+  it("hit-tests points inside and outside text bounding box", () => {
+    const box = { x: 50, y: 100, width: 120, height: 32 };
+    expect(hitTestText(box, { x: 60, y: 110 })).toBe(true);
+    expect(hitTestText(box, { x: 49, y: 110 })).toBe(false);
+    expect(hitTestText(box, { x: 60, y: 133 })).toBe(false);
   });
 });

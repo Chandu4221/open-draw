@@ -69,6 +69,14 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             onClick={() => chooseTool(TOOLS.drawPenPath)}
           />
         </OdTooltip>
+        <OdTooltip text="Text (T)">
+          <OdIconButton
+            name="text-tool"
+            aria-label="Add text (T)"
+            active={tool === TOOLS.drawText}
+            onClick={() => chooseTool(TOOLS.drawText)}
+          />
+        </OdTooltip>
       </div>
 
       <div className="od-divider" />

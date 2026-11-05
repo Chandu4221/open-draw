@@ -22,6 +22,7 @@ describe("icons registry", () => {
       "ellipse-tool",
       "line-tool",
       "pen-tool",
+      "text-tool",
       "board-tool",
       "save",
       "open",

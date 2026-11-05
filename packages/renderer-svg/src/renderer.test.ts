@@ -14,6 +14,7 @@ import {
   createPage,
   createPenPath,
   createRect,
+  createText,
   type Shape,
 } from "@open-draw/document";
 import {
@@ -431,5 +432,18 @@ describe("visible text on shapes (F2, ADR-0006 Option A / shape.content)", () =>
     const svg = documentToSvg(doc);
     expect(svg).not.toContain("<clipPath");
     expect(svg).not.toContain("<text");
+  });
+
+  it("renders standalone text shape with placeholder text and transparent background", () => {
+    const textId = parseShapeId("text-standalone");
+    const doc = createDocument([createText(textId, { x: 200, y: 100, width: 120, height: 32 })]);
+
+    const svg = documentToSvg(doc);
+    expect(svg.startsWith('<clipPath id="clip-text-standalone">')).toBe(true);
+    expect(svg).not.toContain('fill="#ffffff"');
+    expect(svg).toContain('<clipPath id="clip-text-standalone">');
+    expect(svg).toContain('x="260"'); // 200 + 120/2
+    expect(svg).toContain('y="116"'); // 100 + 32/2
+    expect(svg).toContain(">TEXT</text>");
   });
 });

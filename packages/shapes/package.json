@@ -8,7 +8,8 @@
     "./rect": "./src/rect/index.ts",
     "./ellipse": "./src/ellipse/index.ts",
     "./line": "./src/line/index.ts",
-    "./pen-path": "./src/pen-path/index.ts"
+    "./pen-path": "./src/pen-path/index.ts",
+    "./text": "./src/text/index.ts"
   },
   "scripts": {
     "lint": "eslint .",

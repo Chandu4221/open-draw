@@ -29,6 +29,7 @@ describe("resolveKeyBinding", () => {
     expect(resolveKeyBinding({ code: "KeyL" })).toBe(ACTIONS.selectToolLine);
     expect(resolveKeyBinding({ code: "KeyP" })).toBe(ACTIONS.selectToolPenPath);
     expect(resolveKeyBinding({ code: "KeyD" })).toBe(ACTIONS.selectToolPenPath);
+    expect(resolveKeyBinding({ code: "KeyT" })).toBe(ACTIONS.selectToolText);
   });
 
   it("resolves clipboard shortcuts (duplicate, copy, paste) when modifier is present (F5)", () => {
@@ -41,7 +42,7 @@ describe("resolveKeyBinding", () => {
   });
 
   it("returns undefined for unbound keys", () => {
-    expect(resolveKeyBinding({ code: "KeyT" })).toBeUndefined();
+    expect(resolveKeyBinding({ code: "KeyU" })).toBeUndefined();
     expect(resolveKeyBinding({ code: "KeyX" })).toBeUndefined();
   });
 });

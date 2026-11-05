@@ -68,6 +68,12 @@ describe("shape-kinds", () => {
     expect(SHAPE_KIND_VALUES.has("pen-path")).toBe(true);
   });
 
+  it("includes text in built-in shape kinds and labels", () => {
+    expect(SHAPE_KINDS.text).toBe("text");
+    expect(SHAPE_KIND_LABELS.text).toBe("Text");
+    expect(SHAPE_KIND_VALUES.has("text")).toBe(true);
+  });
+
   it("validates namespaced custom shape kinds", () => {
     expect(isValidCustomShapeKind("vendor:star")).toBe(true);
     expect(isValidCustomShapeKind("open-draw:cloud")).toBe(true);

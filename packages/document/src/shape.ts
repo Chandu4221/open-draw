@@ -104,13 +104,17 @@ export interface PenPathShape extends BaseShape {
   readonly points: readonly Point[];
 }
 
+export interface TextShape extends BaseShape {
+  readonly kind: (typeof SHAPE_KINDS)["text"];
+}
+
 export interface CustomShape extends BaseShape {
   readonly kind: CustomShapeKind;
   readonly customData?: Readonly<Record<string, unknown>>;
 }
 
 export type BuiltinShape =
-  PageShape | SectionShape | RectShape | EllipseShape | LineShape | PenPathShape;
+  PageShape | SectionShape | RectShape | EllipseShape | LineShape | PenPathShape | TextShape;
 
 export type Shape = BuiltinShape | CustomShape;
 
@@ -217,6 +221,16 @@ export function createPenPath(
     ...baseInit(id, SHAPE_KINDS.penPath, boundingBox, init),
     kind: SHAPE_KINDS.penPath,
     points: Object.freeze(points.map((p) => Object.freeze({ x: p.x, y: p.y }))),
+  });
+}
+
+export function createText(id: ShapeId, boundingBox: BoundingBox, init: ShapeInit = {}): TextShape {
+  return Object.freeze({
+    ...baseInit(id, SHAPE_KINDS.text, boundingBox, {
+      ...init,
+      content: init.content ?? "TEXT",
+    }),
+    kind: SHAPE_KINDS.text,
   });
 }
 
