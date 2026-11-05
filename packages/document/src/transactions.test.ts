@@ -70,7 +70,7 @@ describe("applyTransaction", () => {
     let history = recordHistory(EMPTY_HISTORY, removed.inverse);
     const undone = undo(removed.document, history);
     expect(undone?.document.shapes[parseShapeId("rect-1")]?.label).toBe("Button");
-    expect(undone?.document.shapes[parseShapeId("rect-1")]?.parent).toBe("section-1");
+    expect(undone?.document.shapes[parseShapeId("rect-1")]?.parentId).toBe("section-1");
 
     history = undone!.history;
     const redone = redo(undone!.document, history);
@@ -118,7 +118,7 @@ describe("applyTransaction", () => {
           {
             type: COMMANDS.reparentShape,
             id: parseShapeId("page-1"),
-            parent: parseShapeId("section-1"),
+            parentId: parseShapeId("section-1"),
             boundingBox: page.boundingBox,
           },
         ]),

@@ -73,7 +73,7 @@ export function serializeDocument(doc: Document): string {
     const shapeRecord: Record<string, unknown> = {
       id: shape.id,
       kind: shape.kind,
-      parent: shape.parent,
+      parentId: shape.parentId,
       boundingBox: {
         x: shape.boundingBox.x,
         y: shape.boundingBox.y,

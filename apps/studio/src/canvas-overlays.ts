@@ -109,14 +109,14 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
     let isInteractive = false;
     let isActive = false;
 
-    if (isRootId(shape.parent)) {
+    if (isRootId(shape.parentId)) {
       const platform = shape.meta.platform;
       chipLabel =
         platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : "Container";
       isInteractive = true;
       isActive = visibleChipRootIds?.has(shape.id) ?? false;
     } else if (shape.meta.semantic !== undefined) {
-      const root = ancestorsOf(doc, shape).find((a) => isRootId(a.parent));
+      const root = ancestorsOf(doc, shape).find((a) => isRootId(a.parentId));
       const isRootChipsVisible = root !== undefined && (visibleChipRootIds?.has(root.id) ?? false);
       const isSelected = activeSelectedIds.includes(shape.id);
 
@@ -152,7 +152,7 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
 
   // Render responsive device bar at top-right of web root containers (R-023, R-028, R-031)
   for (const shape of Object.values(doc.shapes)) {
-    if (isRootId(shape.parent) && shape.meta.platform === "web") {
+    if (isRootId(shape.parentId) && shape.meta.platform === "web") {
       let box = absoluteBoundingBox(doc, shape);
       const isShapeMoved =
         gesture !== null &&
@@ -175,7 +175,7 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
 
 export function pickAnyRootChip(doc: Document, world: Point, zoom: number): ShapeId | null {
   for (const shape of Object.values(doc.shapes)) {
-    if (isRootId(shape.parent)) {
+    if (isRootId(shape.parentId)) {
       const platform = shape.meta.platform;
       const chipLabel =
         platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : "Container";
@@ -194,7 +194,7 @@ export function pickAnyRootDeviceButton(
   zoom: number,
 ): RootDeviceItem | null {
   for (const shape of Object.values(doc.shapes)) {
-    if (isRootId(shape.parent) && shape.meta.platform === "web") {
+    if (isRootId(shape.parentId) && shape.meta.platform === "web") {
       const box = absoluteBoundingBox(doc, shape);
       const hit = pickRootDeviceButton(box, world, zoom);
       if (hit !== null) return hit;

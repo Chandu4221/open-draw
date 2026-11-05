@@ -73,7 +73,7 @@ export function applyDuplicateShapes(document: Document, command: DuplicateShape
   const clonedShapes: Shape[] = shapesToClone.map((shape): Shape => {
     const isTopLevel = topLevelSet.has(shape.id);
     const newId = idMap.get(shape.id)!;
-    const newParent = isTopLevel ? shape.parent : (idMap.get(shape.parent) ?? shape.parent);
+    const newParentId = isTopLevel ? shape.parentId : (idMap.get(shape.parentId) ?? shape.parentId);
     const newBoundingBox = isTopLevel
       ? {
           ...shape.boundingBox,
@@ -85,7 +85,7 @@ export function applyDuplicateShapes(document: Document, command: DuplicateShape
     return {
       ...shape,
       id: newId,
-      parent: newParent,
+      parentId: newParentId,
       boundingBox: newBoundingBox,
     };
   });

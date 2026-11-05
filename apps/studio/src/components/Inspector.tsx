@@ -107,7 +107,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
         <h2 className="od-panel-title">
           {!selectedShape
             ? "Inspector"
-            : isRootId(selectedShape.parent)
+            : isRootId(selectedShape.parentId)
               ? "Container Inspector"
               : "Shape Inspector"}
         </h2>
@@ -116,7 +116,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
         <div className="od-empty">
           <span>Select a shape to inspect</span>
         </div>
-      ) : isRootId(selectedShape.parent) ? (
+      ) : isRootId(selectedShape.parentId) ? (
         <ContainerInspector
           selectedShape={selectedShape}
           rootPlatform={rootPlatform}

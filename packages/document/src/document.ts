@@ -26,11 +26,11 @@ export const CONTAINER_KINDS: ReadonlySet<string> = new Set([
 
 function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
   for (const shape of Object.values(shapes)) {
-    if (isRootId(shape.parent)) {
+    if (isRootId(shape.parentId)) {
       continue;
     }
     const visited = new Set<ShapeId>([shape.id]);
-    let cursor = shape.parent;
+    let cursor = shape.parentId;
     let depth = 1;
     while (!isRootId(cursor)) {
       depth++;
@@ -48,15 +48,15 @@ function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
       if (parent === undefined) {
         throw new DocumentError("unknownParent", `unknown parent: ${cursor} (of ${shape.id})`);
       }
-      cursor = parent.parent;
+      cursor = parent.parentId;
     }
   }
   for (const shape of Object.values(shapes)) {
-    if (!isRootId(shape.parent)) {
-      const parentShape = shapes[shape.parent];
+    if (!isRootId(shape.parentId)) {
+      const parentShape = shapes[shape.parentId];
       const isValidContainer =
         parentShape !== undefined &&
-        (CONTAINER_KINDS.has(parentShape.kind) || isRootId(parentShape.parent));
+        (CONTAINER_KINDS.has(parentShape.kind) || isRootId(parentShape.parentId));
       if (!isValidContainer) {
         throw new DocumentError(
           "invalidShape",

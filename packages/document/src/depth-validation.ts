@@ -15,7 +15,11 @@ export function validateDocumentDepth(rawShapes: Record<string, unknown>): void 
       continue;
     }
     const path: string[] = [id];
-    let cursor: unknown = isRecord(entry) ? entry.parent : undefined;
+    let cursor: unknown = isRecord(entry)
+      ? entry.parentId !== undefined
+        ? entry.parentId
+        : entry.parent
+      : undefined;
     let pathDepth = 1;
 
     while (cursor !== undefined && cursor !== ROOT_ID) {
@@ -38,7 +42,11 @@ export function validateDocumentDepth(rawShapes: Record<string, unknown>): void 
         break;
       }
       const parentEntry = rawShapes[cursor];
-      cursor = isRecord(parentEntry) ? parentEntry.parent : undefined;
+      cursor = isRecord(parentEntry)
+        ? parentEntry.parentId !== undefined
+          ? parentEntry.parentId
+          : parentEntry.parent
+        : undefined;
     }
 
     if (pathDepth > MAX_DOCUMENT_DEPTH) {

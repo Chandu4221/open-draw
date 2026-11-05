@@ -134,7 +134,8 @@ function parseShape(value: unknown): Shape {
     throw new DocumentError("invalidShape", `shape id is invalid: ${(err as Error).message}`);
   }
   const kind = parseKind(value.kind);
-  const parent = parseParentId(value.parent);
+  const rawParent = value.parentId !== undefined ? value.parentId : value.parent;
+  const parentId = parseParentId(rawParent);
   const boundingBox = parseBoundingBox(value.boundingBox);
   if (value.label !== undefined && typeof value.label !== "string") {
     throw new DocumentError("invalidShape", "label must be a string when present");
@@ -154,12 +155,12 @@ function parseShape(value: unknown): Shape {
   if (value.strokeWidth !== undefined) {
     strokeWidth = parseStrokeWidth(value.strokeWidth);
   }
-  const isRootShape = isRootId(parent);
+  const isRootShape = isRootId(parentId);
   const meta = parseMeta(value.meta, isRootShape);
   const base = {
     id,
     kind,
-    parent,
+    parentId,
     boundingBox,
     ...(value.label === undefined ? {} : { label: value.label }),
     ...(value.content === undefined ? {} : { content: value.content }),

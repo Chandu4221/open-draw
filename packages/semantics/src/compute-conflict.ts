@@ -43,7 +43,7 @@ export function computeSemanticConflict(
     };
   }
 
-  if (!isRootId(shape.parent) && profile !== undefined && semantic.id === profile.rootSemantic) {
+  if (!isRootId(shape.parentId) && profile !== undefined && semantic.id === profile.rootSemantic) {
     return {
       status: SEMANTIC_CONFLICTS.conflicted,
       expectedPlatform: rootPlatform,

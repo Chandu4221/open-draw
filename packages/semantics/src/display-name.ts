@@ -21,7 +21,7 @@ export function resolveShapeDisplayName(shape: Shape, profile?: PlatformProfile)
   if (shape.label !== undefined && shape.label !== "") {
     return shape.label;
   }
-  if (isRootId(shape.parent)) {
+  if (isRootId(shape.parentId)) {
     if (shape.meta.role === ROOT_ROLES.component) {
       if (shape.meta.semantic !== undefined && profile !== undefined) {
         const definition = profile.semantics[shape.meta.semantic.id];

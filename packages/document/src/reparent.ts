@@ -52,7 +52,7 @@ export function isContainerShape(shape: Shape, doc?: Document): boolean {
     return false;
   }
   return (
-    CONTAINER_KINDS.has(shape.kind) || shape.meta.platform !== undefined || isRootId(shape.parent)
+    CONTAINER_KINDS.has(shape.kind) || shape.meta.platform !== undefined || isRootId(shape.parentId)
   );
 }
 

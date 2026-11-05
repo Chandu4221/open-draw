@@ -21,14 +21,14 @@ const section = createSection(
   { x: 0, y: 0, width: 1400, height: 120 },
   "row",
   {
-    parent: parseShapeId("page-1"),
+    parentId: parseShapeId("page-1"),
   },
 );
 const rect = createRect(
   parseShapeId("rect-1"),
   { x: 10, y: 10, width: 200, height: 80 },
   {
-    parent: parseShapeId("section-1"),
+    parentId: parseShapeId("section-1"),
     label: "Hero",
   },
 );
@@ -38,7 +38,7 @@ describe("parseDocument", () => {
     const document = parseDocument(serialize([page, section, rect]));
     expect(document.schema.version).toBe(1);
     expect(document.shapes[parseShapeId("rect-1")]?.label).toBe("Hero");
-    expect(document.shapes[parseShapeId("rect-1")]?.parent).toBe("section-1");
+    expect(document.shapes[parseShapeId("rect-1")]?.parentId).toBe("section-1");
   });
 
   it("rejects a schema with the wrong version", () => {
@@ -64,7 +64,8 @@ describe("parseDocument", () => {
     const input = serialize([page, section]) as {
       shapes: Record<string, Record<string, unknown>>;
     };
-    input.shapes["page-1"]!.parent = "section-1";
+    input.shapes["page-1"]!.parentId = "section-1";
+    delete input.shapes["page-1"]!.parent;
     expect(() => parseDocument(input)).toThrow(DocumentError);
   });
 
@@ -72,13 +73,13 @@ describe("parseDocument", () => {
     const ellipse = createEllipse(
       parseShapeId("ellipse-1"),
       { x: 10, y: 10, width: 50, height: 50 },
-      { parent: parseShapeId("section-1") },
+      { parentId: parseShapeId("section-1") },
     );
     const nested = createRect(
       parseShapeId("rect-2"),
       { x: 0, y: 0, width: 10, height: 10 },
       {
-        parent: parseShapeId("ellipse-1"),
+        parentId: parseShapeId("ellipse-1"),
       },
     );
     expect(() => parseDocument(serialize([page, section, ellipse, nested]))).toThrow(DocumentError);
@@ -89,11 +90,11 @@ describe("parseDocument", () => {
       parseShapeId("rect-2"),
       { x: 0, y: 0, width: 10, height: 10 },
       {
-        parent: parseShapeId("rect-1"),
+        parentId: parseShapeId("rect-1"),
       },
     );
     const doc = parseDocument(serialize([page, section, rect, nested]));
-    expect(doc.shapes[parseShapeId("rect-2")]?.parent).toBe("rect-1");
+    expect(doc.shapes[parseShapeId("rect-2")]?.parentId).toBe("rect-1");
   });
 
   it("accepts a root child that is not a page as a freestanding shape on canvas", () => {
@@ -101,12 +102,12 @@ describe("parseDocument", () => {
       parseShapeId("stray-1"),
       { x: 0, y: 0, width: 10, height: 10 },
       {
-        parent: ROOT_ID,
+        parentId: ROOT_ID,
       },
     );
     const doc = parseDocument(serialize([stray]));
     expect(doc.shapes[parseShapeId("stray-1")]?.kind).toBe("rect");
-    expect(doc.shapes[parseShapeId("stray-1")]?.parent).toBe(ROOT_ID);
+    expect(doc.shapes[parseShapeId("stray-1")]?.parentId).toBe(ROOT_ID);
   });
 
   it("rejects an unknown device type in meta", () => {
@@ -164,7 +165,7 @@ describe("parseDocument", () => {
       { parent: parseShapeId("root-rect-1") },
     );
     const document = parseDocument(serialize([rootRect, childRect]));
-    expect(document.shapes[parseShapeId("child-rect-1")]?.parent).toBe("root-rect-1");
+    expect(document.shapes[parseShapeId("child-rect-1")]?.parentId).toBe("root-rect-1");
   });
 
   it("rejects platform on non-root shapes (R-026)", () => {
@@ -321,7 +322,7 @@ describe("parseDocument", () => {
       const input = serialize(chain);
       const doc = parseDocument(input);
       expect(Object.keys(doc.shapes)).toHaveLength(256);
-      expect(doc.shapes[parseShapeId("shape-256")]?.parent).toBe("shape-255");
+      expect(doc.shapes[parseShapeId("shape-256")]?.parentId).toBe("shape-255");
       const serialized = serializeDocument(doc);
       const parsed = JSON.parse(serialized) as { shapes: Record<string, unknown> };
       expect(Object.keys(parsed.shapes)).toHaveLength(256);

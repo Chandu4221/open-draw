@@ -51,7 +51,7 @@ export interface ShapeMeta {
 export interface BaseShape {
   readonly id: ShapeId;
   readonly kind: ShapeKind;
-  readonly parent: ShapeId;
+  readonly parentId: ShapeId;
   readonly boundingBox: BoundingBox;
   readonly label?: string;
   readonly content?: string;
@@ -64,7 +64,7 @@ export interface BaseShape {
 export const BASE_SHAPE_KEYS = {
   id: "id",
   kind: "kind",
-  parent: "parent",
+  parentId: "parentId",
   boundingBox: "boundingBox",
   label: "label",
   content: "content",
@@ -119,6 +119,7 @@ export function isCustomShape(shape: Shape): shape is CustomShape {
 }
 
 export interface ShapeInit {
+  readonly parentId?: ShapeId;
   readonly parent?: ShapeId;
   readonly label?: string;
   readonly content?: string;
@@ -142,7 +143,7 @@ function baseInit(
   return {
     id,
     kind,
-    parent: init.parent ?? ROOT_ID,
+    parentId: init.parentId ?? init.parent ?? ROOT_ID,
     boundingBox,
     ...(init.label === undefined ? {} : { label: init.label }),
     ...(init.content === undefined ? {} : { content: init.content }),

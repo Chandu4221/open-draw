@@ -63,7 +63,7 @@ export function commitDragGesture(
     };
     const targetParentId = pickDropTarget(doc, center, [id]);
 
-    if (targetParentId !== shape.parent) {
+    if (targetParentId !== shape.parentId) {
       const newBoundingBox = computeReparentBoundingBox(
         doc,
         shape,
@@ -73,7 +73,7 @@ export function commitDragGesture(
       commands.push({
         type: COMMANDS.reparentShape,
         id,
-        parent: targetParentId,
+        parentId: targetParentId,
         boundingBox: newBoundingBox,
       });
     } else {
@@ -110,7 +110,7 @@ export function commitResizeGesture(
   if (shape === undefined) {
     return;
   }
-  const parentShape = doc.shapes[shape.parent];
+  const parentShape = doc.shapes[shape.parentId];
   const parentOrigin =
     parentShape === undefined ? { x: 0, y: 0 } : absoluteBoundingBox(doc, parentShape);
   const resized = resizeBox(gesture.originalBox, gesture.handleId, world);

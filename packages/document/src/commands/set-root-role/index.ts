@@ -19,7 +19,7 @@ export function applySetRootRole(document: Document, command: SetRootRole): Comm
   if (shape === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
   }
-  if (!isRootId(shape.parent)) {
+  if (!isRootId(shape.parentId)) {
     throw new DocumentError("invalidShape", "role may only be set on root shapes (R-026)");
   }
   if (command.role !== null && !isRootRole(command.role)) {
