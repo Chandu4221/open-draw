@@ -65,8 +65,19 @@ function PlaygroundApp() {
     setActiveDeviceType(deviceType);
     render();
   };
+  const [visibleChipRoots, setVisibleChipRoots] = useState<ReadonlySet<ShapeId>>(() => new Set());
+
   const handleToggleChildChips = (rootId: ShapeId): void => {
     canvasRef.current.toggleRootChipsVisible(rootId);
+    setVisibleChipRoots((prev) => {
+      const next = new Set(prev);
+      if (next.has(rootId)) {
+        next.delete(rootId);
+      } else {
+        next.add(rootId);
+      }
+      return next;
+    });
     render();
   };
   const handleZoom = (factor: number): void => {
@@ -228,9 +239,7 @@ function PlaygroundApp() {
           {...mutations}
           selectedShapeId={selectedShapeId}
           selectShape={selectShape}
-          showChildChips={
-            selectedShapeId ? canvasRef.current.isRootChipsVisible(selectedShapeId) : false
-          }
+          showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
           handleToggleChildChips={handleToggleChildChips}
         />
       )}
