@@ -23,7 +23,7 @@ import { renderCanvasSvg } from "./canvas-render";
 import { Sidebar } from "./components/Sidebar";
 import { CanvasDock } from "./components/CanvasDock";
 import { CanvasZoomControls } from "./components/CanvasZoomControls";
-import { ExportModal } from "./components/ExportModal";
+import { ExportModal, type ExportFormat } from "./components/ExportModal";
 import { useCanvasInteractions } from "./use-canvas-interactions";
 import { useCanvasKeyboard } from "./use-canvas-keyboard";
 import { useDocumentMutations } from "./use-document-mutations";
@@ -49,9 +49,9 @@ function PlaygroundApp() {
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
-  const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
+  const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
 
-  const handleOpenExportModal = (initial: "markdown" | "json" = "markdown") => {
+  const handleOpenExportModal = (initial: ExportFormat = "markdown") => {
     setExportInitialFormat(initial);
     setIsExportModalOpen(true);
   };
@@ -212,8 +212,6 @@ function PlaygroundApp() {
           handleDuplicate={toolbarActions.handleDuplicate}
           handleDelete={toolbarActions.handleDelete}
           handleLoad={toolbarActions.handleLoad}
-          handleExportSvg={toolbarActions.handleExportSvg}
-          handleExportPng={toolbarActions.handleExportPng}
           onOpenExportModal={() => handleOpenExportModal("markdown")}
         />
         <CanvasZoomControls

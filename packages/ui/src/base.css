@@ -216,9 +216,7 @@
   position: relative;
   display: inline-flex;
 }
-.od-tooltip-host[data-tooltip]:hover::after,
-.od-tooltip-host[data-tooltip]:focus-within::after,
-.od-tooltip-host[data-tooltip]:focus-visible::after {
+.od-tooltip-host[data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: absolute;
   top: 120%;
