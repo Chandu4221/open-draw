@@ -1,4 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@open-draw/contracts": ["../contracts/src/index.ts"],
+      "@open-draw/document": ["../document/src/index.ts"],
+      "@open-draw/input": ["../input/src/index.ts"],
+      "@open-draw/renderer-svg": ["../renderer-svg/src/index.ts"],
+      "@open-draw/shapes": ["../shapes/src/index.ts"]
+    }
+  },
   "include": ["src"]
 }

@@ -84,10 +84,11 @@ module.exports = {
     {
       name: "canvas-boundary",
       severity: "error",
-      comment: "@open-draw/canvas may only depend on contracts, document, input",
+      comment:
+        "@open-draw/canvas may only depend on contracts, document, input, shapes, renderer-svg (ADR-0008)",
       from: { path: "^packages/canvas/" },
       to: {
-        path: "^packages/(?!canvas/|contracts/|document/|input/)|^@open-draw/(?!contracts$|document$|input$)",
+        path: "^packages/(?!canvas/|contracts/|document/|input/|shapes/|renderer-svg/)|^@open-draw/(?!contracts$|document$|input$|shapes$|renderer-svg$)",
       },
     },
     {
