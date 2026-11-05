@@ -9,7 +9,7 @@ import type { Shape } from "./shape";
 // Sibling order: map insertion order by default; meta.order overrides per
 // device type (the derive pipeline consumes both — ADR-0002 D6).
 export function childrenOf(document: Document, parent: ShapeId): readonly Shape[] {
-  return Object.values(document.shapes).filter((shape) => shape.parent === parent);
+  return Object.values(document.shapes).filter((shape) => shape.parentId === parent);
 }
 
 // The shape and all its descendants, parent-first (breadth-first).
@@ -33,14 +33,14 @@ export function subtreeOf(document: Document, id: ShapeId): readonly Shape[] {
 // Ancestors from the immediate parent up to the root (exclusive).
 export function ancestorsOf(document: Document, shape: Shape): readonly Shape[] {
   const result: Shape[] = [];
-  let cursor = shape.parent;
+  let cursor = shape.parentId;
   while (cursor !== ROOT_ID) {
     const parent = document.shapes[cursor];
     if (parent === undefined) {
       throw new DocumentError("unknownParent", `broken parent chain at: ${cursor}`);
     }
     result.push(parent);
-    cursor = parent.parent;
+    cursor = parent.parentId;
   }
   return result;
 }

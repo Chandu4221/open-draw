@@ -47,4 +47,5 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = [
   { code: "KeyL", action: ACTIONS.selectToolLine },
   { code: "KeyP", action: ACTIONS.selectToolPenPath },
   { code: "KeyD", action: ACTIONS.selectToolPenPath },
+  { code: "KeyT", action: ACTIONS.selectToolText },
 ];

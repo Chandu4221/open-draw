@@ -8,6 +8,7 @@ export const TOOLS = {
   drawEllipse: "draw-ellipse",
   drawLine: "draw-line",
   drawPenPath: "draw-pen-path",
+  drawText: "draw-text",
 } as const;
 
 export type ToolId = (typeof TOOLS)[keyof typeof TOOLS];

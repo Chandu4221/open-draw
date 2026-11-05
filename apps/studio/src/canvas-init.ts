@@ -10,6 +10,8 @@ import {
   LINE_CAPABILITIES,
   PEN_PATH_CAPABILITIES,
   RECT_CAPABILITIES,
+  TEXT_CAPABILITIES,
+  hitTestText,
 } from "@open-draw/shapes";
 
 export function initCanvas(): CanvasController {
@@ -40,6 +42,11 @@ export function initCanvas(): CanvasController {
           const pen = shape as PenPathShape;
           return hitTestPenPath(box, pen.points, pt);
         },
+      },
+      {
+        kind: SHAPE_KINDS.text,
+        capabilities: TEXT_CAPABILITIES,
+        hitTest: (box, _shape, pt) => hitTestText(box, pt),
       },
     ],
   });

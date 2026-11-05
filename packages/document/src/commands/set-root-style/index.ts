@@ -19,7 +19,7 @@ export function applySetRootStyle(document: Document, command: SetRootStyle): Co
   if (shape === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
   }
-  if (!isRootId(shape.parent)) {
+  if (!isRootId(shape.parentId)) {
     throw new DocumentError("invalidShape", "style may only be set on root shapes (R-026)");
   }
 

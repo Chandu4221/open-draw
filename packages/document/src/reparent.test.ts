@@ -163,14 +163,14 @@ describe("reparent helpers and N-level deep hierarchies", () => {
           {
             type: COMMANDS.reparentShape,
             id: freeRectId,
-            parent: cardId,
+            parentId: cardId,
             boundingBox: cardLocalBox,
           },
         ]),
       );
 
       const reparented1 = step1.document.shapes[freeRectId]!;
-      expect(reparented1.parent).toBe(cardId);
+      expect(reparented1.parentId).toBe(cardId);
       expect(absoluteBoundingBox(step1.document, reparented1)).toEqual(newWorldBox);
 
       // Verify ancestry
@@ -192,14 +192,14 @@ describe("reparent helpers and N-level deep hierarchies", () => {
           {
             type: COMMANDS.reparentShape,
             id: freeRectId,
-            parent: ROOT_ID,
+            parentId: ROOT_ID,
             boundingBox: rootLocalBox,
           },
         ]),
       );
 
       const reparented2 = step2.document.shapes[freeRectId]!;
-      expect(reparented2.parent).toBe(ROOT_ID);
+      expect(reparented2.parentId).toBe(ROOT_ID);
       expect(absoluteBoundingBox(step2.document, reparented2)).toEqual(exitWorldBox);
 
       // 3. Test Undo
@@ -207,13 +207,13 @@ describe("reparent helpers and N-level deep hierarchies", () => {
       history = recordHistory(history, step2.inverse);
 
       const undo1 = undo(step2.document, history);
-      expect(undo1?.document.shapes[freeRectId]?.parent).toBe(cardId);
+      expect(undo1?.document.shapes[freeRectId]?.parentId).toBe(cardId);
       expect(absoluteBoundingBox(undo1!.document, undo1!.document.shapes[freeRectId]!)).toEqual(
         newWorldBox,
       );
 
       const undo2 = undo(undo1!.document, undo1!.history);
-      expect(undo2?.document.shapes[freeRectId]?.parent).toBe(ROOT_ID);
+      expect(undo2?.document.shapes[freeRectId]?.parentId).toBe(ROOT_ID);
       expect(absoluteBoundingBox(undo2!.document, undo2!.document.shapes[freeRectId]!)).toEqual(
         initialWorldBox,
       );

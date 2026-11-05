@@ -12,7 +12,8 @@ import { COMMANDS } from "../registry";
 export interface ReparentShape {
   readonly type: (typeof COMMANDS)["reparentShape"];
   readonly id: ShapeId;
-  readonly parent: ShapeId;
+  readonly parentId: ShapeId;
+  readonly parent?: ShapeId;
   readonly boundingBox: BoundingBox;
 }
 
@@ -21,16 +22,17 @@ export function applyReparentShape(document: Document, command: ReparentShape): 
   if (shape === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
   }
-  const previousParent = shape.parent;
+  const previousParentId = shape.parentId;
   const previousBoundingBox = shape.boundingBox;
-  const moved = { ...shape, parent: command.parent, boundingBox: command.boundingBox };
+  const targetParentId = command.parentId ?? command.parent!;
+  const moved = { ...shape, parentId: targetParentId, boundingBox: command.boundingBox };
   const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
   const next = createDocument([...others, moved]);
   const inverse: readonly Command[] = [
     {
       type: COMMANDS.reparentShape,
       id: command.id,
-      parent: previousParent,
+      parentId: previousParentId,
       boundingBox: previousBoundingBox,
     },
   ];

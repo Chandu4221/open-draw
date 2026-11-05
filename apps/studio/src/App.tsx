@@ -23,7 +23,7 @@ import { renderCanvasSvg } from "./canvas-render";
 import { Sidebar } from "./components/Sidebar";
 import { CanvasDock } from "./components/CanvasDock";
 import { CanvasZoomControls } from "./components/CanvasZoomControls";
-import { ExportModal } from "./components/ExportModal";
+import { ExportModal, type ExportFormat } from "./components/ExportModal";
 import { useCanvasInteractions } from "./use-canvas-interactions";
 import { useCanvasKeyboard } from "./use-canvas-keyboard";
 import { useDocumentMutations } from "./use-document-mutations";
@@ -49,9 +49,9 @@ function StudioShell() {
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
-  const [exportInitialFormat, setExportInitialFormat] = useState<"markdown" | "json">("markdown");
+  const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
 
-  const handleOpenExportModal = (initial: "markdown" | "json" = "markdown") => {
+  const handleOpenExportModal = (initial: ExportFormat = "markdown") => {
     setExportInitialFormat(initial);
     setIsExportModalOpen(true);
   };
@@ -65,8 +65,19 @@ function StudioShell() {
     setActiveDeviceType(deviceType);
     render();
   };
+  const [visibleChipRoots, setVisibleChipRoots] = useState<ReadonlySet<ShapeId>>(() => new Set());
+
   const handleToggleChildChips = (rootId: ShapeId): void => {
     canvasRef.current.toggleRootChipsVisible(rootId);
+    setVisibleChipRoots((prev) => {
+      const next = new Set(prev);
+      if (next.has(rootId)) {
+        next.delete(rootId);
+      } else {
+        next.add(rootId);
+      }
+      return next;
+    });
     render();
   };
   const handleZoom = (factor: number): void => {
@@ -212,8 +223,6 @@ function StudioShell() {
           handleDuplicate={toolbarActions.handleDuplicate}
           handleDelete={toolbarActions.handleDelete}
           handleLoad={toolbarActions.handleLoad}
-          handleExportSvg={toolbarActions.handleExportSvg}
-          handleExportPng={toolbarActions.handleExportPng}
           onOpenExportModal={() => handleOpenExportModal("markdown")}
         />
         <CanvasZoomControls
@@ -230,9 +239,7 @@ function StudioShell() {
           {...mutations}
           selectedShapeId={selectedShapeId}
           selectShape={selectShape}
-          showChildChips={
-            selectedShapeId ? canvasRef.current.isRootChipsVisible(selectedShapeId) : false
-          }
+          showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
           handleToggleChildChips={handleToggleChildChips}
         />
       )}

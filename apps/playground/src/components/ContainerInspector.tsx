@@ -149,23 +149,19 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
 
       {handleToggleChildChips && (
         <OdField label="Semantic Chips" htmlFor="container-show-chips">
-          <label
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "var(--od-8)",
-              cursor: "pointer",
-              fontSize: "var(--od-text-xs)",
-              color: "var(--od-text-secondary)",
-            }}
-          >
+          <label className="od-switch">
             <input
               id="container-show-chips"
               type="checkbox"
+              role="switch"
+              aria-checked={showChildChips ?? false}
               checked={showChildChips ?? false}
               onChange={() => handleToggleChildChips(selectedShape.id)}
             />
-            Show tags on child components
+            <span className="od-switch__track" aria-hidden="true">
+              <span className="od-switch__thumb" />
+            </span>
+            <span>Show tags on child components</span>
           </label>
         </OdField>
       )}

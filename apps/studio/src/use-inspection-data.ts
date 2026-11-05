@@ -45,7 +45,7 @@ export function useInspectionData(
   const selectedShape = selectedShapeId !== null ? doc.shapes[selectedShapeId] : undefined;
   const rootShape = selectedShape
     ? resolveRootShape(doc, selectedShape.id)
-    : Object.values(doc.shapes).find((s) => isRootId(s.parent) && s.meta.platform !== undefined);
+    : Object.values(doc.shapes).find((s) => isRootId(s.parentId) && s.meta.platform !== undefined);
   const rootPlatform = rootShape ? resolveRootPlatform(doc, rootShape.id) : undefined;
   const rootStyle = rootShape ? resolveRootStyle(doc, rootShape.id) : STYLE_PROFILES.minimal;
   const rootDesignStyle = rootShape ? resolveRootDesignStyle(doc, rootShape.id) : undefined;

@@ -1,6 +1,6 @@
 import React from "react";
 import { TOOLS, type ToolId } from "@open-draw/canvas";
-import { OdIconButton, OdTooltip } from "@open-draw/ui";
+import { OdButton, OdIcon, OdIconButton, OdTooltip } from "@open-draw/ui";
 
 export interface CanvasDockProps {
   readonly tool: ToolId;
@@ -10,8 +10,6 @@ export interface CanvasDockProps {
   readonly handleDuplicate?: () => void;
   readonly handleDelete?: () => void;
   readonly handleLoad?: () => void;
-  readonly handleExportSvg?: () => void;
-  readonly handleExportPng?: () => void;
   readonly onOpenExportModal: () => void;
 }
 
@@ -24,8 +22,6 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
     handleDuplicate,
     handleDelete,
     handleLoad,
-    handleExportSvg,
-    handleExportPng,
     onOpenExportModal,
   } = props;
 
@@ -73,6 +69,14 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             onClick={() => chooseTool(TOOLS.drawPenPath)}
           />
         </OdTooltip>
+        <OdTooltip text="Text (T)">
+          <OdIconButton
+            name="text-tool"
+            aria-label="Add text (T)"
+            active={tool === TOOLS.drawText}
+            onClick={() => chooseTool(TOOLS.drawText)}
+          />
+        </OdTooltip>
       </div>
 
       <div className="od-divider" />
@@ -110,45 +114,24 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />
           </OdTooltip>
         )}
-        {handleExportSvg && (
-          <OdTooltip text="Save SVG">
-            <OdIconButton aria-label="Save SVG" ghost onClick={handleExportSvg}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                SVG
-              </span>
-            </OdIconButton>
-          </OdTooltip>
-        )}
-        {handleExportPng && (
-          <OdTooltip text="Save PNG">
-            <OdIconButton aria-label="Save PNG" ghost onClick={handleExportPng}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                PNG
-              </span>
-            </OdIconButton>
-          </OdTooltip>
-        )}
-        <OdTooltip text="Save / Export wireframe">
-          <OdIconButton
-            name="save"
-            aria-label="Save or export wireframe"
-            ghost
+        <OdTooltip text="Export wireframe">
+          <OdButton
+            variant="ghost"
             onClick={onOpenExportModal}
-          />
+            aria-label="Export wireframe"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "var(--od-4)",
+              padding: "0 var(--od-8)",
+              height: "var(--od-control-height)",
+              fontSize: "var(--od-text-xs)",
+              fontWeight: 600,
+            }}
+          >
+            <OdIcon name="export" size={16} />
+            <span>Export</span>
+          </OdButton>
         </OdTooltip>
       </div>
     </div>

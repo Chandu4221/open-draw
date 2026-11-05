@@ -11,6 +11,7 @@ import { SELECT_TOOL_ELLIPSE } from "./select-tool-ellipse";
 import { SELECT_TOOL_LINE } from "./select-tool-line";
 import { SELECT_TOOL_PEN_PATH } from "./select-tool-pen-path";
 import { SELECT_TOOL_RECT } from "./select-tool-rect";
+import { SELECT_TOOL_TEXT } from "./select-tool-text";
 import { UNDO } from "./undo";
 
 export const ACTIONS = {
@@ -26,6 +27,7 @@ export const ACTIONS = {
   selectToolEllipse: SELECT_TOOL_ELLIPSE,
   selectToolLine: SELECT_TOOL_LINE,
   selectToolPenPath: SELECT_TOOL_PEN_PATH,
+  selectToolText: SELECT_TOOL_TEXT,
 } as const;
 
 export type ActionId = (typeof ACTIONS)[keyof typeof ACTIONS];

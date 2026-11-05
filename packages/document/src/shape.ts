@@ -51,7 +51,7 @@ export interface ShapeMeta {
 export interface BaseShape {
   readonly id: ShapeId;
   readonly kind: ShapeKind;
-  readonly parent: ShapeId;
+  readonly parentId: ShapeId;
   readonly boundingBox: BoundingBox;
   readonly label?: string;
   readonly content?: string;
@@ -64,7 +64,7 @@ export interface BaseShape {
 export const BASE_SHAPE_KEYS = {
   id: "id",
   kind: "kind",
-  parent: "parent",
+  parentId: "parentId",
   boundingBox: "boundingBox",
   label: "label",
   content: "content",
@@ -104,13 +104,17 @@ export interface PenPathShape extends BaseShape {
   readonly points: readonly Point[];
 }
 
+export interface TextShape extends BaseShape {
+  readonly kind: (typeof SHAPE_KINDS)["text"];
+}
+
 export interface CustomShape extends BaseShape {
   readonly kind: CustomShapeKind;
   readonly customData?: Readonly<Record<string, unknown>>;
 }
 
 export type BuiltinShape =
-  PageShape | SectionShape | RectShape | EllipseShape | LineShape | PenPathShape;
+  PageShape | SectionShape | RectShape | EllipseShape | LineShape | PenPathShape | TextShape;
 
 export type Shape = BuiltinShape | CustomShape;
 
@@ -119,6 +123,7 @@ export function isCustomShape(shape: Shape): shape is CustomShape {
 }
 
 export interface ShapeInit {
+  readonly parentId?: ShapeId;
   readonly parent?: ShapeId;
   readonly label?: string;
   readonly content?: string;
@@ -142,7 +147,7 @@ function baseInit(
   return {
     id,
     kind,
-    parent: init.parent ?? ROOT_ID,
+    parentId: init.parentId ?? init.parent ?? ROOT_ID,
     boundingBox,
     ...(init.label === undefined ? {} : { label: init.label }),
     ...(init.content === undefined ? {} : { content: init.content }),
@@ -216,6 +221,16 @@ export function createPenPath(
     ...baseInit(id, SHAPE_KINDS.penPath, boundingBox, init),
     kind: SHAPE_KINDS.penPath,
     points: Object.freeze(points.map((p) => Object.freeze({ x: p.x, y: p.y }))),
+  });
+}
+
+export function createText(id: ShapeId, boundingBox: BoundingBox, init: ShapeInit = {}): TextShape {
+  return Object.freeze({
+    ...baseInit(id, SHAPE_KINDS.text, boundingBox, {
+      ...init,
+      content: init.content ?? "TEXT",
+    }),
+    kind: SHAPE_KINDS.text,
   });
 }
 

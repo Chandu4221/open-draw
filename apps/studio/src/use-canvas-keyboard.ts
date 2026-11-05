@@ -163,7 +163,7 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
         const clipboard = clipboardRef.current;
         if (clipboard !== null && clipboard.length > 0) {
           const clipboardIdSet = new Set(clipboard.map((s) => s.id));
-          const topLevelCopied = clipboard.filter((s) => !clipboardIdSet.has(s.parent));
+          const topLevelCopied = clipboard.filter((s) => !clipboardIdSet.has(s.parentId));
           if (topLevelCopied.length === 0) break;
 
           const idMap = new Map<ShapeId, ShapeId>();
@@ -172,15 +172,16 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
           }
 
           const clonedShapes: Shape[] = clipboard.map((shape): Shape => {
-            const isTopLevel = !clipboardIdSet.has(shape.parent);
+            const isTopLevel = !clipboardIdSet.has(shape.parentId);
             const newId = idMap.get(shape.id)!;
             const parentExists =
-              shape.parent === ROOT_ID || documentRef.current.shapes[shape.parent] !== undefined;
-            const newParent = isTopLevel
+              shape.parentId === ROOT_ID ||
+              documentRef.current.shapes[shape.parentId] !== undefined;
+            const newParentId = isTopLevel
               ? parentExists
-                ? shape.parent
+                ? shape.parentId
                 : ROOT_ID
-              : (idMap.get(shape.parent) ?? ROOT_ID);
+              : (idMap.get(shape.parentId) ?? ROOT_ID);
             const newBoundingBox = isTopLevel
               ? { ...shape.boundingBox, x: shape.boundingBox.x + 20, y: shape.boundingBox.y + 20 }
               : shape.boundingBox;
@@ -188,14 +189,14 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
             return {
               ...shape,
               id: newId,
-              parent: newParent,
+              parentId: newParentId,
               boundingBox: newBoundingBox,
             };
           });
 
           // Offset clipboard shapes so successive pastes don't overlap exactly
           clipboardRef.current = clipboard.map((shape) => {
-            if (!clipboardIdSet.has(shape.parent)) {
+            if (!clipboardIdSet.has(shape.parentId)) {
               return {
                 ...shape,
                 boundingBox: {
@@ -240,6 +241,10 @@ export function useCanvasKeyboard(props: CanvasKeyboardProps): void {
       }
       case ACTIONS.selectToolPenPath: {
         chooseTool(TOOLS.drawPenPath);
+        break;
+      }
+      case ACTIONS.selectToolText: {
+        chooseTool(TOOLS.drawText);
         break;
       }
     }

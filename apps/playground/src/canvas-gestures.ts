@@ -15,6 +15,7 @@ import {
   createLine,
   createPenPath,
   createRect,
+  createText,
   pickDropTarget,
   pruneSelectedDescendants,
   type Command,
@@ -63,7 +64,7 @@ export function commitDragGesture(
     };
     const targetParentId = pickDropTarget(doc, center, [id]);
 
-    if (targetParentId !== shape.parent) {
+    if (targetParentId !== shape.parentId) {
       const newBoundingBox = computeReparentBoundingBox(
         doc,
         shape,
@@ -73,7 +74,7 @@ export function commitDragGesture(
       commands.push({
         type: COMMANDS.reparentShape,
         id,
-        parent: targetParentId,
+        parentId: targetParentId,
         boundingBox: newBoundingBox,
       });
     } else {
@@ -110,7 +111,7 @@ export function commitResizeGesture(
   if (shape === undefined) {
     return;
   }
-  const parentShape = doc.shapes[shape.parent];
+  const parentShape = doc.shapes[shape.parentId];
   const parentOrigin =
     parentShape === undefined ? { x: 0, y: 0 } : absoluteBoundingBox(doc, parentShape);
   const resized = resizeBox(gesture.originalBox, gesture.handleId, world);
@@ -189,6 +190,40 @@ export function commitDrawGesture(
     const pen = createPenPath(nextShapeId(), boundingBox, points, { parent: ROOT_ID });
     commit([{ type: COMMANDS.createShape, shape: pen }]);
     canvas.select(pen.id);
+    return;
+  }
+
+  if (tool === TOOLS.drawText) {
+    const defaultWidth = 100;
+    const defaultHeight = 32;
+    const box = normalizeBox(gesture.startWorld, world);
+    const textWidth = box.width > 10 ? box.width : defaultWidth;
+    const textHeight = box.height > 10 ? box.height : defaultHeight;
+    const localBox: BoundingBox = {
+      x: box.x,
+      y: box.y,
+      width: textWidth,
+      height: textHeight,
+    };
+    if (targetParent !== undefined) {
+      const parentBox = absoluteBoundingBox(doc, targetParent);
+      const textShape = createText(
+        nextShapeId(),
+        {
+          x: localBox.x - parentBox.x,
+          y: localBox.y - parentBox.y,
+          width: localBox.width,
+          height: localBox.height,
+        },
+        { parentId: targetParent.id },
+      );
+      commit([{ type: COMMANDS.createShape, shape: textShape }]);
+      canvas.select(textShape.id);
+      return;
+    }
+    const textShape = createText(nextShapeId(), localBox, { parentId: ROOT_ID });
+    commit([{ type: COMMANDS.createShape, shape: textShape }]);
+    canvas.select(textShape.id);
     return;
   }
 

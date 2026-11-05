@@ -68,7 +68,7 @@ describe("DuplicateShapes command (F5, ADR-0006 Option A)", () => {
 
     const dup = shapes.find((s) => s.id !== pageId && s.id !== sectionId && s.id !== rectId);
     expect(dup).toBeDefined();
-    expect(dup?.parent).toBe(sectionId);
+    expect(dup?.parentId).toBe(sectionId);
     expect(dup?.kind).toBe("rect");
     expect(dup?.boundingBox).toEqual({ x: 30, y: 40, width: 100, height: 50 });
     expect(dup?.label).toBe("MyButton");
@@ -109,13 +109,13 @@ describe("DuplicateShapes command (F5, ADR-0006 Option A)", () => {
     const newSections = shapes.filter((s) => s.kind === "section" && s.id !== sectionId);
     expect(newSections.length).toBe(1);
     const newSection = newSections[0]!;
-    expect(newSection.parent).toBe(newPage.id);
+    expect(newSection.parentId).toBe(newPage.id);
     expect(newSection.boundingBox).toEqual({ x: 50, y: 50, width: 300, height: 200 });
 
     const newRects = shapes.filter((s) => s.kind === "rect" && s.id !== rectId);
     expect(newRects.length).toBe(1);
     const newRect = newRects[0]!;
-    expect(newRect.parent).toBe(newSection.id);
+    expect(newRect.parentId).toBe(newSection.id);
     expect(newRect.boundingBox).toEqual({ x: 10, y: 10, width: 100, height: 50 });
 
     expect(() => parseDocument(serializeDocument(result.document))).not.toThrow();

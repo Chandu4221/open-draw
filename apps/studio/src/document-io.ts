@@ -27,9 +27,13 @@ export function extractDocumentLegendItems(doc: Document): readonly LegendItem[]
   return items;
 }
 
-export function exportDocumentSvg(doc: Document, includeLegend: boolean): void {
+export function generateExportSvg(doc: Document, includeLegend: boolean): string {
   const legendItems = includeLegend ? extractDocumentLegendItems(doc) : [];
-  const svg = documentToSvgWithLegend(doc, { legendItems });
+  return documentToSvgWithLegend(doc, { legendItems });
+}
+
+export function exportDocumentSvg(doc: Document, includeLegend: boolean): void {
+  const svg = generateExportSvg(doc, includeLegend);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -44,8 +48,7 @@ export function exportDocumentPng(
   includeLegend: boolean,
   onError?: (err: unknown) => void,
 ): void {
-  const legendItems = includeLegend ? extractDocumentLegendItems(doc) : [];
-  const svg = documentToSvgWithLegend(doc, { legendItems });
+  const svg = generateExportSvg(doc, includeLegend);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const img = new Image();
@@ -82,6 +85,50 @@ export function exportDocumentPng(
     onError?.(err);
   };
   img.src = url;
+}
+
+export async function copyDocumentPng(doc: Document, includeLegend: boolean): Promise<void> {
+  const svg = generateExportSvg(doc, includeLegend);
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  return new Promise<void>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          reject(new Error("Unable to create canvas 2D context"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(async (pngBlob) => {
+          if (!pngBlob) {
+            reject(new Error("Unable to generate PNG blob"));
+            return;
+          }
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        }, "image/png");
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        reject(err);
+      }
+    };
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url);
+      reject(err);
+    };
+    img.src = url;
+  });
 }
 
 export function generateExportJson(

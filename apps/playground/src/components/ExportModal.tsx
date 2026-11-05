@@ -1,23 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { Document } from "@open-draw/document";
-import {
-  type CreativityLevel,
-  CREATIVITY_LEVEL_DEFINITIONS,
-  DEFAULT_CREATIVITY_LEVEL,
-} from "@open-draw/contracts";
+import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/contracts";
 import { OdButton, OdIcon, OdIconButton, OdSegmentedControl } from "@open-draw/ui";
 import {
+  copyDocumentPng,
   exportDocumentJson,
   exportDocumentMarkdown,
+  exportDocumentPng,
+  exportDocumentSvg,
   generateExportJson,
   generateExportMarkdown,
+  generateExportSvg,
 } from "../document-io";
+import { AiCreativityMeter } from "./AiCreativityMeter";
+
+export type ExportFormat = "markdown" | "json" | "svg" | "png";
 
 export interface ExportModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly doc: Document;
-  readonly initialFormat?: "markdown" | "json" | undefined;
+  readonly initialFormat?: ExportFormat | undefined;
   readonly includeLegend?: boolean;
   readonly setIncludeLegend?: (include: boolean) => void;
 }
@@ -25,7 +28,42 @@ export interface ExportModalProps {
 const FORMAT_OPTIONS = [
   { id: "markdown", label: "Markdown (.md)" },
   { id: "json", label: "JSON (.json)" },
+  { id: "svg", label: "SVG (.svg)" },
+  { id: "png", label: "PNG (.png)" },
 ] as const;
+
+const HIDDEN_STYLE: React.CSSProperties = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  padding: 0,
+  margin: "-1px",
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
+
+const PNG_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "var(--od-bg)",
+  border: "var(--od-border-width) solid var(--od-border)",
+  borderRadius: "var(--od-radius-sm)",
+  padding: "var(--od-16)",
+  maxHeight: "260px",
+  overflow: "auto",
+};
+
+const LEGEND_LABEL_STYLE: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "var(--od-4)",
+  cursor: "pointer",
+  fontSize: "var(--od-text-xs)",
+  color: "var(--od-text-secondary)",
+};
 
 function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   const {
@@ -35,7 +73,7 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
     includeLegend = true,
     setIncludeLegend,
   } = props;
-  const [format, setFormat] = useState<"markdown" | "json">(initialFormat);
+  const [format, setFormat] = useState<ExportFormat>(initialFormat);
   const [creativityLevel, setCreativityLevel] = useState<CreativityLevel>(DEFAULT_CREATIVITY_LEVEL);
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -48,23 +86,29 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   }, [onClose]);
 
   const preview = useMemo(() => {
-    return format === "markdown"
-      ? generateExportMarkdown(doc, creativityLevel)
-      : generateExportJson(doc, creativityLevel);
-  }, [doc, format, creativityLevel]);
+    if (format === "markdown") return generateExportMarkdown(doc, creativityLevel);
+    if (format === "json") return generateExportJson(doc, creativityLevel);
+    return generateExportSvg(doc, includeLegend);
+  }, [doc, format, creativityLevel, includeLegend]);
 
-  const currentDef = CREATIVITY_LEVEL_DEFINITIONS[creativityLevel];
+  const svgDataUrl = useMemo(
+    () => (format === "png" ? `data:image/svg+xml;utf8,${encodeURIComponent(preview)}` : ""),
+    [format, preview],
+  );
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(preview);
+      if (format === "png") await copyDocumentPng(doc, includeLegend);
+      else await navigator.clipboard.writeText(preview);
     } catch {
-      const textArea = document.createElement("textarea");
-      textArea.value = preview;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
+      if (format !== "png") {
+        const ta = document.createElement("textarea");
+        ta.value = preview;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -72,20 +116,10 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
 
   const handleDownload = () => {
     if (format === "markdown") exportDocumentMarkdown(doc, creativityLevel);
-    else exportDocumentJson(doc, creativityLevel);
+    else if (format === "json") exportDocumentJson(doc, creativityLevel);
+    else if (format === "svg") exportDocumentSvg(doc, includeLegend);
+    else exportDocumentPng(doc, includeLegend);
   };
-  const handleMeterKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-      e.preventDefault();
-      setCreativityLevel((prev) => Math.max(1, prev - 1) as CreativityLevel);
-    } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-      e.preventDefault();
-      setCreativityLevel((prev) => Math.min(5, prev + 1) as CreativityLevel);
-    }
-  };
-
-  const lineCount = preview.split("\n").length;
-  const charCount = preview.length;
 
   return (
     <div
@@ -98,33 +132,19 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
       aria-labelledby="od-export-modal-title"
     >
       <div className="od-modal">
-        {/* Header */}
         <div className="od-modal__header">
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <h2 id="od-export-modal-title" className="od-panel-title">
-              Export Wireframe
-            </h2>
-          </div>
+          <h2 id="od-export-modal-title" className="od-panel-title">
+            Export Wireframe
+          </h2>
           <OdIconButton name="close" aria-label="Close export modal" ghost onClick={onClose} />
         </div>
 
-        {/* Body */}
         <div className="od-modal__body">
-          {/* Format Selector */}
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="od-section-header">Export Format</span>
               {setIncludeLegend && (
-                <label
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "var(--od-4)",
-                    cursor: "pointer",
-                    fontSize: "var(--od-text-xs)",
-                    color: "var(--od-text-secondary)",
-                  }}
-                >
+                <label style={LEGEND_LABEL_STYLE}>
                   <input
                     type="checkbox"
                     checked={includeLegend}
@@ -138,143 +158,68 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
               items={FORMAT_OPTIONS}
               value={format}
               aria-label="Export format"
-              onSelect={(val) => setFormat(val as "markdown" | "json")}
+              onSelect={(val) => setFormat(val as ExportFormat)}
             />
           </div>
 
-          {/* Creativity Meter */}
+          {(format === "markdown" || format === "json") && (
+            <AiCreativityMeter
+              creativityLevel={creativityLevel}
+              setCreativityLevel={setCreativityLevel}
+            />
+          )}
+
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
             <div
               style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}
             >
-              <span className="od-section-header">AI Creativity Meter</span>
-              <span className="od-meta">Defines AI implementation freedom</span>
-            </div>
-
-            {/* Contiguous Pill Meter */}
-            <div
-              className="od-meter-track"
-              role="radiogroup"
-              aria-label="AI Creativity Level"
-              onKeyDown={handleMeterKeyDown}
-            >
-              {([1, 2, 3, 4, 5] as const).map((level) => {
-                const def = CREATIVITY_LEVEL_DEFINITIONS[level];
-                const isActive = creativityLevel === level;
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    role="radio"
-                    aria-checked={isActive}
-                    tabIndex={isActive ? 0 : -1}
-                    onClick={() => setCreativityLevel(level)}
-                    className={`od-meter-segment${isActive ? " od-meter-segment--active" : ""}`}
-                    aria-label={`Level ${level} ${def.name}: ${def.description}`}
-                  >
-                    <span className="od-meter-segment__title">{def.name}</span>
-                    <span className="od-meter-segment__level">Level {level}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Indicator Pointer Row */}
-            <div className="od-meter-pointer-row" aria-hidden="true">
-              {([1, 2, 3, 4, 5] as const).map((level) => (
-                <div key={level} className="od-meter-pointer-col">
-                  {creativityLevel === level && <div className="od-meter-pointer-arrow" />}
-                </div>
-              ))}
-            </div>
-
-            {/* Level Description Card */}
-            <div
-              style={{
-                backgroundColor: "var(--od-bg)",
-                border: "var(--od-border-width) solid var(--od-border)",
-                borderRadius: "var(--od-radius-sm)",
-                padding: "var(--od-12) var(--od-16)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--od-4)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-                <span
-                  style={{
-                    fontSize: "var(--od-text-xs)",
-                    fontWeight: 600,
-                    color: "var(--od-text)",
-                  }}
-                >
-                  Level {currentDef.level} — {currentDef.name}
-                  {currentDef.level === DEFAULT_CREATIVITY_LEVEL ? " (Default)" : ""}
-                </span>
-              </div>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "var(--od-text-xs)",
-                  color: "var(--od-text-secondary)",
-                  lineHeight: 1.5,
-                }}
-              >
-                {currentDef.description}
-              </p>
-            </div>
-          </div>
-
-          {/* Preview Area */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-            <div
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}
-            >
-              <span className="od-section-header">Live Output Preview</span>
+              <span className="od-section-header">
+                {format === "png" ? "Visual Preview" : "Live Output Preview"}
+              </span>
               <span className="od-meta">
-                {charCount} chars • {lineCount} lines
+                {format === "png"
+                  ? "Raster PNG diagram preview"
+                  : `${preview.length} chars • ${preview.split("\n").length} lines`}
               </span>
             </div>
-            <pre
-              className="od-code-preview"
-              tabIndex={0}
-              role="region"
-              aria-label="Live export output preview"
-            >
-              <code>{preview}</code>
-            </pre>
+            {format === "png" ? (
+              <div style={PNG_STYLE}>
+                <img
+                  src={svgDataUrl}
+                  alt="Wireframe visual preview"
+                  style={{ maxWidth: "100%", maxHeight: "220px", objectFit: "contain" }}
+                />
+              </div>
+            ) : (
+              <pre
+                className="od-code-preview"
+                tabIndex={0}
+                role="region"
+                aria-label="Live export output preview"
+              >
+                <code>{preview}</code>
+              </pre>
+            )}
           </div>
         </div>
 
-        {/* Footer */}
         <div className="od-modal__footer">
           <span className="od-meta">
-            Ready for AI handoff ({format === "markdown" ? "Markdown" : "JSON"})
+            {format === "markdown" || format === "json"
+              ? `Ready for AI handoff (${format === "markdown" ? "Markdown" : "JSON"})`
+              : `Ready for visual export (${format.toUpperCase()})`}
           </span>
-          <div
-            aria-live="polite"
-            style={{
-              position: "absolute",
-              width: "1px",
-              height: "1px",
-              padding: 0,
-              margin: "-1px",
-              overflow: "hidden",
-              clip: "rect(0, 0, 0, 0)",
-              whiteSpace: "nowrap",
-              border: 0,
-            }}
-          >
+          <div aria-live="polite" style={HIDDEN_STYLE}>
             {copied ? "Copied output to clipboard" : ""}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
             <OdButton variant="ghost" onClick={handleCopy}>
               <OdIcon name={copied ? "check" : "copy"} size={16} />
-              <span>{copied ? "Copied!" : "Copy"}</span>
+              <span>{copied ? "Copied!" : format === "png" ? "Copy Image" : "Copy"}</span>
             </OdButton>
             <OdButton variant="primary" onClick={handleDownload}>
               <OdIcon name="export" size={16} />
-              <span>Download {format === "markdown" ? ".md" : ".json"}</span>
+              <span>Download .{format}</span>
             </OdButton>
           </div>
         </div>

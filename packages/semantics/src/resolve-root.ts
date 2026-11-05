@@ -30,10 +30,10 @@ export function resolveRootShape(doc: Document, shapeId: ShapeId): Shape | undef
     if (shape === undefined) {
       break;
     }
-    if (isRootId(shape.parent)) {
+    if (isRootId(shape.parentId)) {
       return shape;
     }
-    currentId = shape.parent;
+    currentId = shape.parentId;
   }
   return undefined;
 }

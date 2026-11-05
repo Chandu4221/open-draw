@@ -96,13 +96,21 @@ export const DEFAULT_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>>
     const fill = escapeXml(shape.fill ?? "none");
     return `<polyline points="${pointsStr}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
+  [SHAPE_KINDS.text]: (shape, box) => {
+    if (shape.fill !== undefined && shape.fill !== "none" && shape.fill !== "transparent") {
+      const fill = escapeXml(shape.fill);
+      const stroke = shape.stroke ? ` stroke="${escapeXml(shape.stroke)}"` : "";
+      return `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${fill}"${stroke} />`;
+    }
+    return "";
+  },
 });
 
 /**
  * Resolves the effective style profile for a shape from its root ancestor (R-026).
  */
 export function resolveEffectiveStyle(doc: Document, shape: Shape): StyleId {
-  if (isRootId(shape.parent)) {
+  if (isRootId(shape.parentId)) {
     return shape.meta.style ?? STYLE_PROFILES.minimal;
   }
   const ancestors = ancestorsOf(doc, shape);

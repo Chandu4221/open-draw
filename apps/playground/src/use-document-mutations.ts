@@ -70,7 +70,8 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
   } = props;
 
   function handleSetPlatform(platform: PlatformId | ""): void {
-    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
+    const targetRoot =
+      selectedShape && isRootId(selectedShape.parentId) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const targetPlatform = platform ? platform : null;
     if (targetPlatform === null && targetRoot.meta.designStyle !== undefined) {
@@ -94,14 +95,16 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
   }
 
   function handleSetStyle(style: StyleId): void {
-    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
+    const targetRoot =
+      selectedShape && isRootId(selectedShape.parentId) ? selectedShape : rootShape;
     if (!targetRoot) return;
     commit([{ type: COMMANDS.setRootStyle, id: targetRoot.id, style }]);
     render();
   }
 
   function handleSetDesignStyle(designStyle: DesignStyleId | ""): void {
-    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
+    const targetRoot =
+      selectedShape && isRootId(selectedShape.parentId) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const nextDesignStyle = designStyle ? designStyle : null;
     commit([
@@ -111,7 +114,8 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
   }
 
   function handleSetRole(role: RootRole | ""): void {
-    const targetRoot = selectedShape && isRootId(selectedShape.parent) ? selectedShape : rootShape;
+    const targetRoot =
+      selectedShape && isRootId(selectedShape.parentId) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const nextRole = role ? (role as RootRole) : null;
     commit([{ type: COMMANDS.setRootRole, id: targetRoot.id, role: nextRole }]);
