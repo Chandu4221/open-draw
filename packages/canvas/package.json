@@ -1,23 +1,48 @@
 {
   "name": "@open-draw/canvas",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.7.0",
+  "description": "A framework-free, batteries-included visual canvas and drawing SDK",
+  "license": "MIT",
   "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": [
+    "dist",
+    "readme.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs",
+        "default": "./dist/index.js"
+      }
+    }
+  },
   "scripts": {
+    "build": "tsup",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@open-draw/contracts": "workspace:*",
     "@open-draw/document": "workspace:*",
-    "@open-draw/input": "workspace:*"
-  },
-  "devDependencies": {
+    "@open-draw/input": "workspace:*",
+    "@open-draw/renderer-svg": "workspace:*",
+    "@open-draw/shapes": "workspace:*",
     "eslint": "^10.13.0",
+    "tsup": "^9.0.0",
     "typescript": "~6.0.3",
     "vitest": "^5.0.5"
   }

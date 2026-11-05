@@ -10,6 +10,7 @@ import type { CanvasEvent } from "./events";
 import type { HandleId } from "./handles";
 import { pickHandle, pickShape } from "./hit-test";
 import { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
+import { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 import {
   createShapeKindRegistry,
   registerShapeKind,
@@ -82,7 +83,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
   let machine = INITIAL_MACHINE_STATE;
   let shapeKindRegistry: ShapeKindRegistry =
     options.shapeKinds === undefined
-      ? createShapeKindRegistry()
+      ? createShapeKindRegistry(DEFAULT_SHAPE_REGISTRATIONS)
       : Array.isArray(options.shapeKinds)
         ? createShapeKindRegistry(options.shapeKinds)
         : (options.shapeKinds as ShapeKindRegistry);

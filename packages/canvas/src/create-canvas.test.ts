@@ -1,6 +1,12 @@
 // Canvas controller behavior (R-004, R-015, ADR-0003).
 import { describe, expect, it } from "vitest";
-import { CAPABILITIES, type CapabilityId, DEVICE_TYPES, parseShapeId } from "@open-draw/contracts";
+import {
+  CAPABILITIES,
+  type CapabilityId,
+  DEVICE_TYPES,
+  parseShapeId,
+  SHAPE_KINDS,
+} from "@open-draw/contracts";
 import { createDocument, createPage, createRect } from "@open-draw/document";
 import { createCanvas } from "./create-canvas";
 import { TOOLS } from "./tools";
@@ -168,5 +174,29 @@ describe("createCanvas", () => {
 
     const canvasWithInit = createCanvas({ visibleChipRootIds: [rootA] });
     expect(canvasWithInit.isRootChipsVisible(rootA)).toBe(true);
+  });
+
+  it("registers built-in shape kinds by default when options.shapeKinds is omitted (ADR-0008 D4)", () => {
+    const canvas = createCanvas();
+    expect(canvas.hasCapability(SHAPE_KINDS.rect, CAPABILITIES.movable)).toBe(true);
+    expect(canvas.hasCapability(SHAPE_KINDS.rect, CAPABILITIES.resizable)).toBe(true);
+    expect(canvas.hasCapability(SHAPE_KINDS.ellipse, CAPABILITIES.movable)).toBe(true);
+    expect(canvas.hasCapability(SHAPE_KINDS.line, CAPABILITIES.movable)).toBe(true);
+    expect(canvas.hasCapability(SHAPE_KINDS.penPath, CAPABILITIES.freehandPath)).toBe(true);
+    expect(canvas.hasCapability(SHAPE_KINDS.text, CAPABILITIES.textLabel)).toBe(true);
+  });
+
+  it("hit-tests built-in shapes out of the box without manual registration (ADR-0008 D4)", () => {
+    const canvas = createCanvas();
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    expect(canvas.pickShape(doc, { x: 50, y: 50 })).toBe(rectId);
+    expect(canvas.pickShape(doc, { x: 200, y: 200 })).toBe(pageId);
+    expect(canvas.pickShape(doc, { x: 600, y: 600 })).toBeNull();
   });
 });
