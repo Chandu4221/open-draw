@@ -44,10 +44,15 @@ Enable the owner to make the GitHub repository private immediately without losin
    - Add `repository`, `homepage`, `bugs`, `keywords`, and `sideEffects: false` to `packages/canvas/package.json`.
    - Update `README.md` and `docs/about/roadmap.md` to document `@open-draw/canvas@0.7.0` as live and clarify that internal packages (`semantics`, `profiles`, `export-markdown`, `ui`) remain strictly private.
 4. **Third-Party License Attributions & Stale Docs (Issues G1, G2, G3, G4):**
-   - Add `OFL.txt` (Inter font) and `APACHE-2.0.txt` (Material Symbols) to `packages/ui/`.
+   - Add `license-ofl.txt` (Inter font) and `license-apache.txt` (Material Symbols) to `packages/ui/` (R-014).
    - Update `README.md` to include iOS platform support.
    - Populate or remove empty placeholder files (`docs/architecture/overview.md`, `docs/contracts/document-model.md`).
    - Reconcile untracked local milestone drafts.
+5. **Front-Facing Landing Page & Multi-Style Showcase (Dogfooding POC):**
+   - In `apps/studio`, implement root view routing (`/` renders Landing Page, CTA button transitions to Studio workbench `/app`).
+   - Single semantic HTML structure designed directly within OpenDraw.
+   - Interactive design style switcher dropdown demonstrating 3 distinct visual themes (`minimalism`, `neo-brutalism`, `terminal-monospace`) using pure CSS variable stylesheets with **zero markup changes**.
+   - Prominent "Launch Studio" CTA.
 
 ---
 

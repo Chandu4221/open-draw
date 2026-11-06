@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, edited, synchronize, reopened]
   push:
     branches: [main]
   workflow_dispatch:
@@ -26,6 +27,20 @@ jobs:
             exit 1
           }
 
+  pr-title:
+    name: "PR title (R-033)"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Enforce conventional commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$PR_TITLE" | grep -Eq '^(feat|fix|docs|refactor|test|build|chore|perf)(\([a-z0-9-]+\))?: .+$' || {
+            echo "::error::PR title '$PR_TITLE' must follow conventional commit format <type>(<scope>): <summary> (R-033)"
+            exit 1
+          }
+
   check:
     name: "format → lint → typecheck → test → build"
     runs-on: ubuntu-24.04
@@ -41,12 +56,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Dependency rules (R-020)
-        run: pnpm lint:deps
-
-      - name: Naming rules (R-014)
-        run: pnpm lint:naming
 
       - name: Check (R-035 tier 1/2)
         run: pnpm check

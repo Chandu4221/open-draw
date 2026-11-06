@@ -9,8 +9,13 @@ A modular, framework-agnostic vector canvas SDK and semantic wireframing engine.
 - **Framework-Agnostic Canvas Controller:** Interaction state machine handling shape creation, selection, translation, corner and edge resizing, viewport panning, and zooming with zero DOM or UI framework dependencies.
 - **Canonical Document Model:** Pure, immutable document tree supporting transactional commands, history tracking (undo/redo), hierarchical nesting, and JSON serialization.
 - **Pluggable Vector Rendering:** SVG rendering pipeline supporting presentation styles (minimal clean lines and deterministic hand-drawn crayon style) without altering underlying geometry.
-- **Semantic Wireframing:** Platform profiles (Web, Android Native, Flutter) with dynamic semantic tags, device visibility filters, and visual chip overlays.
+- **Semantic Wireframing:** Platform profiles (Web, Android Native, Flutter, iOS) with dynamic semantic tags, device visibility filters, and visual chip overlays.
 - **Structured Markdown Export:** Hierarchical document export generating Markdown specifications with semantic annotations for AI-assisted implementation.
+
+## Packages
+
+- **`@open-draw/canvas`**: Published on npm (`npm install @open-draw/canvas`). Standalone, batteries-included vector drawing canvas with zero runtime dependencies.
+- **Internal Modules**: Proprietary semantics, platform profiles, export prompt compilers, and Studio UI remain private.
 
 ## Getting Started
 
@@ -46,9 +51,7 @@ pnpm check
 
 ## Current Limitations
 
-- **SDK Packages Not Published:** Packages are internal workspace packages and not yet published to npm (ruling V5).
-- **No Change-Notification Events:** The canvas controller does not emit reactive change-notification events; consumer shells manage renders on dispatch boundaries (ruling V7).
-- **No Text Shape Kind:** Text labels are rendered via shape metadata labels and semantic chips; there is no standalone freeform text shape kind.
+- **No Change-Notification Events:** The canvas controller does not emit reactive change-notification events; consumer shells manage renders on dispatch boundaries (R-019 named events planned in Milestone 09).
 - **No Grouping:** Hierarchical composition is managed via container shapes (Pages and Sections); arbitrary grouping (`group` shape) is not implemented.
 
 ## License
