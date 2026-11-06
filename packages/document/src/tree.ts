@@ -6,25 +6,55 @@ import type { Document } from "./document";
 import { DocumentError } from "./errors";
 import type { Shape } from "./shape";
 
+export type ChildIndex = ReadonlyMap<ShapeId, readonly Shape[]>;
+
+export function buildChildIndex(document: Document): ChildIndex {
+  const index = new Map<ShapeId, Shape[]>();
+  for (const shape of Object.values(document.shapes)) {
+    const list = index.get(shape.parentId);
+    if (list === undefined) {
+      index.set(shape.parentId, [shape]);
+    } else {
+      list.push(shape);
+    }
+  }
+  return index;
+}
+
 // Sibling order: map insertion order by default; meta.order overrides per
 // device type (the derive pipeline consumes both — ADR-0002 D6).
-export function childrenOf(document: Document, parent: ShapeId): readonly Shape[] {
+export function childrenOf(
+  document: Document,
+  parent: ShapeId,
+  childIndex?: ChildIndex,
+): readonly Shape[] {
+  if (childIndex !== undefined) {
+    return childIndex.get(parent) ?? [];
+  }
   return Object.values(document.shapes).filter((shape) => shape.parentId === parent);
 }
 
 // The shape and all its descendants, parent-first (breadth-first).
-export function subtreeOf(document: Document, id: ShapeId): readonly Shape[] {
+export function subtreeOf(
+  document: Document,
+  id: ShapeId,
+  childIndex?: ChildIndex,
+): readonly Shape[] {
   const root = document.shapes[id];
   if (root === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${id}`);
   }
+  const index = childIndex ?? buildChildIndex(document);
   const result: Shape[] = [root];
-  const queue: Shape[] = [root];
-  while (queue.length > 0) {
-    const shape = queue.shift()!;
-    for (const child of childrenOf(document, shape.id)) {
-      result.push(child);
-      queue.push(child);
+  let cursor = 0;
+  while (cursor < result.length) {
+    const shape = result[cursor]!;
+    cursor += 1;
+    const children = index.get(shape.id);
+    if (children !== undefined) {
+      for (const child of children) {
+        result.push(child);
+      }
     }
   }
   return result;
@@ -58,12 +88,16 @@ export function absoluteBoundingBox(document: Document, shape: Shape): BoundingB
 }
 
 // Depth-first pre-order walk: pages in map order, then each subtree.
-export function shapeListInOrder(document: Document): readonly Shape[] {
+export function shapeListInOrder(document: Document, childIndex?: ChildIndex): readonly Shape[] {
+  const index = childIndex ?? buildChildIndex(document);
   const result: Shape[] = [];
   const walk = (parent: ShapeId): void => {
-    for (const child of childrenOf(document, parent)) {
-      result.push(child);
-      walk(child.id);
+    const children = index.get(parent);
+    if (children !== undefined) {
+      for (const child of children) {
+        result.push(child);
+        walk(child.id);
+      }
     }
   };
   walk(ROOT_ID);

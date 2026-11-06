@@ -8,9 +8,19 @@ export const CANVAS_EVENTS = {
   pointerDown: "pointerDown",
   pointerMove: "pointerMove",
   pointerUp: "pointerUp",
+  doubleClick: "doubleClick",
   wheel: "wheel",
   keyEscape: "keyEscape",
 } as const;
+
+// Named controller events from the registry (R-005, R-019).
+export const CONTROLLER_EVENTS = {
+  documentChanged: "documentChanged",
+  selectionChanged: "selectionChanged",
+  historyChanged: "historyChanged",
+} as const;
+
+export type ControllerEvent = (typeof CONTROLLER_EVENTS)[keyof typeof CONTROLLER_EVENTS];
 
 export interface PointerDownEvent {
   readonly type: (typeof CANVAS_EVENTS)["pointerDown"];
@@ -45,5 +55,17 @@ export interface KeyEscapeEvent {
   readonly type: (typeof CANVAS_EVENTS)["keyEscape"];
 }
 
+export interface DoubleClickEvent {
+  readonly type: (typeof CANVAS_EVENTS)["doubleClick"];
+  readonly screenPoint: Point;
+  readonly worldPoint: Point;
+  readonly hit: ShapeId | null;
+}
+
 export type CanvasEvent =
-  PointerDownEvent | PointerMoveEvent | PointerUpEvent | WheelEvent | KeyEscapeEvent;
+  | PointerDownEvent
+  | PointerMoveEvent
+  | PointerUpEvent
+  | DoubleClickEvent
+  | WheelEvent
+  | KeyEscapeEvent;

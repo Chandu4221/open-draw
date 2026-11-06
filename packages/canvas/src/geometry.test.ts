@@ -3,7 +3,13 @@
 // caught otherwise (R-043).
 import { describe, expect, it } from "vitest";
 import { HANDLES } from "./handles";
-import { MIN_SHAPE_SIZE, normalizeBox, resizeBox } from "./geometry";
+import {
+  MIN_SHAPE_SIZE,
+  flipHandle,
+  normalizeBox,
+  resizeBox,
+  resizeBoxWithHandle,
+} from "./geometry";
 
 describe("normalizeBox", () => {
   it("produces a positive box from an up-left drag", () => {
@@ -64,10 +70,52 @@ describe("resizeBox", () => {
     });
   });
 
-  it("clamps at the minimum size without flipping past the anchored edge", () => {
-    const resized = resizeBox(original, HANDLES.ne, { x: 150, y: 200 });
-    expect(resized.y + resized.height).toBe(60); // bottom stays anchored
-    expect(resized.height).toBe(MIN_SHAPE_SIZE);
+  it("flips the box horizontally and vertically when dragging south-east past the top-left origin", () => {
+    // original: { x: 10, y: 10, width: 100, height: 50 }, anchor is (10, 10)
+    // dragging se to (-20, -15) flips past (10, 10):
+    // x flips left: x = -20, width = 10 - (-20) = 30
+    // y flips up: y = -15, height = 10 - (-15) = 25
+    expect(resizeBox(original, HANDLES.se, { x: -20, y: -15 })).toEqual({
+      x: -20,
+      y: -15,
+      width: 30,
+      height: 25,
+    });
+  });
+
+  it("flips the box horizontally and vertically when dragging north-west past the bottom-right origin", () => {
+    // original: { x: 10, y: 10, width: 100, height: 50 }, anchor is (110, 60)
+    // dragging nw to (140, 90) flips past (110, 60):
+    // x flips right: x = 110, width = 140 - 110 = 30
+    // y flips down: y = 60, height = 90 - 60 = 30
+    expect(resizeBox(original, HANDLES.nw, { x: 140, y: 90 })).toEqual({
+      x: 110,
+      y: 60,
+      width: 30,
+      height: 30,
+    });
+  });
+
+  it("flips the box vertically when dragging north past the bottom edge", () => {
+    // original: { x: 10, y: 10, width: 100, height: 50 }, bottom = 60
+    // dragging n to (50, 90) flips past bottom: y = 60, height = 30
+    expect(resizeBox(original, HANDLES.n, { x: 50, y: 90 })).toEqual({
+      x: 10,
+      y: 60,
+      width: 100,
+      height: 30,
+    });
+  });
+
+  it("flips the box horizontally when dragging west past the right edge", () => {
+    // original: { x: 10, y: 10, width: 100, height: 50 }, right = 110
+    // dragging w to (140, 30) flips past right: x = 110, width = 30
+    expect(resizeBox(original, HANDLES.w, { x: 140, y: 30 })).toEqual({
+      x: 110,
+      y: 10,
+      width: 30,
+      height: 50,
+    });
   });
 
   it("grows/shrinks height from the north handle while keeping bottom and x anchored", () => {
@@ -106,5 +154,52 @@ describe("resizeBox", () => {
       width: 150,
       height: 50,
     });
+  });
+});
+
+describe("flipHandle", () => {
+  it("swaps corner handles horizontally and vertically", () => {
+    expect(flipHandle(HANDLES.nw, true, false)).toBe(HANDLES.ne);
+    expect(flipHandle(HANDLES.nw, false, true)).toBe(HANDLES.sw);
+    expect(flipHandle(HANDLES.nw, true, true)).toBe(HANDLES.se);
+    expect(flipHandle(HANDLES.se, true, true)).toBe(HANDLES.nw);
+  });
+
+  it("swaps edge handles along their active axis", () => {
+    expect(flipHandle(HANDLES.n, false, true)).toBe(HANDLES.s);
+    expect(flipHandle(HANDLES.s, false, true)).toBe(HANDLES.n);
+    expect(flipHandle(HANDLES.w, true, false)).toBe(HANDLES.e);
+    expect(flipHandle(HANDLES.e, true, false)).toBe(HANDLES.w);
+  });
+
+  it("preserves handles when no flip occurs", () => {
+    expect(flipHandle(HANDLES.se, false, false)).toBe(HANDLES.se);
+    expect(flipHandle(HANDLES.n, true, false)).toBe(HANDLES.n);
+  });
+});
+
+describe("resizeBoxWithHandle", () => {
+  const original = { x: 10, y: 10, width: 100, height: 50 };
+
+  it("returns flipped box and swapped handle when dragging nw past se anchor", () => {
+    const result = resizeBoxWithHandle(original, HANDLES.nw, { x: 140, y: 90 });
+    expect(result.boundingBox).toEqual({
+      x: 110,
+      y: 60,
+      width: 30,
+      height: 30,
+    });
+    expect(result.handle).toBe(HANDLES.se);
+  });
+
+  it("returns flipped box and swapped handle when dragging n past bottom anchor", () => {
+    const result = resizeBoxWithHandle(original, HANDLES.n, { x: 50, y: 90 });
+    expect(result.boundingBox).toEqual({
+      x: 10,
+      y: 60,
+      width: 100,
+      height: 30,
+    });
+    expect(result.handle).toBe(HANDLES.s);
   });
 });

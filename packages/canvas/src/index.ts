@@ -15,6 +15,9 @@ export {
 export {
   type CanvasEvent,
   CANVAS_EVENTS,
+  CONTROLLER_EVENTS,
+  type ControllerEvent,
+  type DoubleClickEvent,
   type KeyEscapeEvent,
   type PointerDownEvent,
   type PointerMoveEvent,
@@ -22,7 +25,13 @@ export {
   type WheelEvent,
 } from "./events";
 
-export { MIN_SHAPE_SIZE, normalizeBox, resizeBox } from "./geometry";
+export {
+  MIN_SHAPE_SIZE,
+  flipHandle,
+  normalizeBox,
+  resizeBox,
+  resizeBoxWithHandle,
+} from "./geometry";
 
 export { type GestureKind, GESTURE_KINDS } from "./gestures";
 
@@ -35,6 +44,7 @@ export {
   pickShape,
   pickShapesInBox,
   pointInBox,
+  resolveSelectionDrillDown,
 } from "./hit-test";
 
 export { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";

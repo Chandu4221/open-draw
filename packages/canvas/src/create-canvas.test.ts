@@ -9,6 +9,7 @@ import {
 } from "@open-draw/contracts";
 import { createDocument, createPage, createRect } from "@open-draw/document";
 import { createCanvas } from "./create-canvas";
+import { CONTROLLER_EVENTS } from "./events";
 import { TOOLS } from "./tools";
 
 describe("createCanvas", () => {
@@ -198,5 +199,61 @@ describe("createCanvas", () => {
     expect(canvas.pickShape(doc, { x: 50, y: 50 })).toBe(rectId);
     expect(canvas.pickShape(doc, { x: 200, y: 200 })).toBe(pageId);
     expect(canvas.pickShape(doc, { x: 600, y: 600 })).toBeNull();
+  });
+
+  it("emits selectionChanged on select, selectMany, and clearSelection (R-019)", () => {
+    const canvas = createCanvas();
+    let calls = 0;
+    const unsubscribe = canvas.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
+      calls += 1;
+    });
+
+    const id1 = parseShapeId("shape-1");
+    canvas.select(id1);
+    expect(calls).toBe(1);
+
+    canvas.clearSelection();
+    expect(calls).toBe(2);
+
+    unsubscribe();
+    canvas.select(id1);
+    expect(calls).toBe(2);
+  });
+
+  it("supports documentChanged and historyChanged events (R-019)", () => {
+    const canvas = createCanvas();
+    let docCalls = 0;
+    let historyCalls = 0;
+
+    canvas.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+      docCalls += 1;
+    });
+    canvas.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyCalls += 1;
+    });
+
+    canvas.emit(CONTROLLER_EVENTS.documentChanged);
+    expect(docCalls).toBe(1);
+    expect(historyCalls).toBe(0);
+
+    canvas.emit(CONTROLLER_EVENTS.historyChanged);
+    expect(docCalls).toBe(1);
+    expect(historyCalls).toBe(1);
+  });
+
+  it("resolves selection drill-down through controller (Idea 5, Milestone 09)", () => {
+    const canvas = createCanvas();
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    // Single click unselected: selects root
+    expect(canvas.resolveSelectionDrillDown(doc, rectId, false)).toBe(pageId);
+
+    // Double click unselected: drills into child
+    expect(canvas.resolveSelectionDrillDown(doc, rectId, true)).toBe(rectId);
   });
 });

@@ -16,75 +16,138 @@ export function normalizeBox(start: Point, end: Point): BoundingBox {
   };
 }
 
-// Resizes from a corner or edge handle (ADR-0006 Option A). The anchored edges
-// NEVER move — only the dragged edge does. Never below MIN_SHAPE_SIZE; no flip.
+function normalizeSpan(anchor: number, dragged: number): { min: number; size: number } {
+  if (dragged >= anchor) {
+    return {
+      min: anchor,
+      size: Math.max(MIN_SHAPE_SIZE, dragged - anchor),
+    };
+  }
+  const size = Math.max(MIN_SHAPE_SIZE, anchor - dragged);
+  return {
+    min: anchor - size,
+    size,
+  };
+}
+
+// Resizes from a corner or edge handle (ADR-0006 Option A, Milestone 09).
+// Bidirectional resize: dragging past the anchored edge flips the box
+// while preserving the anchor point as the opposite edge.
 export function resizeBox(original: BoundingBox, handle: HandleId, worldPoint: Point): BoundingBox {
   const right = original.x + original.width;
   const bottom = original.y + original.height;
   switch (handle) {
-    case HANDLES.se:
-      return {
-        x: original.x,
-        y: original.y,
-        width: Math.max(MIN_SHAPE_SIZE, worldPoint.x - original.x),
-        height: Math.max(MIN_SHAPE_SIZE, worldPoint.y - original.y),
-      };
+    case HANDLES.se: {
+      const spanX = normalizeSpan(original.x, worldPoint.x);
+      const spanY = normalizeSpan(original.y, worldPoint.y);
+      return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
+    }
     case HANDLES.ne: {
-      const y = Math.min(worldPoint.y, bottom - MIN_SHAPE_SIZE);
-      return {
-        x: original.x,
-        y,
-        width: Math.max(MIN_SHAPE_SIZE, worldPoint.x - original.x),
-        height: bottom - y,
-      };
+      const spanX = normalizeSpan(original.x, worldPoint.x);
+      const spanY = normalizeSpan(bottom, worldPoint.y);
+      return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.sw: {
-      const x = Math.min(worldPoint.x, right - MIN_SHAPE_SIZE);
-      return {
-        x,
-        y: original.y,
-        width: right - x,
-        height: Math.max(MIN_SHAPE_SIZE, worldPoint.y - original.y),
-      };
+      const spanX = normalizeSpan(right, worldPoint.x);
+      const spanY = normalizeSpan(original.y, worldPoint.y);
+      return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.nw: {
-      const x = Math.min(worldPoint.x, right - MIN_SHAPE_SIZE);
-      const y = Math.min(worldPoint.y, bottom - MIN_SHAPE_SIZE);
-      return { x, y, width: right - x, height: bottom - y };
+      const spanX = normalizeSpan(right, worldPoint.x);
+      const spanY = normalizeSpan(bottom, worldPoint.y);
+      return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.n: {
-      const y = Math.min(worldPoint.y, bottom - MIN_SHAPE_SIZE);
-      return {
-        x: original.x,
-        y,
-        width: original.width,
-        height: bottom - y,
-      };
+      const spanY = normalizeSpan(bottom, worldPoint.y);
+      return { x: original.x, y: spanY.min, width: original.width, height: spanY.size };
     }
     case HANDLES.s: {
-      return {
-        x: original.x,
-        y: original.y,
-        width: original.width,
-        height: Math.max(MIN_SHAPE_SIZE, worldPoint.y - original.y),
-      };
+      const spanY = normalizeSpan(original.y, worldPoint.y);
+      return { x: original.x, y: spanY.min, width: original.width, height: spanY.size };
     }
     case HANDLES.w: {
-      const x = Math.min(worldPoint.x, right - MIN_SHAPE_SIZE);
-      return {
-        x,
-        y: original.y,
-        width: right - x,
-        height: original.height,
-      };
+      const spanX = normalizeSpan(right, worldPoint.x);
+      return { x: spanX.min, y: original.y, width: spanX.size, height: original.height };
     }
     case HANDLES.e: {
-      return {
-        x: original.x,
-        y: original.y,
-        width: Math.max(MIN_SHAPE_SIZE, worldPoint.x - original.x),
-        height: original.height,
-      };
+      const spanX = normalizeSpan(original.x, worldPoint.x);
+      return { x: spanX.min, y: original.y, width: spanX.size, height: original.height };
     }
   }
+}
+
+export function flipHandle(handle: HandleId, flippedX: boolean, flippedY: boolean): HandleId {
+  let result = handle;
+  if (flippedX) {
+    switch (result) {
+      case HANDLES.nw:
+        result = HANDLES.ne;
+        break;
+      case HANDLES.ne:
+        result = HANDLES.nw;
+        break;
+      case HANDLES.se:
+        result = HANDLES.sw;
+        break;
+      case HANDLES.sw:
+        result = HANDLES.se;
+        break;
+      case HANDLES.w:
+        result = HANDLES.e;
+        break;
+      case HANDLES.e:
+        result = HANDLES.w;
+        break;
+      default:
+        break;
+    }
+  }
+  if (flippedY) {
+    switch (result) {
+      case HANDLES.nw:
+        result = HANDLES.sw;
+        break;
+      case HANDLES.ne:
+        result = HANDLES.se;
+        break;
+      case HANDLES.se:
+        result = HANDLES.ne;
+        break;
+      case HANDLES.sw:
+        result = HANDLES.nw;
+        break;
+      case HANDLES.n:
+        result = HANDLES.s;
+        break;
+      case HANDLES.s:
+        result = HANDLES.n;
+        break;
+      default:
+        break;
+    }
+  }
+  return result;
+}
+
+export function resizeBoxWithHandle(
+  original: BoundingBox,
+  handle: HandleId,
+  worldPoint: Point,
+): { boundingBox: BoundingBox; handle: HandleId } {
+  const boundingBox = resizeBox(original, handle, worldPoint);
+  const right = original.x + original.width;
+  const bottom = original.y + original.height;
+
+  const isWest = handle === HANDLES.nw || handle === HANDLES.w || handle === HANDLES.sw;
+  const isEast = handle === HANDLES.ne || handle === HANDLES.e || handle === HANDLES.se;
+  const isNorth = handle === HANDLES.nw || handle === HANDLES.n || handle === HANDLES.ne;
+  const isSouth = handle === HANDLES.sw || handle === HANDLES.s || handle === HANDLES.se;
+
+  const flippedX = (isWest && worldPoint.x > right) || (isEast && worldPoint.x < original.x);
+  const flippedY = (isNorth && worldPoint.y > bottom) || (isSouth && worldPoint.y < original.y);
+
+  return {
+    boundingBox,
+    handle: flipHandle(handle, flippedX, flippedY),
+  };
 }
