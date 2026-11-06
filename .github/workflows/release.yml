@@ -50,14 +50,10 @@ jobs:
         run: pnpm --filter studio exec vite build --base=/
 
       - name: Deploy to Cloudflare Pages (R-036)
-        uses: cloudflare/pages-action@1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: open-draw
-          directory: apps/studio/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+        run: npx -y --prefix /tmp wrangler pages deploy apps/studio/dist --project-name=open-draw --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: GitHub Release with generated notes
         uses: softprops/action-gh-release@v2
