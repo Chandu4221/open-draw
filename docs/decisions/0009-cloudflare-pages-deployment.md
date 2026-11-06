@@ -23,7 +23,7 @@ Previously (ADR-0001 D4, R-036), production builds of Studio and Playground were
 
 - Deployments continue to be strictly tag-gated. Only git tags matching `v*.*.*` that point directly to verified commits on `main` trigger deployment (**R-034**, **R-036**).
 - Development builds and unmerged feature branches are never automatically deployed to production.
-- Deployment is executed via GitHub Actions using the official Cloudflare Wrangler CLI (`npx -y --prefix /tmp wrangler pages deploy`) with repository secrets (`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`), running from `/tmp` to avoid package manager checks and root workspace pollution.
+- Deployment is executed via GitHub Actions using the official Cloudflare Wrangler CLI (`npx -y --prefix /tmp wrangler pages project create open-draw --production-branch=main || true` followed by `npx -y --prefix /tmp wrangler pages deploy`) with repository secrets (`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`), running from `/tmp` to avoid package manager checks and root workspace pollution.
 
 ### D3 — Vite root base path configuration
 
