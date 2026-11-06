@@ -50,7 +50,9 @@ jobs:
         run: pnpm --filter studio exec vite build --base=/
 
       - name: Deploy to Cloudflare Pages (R-036)
-        run: npx -y --prefix /tmp wrangler pages deploy apps/studio/dist --project-name=open-draw --branch=main
+        run: |
+          npx -y --prefix /tmp wrangler pages project create open-draw --production-branch=main || true
+          npx -y --prefix /tmp wrangler pages deploy apps/studio/dist --project-name=open-draw --branch=main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
