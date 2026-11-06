@@ -54,6 +54,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy apps/studio/dist --project-name=open-draw --branch=main
+          packageManager: npm
 
       - name: GitHub Release with generated notes
         uses: softprops/action-gh-release@v2
