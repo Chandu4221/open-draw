@@ -15,9 +15,9 @@ Previously (ADR-0001 D4, R-036), production builds of Studio and Playground were
 
 ### D1 — Cloudflare Pages hosting for production releases
 
-- Production deployments of Studio and Playground migrate from GitHub Pages to **Cloudflare Pages**.
+- Production deployment of Studio migrates from GitHub Pages to **Cloudflare Pages**.
 - Cloudflare Pages provides free-tier hosting from private GitHub repositories, automated global edge distribution, free managed SSL, and custom domain mapping.
-- The project domain serves Studio at root (`https://open-draw.pages.dev/`) and Playground under `/playground/` (`https://open-draw.pages.dev/playground/`).
+- The project domain serves Studio at root (`https://open-draw.pages.dev/`). Playground is strictly an internal local/pre-prod development environment run via `pnpm dev` and is never deployed or exposed to end users.
 
 ### D2 — Release gate preserved (R-034, R-036)
 
@@ -28,7 +28,7 @@ Previously (ADR-0001 D4, R-036), production builds of Studio and Playground were
 ### D3 — Vite root base path configuration
 
 - Studio builds with `--base=/` instead of the previous GitHub Pages subpath `--base=/open-draw/`.
-- Playground builds with `--base=/playground/` and is assembled into `apps/studio/dist/playground` before upload.
+- `apps/studio/dist` is directly deployed as the Cloudflare Pages root directory. Playground is excluded from production builds.
 
 ## Consequences
 

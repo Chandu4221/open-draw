@@ -26,7 +26,7 @@ jobs:
           }
 
   deploy:
-    name: "Build tagged Studio + playground → Cloudflare Pages (R-036)"
+    name: "Build tagged Studio → Cloudflare Pages (R-036)"
     needs: verify-main
     runs-on: ubuntu-24.04
     environment:
@@ -47,14 +47,6 @@ jobs:
 
       - name: Build Studio from the tag
         run: pnpm --filter studio exec vite build --base=/
-
-      - name: Build Playground from the tag
-        run: pnpm --filter playground exec vite build --base=/playground/
-
-      - name: Assemble Pages artifact
-        run: |
-          mkdir -p apps/studio/dist/playground
-          cp -r apps/playground/dist/. apps/studio/dist/playground/
 
       - name: Deploy to Cloudflare Pages (R-036)
         uses: cloudflare/wrangler-action@v3
