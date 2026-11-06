@@ -63,19 +63,6 @@ export function LandingPage({ onLaunch }: LandingPageProps): React.JSX.Element {
 
         <nav style={{ display: "flex", gap: "var(--od-16)", alignItems: "center" }}>
           <a
-            href="https://github.com/Chandu4221/open-draw"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: "13px",
-              color: "var(--od-text-secondary)",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
-          >
-            GitHub
-          </a>
-          <a
             href="https://www.npmjs.com/package/@open-draw/canvas"
             target="_blank"
             rel="noopener noreferrer"
