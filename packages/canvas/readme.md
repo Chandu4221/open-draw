@@ -44,12 +44,12 @@ const doc = createDocument([
   createRect(
     rectId,
     { x: 50, y: 50, width: 200, height: 100 },
-    { parent: pageId, fill: "#3b82f6", stroke: "#1e40af" },
+    { parentId: pageId, fill: "#3b82f6", stroke: "#1e40af" },
   ),
   createText(
     textId,
     { x: 60, y: 70, width: 180, height: 40 },
-    { parent: rectId, content: "Hello Canvas" },
+    { parentId: rectId, content: "Hello Canvas" },
   ),
 ]);
 

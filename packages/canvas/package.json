@@ -4,6 +4,26 @@
   "description": "A framework-free, batteries-included visual canvas and drawing SDK",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chandu4221/open-draw.git",
+    "directory": "packages/canvas"
+  },
+  "homepage": "https://github.com/Chandu4221/open-draw#readme",
+  "bugs": {
+    "url": "https://github.com/Chandu4221/open-draw/issues"
+  },
+  "keywords": [
+    "canvas",
+    "drawing",
+    "vector",
+    "svg",
+    "shapes",
+    "diagrams",
+    "whiteboard",
+    "typescript"
+  ],
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "types": "./src/index.ts",
