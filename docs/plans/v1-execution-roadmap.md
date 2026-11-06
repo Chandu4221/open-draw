@@ -33,7 +33,7 @@ Enable the owner to make the GitHub repository private immediately without losin
 #### Tasks
 
 1. **Cloudflare Pages Migration:**
-   - Update Vite build base commands to root paths (`--base=/` for Studio, `--base=/playground/` for Playground).
+   - Update Vite build base command for Studio to root path (`--base=/`). Playground remains strictly an internal local/pre-prod development environment (`pnpm dev`) and is not deployed to production.
    - In `.github/workflows/release.yml`, replace GitHub Pages actions (`upload-pages-artifact`, `deploy-pages`) with `cloudflare/wrangler-action@v3` targeting `apps/studio/dist`.
    - Remove unused `permissions: pages: write` and update environment name from `github-pages` to `production`.
 2. **Workflow Hardening & Cleanups:**

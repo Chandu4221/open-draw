@@ -6,13 +6,12 @@ on:
 
 permissions:
   contents: write
-  pages: write
   id-token: write
 
 jobs:
   verify-main:
     name: "Tag must point at main (R-034)"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -27,12 +26,12 @@ jobs:
           }
 
   deploy:
-    name: "Build tagged Studio + playground → GitHub Pages (R-036)"
+    name: "Build tagged Studio → Cloudflare Pages (R-036)"
     needs: verify-main
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: production
+      url: https://open-draw.pages.dev
     steps:
       - uses: actions/checkout@v5
 
@@ -47,23 +46,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Studio from the tag
-        run: pnpm --filter studio exec vite build --base=/open-draw/
+        run: pnpm --filter studio exec vite build --base=/
 
-      - name: Build Playground from the tag
-        run: pnpm --filter playground exec vite build --base=/open-draw/playground/
-
-      - name: Assemble Pages artifact
-        run: |
-          mkdir -p apps/studio/dist/playground
-          cp -r apps/playground/dist/. apps/studio/dist/playground/
-          touch apps/studio/dist/.nojekyll
-
-      - uses: actions/upload-pages-artifact@v3
+      - name: Deploy to Cloudflare Pages (R-036)
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: apps/studio/dist
-
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/studio/dist --project-name=open-draw --branch=main
 
       - name: GitHub Release with generated notes
         uses: softprops/action-gh-release@v2
