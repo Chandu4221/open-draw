@@ -6,11 +6,12 @@ import { ROOT_ID } from "@open-draw/contracts";
 import type { Document } from "@open-draw/document";
 import { walkSemanticTree } from "@open-draw/semantics";
 import { compileAiDirectives } from "./ai-directives";
+import { renderAsciiSketch } from "./ascii-sketch";
 import { escapeCodeSpan, escapeMarkdownText } from "./escape-markdown";
 import { formatLegend, formatTreeRow } from "./format-tree";
 import type { MarkdownExportOptions } from "./types";
 
-export { escapeCodeSpan, escapeMarkdownText };
+export { escapeCodeSpan, escapeMarkdownText, renderAsciiSketch };
 export type { MarkdownExportOptions };
 
 /**
@@ -51,6 +52,12 @@ export function exportMarkdown(doc: Document, options?: MarkdownExportOptions): 
 
   for (const node of nodes) {
     lines.push(formatTreeRow(node));
+  }
+
+  const sketchBlock = renderAsciiSketch(doc, options);
+  if (sketchBlock !== undefined && sketchBlock !== "") {
+    lines.push("");
+    lines.push(sketchBlock);
   }
 
   if (options?.includeLegend === true) {

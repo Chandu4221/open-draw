@@ -1,0 +1,139 @@
+{
+  "schema": {
+    "version": 1
+  },
+  "shapes": {
+    "s-page": {
+      "id": "s-page",
+      "kind": "rect",
+      "parentId": "canvas:root",
+      "boundingBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1200,
+        "height": 800
+      },
+      "label": "Landing Page",
+      "meta": {
+        "semantic": {
+          "id": "page",
+          "platform": "web"
+        },
+        "platform": "web",
+        "role": "screen"
+      }
+    },
+    "s-header": {
+      "id": "s-header",
+      "kind": "rect",
+      "parentId": "s-page",
+      "boundingBox": {
+        "x": 40,
+        "y": 40,
+        "width": 1120,
+        "height": 80
+      },
+      "label": "Header",
+      "meta": {
+        "semantic": {
+          "id": "navigation",
+          "platform": "web"
+        }
+      }
+    },
+    "s-title": {
+      "id": "s-title",
+      "kind": "text",
+      "parentId": "s-header",
+      "content": "Acme Inc",
+      "boundingBox": {
+        "x": 20,
+        "y": 24,
+        "width": 200,
+        "height": 32
+      },
+      "meta": {
+        "semantic": {
+          "id": "heading",
+          "platform": "web",
+          "properties": {
+            "level": "1"
+          }
+        }
+      }
+    },
+    "s-hero": {
+      "id": "s-hero",
+      "kind": "rect",
+      "parentId": "s-page",
+      "boundingBox": {
+        "x": 40,
+        "y": 160,
+        "width": 1120,
+        "height": 300
+      },
+      "label": "Hero Section",
+      "meta": {
+        "semantic": {
+          "id": "section",
+          "platform": "web"
+        }
+      }
+    },
+    "s-cta": {
+      "id": "s-cta",
+      "kind": "rect",
+      "parentId": "s-hero",
+      "content": "Get Started",
+      "label": "Get Started",
+      "boundingBox": {
+        "x": 400,
+        "y": 200,
+        "width": 320,
+        "height": 50
+      },
+      "meta": {
+        "semantic": {
+          "id": "button",
+          "platform": "web"
+        }
+      }
+    },
+    "s-card-1": {
+      "id": "s-card-1",
+      "kind": "rect",
+      "parentId": "s-page",
+      "boundingBox": {
+        "x": 40,
+        "y": 500,
+        "width": 540,
+        "height": 240
+      },
+      "label": "Feature Alpha",
+      "meta": {
+        "semantic": {
+          "id": "card",
+          "platform": "web"
+        }
+      }
+    },
+    "s-card-2": {
+      "id": "s-card-2",
+      "kind": "rect",
+      "parentId": "s-page",
+      "boundingBox": {
+        "x": 620,
+        "y": 500,
+        "width": 540,
+        "height": 240
+      },
+      "label": "Feature Beta",
+      "meta": {
+        "semantic": {
+          "id": "card",
+          "platform": "web"
+        }
+      }
+    }
+  }
+}
