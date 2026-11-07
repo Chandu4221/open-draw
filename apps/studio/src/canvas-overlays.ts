@@ -99,7 +99,7 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
       overlays.push(previewLineToSvg(gesture.startWorld, lastWorld));
     } else if (tool === TOOLS.drawPenPath) {
       overlays.push(previewPenPathToSvg(gesture.points));
-    } else {
+    } else if (tool !== TOOLS.drawText) {
       overlays.push(previewBoxToSvg(normalizeBox(gesture.startWorld, lastWorld)));
     }
   }

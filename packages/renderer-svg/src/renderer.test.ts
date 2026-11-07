@@ -478,6 +478,19 @@ describe("visible text on shapes (F2, ADR-0006 Option A / shape.content)", () =>
     expect(svg).toContain('<clipPath id="clip-text-standalone">');
     expect(svg).toContain('x="260"'); // 200 + 120/2
     expect(svg).toContain('y="116"'); // 100 + 32/2
+    expect(svg).toContain('pointer-events="none"');
+    expect(svg).toContain('user-select="none"');
     expect(svg).toContain(">TEXT</text>");
+  });
+
+  it("renders visible text with pointer-events none and user-select none to prevent I-beam cursor and allow vector selection", () => {
+    const rectId = parseShapeId("rect-btn");
+    const doc = createDocument([
+      createRect(rectId, { x: 50, y: 50, width: 100, height: 40 }, { content: "Click Me" }),
+    ]);
+    const svg = documentToSvg(doc);
+    expect(svg).toContain('<text x="100" y="70"');
+    expect(svg).toContain('pointer-events="none"');
+    expect(svg).toContain('user-select="none"');
   });
 });

@@ -68,7 +68,7 @@ export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
       : shape.kind;
   const safeLabel = escapeXml(label);
   const rect = `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.fallbackFill}" stroke="${RENDER_STYLES.fallbackStroke}" stroke-dasharray="${RENDER_STYLES.fallbackDasharray}" />`;
-  const text = `<text x="${box.x + 8}" y="${box.y + 18}" font-family="sans-serif" font-size="12" fill="${RENDER_STYLES.fallbackStroke}">[${safeLabel}]</text>`;
+  const text = `<text x="${box.x + 8}" y="${box.y + 18}" font-family="sans-serif" font-size="12" fill="${RENDER_STYLES.fallbackStroke}" pointer-events="none" user-select="none">[${safeLabel}]</text>`;
   return rect + text;
 }
 
@@ -155,7 +155,7 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
     const textColor = escapeXml(
       shape.stroke && shape.stroke !== "none" ? shape.stroke : RENDER_STYLES.contentStroke,
     );
-    const text = `<text x="${centerX}" y="${centerY}" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="14" fill="${textColor}" clip-path="url(#${clipId})">${escapeXml(shape.content)}</text>`;
+    const text = `<text x="${centerX}" y="${centerY}" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="14" fill="${textColor}" clip-path="url(#${clipId})" pointer-events="none" user-select="none">${escapeXml(shape.content)}</text>`;
     rendered = `${rendered}${clip}${text}`;
   }
 

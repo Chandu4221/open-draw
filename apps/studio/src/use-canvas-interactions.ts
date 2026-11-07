@@ -97,9 +97,10 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
 
     const panRequested = event.button === 1 || spaceRef.current;
     const rawHit = panRequested ? null : canvas.pickShape(doc, world);
+    const isDoubleClick = event.detail >= 2;
     const hit =
       rawHit !== null && toolRef.current === TOOLS.select
-        ? canvas.resolveSelectionDrillDown(doc, rawHit, false)
+        ? canvas.resolveSelectionDrillDown(doc, rawHit, isDoubleClick)
         : rawHit;
 
     canvas.dispatch({
@@ -112,6 +113,15 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
       tool: toolRef.current,
       panRequested,
     });
+
+    if (isDoubleClick && hit !== null) {
+      canvas.dispatch({
+        type: CANVAS_EVENTS.doubleClick,
+        screenPoint: screen,
+        worldPoint: world,
+        hit,
+      });
+    }
 
     if (handle === null && toolRef.current === TOOLS.select) {
       if (event.shiftKey && hit !== null) {
@@ -281,27 +291,6 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     render();
   }
 
-  function onDoubleClick(event: MouseEvent): void {
-    if (toolRef.current !== TOOLS.select) return;
-    const canvas = canvasRef.current;
-    const screen = screenPointFrom(event);
-    const world = canvas.screenToWorld(screen);
-    const doc = documentRef.current;
-    const rawHit = canvas.pickShape(doc, world);
-    if (rawHit !== null) {
-      const drilled = canvas.resolveSelectionDrillDown(doc, rawHit, true);
-      canvas.select(drilled);
-      setSelectedShapeId(drilled);
-      canvas.dispatch({
-        type: CANVAS_EVENTS.doubleClick,
-        screenPoint: screen,
-        worldPoint: world,
-        hit: drilled,
-      });
-      render();
-    }
-  }
-
   useEffect(() => {
     const svg = svgRef.current;
     if (svg === null) return;
@@ -309,7 +298,6 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
       ["pointerdown", onPointerDown as EventListener],
       ["pointermove", onPointerMove as EventListener],
       ["pointerup", onPointerUp as EventListener],
-      ["dblclick", onDoubleClick as EventListener],
       ["wheel", onWheel as EventListener],
     ];
     for (const [evt, fn] of handlers) {
