@@ -18,6 +18,7 @@ import {
   EXPORT_FORMATS,
   EXPORT_FORMAT_BY_VALUE,
   isExportFormat,
+  EXPORT_CHIP_PREFIX,
   STYLE_PROFILES,
   STYLE_PROFILE_BY_VALUE,
   DESIGN_STYLES,
@@ -30,6 +31,7 @@ import {
   CREATIVITY_LEVELS,
   CREATIVITY_LEVEL_DEFINITIONS,
   DEFAULT_CREATIVITY_LEVEL,
+  THEME_PALETTE_SLOTS,
 } from "./index";
 
 describe("capabilities", () => {
@@ -125,6 +127,10 @@ describe("export-contract", () => {
     expect(isExportFormat("markdown")).toBe(true);
     expect(isExportFormat("csv")).toBe(false);
   });
+
+  it("exposes EXPORT_CHIP_PREFIX as # for shared chip references (Milestone 11A)", () => {
+    expect(EXPORT_CHIP_PREFIX).toBe("#");
+  });
 });
 
 describe("document-limits", () => {
@@ -185,5 +191,18 @@ describe("creativity-levels", () => {
       expect(def.description.length).toBeGreaterThan(0);
       expect(def.promptDirective.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("theme-palettes", () => {
+  it("exposes all 6 semantic theme palette slots (Idea 6, R-026)", () => {
+    expect(THEME_PALETTE_SLOTS).toEqual([
+      "primary",
+      "secondary",
+      "tertiary",
+      "surface",
+      "error",
+      "success",
+    ]);
   });
 });

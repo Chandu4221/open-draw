@@ -9,7 +9,13 @@ import type {
   ShapeId,
   StyleId,
 } from "@open-draw/contracts";
-import { isRootId, SHAPE_KINDS, SHAPE_KIND_LABELS, STYLE_PROFILES } from "@open-draw/contracts";
+import {
+  EXPORT_CHIP_PREFIX,
+  isRootId,
+  SHAPE_KINDS,
+  SHAPE_KIND_LABELS,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   ancestorsOf,
@@ -47,9 +53,12 @@ export type ShapeSvgRenderer = (shape: Shape, box: BoundingBox) => string;
 
 export interface RenderOptions {
   readonly activeDeviceType?: DeviceType | undefined;
+  readonly activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>> | undefined;
   readonly styleProfile?: StyleId | undefined;
   readonly onFallback?: (event: RendererFallbackEvent) => void;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
+  readonly includeAnnotations?: boolean;
+  readonly resolveDisplayName?: (shape: Shape) => string;
 }
 
 export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
@@ -59,7 +68,7 @@ export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
       : shape.kind;
   const safeLabel = escapeXml(label);
   const rect = `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.fallbackFill}" stroke="${RENDER_STYLES.fallbackStroke}" stroke-dasharray="${RENDER_STYLES.fallbackDasharray}" />`;
-  const text = `<text x="${box.x + 8}" y="${box.y + 18}" font-family="sans-serif" font-size="12" fill="${RENDER_STYLES.fallbackStroke}">[${safeLabel}]</text>`;
+  const text = `<text x="${box.x + 8}" y="${box.y + 18}" font-family="sans-serif" font-size="12" fill="${RENDER_STYLES.fallbackStroke}" pointer-events="none" user-select="none">[${safeLabel}]</text>`;
   return rect + text;
 }
 
@@ -146,7 +155,7 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
     const textColor = escapeXml(
       shape.stroke && shape.stroke !== "none" ? shape.stroke : RENDER_STYLES.contentStroke,
     );
-    const text = `<text x="${centerX}" y="${centerY}" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="14" fill="${textColor}" clip-path="url(#${clipId})">${escapeXml(shape.content)}</text>`;
+    const text = `<text x="${centerX}" y="${centerY}" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="14" fill="${textColor}" clip-path="url(#${clipId})" pointer-events="none" user-select="none">${escapeXml(shape.content)}</text>`;
     rendered = `${rendered}${clip}${text}`;
   }
 
@@ -160,6 +169,15 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
   return rendered;
 }
 
+function resolveShapeRootId(document: Document, shape: Shape): ShapeId | undefined {
+  if (isRootId(shape.parentId)) {
+    return shape.id;
+  }
+  const ancestors = ancestorsOf(document, shape);
+  const root = ancestors.find((a) => isRootId(a.parentId));
+  return root?.id;
+}
+
 // The whole document in pre-order walk order (structural order).
 // Style selection is root-resolved (R-026).
 // Fallback emission surfaces via the pure options callback without singletons (R-008, ADR-0003 D3).
@@ -167,11 +185,45 @@ export function documentToSvg(document: Document, options?: RenderOptions): stri
   return shapeListInOrder(document)
     .map((shape) => {
       const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
-      const shapeOptions =
-        effectiveStyle !== options?.styleProfile
-          ? { ...options, styleProfile: effectiveStyle }
+      const rootId = resolveShapeRootId(document, shape);
+      const effectiveDevice =
+        rootId !== undefined && options?.activeDeviceTypes !== undefined
+          ? (options.activeDeviceTypes[rootId] ?? options?.activeDeviceType)
+          : options?.activeDeviceType;
+
+      const shapeOptions: RenderOptions | undefined =
+        effectiveStyle !== options?.styleProfile || effectiveDevice !== options?.activeDeviceType
+          ? { ...options, styleProfile: effectiveStyle, activeDeviceType: effectiveDevice }
           : options;
-      return shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
+      const rendered = shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
+
+      if (options?.includeAnnotations === true) {
+        const chipId = `${EXPORT_CHIP_PREFIX}${shape.id}`;
+        const shapeIdAttr = `data-shape-id="${escapeXml(shape.id)}"`;
+        const chipIdAttr = `data-chip-id="${escapeXml(chipId)}"`;
+        const semanticAttr =
+          shape.meta.semantic !== undefined
+            ? ` data-semantic="${escapeXml(shape.meta.semantic.id)}"`
+            : "";
+        const parentIdAttr = !isRootId(shape.parentId)
+          ? ` data-parent-id="${escapeXml(shape.parentId)}"`
+          : "";
+
+        const displayName =
+          options.resolveDisplayName?.(shape) ??
+          (shape.label !== undefined && shape.label !== ""
+            ? shape.label
+            : shape.kind in SHAPE_KIND_LABELS
+              ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
+              : shape.kind);
+
+        const a11yText = `${chipId} — ${displayName}`;
+        const safeA11yText = escapeXml(a11yText);
+
+        return `<g ${shapeIdAttr} ${chipIdAttr}${semanticAttr}${parentIdAttr} role="img" aria-label="${safeA11yText}"><title>${safeA11yText}</title>${rendered}</g>`;
+      }
+
+      return rendered;
     })
     .join("");
 }

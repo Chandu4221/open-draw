@@ -70,12 +70,25 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
     onClose,
     doc,
     initialFormat = "markdown",
-    includeLegend = true,
+    includeLegend = false,
     setIncludeLegend,
   } = props;
+  const [localIncludeLegend, setLocalIncludeLegend] = useState<boolean>(includeLegend);
+  const effectiveIncludeLegend =
+    setIncludeLegend !== undefined ? includeLegend : localIncludeLegend;
+  const handleToggleLegend = (val: boolean) => {
+    if (setIncludeLegend) {
+      setIncludeLegend(val);
+    } else {
+      setLocalIncludeLegend(val);
+    }
+  };
+
   const [format, setFormat] = useState<ExportFormat>(initialFormat);
   const [creativityLevel, setCreativityLevel] = useState<CreativityLevel>(DEFAULT_CREATIVITY_LEVEL);
   const [copied, setCopied] = useState<boolean>(false);
+  const [includeAsciiSketch, setIncludeAsciiSketch] = useState<boolean | undefined>(undefined);
+  const [includeAnnotations, setIncludeAnnotations] = useState<boolean>(true);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -85,11 +98,20 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  const mdOptions = useMemo(
+    () => ({ creativityLevel, includeLegend: effectiveIncludeLegend, includeAsciiSketch }),
+    [creativityLevel, effectiveIncludeLegend, includeAsciiSketch],
+  );
+  const svgOptions = useMemo(
+    () => ({ includeLegend: effectiveIncludeLegend, includeAnnotations }),
+    [effectiveIncludeLegend, includeAnnotations],
+  );
+
   const preview = useMemo(() => {
-    if (format === "markdown") return generateExportMarkdown(doc, creativityLevel);
+    if (format === "markdown") return generateExportMarkdown(doc, mdOptions);
     if (format === "json") return generateExportJson(doc, creativityLevel);
-    return generateExportSvg(doc, includeLegend);
-  }, [doc, format, creativityLevel, includeLegend]);
+    return generateExportSvg(doc, svgOptions);
+  }, [doc, format, creativityLevel, mdOptions, svgOptions]);
 
   const svgDataUrl = useMemo(
     () => (format === "png" ? `data:image/svg+xml;utf8,${encodeURIComponent(preview)}` : ""),
@@ -98,8 +120,11 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
 
   const handleCopy = async () => {
     try {
-      if (format === "png") await copyDocumentPng(doc, includeLegend);
-      else await navigator.clipboard.writeText(preview);
+      if (format === "png") {
+        await copyDocumentPng(doc, svgOptions);
+      } else {
+        await navigator.clipboard.writeText(preview);
+      }
     } catch {
       if (format !== "png") {
         const ta = document.createElement("textarea");
@@ -115,10 +140,10 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   };
 
   const handleDownload = () => {
-    if (format === "markdown") exportDocumentMarkdown(doc, creativityLevel);
+    if (format === "markdown") exportDocumentMarkdown(doc, mdOptions);
     else if (format === "json") exportDocumentJson(doc, creativityLevel);
-    else if (format === "svg") exportDocumentSvg(doc, includeLegend);
-    else exportDocumentPng(doc, includeLegend);
+    else if (format === "svg") exportDocumentSvg(doc, svgOptions);
+    else exportDocumentPng(doc, svgOptions);
   };
 
   return (
@@ -143,16 +168,38 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="od-section-header">Export Format</span>
-              {setIncludeLegend && (
-                <label style={LEGEND_LABEL_STYLE}>
-                  <input
-                    type="checkbox"
-                    checked={includeLegend}
-                    onChange={(e) => setIncludeLegend(e.target.checked)}
-                  />
-                  <span>Include Legend</span>
-                </label>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--od-12)" }}>
+                {format !== "json" && (
+                  <label style={LEGEND_LABEL_STYLE}>
+                    <input
+                      type="checkbox"
+                      checked={effectiveIncludeLegend}
+                      onChange={(e) => handleToggleLegend(e.target.checked)}
+                    />
+                    <span>Include Legend</span>
+                  </label>
+                )}
+                {format === "markdown" && (
+                  <label style={LEGEND_LABEL_STYLE}>
+                    <input
+                      type="checkbox"
+                      checked={includeAsciiSketch ?? Object.keys(doc.shapes).length > 5}
+                      onChange={(e) => setIncludeAsciiSketch(e.target.checked)}
+                    />
+                    <span>Include ASCII Sketch</span>
+                  </label>
+                )}
+                {(format === "svg" || format === "png") && (
+                  <label style={LEGEND_LABEL_STYLE}>
+                    <input
+                      type="checkbox"
+                      checked={includeAnnotations}
+                      onChange={(e) => setIncludeAnnotations(e.target.checked)}
+                    />
+                    <span>Include Annotations</span>
+                  </label>
+                )}
+              </div>
             </div>
             <OdSegmentedControl
               items={FORMAT_OPTIONS}

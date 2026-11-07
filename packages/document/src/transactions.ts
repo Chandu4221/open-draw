@@ -19,6 +19,8 @@ import { applySetShapeSemantic } from "./commands/set-shape-semantic";
 import { applySetShapeStyle } from "./commands/set-shape-style";
 import { applySetShapeContent } from "./commands/set-shape-content";
 import { applyDuplicateShapes } from "./commands/duplicate-shapes";
+import { applySetRootTheme } from "./commands/set-root-theme";
+import { applySetRootDarkMode } from "./commands/set-root-dark-mode";
 import type { Document } from "./document";
 import { DocumentError } from "./errors";
 
@@ -62,6 +64,10 @@ function applyCommand(document: Document, command: Command): CommandResult {
       return applySetRootDesignStyle(document, command);
     case COMMANDS.setRootRole:
       return applySetRootRole(document, command);
+    case COMMANDS.setRootTheme:
+      return applySetRootTheme(document, command);
+    case COMMANDS.setRootDarkMode:
+      return applySetRootDarkMode(document, command);
     case COMMANDS.setShapeHiddenOn:
       return applySetShapeHiddenOn(document, command);
     case COMMANDS.setShapeOrder:

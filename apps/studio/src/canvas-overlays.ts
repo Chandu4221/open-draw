@@ -26,6 +26,7 @@ export interface OverlayOptions {
   readonly zoom: number;
   readonly visibleChipRootIds?: ReadonlySet<ShapeId> | undefined;
   readonly activeDeviceType?: DeviceType | undefined;
+  readonly activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>> | undefined;
 }
 
 export function computeCanvasOverlays(options: OverlayOptions): string[] {
@@ -98,7 +99,7 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
       overlays.push(previewLineToSvg(gesture.startWorld, lastWorld));
     } else if (tool === TOOLS.drawPenPath) {
       overlays.push(previewPenPathToSvg(gesture.points));
-    } else {
+    } else if (tool !== TOOLS.drawText) {
       overlays.push(previewBoxToSvg(normalizeBox(gesture.startWorld, lastWorld)));
     }
   }
@@ -166,7 +167,8 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
           y: box.y + (lastWorld.y - gesture.startWorld.y),
         };
       }
-      overlays.push(rootDeviceBarToSvg(box, options.activeDeviceType, zoom));
+      const effectiveDevice = options.activeDeviceTypes?.[shape.id] ?? options.activeDeviceType;
+      overlays.push(rootDeviceBarToSvg(box, effectiveDevice, zoom));
     }
   }
 
@@ -188,16 +190,21 @@ export function pickAnyRootChip(doc: Document, world: Point, zoom: number): Shap
   return null;
 }
 
+export interface RootDeviceHit {
+  readonly rootId: ShapeId;
+  readonly item: RootDeviceItem;
+}
+
 export function pickAnyRootDeviceButton(
   doc: Document,
   world: Point,
   zoom: number,
-): RootDeviceItem | null {
+): RootDeviceHit | null {
   for (const shape of Object.values(doc.shapes)) {
     if (isRootId(shape.parentId) && shape.meta.platform === "web") {
       const box = absoluteBoundingBox(doc, shape);
       const hit = pickRootDeviceButton(box, world, zoom);
-      if (hit !== null) return hit;
+      if (hit !== null) return { rootId: shape.id, item: hit };
     }
   }
   return null;

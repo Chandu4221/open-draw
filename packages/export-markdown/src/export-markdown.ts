@@ -1,161 +1,22 @@
-// Structured Markdown semantic projection exporter (ADR-0005 D1, D2).
+// Structured Markdown semantic projection exporter (Milestone 11A B1-B3, B5).
 // Pure Document → string projection, zero side effects (R-008, R-016).
 // Consumes walkSemanticTree to guarantee 100% hierarchy parity with the canvas (ADR-0004).
-// Strictly NO geometry, NO coordinates, NO bounding boxes (ADR-0005 D2).
 // Byte-stable by construction: deterministic sort orders, zero timestamps (R-041).
-import {
-  type DeviceType,
-  type ExportOptions,
-  type ShapeId,
-  DESIGN_STYLE_LABELS,
-  DEVICE_TYPES,
-  ROOT_ID,
-  ROOT_ROLES,
-  SEMANTIC_CONFLICTS,
-  SHAPE_KINDS,
-  CREATIVITY_LEVEL_DEFINITIONS,
-} from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
-import {
-  resolveRootDesignStyle,
-  resolveRootPlatform,
-  resolveRootStyle,
-  walkSemanticTree,
-  type SemanticTreeNode,
-} from "@open-draw/semantics";
+import { ROOT_ID } from "@open-draw/contracts";
+import type { Document } from "@open-draw/document";
+import { walkSemanticTree } from "@open-draw/semantics";
+import { compileAiDirectives } from "./ai-directives";
+import { renderAsciiSketch } from "./ascii-sketch";
+import { escapeCodeSpan, escapeMarkdownText } from "./escape-markdown";
+import { formatLegend, formatTreeRow } from "./format-tree";
+import type { MarkdownExportOptions } from "./types";
 
-export interface MarkdownExportOptions extends ExportOptions {
-  readonly rootId?: ShapeId;
-  readonly deviceType?: DeviceType;
-}
-
-/**
- * Safely escapes user-derived strings for structured Markdown export (R-008, R-016).
- * Neutralizes newlines, Markdown formatting syntax, and raw HTML tags.
- */
-export function escapeMarkdownText(text: string): string {
-  if (text === "") {
-    return "";
-  }
-  return text
-    .replace(/[\r\n\t]+/g, " ")
-    .replace(/\\/g, "\\\\")
-    .replace(/([`*_#[\]()<>~|])/g, "\\$1")
-    .trim();
-}
-
-/**
- * Safely escapes strings rendered inside a Markdown backtick code span (`...`) (R-006, R-008).
- * Neutralizes newlines so they cannot start a new line, and replaces backticks so they cannot close the code span early.
- */
-export function escapeCodeSpan(text: string): string {
-  if (text === "") {
-    return "";
-  }
-  return text
-    .replace(/[\r\n\t]+/g, " ")
-    .replace(/`/g, "'")
-    .trim();
-}
-
-function formatProperties(properties: Readonly<Record<string, string | number | boolean>>): string {
-  const entries = Object.entries(properties);
-  if (entries.length === 0) {
-    return "";
-  }
-  entries.sort(([a], [b]) => a.localeCompare(b));
-  const formatted = entries
-    .map(([key, value]) => `${escapeMarkdownText(key)}: ${escapeMarkdownText(String(value))}`)
-    .join(", ");
-  return ` (${formatted})`;
-}
-
-function formatHiddenOn(hiddenOn: readonly DeviceType[] | undefined): string {
-  if (hiddenOn === undefined || hiddenOn.length === 0) {
-    return "";
-  }
-  const sorted = [...hiddenOn].map((d) => DEVICE_TYPES[d] ?? d).sort((a, b) => a.localeCompare(b));
-  return ` _(hidden on ${sorted.map(escapeMarkdownText).join(", ")})_`;
-}
-
-function formatConflict(node: SemanticTreeNode): string {
-  if (node.conflict?.status !== SEMANTIC_CONFLICTS.conflicted) {
-    return "";
-  }
-  const reason = escapeMarkdownText(node.conflict.reason ?? "conflicted semantic tag");
-  return ` ⚠️ _[CONFLICT: ${reason}]_`;
-}
-
-function formatRootMeta(doc: Document, shape: Shape): string {
-  const platform = resolveRootPlatform(doc, shape.id);
-  const explicitStyle = shape.meta.style;
-  const tags: string[] = [];
-  if (shape.meta.role !== undefined) {
-    tags.push(`Role: ${escapeMarkdownText(shape.meta.role)}`);
-  }
-  if (platform !== undefined) {
-    tags.push(`Platform: ${escapeMarkdownText(platform)}`);
-    const effectiveStyle = explicitStyle ?? resolveRootStyle(doc, shape.id);
-    tags.push(`Style: ${escapeMarkdownText(effectiveStyle)}`);
-    const designStyle = resolveRootDesignStyle(doc, shape.id);
-    if (designStyle !== undefined) {
-      const designStyleLabel = DESIGN_STYLE_LABELS[designStyle] ?? designStyle;
-      tags.push(`Design Style: ${escapeMarkdownText(designStyleLabel)}`);
-    }
-  } else if (explicitStyle !== undefined) {
-    tags.push(`Style: ${escapeMarkdownText(explicitStyle)}`);
-  }
-  return tags.length > 0 ? ` (${tags.join(", ")})` : "";
-}
-
-function renderNode(doc: Document, node: SemanticTreeNode): string {
-  const safeDisplayName = escapeMarkdownText(node.displayName);
-
-  // Depth 0 = immediate child of ROOT_ID (Root shape on canvas)
-  if (node.depth === 0) {
-    const metaStr = formatRootMeta(doc, node.shape);
-    const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
-    const conflictStr = formatConflict(node);
-    const semanticTag =
-      node.shape.meta.role === ROOT_ROLES.component && node.shape.meta.semantic !== undefined
-        ? ` — \`${escapeCodeSpan(node.shape.meta.semantic.id)}\``
-        : "";
-    const properties =
-      node.shape.meta.role === ROOT_ROLES.component &&
-      node.shape.meta.semantic?.properties !== undefined
-        ? formatProperties(node.shape.meta.semantic.properties)
-        : "";
-    return `## ${safeDisplayName}${semanticTag}${properties}${metaStr}${hiddenStr}${conflictStr}`;
-  }
-
-  // Nested container section
-  if (node.shape.kind === SHAPE_KINDS.section) {
-    const headingLevel = Math.min(node.depth + 2, 6);
-    const hashes = "#".repeat(headingLevel);
-    const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
-    const conflictStr = formatConflict(node);
-    return `${hashes} ${safeDisplayName}${hiddenStr}${conflictStr}`;
-  }
-
-  // Leaf content shapes
-  const indent = "  ".repeat(Math.max(0, node.depth - 1));
-  const semanticTag =
-    node.shape.meta.semantic !== undefined
-      ? ` — \`${escapeCodeSpan(node.shape.meta.semantic.id)}\``
-      : "";
-  const properties =
-    node.shape.meta.semantic?.properties !== undefined
-      ? formatProperties(node.shape.meta.semantic.properties)
-      : "";
-  const hiddenStr = formatHiddenOn(node.shape.meta.hiddenOn);
-  const conflictStr = formatConflict(node);
-
-  return `${indent}- **${safeDisplayName}**${semanticTag}${properties}${hiddenStr}${conflictStr}`;
-}
+export { escapeCodeSpan, escapeMarkdownText, renderAsciiSketch };
+export type { MarkdownExportOptions };
 
 /**
  * Pure function exporting an OpenDraw document to human-readable, AI-ready Markdown.
- * Deterministic and byte-stable (R-016, R-041).
+ * Deterministic and byte-stable (R-016, R-025, R-041).
  */
 export function exportMarkdown(doc: Document, options?: MarkdownExportOptions): string {
   const rootId = options?.rootId ?? ROOT_ID;
@@ -169,13 +30,14 @@ export function exportMarkdown(doc: Document, options?: MarkdownExportOptions): 
     lines.push("");
   }
 
-  if (options?.creativityLevel !== undefined) {
-    const def = CREATIVITY_LEVEL_DEFINITIONS[options.creativityLevel];
-    if (def) {
+  if (options?.creativityLevel !== undefined || options?.includeAiDirectives === true) {
+    const directives = compileAiDirectives(doc, options);
+    if (directives.length > 0) {
       lines.push("## AI Implementation Guidance");
       lines.push("");
-      lines.push(`- **Creativity Level**: Level ${def.level} — ${escapeMarkdownText(def.name)}`);
-      lines.push(`- **Directive**: ${escapeMarkdownText(def.promptDirective)}`);
+      for (const directive of directives) {
+        lines.push(directive);
+      }
       lines.push("");
     }
   }
@@ -188,25 +50,21 @@ export function exportMarkdown(doc: Document, options?: MarkdownExportOptions): 
     return lines.join("\n");
   }
 
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i]!;
-    const line = renderNode(doc, node);
+  for (const node of nodes) {
+    lines.push(formatTreeRow(node));
+  }
 
-    // Add extra newline before headings for clean Markdown spacing
-    if (node.depth === 0) {
-      if (lines.length > 0 && lines[lines.length - 1] !== "") {
-        lines.push("");
-      }
-      lines.push(line);
+  const sketchBlock = renderAsciiSketch(doc, options);
+  if (sketchBlock !== undefined && sketchBlock !== "") {
+    lines.push("");
+    lines.push(sketchBlock);
+  }
+
+  if (options?.includeLegend === true) {
+    const legendBlock = formatLegend(nodes);
+    if (legendBlock !== "") {
       lines.push("");
-    } else if (node.shape.kind === SHAPE_KINDS.section) {
-      if (lines.length > 0 && lines[lines.length - 1] !== "") {
-        lines.push("");
-      }
-      lines.push(line);
-      lines.push("");
-    } else {
-      lines.push(line);
+      lines.push(legendBlock);
     }
   }
 

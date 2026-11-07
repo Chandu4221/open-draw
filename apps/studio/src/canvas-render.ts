@@ -1,4 +1,4 @@
-import type { DeviceType, Point } from "@open-draw/contracts";
+import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import type { CanvasController, ToolId } from "@open-draw/canvas";
 import type { Document } from "@open-draw/document";
 import { documentToSvg } from "@open-draw/renderer-svg";
@@ -18,6 +18,7 @@ export interface RenderCanvasSvgOptions {
 interface RenderCacheEntry {
   doc: Document;
   activeDeviceType?: DeviceType | undefined;
+  activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>> | undefined;
 }
 
 const renderCache = new WeakMap<SVGSVGElement, RenderCacheEntry>();
@@ -26,6 +27,7 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
   const { svg, canvas, doc, gesture, tool, lastWorld, onFallback } = options;
   const camera = canvas.getCamera();
   const activeDeviceType = canvas.getActiveDeviceType();
+  const activeDeviceTypes = canvas.getActiveDeviceTypes();
 
   let viewport = svg.querySelector<SVGGElement>(".od-scene-viewport");
   let docScene = svg.querySelector<SVGGElement>(".od-document-scene");
@@ -48,14 +50,20 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
   );
 
   const cached = renderCache.get(svg);
-  if (cached === undefined || cached.doc !== doc || cached.activeDeviceType !== activeDeviceType) {
+  const deviceTypesChanged =
+    cached === undefined ||
+    cached.activeDeviceType !== activeDeviceType ||
+    cached.activeDeviceTypes !== activeDeviceTypes;
+
+  if (cached === undefined || cached.doc !== doc || deviceTypesChanged) {
     docScene.innerHTML = documentToSvg(doc, {
       activeDeviceType,
+      activeDeviceTypes,
       onFallback: (event) => {
         onFallback(`Fallback render: ${event.shapeId} (${event.kind})`);
       },
     });
-    renderCache.set(svg, { doc, activeDeviceType });
+    renderCache.set(svg, { doc, activeDeviceType, activeDeviceTypes });
   }
 
   const overlays = computeCanvasOverlays({
@@ -68,6 +76,7 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
     zoom: camera.zoom,
     visibleChipRootIds: canvas.getVisibleChipRootIds(),
     activeDeviceType,
+    activeDeviceTypes,
   });
 
   const overlayHtml = overlays.join("");

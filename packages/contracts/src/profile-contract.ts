@@ -47,3 +47,30 @@ export interface StyleProfile {
   readonly id: StyleId;
   readonly label: string;
 }
+
+/**
+ * Closed registry of theme palette color slots (Idea 6, R-026).
+ */
+export const THEME_PALETTE_SLOTS = [
+  "primary",
+  "secondary",
+  "tertiary",
+  "surface",
+  "error",
+  "success",
+] as const;
+
+export type ThemePaletteSlot = (typeof THEME_PALETTE_SLOTS)[number];
+
+/**
+ * Root container semantic theme palette (Idea 6, R-026).
+ * Carries brand theme tokens for AI prompt export (Tailwind, Flutter, Compose).
+ */
+export interface ThemePalette {
+  readonly primary?: string;
+  readonly secondary?: string;
+  readonly tertiary?: string;
+  readonly surface?: string;
+  readonly error?: string;
+  readonly success?: string;
+}

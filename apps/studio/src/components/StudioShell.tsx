@@ -27,6 +27,7 @@ import { useCanvasInteractions } from "../use-canvas-interactions";
 import { useCanvasKeyboard } from "../use-canvas-keyboard";
 import { useDocumentMutations } from "../use-document-mutations";
 import { useInspectionData } from "../use-inspection-data";
+import { useRootThemeMutations } from "../use-root-theme-mutations";
 import { useToolbarActions } from "../use-toolbar-actions";
 
 export interface StudioShellProps {
@@ -58,7 +59,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   }, []);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
-  const [includeLegend, setIncludeLegend] = useState<boolean>(true);
+  const [includeLegend, setIncludeLegend] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
 
@@ -166,9 +167,10 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const selectedShapes = selectedShapeIds
     .map((id) => doc.shapes[id])
     .filter((s): s is Shape => s !== undefined);
-  const batchMutations = useBatchMutations({
-    selectedShapes,
-    canvasRef,
+  const batchMutations = useBatchMutations({ selectedShapes, canvasRef, commit, render });
+  const themeMutations = useRootThemeMutations({
+    selectedShape: inspection.selectedShape,
+    rootShape: inspection.rootShape,
     commit,
     render,
   });
@@ -266,6 +268,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           <Sidebar
             {...inspection}
             {...mutations}
+            {...themeMutations}
             {...batchMutations}
             selectedShapes={selectedShapes}
             selectedShapeId={selectedShapeId}

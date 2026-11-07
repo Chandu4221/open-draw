@@ -1,25 +1,27 @@
-# OpenDraw v1 Execution Roadmap (Milestones 08–13)
+# OpenDraw v1 Execution Roadmap (Milestones 08–14)
 
 - **Status:** Ratified
 - **Date:** 2026-11-06
 - **Branch:** `docs/milestone-roadmap-plans`
 - **Applicable Rules:** R-002, R-004, R-005, R-006, R-008, R-009, R-010, R-014, R-015, R-016, R-018, R-019, R-020, R-023, R-026, R-027, R-030, R-032, R-033, R-034, R-035, R-036, R-040, R-043
 
-This document is the binding single source of truth for the planned milestones following the initial standalone npm distribution of `@open-draw/canvas@0.7.0` (commit `c2d4e91`). It consolidates all findings from the Open Issues Report (Sections A through G), workflow enhancements, and new product features into 6 sequential milestones.
+This document is the binding single source of truth for the planned milestones following the initial standalone npm distribution of `@open-draw/canvas@0.7.0` (commit `c2d4e91`). It consolidates all findings from the Open Issues Report (Sections A through G), workflow enhancements, and new product features into 7 sequential milestones.
 
 ---
 
 ## Master Milestones Table
 
-| #      | Milestone Title                                          | Primary Scope                                                                                                                                                                                         | Target Branch                              | Rules Implemented                               |
-| ------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| **08** | **Privacy, Cloudflare Deployment & Workflow Hygiene**    | Migrate to Cloudflare Pages, harden CI/release workflows, add license notices, update README & npm metadata, enable private repo transition                                                           | `feat/cloudflare-pages-deployment`         | R-001, R-014, R-032, R-033, R-034, R-035, R-036 |
-| **09** | **Engine Performance & Core Canvas Interaction**         | $O(1)$ child index, cursor-based BFS, gesture render decoupling, negative drag-to-draw & resize flipping, double-click drill-down, R-019 named events                                                 | `feat/engine-performance-and-interaction`  | R-008, R-009, R-015, R-016, R-018, R-019        |
-| **10** | **Studio Workbench & Resizable Inspector (`allotment`)** | Resizable split-view via `allotment`, multi-select inspector, responsive controls polish, top-right toast repositioning, apps consolidation to `apps/studio`, Playwright smoke tests                  | `feat/studio-workbench-and-inspector`      | R-001, R-002, R-005, R-010, R-014, R-020, R-035 |
-| **11** | **P0 Platform Semantics, Root Theming & AI Directives**  | Expanded P0 semantic catalogs (Web, Android, Flutter, iOS) split under 300 lines (R-010); root brand theme inputs; export popup with 4 AI directives (A11y, Contrast, Stack Detection, Codegen Style) | `feat/semantics-theming-and-ai-directives` | R-006, R-010, R-016, R-023, R-026, R-040        |
-| **12** | **Front Page Showcase (Golden Circle)**                  | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                             | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                      |
-| **13** | **Advanced Transformations**                             | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                     | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021               |
-| **—**  | **Responsive Reflow Add-on (Experimental)**              | Dedicated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`).                                                                                                                | `feat/responsive-reflow-addon`             | R-002, R-004, R-016, R-027, R-030 (PARKED)      |
+| #       | Milestone Title                                                   | Primary Scope                                                                                                                                                                                             | Target Branch                              | Rules Implemented                                                                                   |
+| ------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| **08**  | **Privacy, Cloudflare Deployment & Workflow Hygiene** (Merged)    | Migrate to Cloudflare Pages, harden CI/release workflows, add license notices, update README & npm metadata, enable private repo transition                                                               | `feat/cloudflare-pages-deployment`         | R-001, R-014, R-032, R-033, R-034, R-035, R-036                                                     |
+| **09**  | **Engine Performance & Core Canvas Interaction** (Merged)         | $O(1)$ child index, cursor-based BFS, gesture render decoupling, negative drag-to-draw & resize flipping, double-click drill-down, R-019 named events                                                     | `feat/engine-performance-and-interaction`  | R-008, R-009, R-015, R-016, R-018, R-019                                                            |
+| **10**  | **Studio Workbench & Resizable Inspector (`allotment`)** (Merged) | Resizable split-view via `allotment`, multi-select inspector, responsive controls polish, top-right toast repositioning, apps consolidation to `apps/studio`, Playwright smoke tests                      | `feat/studio-workbench-and-inspector`      | R-001, R-002, R-005, R-010, R-014, R-020, R-035                                                     |
+| **11**  | **P0 Platform Semantics, Root Theming & AI Directives**           | Expanded P0 semantic catalogs (Web, Android, Flutter, iOS) split under 300 lines (R-010); root brand theme inputs; export popup with 4 AI directives (A11y, Contrast, Stack Detection, Codegen Style)     | `feat/semantics-theming-and-ai-directives` | R-006, R-010, R-016, R-023, R-026, R-040                                                            |
+| **11A** | **Machine-Readable Export Parity** (Completed)                    | Chip ID system (`#s-xxxx`), pure JSON export projection, Markdown tree hierarchy & boxes, deterministic ASCII layout sketch, SVG annotations layer with dependency inversion, on-demand chip-keyed legend | `feat/export-shape-parity`                 | R-002, R-005, R-006, R-008, R-010, R-014, R-016, R-020, R-021, R-025, R-041, R-042, R-043, ADR-0010 |
+| **12**  | **Studio UI Redesign & Floating Chrome (Inspector & Dock)**       | Redesign inspector into collapsible card widgets with 2-column inline inputs (`PX`, `%`) & segmented controls; refine floating dock into distinct tool/action/export pill groups; re-anchor collapse      | `feat/studio-ui-redesign-and-chrome`       | R-004, R-008, R-010, R-014, ADR-0007                                                                |
+| **13**  | **Front Page Showcase (Golden Circle)**                           | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                                 | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                                                                          |
+| **14**  | **Advanced Transformations**                                      | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                         | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021                                                                   |
+| **—**   | **Responsive Reflow Add-on (Experimental)**                       | Dedicated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`).                                                                                                                    | `feat/responsive-reflow-addon`             | R-002, R-004, R-016, R-027, R-030 (PARKED)                                                          |
 
 ---
 
@@ -156,7 +158,74 @@ Transform OpenDraw into an intelligent AI prompt compiler for design handoff, wi
 
 ---
 
-### Milestone 12 — Advanced Transformations
+### Milestone 11A — Machine-Readable Export Parity
+
+#### Objective
+
+Guarantee machine-readable shape identity and semantics parity across all export formats (JSON, Markdown, SVG) via a shared chip ID system and pure export-time projections, with zero document mutation (R-016, R-025, ADR-0010).
+
+#### Tasks
+
+1. **Universal Chip ID System & Enriched JSON Export (Work Package A):**
+   - Define `EXPORT_CHIP_PREFIX = "#"` in `@open-draw/contracts`.
+   - Implement pure export projection `exportJson()` in `@open-draw/export-markdown`: top-level `shapeOrder`, `SEMANTICS_REGISTRY_VERSION`, chip IDs (`#s-xxxx`), explicit style fields (`fill`, `stroke`, `strokeWidth`), and explicit `semantic: null`.
+   - Keep `@open-draw/document` untouched (R-016, R-025).
+2. **Markdown Tree Hierarchy, Boxes & ASCII Layout Sketch (Work Package B):**
+   - Replace flat bullets with indented tree hierarchy walking `subtreeOf` in canonical order.
+   - Amend ADR-0005 D2 to include parent-relative bounding boxes `[x:0.00 y:0.00 w:0.00 h:0.00]`.
+   - Implement deterministic 80-column ASCII layout sketch renderer auto-included when shape count $> 5$ (`ASCII_SKETCH_SHAPE_THRESHOLD = 5`).
+3. **SVG Annotations Layer & Dependency Inversion (Work Package C):**
+   - Add `data-shape-id`, `data-chip-id`, `data-semantic`, `data-parent-id`, `<title>`, and `role="img"`/`aria-label` to exported SVG shape groups.
+   - Render top-level `<g class="annotation-chips">` overlay with deterministic collision avoidance.
+   - Maintain strict package boundaries: `@open-draw/renderer-svg` never imports semantics or profiles; Studio injects `resolveDisplayName` resolver.
+4. **On-Demand Chip-Keyed Legend & Studio UI Wiring:**
+   - Remove legacy generic glossary legend across all formats; replace with on-demand chip-keyed mappings (`#s-7a01 — Profie Card (Card)`).
+   - Wire legend, ASCII sketch, and annotations toggles in Studio `ExportModal`. Default legend to OFF.
+
+---
+
+### Milestone 12 — Studio UI Redesign & Floating Chrome (Inspector Layout & Dock Controls)
+
+#### Objective
+
+Overhaul Studio's visual chrome and inspector panels based on design references, introducing collapsible card sections, compact 2-column inline inputs (`PX`, `%`), segmented icon/pill controls, and a refined modular floating dock.
+
+#### Tasks
+
+1. **Redesign the Inspector Layout:**
+   - Implement collapsible card widgets for logical property sections (`Identity`, `Geometry`, `Platform & Semantics`, `Styling` / `Fill & Stroke`, `Layout & Responsive`) with `—` / `+` collapse toggles and persistent open/close states.
+   - Refactor geometry and spacing inputs into compact 2-column inline numeric pairs (Width / Height, X / Y) with embedded unit badges (`PX`, `%`, `auto`).
+   - Replace full-width `<select>` dropdowns with segmented icon/pill controls for choices with $\le 4$ options (e.g. text alignment, stroke styles, device types).
+   - Establish proportional spacing with $12\text{px}$–$16\text{px}$ card margins and $4\text{px}$–$6\text{px}$ inner element gaps.
+2. **Refine Dock & Floating Controls:**
+   - Partition the floating bottom dock into distinct functional pill groups:
+     - Drawing Tools (Select, Pan, Rect, Ellipse, Line, Text, Container).
+     - Canvas History & Actions (Undo, Redo, Zoom In, Zoom Out, Zoom Reset, Zoom to Fit).
+     - File & Export (New, Open, Save, Export Markdown/SVG).
+   - Apply surface elevation depth (`--od-surface-raised`), soft floating drop shadows (`box-shadow`), active state indicators, and polished dark/light mode balance.
+   - Re-anchor the "Hide Inspector" toggle from empty canvas space into the workbench header or allotment sash to avoid floating clutter.
+
+---
+
+### Milestone 13 — Front Page Showcase (Golden Circle)
+
+#### Objective
+
+Create the OpenDraw marketing landing page (`/`) implementing Simon Sinek's Golden Circle copy structure, live SVG hero rendering via `@open-draw/renderer-svg`, and 3–4 switchable CSS token packs.
+
+#### Tasks
+
+1. **Golden Circle Landing Copy & Structure:**
+   - Why: Purpose-driven philosophy (pure vectors, AI-ready semantics, zero lock-in).
+   - How: Lightweight standalone engine, clean package boundaries, determinism.
+   - What: High-performance canvas SDK, semantic wireframing studio, AI prompt compiler.
+2. **Live Interactive Hero:**
+   - Render live SVG graphics using `@open-draw/renderer-svg` directly on the landing page.
+   - Provide interactive CSS token pack switcher demonstrating real-time visual style changes.
+
+---
+
+### Milestone 14 — Advanced Transformations
 
 #### Objective
 
@@ -176,7 +245,7 @@ Provide vector editing capabilities for shape rotation and skewing.
 
 ---
 
-### Milestone 13 — Responsive Reflow Add-on (`@open-draw/reflow` Experimental)
+### Milestone — Responsive Reflow Add-on (`@open-draw/reflow` Experimental)
 
 #### Objective
 

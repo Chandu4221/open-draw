@@ -8,17 +8,20 @@ import type {
   ShapeId,
   StyleId,
   RootRole,
+  ThemePalette,
 } from "@open-draw/contracts";
 import { isRootId, ROOT_ID, ROOT_ROLES, STYLE_PROFILES } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
+  resolveRootDarkMode,
   resolveRootDesignStyle,
   resolveRootPlatform,
   resolveRootRole,
   resolveRootShape,
   resolveRootStyle,
+  resolveRootTheme,
   walkSemanticTree,
   type SemanticTreeNode,
 } from "@open-draw/semantics";
@@ -30,6 +33,8 @@ export interface InspectionData {
   readonly rootStyle: StyleId;
   readonly rootDesignStyle: DesignStyleId | undefined;
   readonly rootRole: RootRole;
+  readonly rootTheme: ThemePalette | undefined;
+  readonly rootDarkMode: boolean;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
@@ -50,6 +55,8 @@ export function useInspectionData(
   const rootStyle = rootShape ? resolveRootStyle(doc, rootShape.id) : STYLE_PROFILES.minimal;
   const rootDesignStyle = rootShape ? resolveRootDesignStyle(doc, rootShape.id) : undefined;
   const rootRole = rootShape ? resolveRootRole(doc, rootShape.id) : ROOT_ROLES.screen;
+  const rootTheme = rootShape ? resolveRootTheme(doc, rootShape.id) : undefined;
+  const rootDarkMode = rootShape ? resolveRootDarkMode(doc, rootShape.id) : false;
   const activeProfile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
   const conflict = selectedShape
     ? computeSemanticConflict(doc, selectedShape, activeProfile)
@@ -68,6 +75,8 @@ export function useInspectionData(
     rootStyle,
     rootDesignStyle,
     rootRole,
+    rootTheme,
+    rootDarkMode,
     activeProfile,
     conflict,
     semanticDef,

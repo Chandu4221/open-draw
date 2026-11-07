@@ -12,7 +12,7 @@ import { childrenOf, type Document, type Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { computeSemanticConflict } from "./compute-conflict";
 import { resolveShapeDisplayName } from "./display-name";
-import { resolveRootPlatform } from "./resolve-root";
+import { resolveRootPlatform, resolveRootShape } from "./resolve-root";
 import { resolveSemantic, type ResolvedSemantic } from "./resolve-semantic";
 
 export interface SemanticTreeNode {
@@ -30,7 +30,7 @@ export function walkSemanticTree(
   doc: Document,
   rootId: ShapeId,
   profile?: PlatformProfile,
-  deviceType?: DeviceType,
+  deviceType?: DeviceType | Readonly<Record<ShapeId, DeviceType | undefined>>,
 ): readonly SemanticTreeNode[] {
   const nodes: SemanticTreeNode[] = [];
 
@@ -54,11 +54,17 @@ export function walkSemanticTree(
       return;
     }
 
-    // If deviceType is provided, sort by responsive order (absent = 0)
-    if (deviceType !== undefined) {
+    // If deviceType is provided (global or scoped to root), sort by responsive order (absent = 0)
+    const rootShape = resolveRootShape(doc, shape.id);
+    const activeDevice: DeviceType | undefined =
+      typeof deviceType === "object" && deviceType !== null && rootShape !== undefined
+        ? deviceType[rootShape.id]
+        : (deviceType as DeviceType | undefined);
+
+    if (activeDevice !== undefined) {
       children.sort((a, b) => {
-        const orderA = a.meta.order[deviceType] ?? 0;
-        const orderB = b.meta.order[deviceType] ?? 0;
+        const orderA = a.meta.order[activeDevice] ?? 0;
+        const orderB = b.meta.order[activeDevice] ?? 0;
         return orderA - orderB;
       });
     }

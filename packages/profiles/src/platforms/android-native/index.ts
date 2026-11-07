@@ -17,6 +17,18 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
           label: "Title",
           defaultValue: "Title",
         }),
+        Object.freeze({
+          id: "type",
+          control: CONTROL_TYPES.select,
+          label: "Type",
+          defaultValue: "small",
+          options: Object.freeze([
+            Object.freeze({ value: "small", label: "Small" }),
+            Object.freeze({ value: "medium", label: "Medium" }),
+            Object.freeze({ value: "large", label: "Large" }),
+            Object.freeze({ value: "center-aligned", label: "Center Aligned" }),
+          ]),
+        }),
       ]),
     }),
     "navigation-bar": Object.freeze({
@@ -28,6 +40,17 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
       displayName: "Floating Action Button",
       properties: Object.freeze([
         Object.freeze({
+          id: "size",
+          control: CONTROL_TYPES.select,
+          label: "Size",
+          defaultValue: "regular",
+          options: Object.freeze([
+            Object.freeze({ value: "small", label: "Small" }),
+            Object.freeze({ value: "regular", label: "Regular" }),
+            Object.freeze({ value: "large", label: "Large" }),
+          ]),
+        }),
+        Object.freeze({
           id: "extended",
           control: CONTROL_TYPES.toggle,
           label: "Extended",
@@ -38,11 +61,37 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
     card: Object.freeze({
       id: parseSemanticId("card"),
       displayName: "Material Card",
+      properties: Object.freeze([
+        Object.freeze({
+          id: "variant",
+          control: CONTROL_TYPES.select,
+          label: "Variant",
+          defaultValue: "elevated",
+          options: Object.freeze([
+            Object.freeze({ value: "elevated", label: "Elevated" }),
+            Object.freeze({ value: "filled", label: "Filled" }),
+            Object.freeze({ value: "outlined", label: "Outlined" }),
+          ]),
+        }),
+      ]),
     }),
     button: Object.freeze({
       id: parseSemanticId("button"),
       displayName: "Filled Button",
       properties: Object.freeze([
+        Object.freeze({
+          id: "variant",
+          control: CONTROL_TYPES.select,
+          label: "Variant",
+          defaultValue: "filled",
+          options: Object.freeze([
+            Object.freeze({ value: "filled", label: "Filled" }),
+            Object.freeze({ value: "tonal", label: "Tonal" }),
+            Object.freeze({ value: "outlined", label: "Outlined" }),
+            Object.freeze({ value: "elevated", label: "Elevated" }),
+            Object.freeze({ value: "text", label: "Text" }),
+          ]),
+        }),
         Object.freeze({
           id: "enabled",
           control: CONTROL_TYPES.toggle,
@@ -63,6 +112,16 @@ export const ANDROID_NATIVE_SEMANTICS: Readonly<Record<string, SemanticDefinitio
       id: parseSemanticId("text-field"),
       displayName: "Outlined Text Field",
       properties: Object.freeze([
+        Object.freeze({
+          id: "variant",
+          control: CONTROL_TYPES.select,
+          label: "Variant",
+          defaultValue: "outlined",
+          options: Object.freeze([
+            Object.freeze({ value: "outlined", label: "Outlined" }),
+            Object.freeze({ value: "filled", label: "Filled" }),
+          ]),
+        }),
         Object.freeze({
           id: "label",
           control: CONTROL_TYPES.text,

@@ -5,6 +5,7 @@ import type {
   PluginId,
   StyleId,
   RootRole,
+  ThemePalette,
 } from "@open-draw/contracts";
 import {
   DESIGN_STYLE_BY_VALUE,
@@ -92,6 +93,12 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     }
     if (value.role !== undefined) {
       throw new DocumentError("invalidMeta", "role may only be set on root shapes (R-026)");
+    }
+    if (value.theme !== undefined) {
+      throw new DocumentError("invalidMeta", "theme may only be set on root shapes (R-026)");
+    }
+    if (value.darkMode !== undefined) {
+      throw new DocumentError("invalidMeta", "darkMode may only be set on root shapes (R-026)");
     }
   }
 
@@ -192,6 +199,29 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     }
   }
 
+  let theme: ThemePalette | undefined;
+  if (value.theme !== undefined) {
+    if (!isRecord(value.theme)) {
+      throw new DocumentError("invalidMeta", "meta.theme must be an object");
+    }
+    const themeObj: Record<string, string> = {};
+    for (const [slotKey, slotVal] of Object.entries(value.theme)) {
+      if (typeof slotVal !== "string") {
+        throw new DocumentError("invalidMeta", `meta.theme.${slotKey} must be a string color`);
+      }
+      themeObj[slotKey] = slotVal;
+    }
+    theme = themeObj as ThemePalette;
+  }
+
+  let darkMode: boolean | undefined;
+  if (value.darkMode !== undefined) {
+    if (typeof value.darkMode !== "boolean") {
+      throw new DocumentError("invalidMeta", "meta.darkMode must be a boolean");
+    }
+    darkMode = value.darkMode;
+  }
+
   return {
     ...(semantic === undefined ? {} : { semantic }),
     order,
@@ -201,5 +231,7 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     ...(style === undefined ? {} : { style }),
     ...(designStyle === undefined ? {} : { designStyle }),
     ...(role === undefined ? {} : { role }),
+    ...(theme === undefined ? {} : { theme }),
+    ...(darkMode === undefined ? {} : { darkMode }),
   };
 }

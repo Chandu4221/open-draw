@@ -11,14 +11,19 @@ import { createDocument, createPage, createRect, createSection } from "@open-dra
 import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
+  getPlatformEquivalents,
+  resolveRootDarkMode,
   resolveRootDesignStyle,
   resolveRootPage,
   resolveRootPlatform,
   resolveRootShape,
   resolveRootStyle,
+  resolveRootTheme,
   resolveSemantic,
   resolveShapeDisplayName,
+  suggestPlatformEquivalent,
   walkSemanticTree,
+  SEMANTICS_REGISTRY_VERSION,
 } from "./index";
 
 describe("root resolution (R-026)", () => {
@@ -436,5 +441,124 @@ describe("hierarchical tree walk", () => {
     // The freestanding shape resolves as "Rectangle"
     expect(walk[2]?.shape.id).toBe(freeRectId);
     expect(walk[2]?.displayName).toBe("Rectangle");
+  });
+
+  it("supports scoped root deviceType during semantic tree walk", () => {
+    const root1 = parseShapeId("root-1");
+    const child1A = parseShapeId("child-1a");
+    const child1B = parseShapeId("child-1b");
+
+    const doc = createDocument([
+      createRect(root1, { x: 0, y: 0, width: 800, height: 600 }, { parent: ROOT_ID }),
+      createRect(
+        child1A,
+        { x: 10, y: 10, width: 100, height: 50 },
+        {
+          parent: root1,
+          meta: { order: { [DEVICE_TYPES.mobile]: 2, [DEVICE_TYPES.desktop]: 1 } },
+        },
+      ),
+      createRect(
+        child1B,
+        { x: 10, y: 70, width: 100, height: 50 },
+        {
+          parent: root1,
+          meta: { order: { [DEVICE_TYPES.mobile]: 1, [DEVICE_TYPES.desktop]: 2 } },
+        },
+      ),
+    ]);
+
+    // Walk with scoped deviceType for root1 = mobile (child1B order 1, child1A order 2)
+    const mobileWalk = walkSemanticTree(doc, root1, undefined, { [root1]: DEVICE_TYPES.mobile });
+    expect(mobileWalk[1]?.shape.id).toBe(child1B);
+    expect(mobileWalk[2]?.shape.id).toBe(child1A);
+
+    // Walk with scoped deviceType for root1 = desktop (child1A order 1, child1B order 2)
+    const desktopWalk = walkSemanticTree(doc, root1, undefined, { [root1]: DEVICE_TYPES.desktop });
+    expect(desktopWalk[1]?.shape.id).toBe(child1A);
+    expect(desktopWalk[2]?.shape.id).toBe(child1B);
+  });
+});
+
+describe("theme & dark mode resolution (Idea 4, 6, R-026)", () => {
+  const rootId = parseShapeId("themed-root");
+  const childId = parseShapeId("themed-child");
+
+  it("resolves root theme palette and dark mode from nested children", () => {
+    const doc = createDocument([
+      createRect(
+        rootId,
+        { x: 0, y: 0, width: 800, height: 600 },
+        {
+          parent: ROOT_ID,
+          meta: {
+            order: {},
+            theme: { primary: "#3b82f6", surface: "#1e293b" },
+            darkMode: true,
+          },
+        },
+      ),
+      createRect(childId, { x: 10, y: 10, width: 100, height: 40 }, { parent: rootId }),
+    ]);
+
+    expect(resolveRootTheme(doc, childId)).toEqual({ primary: "#3b82f6", surface: "#1e293b" });
+    expect(resolveRootDarkMode(doc, childId)).toBe(true);
+  });
+
+  it("defaults dark mode to false and theme to undefined when omitted on root", () => {
+    const doc = createDocument([
+      createRect(rootId, { x: 0, y: 0, width: 800, height: 600 }, { parent: ROOT_ID }),
+      createRect(childId, { x: 10, y: 10, width: 100, height: 40 }, { parent: rootId }),
+    ]);
+
+    expect(resolveRootTheme(doc, childId)).toBeUndefined();
+    expect(resolveRootDarkMode(doc, childId)).toBe(false);
+  });
+});
+
+describe("cross-platform concept harmonization (Idea 2, Issues D1, D2, D3)", () => {
+  it("suggests equivalent semantic IDs between platforms", () => {
+    // Web navbar -> Android top-app-bar -> Flutter app-bar -> iOS navigation-bar
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.androidNative, "navbar")).toBe(
+      "top-app-bar",
+    );
+    expect(
+      suggestPlatformEquivalent(PLATFORMS.androidNative, PLATFORMS.flutter, "top-app-bar"),
+    ).toBe("app-bar");
+    expect(suggestPlatformEquivalent(PLATFORMS.flutter, PLATFORMS.ios, "app-bar")).toBe(
+      "navigation-bar",
+    );
+    expect(suggestPlatformEquivalent(PLATFORMS.ios, PLATFORMS.web, "navigation-bar")).toBe(
+      "navbar",
+    );
+
+    // Button equivalents
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.flutter, "button")).toBe(
+      "elevated-button",
+    );
+    expect(
+      suggestPlatformEquivalent(PLATFORMS.flutter, PLATFORMS.androidNative, "elevated-button"),
+    ).toBe("button");
+
+    // Identity when platforms match
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.web, "navbar")).toBe("navbar");
+
+    // Undefined for unknown concept
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.ios, "unknown-tag")).toBeUndefined();
+  });
+
+  it("returns all known platform equivalents for a concept", () => {
+    const equivalents = getPlatformEquivalents("text-field", PLATFORMS.androidNative);
+    expect(equivalents.web).toBe("input");
+    expect(equivalents.androidNative).toBe("text-field");
+    expect(equivalents.flutter).toBe("text-field");
+    expect(equivalents.ios).toBe("text-field");
+  });
+});
+
+describe("semantics-version", () => {
+  it("exposes integer SEMANTICS_REGISTRY_VERSION >= 1 for export parity fingerprinting (Milestone 11A)", () => {
+    expect(Number.isInteger(SEMANTICS_REGISTRY_VERSION)).toBe(true);
+    expect(SEMANTICS_REGISTRY_VERSION).toBeGreaterThanOrEqual(1);
   });
 });

@@ -194,14 +194,11 @@ export function commitDrawGesture(
   }
 
   if (tool === TOOLS.drawText) {
-    const defaultWidth = 100;
-    const defaultHeight = 32;
-    const box = normalizeBox(gesture.startWorld, world);
-    const textWidth = box.width > 10 ? box.width : defaultWidth;
-    const textHeight = box.height > 10 ? box.height : defaultHeight;
+    const textWidth = 100;
+    const textHeight = 32;
     const localBox: BoundingBox = {
-      x: box.x,
-      y: box.y,
+      x: gesture.startWorld.x,
+      y: gesture.startWorld.y,
       width: textWidth,
       height: textHeight,
     };

@@ -7,6 +7,7 @@ import {
   type RootRole,
   type ShapeId,
   type StyleId,
+  type ThemePalette,
   isRootId,
   ROOT_ROLES,
   STYLE_PROFILES,
@@ -84,4 +85,22 @@ export function resolveRootDesignStyle(doc: Document, shapeId: ShapeId): DesignS
 export function resolveRootRole(doc: Document, shapeId: ShapeId): RootRole {
   const root = resolveRootShape(doc, shapeId);
   return root?.meta.role ?? ROOT_ROLES.screen;
+}
+
+/**
+ * Resolves the root theme palette from its root ancestor (Idea 6, R-026).
+ * Returns undefined if no theme is defined.
+ */
+export function resolveRootTheme(doc: Document, shapeId: ShapeId): ThemePalette | undefined {
+  const root = resolveRootShape(doc, shapeId);
+  return root?.meta.theme;
+}
+
+/**
+ * Resolves whether dark mode is enabled from its root ancestor (Idea 4, R-026).
+ * Defaults to false if no root shape is found or if root has no explicit darkMode.
+ */
+export function resolveRootDarkMode(doc: Document, shapeId: ShapeId): boolean {
+  const root = resolveRootShape(doc, shapeId);
+  return root?.meta.darkMode ?? false;
 }

@@ -34,6 +34,7 @@ export interface CanvasOptions {
   readonly selection?: Selection;
   readonly shapeKinds?: ShapeKindRegistry | readonly ShapeKindRegistration[];
   readonly activeDeviceType?: DeviceType;
+  readonly activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>>;
   readonly visibleChipRootIds?: readonly ShapeId[] | ReadonlySet<ShapeId>;
 }
 
@@ -70,8 +71,9 @@ export interface CanvasController {
   subscribe(event: ControllerEvent, listener: () => void): () => void;
   emit(event: ControllerEvent): void;
 
-  getActiveDeviceType(): DeviceType | undefined;
-  setActiveDeviceType(deviceType?: DeviceType): void;
+  getActiveDeviceType(rootId?: ShapeId): DeviceType | undefined;
+  setActiveDeviceType(deviceType?: DeviceType, rootId?: ShapeId): void;
+  getActiveDeviceTypes(): Readonly<Record<ShapeId, DeviceType | undefined>>;
 
   getVisibleChipRootIds(): ReadonlySet<ShapeId>;
   isRootChipsVisible(rootId: ShapeId): boolean;
@@ -83,6 +85,11 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
   let camera = options.camera ?? DEFAULT_CAMERA;
   let selection = options.selection ?? EMPTY_SELECTION;
   let activeDeviceType = options.activeDeviceType;
+  const scopedDeviceTypes = new Map<ShapeId, DeviceType | undefined>(
+    options.activeDeviceTypes !== undefined
+      ? (Object.entries(options.activeDeviceTypes) as [ShapeId, DeviceType | undefined][])
+      : [],
+  );
   const visibleChipRootIds = new Set<ShapeId>(options.visibleChipRootIds ?? []);
   let machine = INITIAL_MACHINE_STATE;
   let shapeKindRegistry: ShapeKindRegistry =
@@ -177,10 +184,25 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
       emit(event);
     },
 
-    getActiveDeviceType: () => activeDeviceType,
-    setActiveDeviceType: (deviceType) => {
-      activeDeviceType = deviceType;
+    getActiveDeviceType: (rootId) => {
+      if (rootId !== undefined && scopedDeviceTypes.has(rootId)) {
+        return scopedDeviceTypes.get(rootId);
+      }
+      return activeDeviceType;
     },
+    setActiveDeviceType: (deviceType, rootId) => {
+      if (rootId !== undefined) {
+        if (deviceType === undefined) {
+          scopedDeviceTypes.delete(rootId);
+        } else {
+          scopedDeviceTypes.set(rootId, deviceType);
+        }
+      } else {
+        activeDeviceType = deviceType;
+      }
+    },
+    getActiveDeviceTypes: () =>
+      Object.fromEntries(scopedDeviceTypes.entries()) as Record<ShapeId, DeviceType | undefined>,
 
     getVisibleChipRootIds: () => visibleChipRootIds,
     isRootChipsVisible: (rootId) => visibleChipRootIds.has(rootId),

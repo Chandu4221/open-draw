@@ -1,0 +1,100 @@
+{
+  "schema": {
+    "version": 1
+  },
+  "shapes": {
+    "s-7a01": {
+      "id": "s-7a01",
+      "kind": "rect",
+      "parentId": "canvas:root",
+      "boundingBox": {
+        "x": 386.03,
+        "y": 125.25,
+        "width": 605.62,
+        "height": 319.96
+      },
+      "label": "Profie Card",
+      "meta": {
+        "semantic": {
+          "id": "card",
+          "platform": "web",
+          "properties": {
+            "elevation": "low"
+          }
+        },
+        "platform": "web",
+        "role": "component"
+      }
+    },
+    "s-7a02": {
+      "id": "s-7a02",
+      "kind": "ellipse",
+      "parentId": "s-7a01",
+      "boundingBox": {
+        "x": 44.21,
+        "y": 53.36,
+        "width": 198.15,
+        "height": 193.05
+      },
+      "meta": {}
+    },
+    "s-7a03": {
+      "id": "s-7a03",
+      "kind": "text",
+      "parentId": "s-7a01",
+      "content": "Alex Muller",
+      "meta": {
+        "semantic": {
+          "id": "heading",
+          "platform": "web"
+        }
+      },
+      "boundingBox": {
+        "x": 275.09,
+        "y": 79.93,
+        "width": 100,
+        "height": 32
+      }
+    },
+    "s-7a05": {
+      "id": "s-7a05",
+      "kind": "text",
+      "parentId": "s-7a01",
+      "content": "Software developer",
+      "meta": {
+        "semantic": {
+          "id": "heading",
+          "platform": "web",
+          "properties": {
+            "level": "5"
+          }
+        }
+      },
+      "boundingBox": {
+        "x": 271.81,
+        "y": 114.59,
+        "width": 162.54,
+        "height": 32.39
+      }
+    },
+    "s-7a06": {
+      "id": "s-7a06",
+      "kind": "rect",
+      "parentId": "s-7a01",
+      "content": "Hire Me",
+      "label": "Hire Me",
+      "meta": {
+        "semantic": {
+          "id": "button",
+          "platform": "web"
+        }
+      },
+      "boundingBox": {
+        "x": 268.45,
+        "y": 161.66,
+        "width": 222.14,
+        "height": 60.3
+      }
+    }
+  }
+}

@@ -151,6 +151,35 @@ describe("createCanvas", () => {
     expect(canvasWithInit.getActiveDeviceType()).toBe(DEVICE_TYPES.tablet);
   });
 
+  it("tracks scoped activeDeviceTypes per root shape (Issues C1, C2)", () => {
+    const root1 = parseShapeId("root-1");
+    const root2 = parseShapeId("root-2");
+
+    const canvas = createCanvas({
+      activeDeviceType: DEVICE_TYPES.desktop,
+      activeDeviceTypes: { [root1]: DEVICE_TYPES.mobile },
+    });
+
+    // root1 returns scoped value
+    expect(canvas.getActiveDeviceType(root1)).toBe(DEVICE_TYPES.mobile);
+    // root2 falls back to global activeDeviceType
+    expect(canvas.getActiveDeviceType(root2)).toBe(DEVICE_TYPES.desktop);
+    // undefined root falls back to global
+    expect(canvas.getActiveDeviceType()).toBe(DEVICE_TYPES.desktop);
+
+    // Set scoped device type on root2
+    canvas.setActiveDeviceType(DEVICE_TYPES.tablet, root2);
+    expect(canvas.getActiveDeviceType(root2)).toBe(DEVICE_TYPES.tablet);
+    expect(canvas.getActiveDeviceTypes()).toEqual({
+      [root1]: DEVICE_TYPES.mobile,
+      [root2]: DEVICE_TYPES.tablet,
+    });
+
+    // Clear scoped device type on root1
+    canvas.setActiveDeviceType(undefined, root1);
+    expect(canvas.getActiveDeviceType(root1)).toBe(DEVICE_TYPES.desktop);
+  });
+
   it("manages visible root chip state as transient view state (R-016, R-031)", () => {
     const canvas = createCanvas();
     expect(canvas.getVisibleChipRootIds().size).toBe(0);

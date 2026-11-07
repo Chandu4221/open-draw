@@ -51,9 +51,11 @@ describe("exportMarkdown with root roles (R-024, R-026)", () => {
     const md = exportMarkdown(doc, { includeHeader: false });
 
     expect(md).toContain(
-      "## Card — `card` (elevated: true) (Role: component, Platform: web, Style: minimal)\n\n",
+      "- #card-root — Card (Card, elevated: true) — rect [x:0.00 y:0.00 w:400.00 h:300.00]\n",
     );
-    expect(md).toContain("- **Confirm Action** — `button` (variant: primary)\n");
+    expect(md).toContain(
+      "  - #card-btn — Confirm Action (Button, variant: primary) — rect [x:20.00 y:220.00 w:100.00 h:40.00]\n",
+    );
   });
 
   it("exports root screen shape without role tag when default", () => {
@@ -72,8 +74,8 @@ describe("exportMarkdown with root roles (R-024, R-026)", () => {
     const doc = createDocument([screenRoot]);
     const md = exportMarkdown(doc, { includeHeader: false });
 
-    // When role is not explicitly set, Role tag is omitted
-    expect(md).toBe("## Page (Platform: web, Style: minimal)\n");
+    // When role is not explicitly set, renders as untagged rect with bounding box
+    expect(md).toBe("- #screen-root — (untagged rect) [x:0.00 y:0.00 w:1200.00 h:800.00]\n");
     expect(md).not.toContain("Role:");
   });
 });

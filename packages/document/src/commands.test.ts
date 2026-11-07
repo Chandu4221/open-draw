@@ -287,4 +287,75 @@ describe("document commands (milestone 05)", () => {
     const restored = applyTransaction(cleared.document, createTransaction(cleared.inverse));
     expect(restored.document.shapes[rectId]?.content).toBe("Hello World");
   });
+
+  it("applies SetRootTheme on root shapes and inverts cleanly (R-026)", () => {
+    const doc = createBaseDoc();
+    const result = applyTransaction(
+      doc,
+      createTransaction([
+        {
+          type: COMMANDS.setRootTheme,
+          id: pageId,
+          theme: { primary: "#1d4ed8", surface: "#ffffff" },
+        },
+      ]),
+    );
+
+    expect(result.document.shapes[pageId]?.meta.theme?.primary).toBe("#1d4ed8");
+    expect(result.document.shapes[pageId]?.meta.theme?.surface).toBe("#ffffff");
+
+    const undone = applyTransaction(result.document, createTransaction(result.inverse));
+    expect(undone.document.shapes[pageId]?.meta.theme).toBeUndefined();
+  });
+
+  it("rejects SetRootTheme on non-root shapes (R-026)", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setRootTheme,
+            id: rectId,
+            theme: { primary: "#1d4ed8" },
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+  });
+
+  it("applies SetRootDarkMode on root shapes and inverts cleanly (R-026)", () => {
+    const doc = createBaseDoc();
+    const result = applyTransaction(
+      doc,
+      createTransaction([
+        {
+          type: COMMANDS.setRootDarkMode,
+          id: pageId,
+          darkMode: true,
+        },
+      ]),
+    );
+
+    expect(result.document.shapes[pageId]?.meta.darkMode).toBe(true);
+
+    const undone = applyTransaction(result.document, createTransaction(result.inverse));
+    expect(undone.document.shapes[pageId]?.meta.darkMode).toBeUndefined();
+  });
+
+  it("rejects SetRootDarkMode on non-root shapes (R-026)", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setRootDarkMode,
+            id: rectId,
+            darkMode: true,
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+  });
 });

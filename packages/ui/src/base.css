@@ -358,6 +358,10 @@
     transparent var(--od-border-width)
   );
   background-size: var(--od-grid-size) var(--od-grid-size);
+  user-select: none;
+}
+.od-canvas-bg svg {
+  user-select: none;
 }
 
 /* Modal Dialog */
