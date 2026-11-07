@@ -18,6 +18,7 @@ import {
   EXPORT_FORMATS,
   EXPORT_FORMAT_BY_VALUE,
   isExportFormat,
+  EXPORT_CHIP_PREFIX,
   STYLE_PROFILES,
   STYLE_PROFILE_BY_VALUE,
   DESIGN_STYLES,
@@ -125,6 +126,10 @@ describe("export-contract", () => {
     expect(isExportFormat("json")).toBe(true);
     expect(isExportFormat("markdown")).toBe(true);
     expect(isExportFormat("csv")).toBe(false);
+  });
+
+  it("exposes EXPORT_CHIP_PREFIX as # for shared chip references (Milestone 11A)", () => {
+    expect(EXPORT_CHIP_PREFIX).toBe("#");
   });
 });
 

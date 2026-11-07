@@ -86,6 +86,11 @@ export const CREATIVITY_LEVEL_DEFINITIONS: Readonly<
 export const DEFAULT_CREATIVITY_LEVEL: CreativityLevel = 3;
 
 /**
+ * Shared prefix for human-readable chip references across export formats (Milestone 11A).
+ */
+export const EXPORT_CHIP_PREFIX = "#" as const;
+
+/**
  * Options passed to exporter functions.
  */
 export interface ExportOptions {

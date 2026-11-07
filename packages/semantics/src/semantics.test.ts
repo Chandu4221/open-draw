@@ -23,6 +23,7 @@ import {
   resolveShapeDisplayName,
   suggestPlatformEquivalent,
   walkSemanticTree,
+  SEMANTICS_REGISTRY_VERSION,
 } from "./index";
 
 describe("root resolution (R-026)", () => {
@@ -552,5 +553,12 @@ describe("cross-platform concept harmonization (Idea 2, Issues D1, D2, D3)", () 
     expect(equivalents.androidNative).toBe("text-field");
     expect(equivalents.flutter).toBe("text-field");
     expect(equivalents.ios).toBe("text-field");
+  });
+});
+
+describe("semantics-version", () => {
+  it("exposes integer SEMANTICS_REGISTRY_VERSION >= 1 for export parity fingerprinting (Milestone 11A)", () => {
+    expect(Number.isInteger(SEMANTICS_REGISTRY_VERSION)).toBe(true);
+    expect(SEMANTICS_REGISTRY_VERSION).toBeGreaterThanOrEqual(1);
   });
 });
