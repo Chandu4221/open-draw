@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import { SHAPE_KINDS } from "@open-draw/contracts";
 import {
@@ -53,6 +53,11 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     render,
   } = props;
 
+  const lastPointerDownTimeRef = useRef<number>(0);
+  const lastPointerDownPosRef = useRef<Point>({ x: 0, y: 0 });
+  const DOUBLE_CLICK_THRESHOLD_MS = 350;
+  const DOUBLE_CLICK_MAX_DISTANCE_PX = 6;
+
   function screenPointFrom(event: MouseEvent | PointerEvent | WheelEvent): Point {
     const svg = svgRef.current;
     if (svg === null) {
@@ -97,10 +102,23 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
 
     const panRequested = event.button === 1 || spaceRef.current;
     const rawHit = panRequested ? null : canvas.pickShape(doc, world);
-    const isDoubleClick = event.detail >= 2;
+    const now = Date.now();
+    const dt = now - lastPointerDownTimeRef.current;
+    const dist = Math.hypot(
+      screen.x - lastPointerDownPosRef.current.x,
+      screen.y - lastPointerDownPosRef.current.y,
+    );
+    const isDoubleClick =
+      event.detail >= 2 ||
+      (dt > 0 && dt <= DOUBLE_CLICK_THRESHOLD_MS && dist <= DOUBLE_CLICK_MAX_DISTANCE_PX);
+    lastPointerDownTimeRef.current = now;
+    lastPointerDownPosRef.current = screen;
+
     const hit =
       rawHit !== null && toolRef.current === TOOLS.select
-        ? canvas.resolveSelectionDrillDown(doc, rawHit, isDoubleClick)
+        ? event.metaKey || event.ctrlKey
+          ? rawHit
+          : canvas.resolveSelectionDrillDown(doc, rawHit, isDoubleClick)
         : rawHit;
 
     canvas.dispatch({

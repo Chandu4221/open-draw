@@ -67,14 +67,21 @@ test.describe("Studio workbench smoke tests", () => {
     // 3. Click empty canvas to clear selection
     await page.mouse.click(box.x + 50, box.y + 50);
 
-    // 4. Single-click child position: selects parent container (depth 0)
+    // 4. Single-click child position from unselected state: selects parent container
     await page.mouse.click(box.x + 250, box.y + 250);
-    // Inspector should show the parent shape
-    await expect(page.locator("aside.od-panel")).toBeVisible();
+    await expect(page.locator(".od-meta").filter({ hasText: "ID:" })).toContainText("ID: s-7a01");
 
     // 5. Double-click child position: drills down into child shape
     await page.mouse.dblclick(box.x + 250, box.y + 250);
-    // Verified: child shape is now selected
-    await expect(page.locator("aside.od-panel")).toBeVisible();
+    await expect(page.locator(".od-meta").filter({ hasText: "ID:" })).toContainText("ID: s-7a02");
+
+    // 6. Click empty canvas to clear selection
+    await page.mouse.click(box.x + 50, box.y + 50);
+
+    // 7. Ctrl-click child position: direct selection into child shape in one click
+    await page.keyboard.down("Control");
+    await page.mouse.click(box.x + 250, box.y + 250);
+    await page.keyboard.up("Control");
+    await expect(page.locator(".od-meta").filter({ hasText: "ID:" })).toContainText("ID: s-7a02");
   });
 });
