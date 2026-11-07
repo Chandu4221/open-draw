@@ -2,14 +2,14 @@
 import type { DeviceType, ExportOptions, ShapeId } from "@open-draw/contracts";
 
 export interface MarkdownExportOptions extends ExportOptions {
-  readonly rootId?: ShapeId;
-  readonly deviceType?: DeviceType;
-  readonly includeAiDirectives?: boolean;
-  readonly includeLegend?: boolean;
-  readonly includeAsciiSketch?: boolean;
+  readonly rootId?: ShapeId | undefined;
+  readonly deviceType?: DeviceType | undefined;
+  readonly includeAiDirectives?: boolean | undefined;
+  readonly includeLegend?: boolean | undefined;
+  readonly includeAsciiSketch?: boolean | undefined;
 }
 
 export interface JsonExportOptions extends ExportOptions {
-  readonly rootId?: ShapeId;
-  readonly includeAiDirectives?: boolean;
+  readonly rootId?: ShapeId | undefined;
+  readonly includeAiDirectives?: boolean | undefined;
 }

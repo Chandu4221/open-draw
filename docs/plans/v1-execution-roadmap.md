@@ -11,16 +11,17 @@ This document is the binding single source of truth for the planned milestones f
 
 ## Master Milestones Table
 
-| #      | Milestone Title                                                   | Primary Scope                                                                                                                                                                                         | Target Branch                              | Rules Implemented                               |
-| ------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| **08** | **Privacy, Cloudflare Deployment & Workflow Hygiene** (Merged)    | Migrate to Cloudflare Pages, harden CI/release workflows, add license notices, update README & npm metadata, enable private repo transition                                                           | `feat/cloudflare-pages-deployment`         | R-001, R-014, R-032, R-033, R-034, R-035, R-036 |
-| **09** | **Engine Performance & Core Canvas Interaction** (Merged)         | $O(1)$ child index, cursor-based BFS, gesture render decoupling, negative drag-to-draw & resize flipping, double-click drill-down, R-019 named events                                                 | `feat/engine-performance-and-interaction`  | R-008, R-009, R-015, R-016, R-018, R-019        |
-| **10** | **Studio Workbench & Resizable Inspector (`allotment`)** (Merged) | Resizable split-view via `allotment`, multi-select inspector, responsive controls polish, top-right toast repositioning, apps consolidation to `apps/studio`, Playwright smoke tests                  | `feat/studio-workbench-and-inspector`      | R-001, R-002, R-005, R-010, R-014, R-020, R-035 |
-| **11** | **P0 Platform Semantics, Root Theming & AI Directives**           | Expanded P0 semantic catalogs (Web, Android, Flutter, iOS) split under 300 lines (R-010); root brand theme inputs; export popup with 4 AI directives (A11y, Contrast, Stack Detection, Codegen Style) | `feat/semantics-theming-and-ai-directives` | R-006, R-010, R-016, R-023, R-026, R-040        |
-| **12** | **Studio UI Redesign & Floating Chrome (Inspector & Dock)**       | Redesign inspector into collapsible card widgets with 2-column inline inputs (`PX`, `%`) & segmented controls; refine floating dock into distinct tool/action/export pill groups; re-anchor collapse  | `feat/studio-ui-redesign-and-chrome`       | R-004, R-008, R-010, R-014, ADR-0007            |
-| **13** | **Front Page Showcase (Golden Circle)**                           | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                             | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                      |
-| **14** | **Advanced Transformations**                                      | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                     | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021               |
-| **—**  | **Responsive Reflow Add-on (Experimental)**                       | Dedicated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`).                                                                                                                | `feat/responsive-reflow-addon`             | R-002, R-004, R-016, R-027, R-030 (PARKED)      |
+| #       | Milestone Title                                                   | Primary Scope                                                                                                                                                                                             | Target Branch                              | Rules Implemented                                                                                   |
+| ------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| **08**  | **Privacy, Cloudflare Deployment & Workflow Hygiene** (Merged)    | Migrate to Cloudflare Pages, harden CI/release workflows, add license notices, update README & npm metadata, enable private repo transition                                                               | `feat/cloudflare-pages-deployment`         | R-001, R-014, R-032, R-033, R-034, R-035, R-036                                                     |
+| **09**  | **Engine Performance & Core Canvas Interaction** (Merged)         | $O(1)$ child index, cursor-based BFS, gesture render decoupling, negative drag-to-draw & resize flipping, double-click drill-down, R-019 named events                                                     | `feat/engine-performance-and-interaction`  | R-008, R-009, R-015, R-016, R-018, R-019                                                            |
+| **10**  | **Studio Workbench & Resizable Inspector (`allotment`)** (Merged) | Resizable split-view via `allotment`, multi-select inspector, responsive controls polish, top-right toast repositioning, apps consolidation to `apps/studio`, Playwright smoke tests                      | `feat/studio-workbench-and-inspector`      | R-001, R-002, R-005, R-010, R-014, R-020, R-035                                                     |
+| **11**  | **P0 Platform Semantics, Root Theming & AI Directives**           | Expanded P0 semantic catalogs (Web, Android, Flutter, iOS) split under 300 lines (R-010); root brand theme inputs; export popup with 4 AI directives (A11y, Contrast, Stack Detection, Codegen Style)     | `feat/semantics-theming-and-ai-directives` | R-006, R-010, R-016, R-023, R-026, R-040                                                            |
+| **11A** | **Machine-Readable Export Parity** (Completed)                    | Chip ID system (`#s-xxxx`), pure JSON export projection, Markdown tree hierarchy & boxes, deterministic ASCII layout sketch, SVG annotations layer with dependency inversion, on-demand chip-keyed legend | `feat/export-shape-parity`                 | R-002, R-005, R-006, R-008, R-010, R-014, R-016, R-020, R-021, R-025, R-041, R-042, R-043, ADR-0010 |
+| **12**  | **Studio UI Redesign & Floating Chrome (Inspector & Dock)**       | Redesign inspector into collapsible card widgets with 2-column inline inputs (`PX`, `%`) & segmented controls; refine floating dock into distinct tool/action/export pill groups; re-anchor collapse      | `feat/studio-ui-redesign-and-chrome`       | R-004, R-008, R-010, R-014, ADR-0007                                                                |
+| **13**  | **Front Page Showcase (Golden Circle)**                           | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                                 | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                                                                          |
+| **14**  | **Advanced Transformations**                                      | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                         | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021                                                                   |
+| **—**   | **Responsive Reflow Add-on (Experimental)**                       | Dedicated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`).                                                                                                                    | `feat/responsive-reflow-addon`             | R-002, R-004, R-016, R-027, R-030 (PARKED)                                                          |
 
 ---
 
@@ -154,6 +155,32 @@ Transform OpenDraw into an intelligent AI prompt compiler for design handoff, wi
    - Define clear cross-platform container migration rules.
 5. **Scoped Root Device Lenses (Issues C1, C2):**
    - Scope `activeDeviceType` per root container shape in `createCanvas()` and `documentToSvg()`.
+
+---
+
+### Milestone 11A — Machine-Readable Export Parity
+
+#### Objective
+
+Guarantee machine-readable shape identity and semantics parity across all export formats (JSON, Markdown, SVG) via a shared chip ID system and pure export-time projections, with zero document mutation (R-016, R-025, ADR-0010).
+
+#### Tasks
+
+1. **Universal Chip ID System & Enriched JSON Export (Work Package A):**
+   - Define `EXPORT_CHIP_PREFIX = "#"` in `@open-draw/contracts`.
+   - Implement pure export projection `exportJson()` in `@open-draw/export-markdown`: top-level `shapeOrder`, `SEMANTICS_REGISTRY_VERSION`, chip IDs (`#s-xxxx`), explicit style fields (`fill`, `stroke`, `strokeWidth`), and explicit `semantic: null`.
+   - Keep `@open-draw/document` untouched (R-016, R-025).
+2. **Markdown Tree Hierarchy, Boxes & ASCII Layout Sketch (Work Package B):**
+   - Replace flat bullets with indented tree hierarchy walking `subtreeOf` in canonical order.
+   - Amend ADR-0005 D2 to include parent-relative bounding boxes `[x:0.00 y:0.00 w:0.00 h:0.00]`.
+   - Implement deterministic 80-column ASCII layout sketch renderer auto-included when shape count $> 5$ (`ASCII_SKETCH_SHAPE_THRESHOLD = 5`).
+3. **SVG Annotations Layer & Dependency Inversion (Work Package C):**
+   - Add `data-shape-id`, `data-chip-id`, `data-semantic`, `data-parent-id`, `<title>`, and `role="img"`/`aria-label` to exported SVG shape groups.
+   - Render top-level `<g class="annotation-chips">` overlay with deterministic collision avoidance.
+   - Maintain strict package boundaries: `@open-draw/renderer-svg` never imports semantics or profiles; Studio injects `resolveDisplayName` resolver.
+4. **On-Demand Chip-Keyed Legend & Studio UI Wiring:**
+   - Remove legacy generic glossary legend across all formats; replace with on-demand chip-keyed mappings (`#s-7a01 — Profie Card (Card)`).
+   - Wire legend, ASCII sketch, and annotations toggles in Studio `ExportModal`. Default legend to OFF.
 
 ---
 

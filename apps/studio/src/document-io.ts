@@ -1,13 +1,20 @@
-import { parseDocument, serializeDocument, type Document } from "@open-draw/document";
-import { exportMarkdown } from "@open-draw/export-markdown";
+import { parseDocument, type Document, type Shape } from "@open-draw/document";
+import { exportJson, exportMarkdown } from "@open-draw/export-markdown";
 import { documentToSvgWithLegend, type LegendItem } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
-import {
-  type CreativityLevel,
-  CREATIVITY_LEVEL_DEFINITIONS,
-  DEFAULT_CREATIVITY_LEVEL,
-} from "@open-draw/contracts";
+import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/contracts";
+
+export interface SvgExportOptions {
+  readonly includeLegend?: boolean | undefined;
+  readonly includeAnnotations?: boolean | undefined;
+}
+
+export interface MarkdownExportIoOptions {
+  readonly creativityLevel?: CreativityLevel | undefined;
+  readonly includeLegend?: boolean | undefined;
+  readonly includeAsciiSketch?: boolean | undefined;
+}
 
 export function extractDocumentLegendItems(doc: Document): readonly LegendItem[] {
   const seen = new Set<string>();
@@ -27,13 +34,26 @@ export function extractDocumentLegendItems(doc: Document): readonly LegendItem[]
   return items;
 }
 
-export function generateExportSvg(doc: Document, includeLegend: boolean): string {
-  const legendItems = includeLegend ? extractDocumentLegendItems(doc) : [];
-  return documentToSvgWithLegend(doc, { legendItems });
+export function generateExportSvg(doc: Document, options?: SvgExportOptions | boolean): string {
+  const includeLegend = typeof options === "boolean" ? options : (options?.includeLegend ?? false);
+  const includeAnnotations =
+    typeof options === "boolean" ? true : (options?.includeAnnotations ?? true);
+
+  const resolveDisplayName = (shape: Shape): string => {
+    const rootPlatform = resolveRootPlatform(doc, shape.id);
+    const profile = rootPlatform !== undefined ? PLATFORM_PROFILES[rootPlatform] : undefined;
+    return resolveShapeDisplayName(shape, profile);
+  };
+
+  return documentToSvgWithLegend(doc, {
+    includeLegend,
+    includeAnnotations,
+    resolveDisplayName,
+  });
 }
 
-export function exportDocumentSvg(doc: Document, includeLegend: boolean): void {
-  const svg = generateExportSvg(doc, includeLegend);
+export function exportDocumentSvg(doc: Document, options?: SvgExportOptions | boolean): void {
+  const svg = generateExportSvg(doc, options);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -45,10 +65,10 @@ export function exportDocumentSvg(doc: Document, includeLegend: boolean): void {
 
 export function exportDocumentPng(
   doc: Document,
-  includeLegend: boolean,
+  options?: SvgExportOptions | boolean,
   onError?: (err: unknown) => void,
 ): void {
-  const svg = generateExportSvg(doc, includeLegend);
+  const svg = generateExportSvg(doc, options);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const img = new Image();
@@ -87,8 +107,11 @@ export function exportDocumentPng(
   img.src = url;
 }
 
-export async function copyDocumentPng(doc: Document, includeLegend: boolean): Promise<void> {
-  const svg = generateExportSvg(doc, includeLegend);
+export async function copyDocumentPng(
+  doc: Document,
+  options?: SvgExportOptions | boolean,
+): Promise<void> {
+  const svg = generateExportSvg(doc, options);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   return new Promise<void>((resolve, reject) => {
@@ -135,30 +158,19 @@ export function generateExportJson(
   doc: Document,
   creativityLevel: CreativityLevel = DEFAULT_CREATIVITY_LEVEL,
 ): string {
-  const raw = serializeDocument(doc);
-  const parsed = JSON.parse(raw) as {
-    schema: { version: number };
-    shapes: Record<string, unknown>;
-  };
-  const def = CREATIVITY_LEVEL_DEFINITIONS[creativityLevel];
-  const withGuidance = {
-    schema: parsed.schema,
-    aiGuidance: {
-      creativityLevel: def.level,
-      name: def.name,
-      description: def.description,
-      directive: def.promptDirective,
-    },
-    shapes: parsed.shapes,
-  };
-  return JSON.stringify(withGuidance, null, 2);
+  return exportJson(doc, { creativityLevel });
 }
 
 export function generateExportMarkdown(
   doc: Document,
-  creativityLevel: CreativityLevel = DEFAULT_CREATIVITY_LEVEL,
+  options?: MarkdownExportIoOptions | CreativityLevel,
 ): string {
-  return exportMarkdown(doc, { creativityLevel });
+  const creativityLevel =
+    typeof options === "number" ? options : (options?.creativityLevel ?? DEFAULT_CREATIVITY_LEVEL);
+  const includeLegend = typeof options === "object" ? options.includeLegend : false;
+  const includeAsciiSketch = typeof options === "object" ? options.includeAsciiSketch : undefined;
+
+  return exportMarkdown(doc, { creativityLevel, includeLegend, includeAsciiSketch });
 }
 
 export function exportDocumentJson(doc: Document, creativityLevel?: CreativityLevel): void {
@@ -172,8 +184,11 @@ export function exportDocumentJson(doc: Document, creativityLevel?: CreativityLe
   URL.revokeObjectURL(url);
 }
 
-export function exportDocumentMarkdown(doc: Document, creativityLevel?: CreativityLevel): void {
-  const md = generateExportMarkdown(doc, creativityLevel);
+export function exportDocumentMarkdown(
+  doc: Document,
+  options?: MarkdownExportIoOptions | CreativityLevel,
+): void {
+  const md = generateExportMarkdown(doc, options);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

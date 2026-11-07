@@ -59,7 +59,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   }, []);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
-  const [includeLegend, setIncludeLegend] = useState<boolean>(true);
+  const [includeLegend, setIncludeLegend] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
 
