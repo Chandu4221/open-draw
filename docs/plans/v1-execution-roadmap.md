@@ -11,14 +11,15 @@ This document is the binding single source of truth for the planned milestones f
 
 ## Master Milestones Table
 
-| #      | Milestone Title                                       | Primary Scope                                                                                                                                                               | Target Branch                             | Rules Implemented                               |
-| ------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------- |
-| **08** | **Privacy, Cloudflare Deployment & Workflow Hygiene** | Migrate to Cloudflare Pages, harden CI/release workflows, add license notices, update README & npm metadata, enable private repo transition                                 | `feat/cloudflare-pages-deployment`        | R-001, R-014, R-032, R-033, R-034, R-035, R-036 |
-| **09** | **Engine Performance & Core Canvas Interaction**      | $O(1)$ child index, cursor-based BFS, gesture render decoupling, negative drag-to-draw & resize flipping, double-click drill-down, R-019 named events                       | `feat/engine-performance-and-interaction` | R-008, R-009, R-015, R-016, R-018, R-019        |
-| **10** | **Studio Workbench, Multi-Select & Code Hygiene**     | Multi-select inspector, responsive controls layout fix, toast repositioning & sanitization, app code deduplication, Playwright E2E smoke tests                              | `feat/studio-workbench-and-hygiene`       | R-005, R-010, R-014, R-020, R-035               |
-| **11** | **AI Directives, Semantics & Root Theming**           | WCAG 2.1 AA prompt directives, Dark Mode switch + embedded UI switcher directive, root color theme palettes, semantic specifics (H1–H6, Nav variants), scoped device lenses | `feat/ai-directives-theming-semantics`    | R-006, R-023, R-026, R-028, R-040               |
-| **12** | **Advanced Transformations**                          | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                           | `feat/shape-transformations`              | R-005, R-006, R-008, R-016, R-021               |
-| **13** | **Responsive Reflow Add-on (Experimental)**           | Isolated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`), rows, columns, order, and wrap with 100% test coverage                                | `feat/responsive-reflow-addon`            | R-002, R-004, R-016, R-027, R-030               |
+| #      | Milestone Title                                          | Primary Scope                                                                                                                                                                                         | Target Branch                              | Rules Implemented                               |
+| ------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
+| **08** | **Privacy, Cloudflare Deployment & Workflow Hygiene**    | Migrate to Cloudflare Pages, harden CI/release workflows, add license notices, update README & npm metadata, enable private repo transition                                                           | `feat/cloudflare-pages-deployment`         | R-001, R-014, R-032, R-033, R-034, R-035, R-036 |
+| **09** | **Engine Performance & Core Canvas Interaction**         | $O(1)$ child index, cursor-based BFS, gesture render decoupling, negative drag-to-draw & resize flipping, double-click drill-down, R-019 named events                                                 | `feat/engine-performance-and-interaction`  | R-008, R-009, R-015, R-016, R-018, R-019        |
+| **10** | **Studio Workbench & Resizable Inspector (`allotment`)** | Resizable split-view via `allotment`, multi-select inspector, responsive controls polish, top-right toast repositioning, apps consolidation to `apps/studio`, Playwright smoke tests                  | `feat/studio-workbench-and-inspector`      | R-001, R-002, R-005, R-010, R-014, R-020, R-035 |
+| **11** | **P0 Platform Semantics, Root Theming & AI Directives**  | Expanded P0 semantic catalogs (Web, Android, Flutter, iOS) split under 300 lines (R-010); root brand theme inputs; export popup with 4 AI directives (A11y, Contrast, Stack Detection, Codegen Style) | `feat/semantics-theming-and-ai-directives` | R-006, R-010, R-016, R-023, R-026, R-040        |
+| **12** | **Front Page Showcase (Golden Circle)**                  | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                             | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                      |
+| **13** | **Advanced Transformations**                             | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                     | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021               |
+| **—**  | **Responsive Reflow Add-on (Experimental)**              | Dedicated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`).                                                                                                                | `feat/responsive-reflow-addon`             | R-002, R-004, R-016, R-027, R-030 (PARKED)      |
 
 ---
 
@@ -88,36 +89,37 @@ Eliminate $O(N^2)$ traversal bottlenecks during rendering, hit testing, and expo
 
 ---
 
-### Milestone 10 — Studio Workbench, Multi-Select & Code Hygiene
+### Milestone 10 — Studio Workbench & Resizable Inspector (`allotment`)
 
 #### Objective
 
-Provide complete multi-selection capabilities, resolve inspector layout overflow, reposition intrusive notifications, deduplicate application code, and establish automated Playwright smoke testing.
+Provide resizable split-view inspector panels via `allotment`, multi-selection batch alignment and styling, dynamic semantic property controls, responsive controls polish, top-right toast repositioning, application consolidation into `apps/studio`, and automated Playwright smoke testing.
 
 #### Tasks
 
-1. **Multi-Select Inspector Panel (Issue E5):**
-   - In `apps/studio/src/components/Inspector.tsx`, detect multi-selection (`selectedIds.length > 1`).
-   - Display a dedicated Multi-Select Inspector showing:
+1. **Resizable Split-View via `allotment` (Issue E1):**
+   - Install `allotment` in `apps/studio` and wrap canvas and sidebar in `<Allotment>`.
+   - Restyle allotment sash with OpenDraw CSS tokens (`--od-border`, `--od-surface`).
+   - Add snap-to-close behavior and sidebar collapse toggle.
+2. **Multi-Select Inspector Panel (Issue E5):**
+   - Track multi-selection state (`selectedShapeIds: readonly ShapeId[]`) from `canvasRef.current.getSelectedIds()`.
+   - When multiple shapes are selected, render `MultiSelectInspector` providing:
      - Selected item count.
      - Batch alignment tools (Align Left, Center, Right, Top, Middle, Bottom).
      - Batch distribution tools (Distribute Horizontally, Vertically).
      - Batch styling (shared Fill, Stroke, Stroke Width).
      - Batch Delete action.
-2. **Inspector Layout & Label Polish (Issues E1, E3, C3):**
-   - Redesign Flex Order controls in `apps/studio/src/components/ResponsiveControls.tsx` to prevent horizontal clipping in the 280px sidebar.
-   - Replace developer jargon labels ("Hidden On", "Flex Order") with clear labels ("Device Visibility", "Display Order").
-   - Replace visibility checkboxes with segmented icon toggle buttons matching `root-device-bar.ts`.
-3. **Toast Notifications Repositioning & Sanitization (Issue E2):**
-   - In `packages/ui/src/base.css`, reposition `.od-toast-host` from `bottom: var(--od-24); left: 50%` to `top: var(--od-24); right: var(--od-24)`.
-   - Sanitize fallback notifications to display human-readable labels instead of raw internal IDs.
-4. **Dock Button Consistency (Issue E4):**
-   - Align the Export button in `CanvasDock.tsx` with standard dock icon-button patterns.
-5. **Application Code Deduplication & Type Safety (Issues F1, F2, F3):**
-   - Extract duplicated canvas plumbing files (`canvas-gestures.ts`, `canvas-init.ts`, `canvas-overlays.ts`, `canvas-render.ts`) into a shared module.
-   - Replace lingering raw string literals (`"all"`, `"none"`, `"markdown"`) with closed `as const` registries (R-005).
-   - Replace raw `as` casts and `!` assertions with explicit type-narrowing functions.
-6. **Playwright E2E Smoke Tests (Issue F4):**
+3. **Dynamic Semantic Property Controls:**
+   - In `ComponentSemanticSection.tsx`, render data-driven controls dynamically for each property defined in `semanticDef.properties` (`text`, `select`, `toggle`, `number`).
+4. **Inspector Layout & Label Polish (Issues E1, E3, C3):**
+   - Redesign responsive controls to prevent horizontal clipping in the resizable sidebar.
+   - Replace developer jargon labels ("Hidden On" → "Device Visibility", "Flex Order" → "Display Order") per R-039.
+   - Replace visibility checkboxes with segmented icon toggle buttons.
+5. **Toast Notifications Repositioning (Issue E2):**
+   - In `packages/ui/src/base.css`, reposition `.od-toast-host` from `bottom: var(--od-24); left: 50%` to `top: var(--od-24); right: var(--od-24); flex-direction: column;`.
+6. **Application Consolidation to `apps/studio` (Issue F1):**
+   - Consolidate development and production into `apps/studio` as the single application, eliminating 31 duplicate files from legacy `apps/playground`.
+7. **Playwright E2E Smoke Tests (Issue F4):**
    - Set up `playwright.config.ts` and author core smoke tests verifying canvas loading, shape creation, multi-select, and export modal rendering in Studio.
    - Wire smoke tests into the CI workflow per R-035.
 

@@ -17,7 +17,7 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
     <aside
       className="od-panel"
       style={{
-        width: "360px",
+        width: "100%",
         height: "100%",
         minHeight: 0,
         boxSizing: "border-box",

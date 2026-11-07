@@ -1,6 +1,7 @@
 import React from "react";
 import { DEVICE_TYPES, type DeviceType, type PlatformProfile } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
+import { OdIconButton, type IconId } from "@open-draw/ui";
 
 export interface ResponsiveControlsProps {
   readonly selectedShape: Shape;
@@ -8,6 +9,14 @@ export interface ResponsiveControlsProps {
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
   readonly handleOrderChange: (dt: DeviceType, valStr: string) => void;
 }
+
+const DEVICE_ICON_MAP: Readonly<Record<DeviceType, IconId>> = {
+  mobile: "smartphone",
+  tablet: "tablet",
+  laptop: "laptop",
+  desktop: "desktop",
+  largeScreen: "monitor",
+};
 
 export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.Element {
   const { selectedShape, activeProfile, handleToggleHiddenOn, handleOrderChange } = props;
@@ -22,43 +31,51 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
+      {/* Device Visibility */}
       <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-4)" }}>
-          Visibility (Hidden On)
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+          Device Visibility
         </span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--od-8)" }}>
+        <div style={{ display: "flex", gap: "var(--od-4)", flexWrap: "wrap" }}>
           {activeProfile.deviceTypes.map((dt) => {
             const isHidden = selectedShape.meta.hiddenOn?.includes(dt) ?? false;
-            const inputId = `responsive-hidden-${selectedShape.id}-${dt}`;
+            const icon = DEVICE_ICON_MAP[dt];
+            const deviceLabel = DEVICE_TYPES[dt];
             return (
-              <label
+              <OdIconButton
                 key={dt}
-                htmlFor={inputId}
+                name={icon}
+                aria-label={
+                  isHidden
+                    ? `Hidden on ${deviceLabel} (click to show)`
+                    : `Visible on ${deviceLabel} (click to hide)`
+                }
+                title={
+                  isHidden
+                    ? `Hidden on ${deviceLabel} (click to show)`
+                    : `Visible on ${deviceLabel} (click to hide)`
+                }
+                onClick={() => handleToggleHiddenOn(dt)}
+                active={!isHidden}
+                ghost={isHidden}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--od-4)",
-                  fontSize: "var(--od-text-xs)",
-                  color: "var(--od-text-secondary)",
-                  cursor: "pointer",
+                  opacity: isHidden ? 0.35 : 1,
+                  border: isHidden
+                    ? "1px dashed var(--od-border-strong)"
+                    : "1px solid var(--od-accent)",
+                  backgroundColor: isHidden ? "transparent" : "var(--od-accent-soft)",
+                  color: isHidden ? "var(--od-text-tertiary)" : "var(--od-accent)",
                 }}
-              >
-                <input
-                  id={inputId}
-                  type="checkbox"
-                  checked={isHidden}
-                  onChange={() => handleToggleHiddenOn(dt)}
-                />
-                <span>{DEVICE_TYPES[dt]}</span>
-              </label>
+              />
             );
           })}
         </div>
       </div>
 
+      {/* Display Order */}
       <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-4)" }}>
-          Flex Order
+        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+          Display Order
         </span>
         <div
           style={{
@@ -83,7 +100,7 @@ export function ResponsiveControls(props: ResponsiveControlsProps): React.JSX.El
                   type="number"
                   className="od-input"
                   placeholder="0"
-                  aria-label={`Flex order for ${DEVICE_TYPES[dt]}`}
+                  aria-label={`Display order for ${DEVICE_TYPES[dt]}`}
                   value={orderVal !== undefined ? orderVal : ""}
                   onChange={(e) => handleOrderChange(dt, e.target.value)}
                 />
