@@ -2,6 +2,7 @@
 // Implements ADR-0005 D1, D2. Pure Document → string projection (R-008, R-016).
 export * from "./export-markdown";
 export * from "./export-json";
+export * from "./format-tree";
 export * from "./chip-id";
 export * from "./ai-directives";
 export * from "./escape-markdown";

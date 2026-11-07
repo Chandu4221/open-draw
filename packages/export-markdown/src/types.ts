@@ -5,6 +5,7 @@ export interface MarkdownExportOptions extends ExportOptions {
   readonly rootId?: ShapeId;
   readonly deviceType?: DeviceType;
   readonly includeAiDirectives?: boolean;
+  readonly includeLegend?: boolean;
 }
 
 export interface JsonExportOptions extends ExportOptions {
