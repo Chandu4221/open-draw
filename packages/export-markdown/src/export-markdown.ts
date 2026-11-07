@@ -5,15 +5,12 @@
 // Byte-stable by construction: deterministic sort orders, zero timestamps (R-041).
 import {
   type DeviceType,
-  type ExportOptions,
-  type ShapeId,
   DESIGN_STYLE_LABELS,
   DEVICE_TYPES,
   ROOT_ID,
   ROOT_ROLES,
   SEMANTIC_CONFLICTS,
   SHAPE_KINDS,
-  CREATIVITY_LEVEL_DEFINITIONS,
 } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import {
@@ -23,40 +20,12 @@ import {
   walkSemanticTree,
   type SemanticTreeNode,
 } from "@open-draw/semantics";
+import { compileAiDirectives } from "./ai-directives";
+import { escapeCodeSpan, escapeMarkdownText } from "./escape-markdown";
+import type { MarkdownExportOptions } from "./types";
 
-export interface MarkdownExportOptions extends ExportOptions {
-  readonly rootId?: ShapeId;
-  readonly deviceType?: DeviceType;
-}
-
-/**
- * Safely escapes user-derived strings for structured Markdown export (R-008, R-016).
- * Neutralizes newlines, Markdown formatting syntax, and raw HTML tags.
- */
-export function escapeMarkdownText(text: string): string {
-  if (text === "") {
-    return "";
-  }
-  return text
-    .replace(/[\r\n\t]+/g, " ")
-    .replace(/\\/g, "\\\\")
-    .replace(/([`*_#[\]()<>~|])/g, "\\$1")
-    .trim();
-}
-
-/**
- * Safely escapes strings rendered inside a Markdown backtick code span (`...`) (R-006, R-008).
- * Neutralizes newlines so they cannot start a new line, and replaces backticks so they cannot close the code span early.
- */
-export function escapeCodeSpan(text: string): string {
-  if (text === "") {
-    return "";
-  }
-  return text
-    .replace(/[\r\n\t]+/g, " ")
-    .replace(/`/g, "'")
-    .trim();
-}
+export { escapeCodeSpan, escapeMarkdownText };
+export type { MarkdownExportOptions };
 
 function formatProperties(properties: Readonly<Record<string, string | number | boolean>>): string {
   const entries = Object.entries(properties);
@@ -169,13 +138,14 @@ export function exportMarkdown(doc: Document, options?: MarkdownExportOptions): 
     lines.push("");
   }
 
-  if (options?.creativityLevel !== undefined) {
-    const def = CREATIVITY_LEVEL_DEFINITIONS[options.creativityLevel];
-    if (def) {
+  if (options?.creativityLevel !== undefined || options?.includeAiDirectives === true) {
+    const directives = compileAiDirectives(doc, options);
+    if (directives.length > 0) {
       lines.push("## AI Implementation Guidance");
       lines.push("");
-      lines.push(`- **Creativity Level**: Level ${def.level} — ${escapeMarkdownText(def.name)}`);
-      lines.push(`- **Directive**: ${escapeMarkdownText(def.promptDirective)}`);
+      for (const directive of directives) {
+        lines.push(directive);
+      }
       lines.push("");
     }
   }

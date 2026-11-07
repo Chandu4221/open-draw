@@ -255,6 +255,42 @@ describe("parseDocument", () => {
     expect(() => parseDocument(input)).toThrow(DocumentError);
   });
 
+  it("parses valid theme and darkMode on root shapes and rejects on non-root shapes (R-026)", () => {
+    const rootInput = serialize([page]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    rootInput.shapes["page-1"]!.meta = {
+      order: {},
+      theme: { primary: "#2563eb", surface: "#ffffff" },
+      darkMode: true,
+    };
+    const doc = parseDocument(rootInput);
+    expect(doc.shapes[parseShapeId("page-1")]?.meta.theme?.primary).toBe("#2563eb");
+    expect(doc.shapes[parseShapeId("page-1")]?.meta.darkMode).toBe(true);
+
+    // Reject theme on non-root
+    const nonRootThemeInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    nonRootThemeInput.shapes["rect-1"]!.meta = {
+      order: {},
+      theme: { primary: "#2563eb" },
+    };
+    expect(() => parseDocument(nonRootThemeInput)).toThrow(/theme may only be set on root shapes/);
+
+    // Reject darkMode on non-root
+    const nonRootDarkInput = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    nonRootDarkInput.shapes["rect-1"]!.meta = {
+      order: {},
+      darkMode: true,
+    };
+    expect(() => parseDocument(nonRootDarkInput)).toThrow(
+      /darkMode may only be set on root shapes/,
+    );
+  });
+
   it("validates semantic tag and properties envelope (R-044)", () => {
     const input = serialize([page, section, rect]) as {
       shapes: Record<string, Record<string, unknown>>;

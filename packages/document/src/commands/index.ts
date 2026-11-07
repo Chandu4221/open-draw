@@ -16,6 +16,8 @@ import type { SetShapeSemantic } from "./set-shape-semantic";
 import type { SetShapeStyle } from "./set-shape-style";
 import type { SetShapeContent } from "./set-shape-content";
 import type { DuplicateShapes } from "./duplicate-shapes";
+import type { SetRootTheme } from "./set-root-theme";
+import type { SetRootDarkMode } from "./set-root-dark-mode";
 
 export { COMMANDS } from "./registry";
 export type { CommandId } from "./registry";
@@ -41,6 +43,10 @@ export type { SetRootDesignStyle } from "./set-root-design-style";
 export { applySetRootDesignStyle } from "./set-root-design-style";
 export type { SetRootRole } from "./set-root-role";
 export { applySetRootRole } from "./set-root-role";
+export type { SetRootTheme } from "./set-root-theme";
+export { applySetRootTheme } from "./set-root-theme";
+export type { SetRootDarkMode } from "./set-root-dark-mode";
+export { applySetRootDarkMode } from "./set-root-dark-mode";
 export type { SetShapeHiddenOn } from "./set-shape-hidden-on";
 export { applySetShapeHiddenOn } from "./set-shape-hidden-on";
 export type { SetShapeOrder } from "./set-shape-order";
@@ -64,6 +70,8 @@ export type Command =
   | SetRootStyle
   | SetRootDesignStyle
   | SetRootRole
+  | SetRootTheme
+  | SetRootDarkMode
   | SetShapeHiddenOn
   | SetShapeOrder
   | SetShapeStyle

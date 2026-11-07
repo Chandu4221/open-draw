@@ -30,6 +30,7 @@ import {
   CREATIVITY_LEVELS,
   CREATIVITY_LEVEL_DEFINITIONS,
   DEFAULT_CREATIVITY_LEVEL,
+  THEME_PALETTE_SLOTS,
 } from "./index";
 
 describe("capabilities", () => {
@@ -185,5 +186,18 @@ describe("creativity-levels", () => {
       expect(def.description.length).toBeGreaterThan(0);
       expect(def.promptDirective.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("theme-palettes", () => {
+  it("exposes all 6 semantic theme palette slots (Idea 6, R-026)", () => {
+    expect(THEME_PALETTE_SLOTS).toEqual([
+      "primary",
+      "secondary",
+      "tertiary",
+      "surface",
+      "error",
+      "success",
+    ]);
   });
 });

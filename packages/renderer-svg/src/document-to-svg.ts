@@ -47,6 +47,7 @@ export type ShapeSvgRenderer = (shape: Shape, box: BoundingBox) => string;
 
 export interface RenderOptions {
   readonly activeDeviceType?: DeviceType | undefined;
+  readonly activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>> | undefined;
   readonly styleProfile?: StyleId | undefined;
   readonly onFallback?: (event: RendererFallbackEvent) => void;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
@@ -160,6 +161,15 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
   return rendered;
 }
 
+function resolveShapeRootId(document: Document, shape: Shape): ShapeId | undefined {
+  if (isRootId(shape.parentId)) {
+    return shape.id;
+  }
+  const ancestors = ancestorsOf(document, shape);
+  const root = ancestors.find((a) => isRootId(a.parentId));
+  return root?.id;
+}
+
 // The whole document in pre-order walk order (structural order).
 // Style selection is root-resolved (R-026).
 // Fallback emission surfaces via the pure options callback without singletons (R-008, ADR-0003 D3).
@@ -167,9 +177,15 @@ export function documentToSvg(document: Document, options?: RenderOptions): stri
   return shapeListInOrder(document)
     .map((shape) => {
       const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
-      const shapeOptions =
-        effectiveStyle !== options?.styleProfile
-          ? { ...options, styleProfile: effectiveStyle }
+      const rootId = resolveShapeRootId(document, shape);
+      const effectiveDevice =
+        rootId !== undefined && options?.activeDeviceTypes !== undefined
+          ? (options.activeDeviceTypes[rootId] ?? options?.activeDeviceType)
+          : options?.activeDeviceType;
+
+      const shapeOptions: RenderOptions | undefined =
+        effectiveStyle !== options?.styleProfile || effectiveDevice !== options?.activeDeviceType
+          ? { ...options, styleProfile: effectiveStyle, activeDeviceType: effectiveDevice }
           : options;
       return shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
     })

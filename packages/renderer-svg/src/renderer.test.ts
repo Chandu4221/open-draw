@@ -146,6 +146,40 @@ describe("documentToSvg", () => {
     const normalSvg = documentToSvg(doc);
     expect(normalSvg).not.toContain('<g opacity="0.35" stroke-dasharray="4 4">');
   });
+
+  it("renders ghost presentation based on scoped activeDeviceTypes per root (Issues C1, C2)", () => {
+    const root1 = parseShapeId("root-1");
+    const child1 = parseShapeId("child-1");
+    const root2 = parseShapeId("root-2");
+    const child2 = parseShapeId("child-2");
+
+    const doc = createDocument([
+      createPage(root1, { x: 0, y: 0, width: 800, height: 600 }),
+      createRect(
+        child1,
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: root1, meta: { hiddenOn: [DEVICE_TYPES.mobile], order: {} } },
+      ),
+      createPage(root2, { x: 900, y: 0, width: 800, height: 600 }),
+      createRect(
+        child2,
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: root2, meta: { hiddenOn: [DEVICE_TYPES.mobile], order: {} } },
+      ),
+    ]);
+
+    // root1 scoped to mobile (child1 hidden/ghost), root2 scoped to desktop (child2 normal)
+    const svg = documentToSvg(doc, {
+      activeDeviceTypes: {
+        [root1]: DEVICE_TYPES.mobile,
+        [root2]: DEVICE_TYPES.desktop,
+      },
+    });
+
+    expect(svg).toContain('<g opacity="0.35" stroke-dasharray="4 4"><rect x="10"');
+    expect(svg).not.toContain('<g opacity="0.35" stroke-dasharray="4 4"><rect x="910"');
+    expect(svg).toContain('<rect x="910"');
+  });
 });
 
 describe("gesture previews", () => {

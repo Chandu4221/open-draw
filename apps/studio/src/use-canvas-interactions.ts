@@ -72,7 +72,10 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     const zoom = canvas.getCamera().zoom;
     const hitDevice = pickAnyRootDeviceButton(doc, world, zoom);
     if (hitDevice !== null) {
-      handleDeviceChange(hitDevice === "all" ? undefined : hitDevice);
+      const nextType = hitDevice.item === "all" ? undefined : hitDevice.item;
+      canvas.setActiveDeviceType(nextType, hitDevice.rootId);
+      handleDeviceChange(nextType);
+      render();
       return;
     }
     const hitRootChip = pickAnyRootChip(doc, world, zoom);

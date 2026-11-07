@@ -13,6 +13,7 @@ import type {
   StyleId,
   DesignStyleId,
   RootRole,
+  ThemePalette,
 } from "@open-draw/contracts";
 import { ROOT_ID, SHAPE_KINDS, SHAPE_KIND_VALUES, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
@@ -37,6 +38,7 @@ export interface SemanticTag {
 // `pluginData`: opaque forward-compatibility namespace (R-044, ADR-0003 D4).
 // `platform` and `style`: settable on root pages only, inherited by tree position (R-026, ADR-0004 D7).
 // `designStyle`: aesthetic style specification for AI/developer handoff (R-026).
+// `theme` and `darkMode`: brand colors and theme switcher directives for AI handoff (Idea 4, 6, R-026).
 export interface ShapeMeta {
   readonly semantic?: SemanticTag;
   readonly order: Partial<Record<DeviceType, number>>;
@@ -46,6 +48,8 @@ export interface ShapeMeta {
   readonly style?: StyleId;
   readonly designStyle?: DesignStyleId;
   readonly role?: RootRole;
+  readonly theme?: ThemePalette;
+  readonly darkMode?: boolean;
 }
 
 export interface BaseShape {

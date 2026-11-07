@@ -6,3 +6,4 @@ export * from "./display-name";
 export * from "./resolve-root";
 export * from "./resolve-semantic";
 export * from "./tree-walk";
+export * from "./harmonization";

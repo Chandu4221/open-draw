@@ -399,6 +399,90 @@ describe("exportMarkdown", () => {
     expect(md).toContain("## AI Implementation Guidance");
     expect(md).toContain("- **Creativity Level**: Level 3 — Balanced");
     expect(md).toContain("- **Directive**:");
+    expect(md).toContain("- **Accessibility & Contrast (WCAG 2.1 AA)**:");
+    expect(md).toContain("colorcontrast.cc");
+    expect(md).toContain("- **Theme Architecture (Single Light Mode)**:");
     expect(md).toContain("## My Box");
+  });
+
+  it("exports dual theme switcher directive when root has darkMode enabled (Idea 4)", () => {
+    const page = createPage(
+      parseShapeId("page-dark"),
+      { x: 0, y: 0, width: 1200, height: 800 },
+      {
+        meta: {
+          platform: PLATFORMS.web,
+          darkMode: true,
+          order: {},
+        },
+      },
+    );
+    const doc = createDocument([page]);
+    const md = exportMarkdown(doc, { includeAiDirectives: true });
+
+    expect(md).toContain("- **Theme Architecture (Dual Light/Dark Modes)**:");
+    expect(md).toContain("Theme Toggle Switch (sun/moon)");
+  });
+
+  it("exports root theme palette tokens formatted per platform (Idea 6)", () => {
+    const webRoot = createPage(
+      parseShapeId("web-root"),
+      { x: 0, y: 0, width: 1200, height: 800 },
+      {
+        label: "Web App",
+        meta: {
+          platform: PLATFORMS.web,
+          theme: { primary: "#3b82f6", surface: "#ffffff" },
+          order: {},
+        },
+      },
+    );
+    const androidRoot = createPage(
+      parseShapeId("android-root"),
+      { x: 1300, y: 0, width: 400, height: 800 },
+      {
+        label: "Android App",
+        meta: {
+          platform: "androidNative",
+          theme: { primary: "#6200ee", surface: "#121212" },
+          order: {},
+        },
+      },
+    );
+    const flutterRoot = createPage(
+      parseShapeId("flutter-root"),
+      { x: 1800, y: 0, width: 400, height: 800 },
+      {
+        label: "Flutter App",
+        meta: {
+          platform: PLATFORMS.flutter,
+          theme: { primary: "#02569b", secondary: "#0175c2" },
+          order: {},
+        },
+      },
+    );
+
+    const doc = createDocument([webRoot, androidRoot, flutterRoot]);
+    const md = exportMarkdown(doc, { includeAiDirectives: true });
+
+    // Web CSS tokens
+    expect(md).toContain("- **Theme Palette Tokens (Web App)**:");
+    expect(md).toContain("--color-primary: #3b82f6;");
+    expect(md).toContain("--color-surface: #ffffff;");
+
+    // Android Compose tokens
+    expect(md).toContain("- **Theme Palette Tokens (Android App)**:");
+    expect(md).toContain("val LightColorScheme = lightColorScheme(");
+    expect(md).toContain("primary = Color(0xFF6200EE),");
+
+    // Flutter ColorScheme tokens
+    expect(md).toContain("- **Theme Palette Tokens (Flutter App)**:");
+    expect(md).toContain("const colorScheme = ColorScheme.light(");
+    expect(md).toContain("primary: Color(0xFF02569B),");
+
+    // Stack guidance
+    expect(md).toContain("- **Stack Guidance (Web)**: Implement as modular React components");
+    expect(md).toContain("- **Stack Guidance (Android)**: Implement using Android Jetpack Compose");
+    expect(md).toContain("- **Stack Guidance (Flutter)**: Implement using Flutter and Dart");
   });
 });

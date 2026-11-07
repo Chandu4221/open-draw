@@ -19,11 +19,15 @@ describe("web profile", () => {
     expect(WEB_PROFILE.semantics.page).toBeUndefined();
     expect(WEB_PROFILE.deviceTypes).toHaveLength(5);
     expect(WEB_PROFILE.semantics.navbar?.displayName).toBe("Navigation Bar");
+    expect(WEB_PROFILE.semantics.navbar?.properties?.some((p) => p.id === "position")).toBe(true);
+    expect(WEB_PROFILE.semantics.heading?.properties?.[0]?.options).toHaveLength(6);
     expect(WEB_PROFILE.semantics.button?.properties).toBeDefined();
     expect(WEB_PROFILE.semantics.button?.properties?.[0]?.id).toBe("variant");
   });
 
   it("exposes extended common web semantics", () => {
+    expect(WEB_PROFILE.semantics.form?.displayName).toBe("Form Container");
+    expect(WEB_PROFILE.semantics.modal?.displayName).toBe("Modal Window");
     expect(WEB_PROFILE.semantics.image?.displayName).toBe("Image");
     expect(WEB_PROFILE.semantics.dialog?.displayName).toBe("Modal Dialog");
     expect(WEB_PROFILE.semantics.dropdown?.displayName).toBe("Dropdown Menu");
@@ -41,11 +45,17 @@ describe("android native profile", () => {
     expect(ANDROID_NATIVE_PROFILE.rootSemantic).toBe("screen");
     expect(ANDROID_NATIVE_PROFILE.semantics.screen).toBeUndefined();
     expect(ANDROID_NATIVE_PROFILE.semantics["top-app-bar"]?.displayName).toBe("Top App Bar");
+    expect(
+      ANDROID_NATIVE_PROFILE.semantics["top-app-bar"]?.properties?.some((p) => p.id === "type"),
+    ).toBe(true);
     expect(ANDROID_NATIVE_PROFILE.semantics["floating-action-button"]).toBeDefined();
     expect(ANDROID_NATIVE_PROFILE.semantics.navbar).toBeUndefined();
   });
 
   it("exposes extended Material 3 components", () => {
+    expect(ANDROID_NATIVE_PROFILE.semantics.card?.properties?.some((p) => p.id === "variant")).toBe(
+      true,
+    );
     expect(ANDROID_NATIVE_PROFILE.semantics.dialog?.displayName).toBe("Material Dialog");
     expect(ANDROID_NATIVE_PROFILE.semantics["bottom-sheet"]?.displayName).toBe("Bottom Sheet");
     expect(ANDROID_NATIVE_PROFILE.semantics["text-field"]?.displayName).toBe("Outlined Text Field");
@@ -63,9 +73,15 @@ describe("flutter profile", () => {
     expect(FLUTTER_PROFILE.rootSemantic).toBe("scaffold");
     expect(FLUTTER_PROFILE.semantics.scaffold).toBeUndefined();
     expect(FLUTTER_PROFILE.semantics["app-bar"]?.displayName).toBe("AppBar");
+    expect(
+      FLUTTER_PROFILE.semantics["app-bar"]?.properties?.some((p) => p.id === "centerTitle"),
+    ).toBe(true);
   });
 
   it("exposes standard Flutter widget semantics", () => {
+    expect(FLUTTER_PROFILE.semantics["elevated-button"]?.displayName).toBe("ElevatedButton");
+    expect(FLUTTER_PROFILE.semantics["outlined-button"]?.displayName).toBe("OutlinedButton");
+    expect(FLUTTER_PROFILE.semantics["text-button"]?.displayName).toBe("TextButton");
     expect(FLUTTER_PROFILE.semantics["text-field"]?.displayName).toBe("TextField");
     expect(FLUTTER_PROFILE.semantics.card?.displayName).toBe("Card");
     expect(FLUTTER_PROFILE.semantics["floating-action-button"]?.displayName).toBe(
@@ -87,7 +103,15 @@ describe("ios profile", () => {
     expect(IOS_PROFILE.rootSemantic).toBe("screen");
     expect(IOS_PROFILE.semantics.screen).toBeUndefined();
     expect(IOS_PROFILE.semantics["navigation-bar"]?.displayName).toBe("Navigation Bar");
+    expect(
+      IOS_PROFILE.semantics["navigation-bar"]?.properties?.some(
+        (p) => p.id === "prefersLargeTitles",
+      ),
+    ).toBe(true);
     expect(IOS_PROFILE.semantics["tab-bar"]?.displayName).toBe("Tab Bar");
+    expect(IOS_PROFILE.semantics["tab-bar"]?.properties?.some((p) => p.id === "translucent")).toBe(
+      true,
+    );
     expect(IOS_PROFILE.semantics.button?.displayName).toBe("Button");
     expect(IOS_PROFILE.semantics["text-field"]?.displayName).toBe("Text Field");
     expect(IOS_PROFILE.semantics["segmented-control"]?.displayName).toBe("Segmented Control");

@@ -9,10 +9,32 @@ export const FLUTTER_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = O
   "app-bar": Object.freeze({
     id: parseSemanticId("app-bar"),
     displayName: "AppBar",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "title",
+        control: CONTROL_TYPES.text,
+        label: "Title",
+        defaultValue: "App Title",
+      }),
+      Object.freeze({
+        id: "centerTitle",
+        control: CONTROL_TYPES.toggle,
+        label: "Center Title",
+        defaultValue: false,
+      }),
+    ]),
   }),
   "elevated-button": Object.freeze({
     id: parseSemanticId("elevated-button"),
     displayName: "ElevatedButton",
+  }),
+  "outlined-button": Object.freeze({
+    id: parseSemanticId("outlined-button"),
+    displayName: "OutlinedButton",
+  }),
+  "text-button": Object.freeze({
+    id: parseSemanticId("text-button"),
+    displayName: "TextButton",
   }),
   "text-field": Object.freeze({
     id: parseSemanticId("text-field"),
@@ -24,11 +46,34 @@ export const FLUTTER_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = O
         label: "Obscure Text",
         defaultValue: false,
       }),
+      Object.freeze({
+        id: "decoration",
+        control: CONTROL_TYPES.select,
+        label: "Decoration",
+        defaultValue: "outline",
+        options: Object.freeze([
+          Object.freeze({ value: "outline", label: "Outline" }),
+          Object.freeze({ value: "underline", label: "Underline" }),
+        ]),
+      }),
     ]),
   }),
   card: Object.freeze({
     id: parseSemanticId("card"),
     displayName: "Card",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "elevation",
+        control: CONTROL_TYPES.select,
+        label: "Elevation",
+        defaultValue: "low",
+        options: Object.freeze([
+          Object.freeze({ value: "low", label: "Low" }),
+          Object.freeze({ value: "medium", label: "Medium" }),
+          Object.freeze({ value: "high", label: "High" }),
+        ]),
+      }),
+    ]),
   }),
   "floating-action-button": Object.freeze({
     id: parseSemanticId("floating-action-button"),
@@ -45,6 +90,18 @@ export const FLUTTER_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = O
   "bottom-navigation-bar": Object.freeze({
     id: parseSemanticId("bottom-navigation-bar"),
     displayName: "BottomNavigationBar",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "type",
+        control: CONTROL_TYPES.select,
+        label: "Type",
+        defaultValue: "fixed",
+        options: Object.freeze([
+          Object.freeze({ value: "fixed", label: "Fixed" }),
+          Object.freeze({ value: "shifting", label: "Shifting" }),
+        ]),
+      }),
+    ]),
   }),
   dialog: Object.freeze({
     id: parseSemanticId("dialog"),

@@ -12,12 +12,14 @@ import {
   type SemanticDefinition,
   type ShapeId,
   type StyleId,
+  type ThemePalette,
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdField } from "@open-draw/ui";
 import { ComponentSemanticSection } from "./ComponentSemanticSection";
 import { DesignStyleSelect } from "./DesignStyleSelect";
+import { ThemePaletteSection } from "./ThemePaletteSection";
 
 export interface ContainerInspectorProps {
   readonly selectedShape: Shape;
@@ -25,6 +27,8 @@ export interface ContainerInspectorProps {
   readonly rootStyle: StyleId;
   readonly rootDesignStyle?: DesignStyleId | undefined;
   readonly rootRole?: RootRole | undefined;
+  readonly rootTheme?: ThemePalette | undefined;
+  readonly rootDarkMode?: boolean | undefined;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict?: SemanticConflict | undefined;
   readonly semanticDef?: SemanticDefinition | undefined;
@@ -59,6 +63,8 @@ export interface ContainerInspectorProps {
   ) => void;
   readonly showChildChips?: boolean | undefined;
   readonly handleToggleChildChips?: ((rootId: ShapeId) => void) | undefined;
+  readonly handleSetTheme?: ((theme: ThemePalette | undefined) => void) | undefined;
+  readonly handleSetDarkMode?: ((darkMode: boolean) => void) | undefined;
 }
 
 export function ContainerInspector(props: ContainerInspectorProps): React.JSX.Element {
@@ -68,6 +74,8 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     rootStyle,
     rootDesignStyle,
     rootRole,
+    rootTheme,
+    rootDarkMode,
     activeProfile,
     conflict,
     semanticDef,
@@ -78,6 +86,8 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     handleSetStyle,
     handleSetDesignStyle,
     handleSetRole,
+    handleSetTheme,
+    handleSetDarkMode,
     handleSetSemantic,
     handlePropertyChange,
     handleStyleChange,
@@ -164,6 +174,33 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
             <span>Show tags on child components</span>
           </label>
         </OdField>
+      )}
+
+      {handleSetDarkMode && (
+        <OdField label="Dark Mode" htmlFor="container-dark-mode">
+          <label className="od-switch">
+            <input
+              id="container-dark-mode"
+              type="checkbox"
+              role="switch"
+              aria-checked={rootDarkMode ?? false}
+              checked={rootDarkMode ?? false}
+              onChange={(e) => handleSetDarkMode(e.target.checked)}
+            />
+            <span className="od-switch__track" aria-hidden="true">
+              <span className="od-switch__thumb" />
+            </span>
+            <span>Dual Light/Dark AI Directives</span>
+          </label>
+        </OdField>
+      )}
+
+      {handleSetTheme && (
+        <>
+          <div className="od-divider od-divider--horizontal" />
+          <h3 className="od-section-header">Theme Palette</h3>
+          <ThemePaletteSection theme={rootTheme} onThemeChange={handleSetTheme} />
+        </>
       )}
 
       {/* IDENTITY SECTION */}

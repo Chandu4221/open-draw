@@ -9,6 +9,7 @@ import {
   type SemanticDefinition,
   type ShapeId,
   type StyleId,
+  type ThemePalette,
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { ContainerInspector } from "./ContainerInspector";
@@ -22,6 +23,10 @@ export interface InspectorProps {
   readonly rootStyle: StyleId;
   readonly rootDesignStyle?: DesignStyleId | undefined;
   readonly rootRole?: RootRole;
+  readonly rootTheme?: ThemePalette | undefined;
+  readonly rootDarkMode?: boolean | undefined;
+  readonly handleSetTheme?: ((theme: ThemePalette | undefined) => void) | undefined;
+  readonly handleSetDarkMode?: ((darkMode: boolean) => void) | undefined;
   readonly activeProfile: PlatformProfile | undefined;
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
@@ -77,6 +82,10 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     rootStyle,
     rootDesignStyle,
     rootRole,
+    rootTheme,
+    rootDarkMode,
+    handleSetTheme,
+    handleSetDarkMode,
     activeProfile,
     conflict,
     semanticDef,
@@ -158,6 +167,10 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           rootStyle={rootStyle}
           rootDesignStyle={rootDesignStyle}
           rootRole={rootRole}
+          rootTheme={rootTheme}
+          rootDarkMode={rootDarkMode}
+          handleSetTheme={handleSetTheme}
+          handleSetDarkMode={handleSetDarkMode}
           activeProfile={activeProfile}
           conflict={conflict}
           semanticDef={semanticDef}

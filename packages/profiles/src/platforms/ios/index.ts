@@ -9,10 +9,32 @@ export const IOS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
   "navigation-bar": Object.freeze({
     id: parseSemanticId("navigation-bar"),
     displayName: "Navigation Bar",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "title",
+        control: CONTROL_TYPES.text,
+        label: "Title",
+        defaultValue: "Title",
+      }),
+      Object.freeze({
+        id: "prefersLargeTitles",
+        control: CONTROL_TYPES.toggle,
+        label: "Large Title",
+        defaultValue: false,
+      }),
+    ]),
   }),
   "tab-bar": Object.freeze({
     id: parseSemanticId("tab-bar"),
     displayName: "Tab Bar",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "translucent",
+        control: CONTROL_TYPES.toggle,
+        label: "Translucent",
+        defaultValue: true,
+      }),
+    ]),
   }),
   button: Object.freeze({
     id: parseSemanticId("button"),
@@ -41,6 +63,17 @@ export const IOS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Objec
         control: CONTROL_TYPES.text,
         label: "Placeholder",
         defaultValue: "",
+      }),
+      Object.freeze({
+        id: "borderStyle",
+        control: CONTROL_TYPES.select,
+        label: "Border Style",
+        defaultValue: "roundedRect",
+        options: Object.freeze([
+          Object.freeze({ value: "roundedRect", label: "Rounded Rect" }),
+          Object.freeze({ value: "line", label: "Line" }),
+          Object.freeze({ value: "none", label: "None" }),
+        ]),
       }),
     ]),
   }),
