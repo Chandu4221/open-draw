@@ -1,4 +1,4 @@
-import type { Point } from "@open-draw/contracts";
+import type { DeviceType, Point } from "@open-draw/contracts";
 import type { CanvasController, ToolId } from "@open-draw/canvas";
 import type { Document } from "@open-draw/document";
 import { documentToSvg } from "@open-draw/renderer-svg";
@@ -15,9 +15,48 @@ export interface RenderCanvasSvgOptions {
   readonly onFallback: (msg: string) => void;
 }
 
+interface RenderCacheEntry {
+  doc: Document;
+  activeDeviceType?: DeviceType | undefined;
+}
+
+const renderCache = new WeakMap<SVGSVGElement, RenderCacheEntry>();
+
 export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
   const { svg, canvas, doc, gesture, tool, lastWorld, onFallback } = options;
   const camera = canvas.getCamera();
+  const activeDeviceType = canvas.getActiveDeviceType();
+
+  let viewport = svg.querySelector<SVGGElement>(".od-scene-viewport");
+  let docScene = svg.querySelector<SVGGElement>(".od-document-scene");
+  let overlayScene = svg.querySelector<SVGGElement>(".od-overlay-scene");
+
+  if (viewport === null || docScene === null || overlayScene === null) {
+    svg.innerHTML =
+      '<g class="od-scene-viewport">' +
+      '<g class="od-document-scene"></g>' +
+      '<g class="od-overlay-scene"></g>' +
+      "</g>";
+    viewport = svg.querySelector<SVGGElement>(".od-scene-viewport")!;
+    docScene = svg.querySelector<SVGGElement>(".od-document-scene")!;
+    overlayScene = svg.querySelector<SVGGElement>(".od-overlay-scene")!;
+  }
+
+  viewport.setAttribute(
+    "transform",
+    `translate(${-camera.x * camera.zoom} ${-camera.y * camera.zoom}) scale(${camera.zoom})`,
+  );
+
+  const cached = renderCache.get(svg);
+  if (cached === undefined || cached.doc !== doc || cached.activeDeviceType !== activeDeviceType) {
+    docScene.innerHTML = documentToSvg(doc, {
+      activeDeviceType,
+      onFallback: (event) => {
+        onFallback(`Fallback render: ${event.shapeId} (${event.kind})`);
+      },
+    });
+    renderCache.set(svg, { doc, activeDeviceType });
+  }
 
   const overlays = computeCanvasOverlays({
     doc,
@@ -28,18 +67,11 @@ export function renderCanvasSvg(options: RenderCanvasSvgOptions): void {
     lastWorld,
     zoom: camera.zoom,
     visibleChipRootIds: canvas.getVisibleChipRootIds(),
-    activeDeviceType: canvas.getActiveDeviceType(),
+    activeDeviceType,
   });
 
-  const world =
-    documentToSvg(doc, {
-      activeDeviceType: canvas.getActiveDeviceType(),
-      onFallback: (event) => {
-        onFallback(`Fallback render: ${event.shapeId} (${event.kind})`);
-      },
-    }) + overlays.join("");
-
-  svg.innerHTML =
-    `<g transform="translate(${-camera.x * camera.zoom} ${-camera.y * camera.zoom}) ` +
-    `scale(${camera.zoom})">${world}</g>`;
+  const overlayHtml = overlays.join("");
+  if (overlayScene.innerHTML !== overlayHtml) {
+    overlayScene.innerHTML = overlayHtml;
+  }
 }

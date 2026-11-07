@@ -72,6 +72,16 @@ export function transition(previous: MachineState, event: CanvasEvent): MachineS
     case CANVAS_EVENTS.pointerUp: {
       return INITIAL_MACHINE_STATE;
     }
+    case CANVAS_EVENTS.doubleClick: {
+      if (event.hit !== null) {
+        return {
+          ...INITIAL_MACHINE_STATE,
+          stateId: STATES.pointingShape,
+          activeShapeId: event.hit,
+        };
+      }
+      return INITIAL_MACHINE_STATE;
+    }
     case CANVAS_EVENTS.wheel: {
       return previous;
     }

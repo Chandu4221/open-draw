@@ -1,7 +1,12 @@
 // Pure hit-testing over the canonical document (R-016: no cached truth, ADR-0003 D1/D5).
 // Topmost = last in the pre-order walk. Handles are picked in screen space.
 import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
-import { absoluteBoundingBox, shapeListInOrder, type Document } from "@open-draw/document";
+import {
+  absoluteBoundingBox,
+  ancestorsOf,
+  shapeListInOrder,
+  type Document,
+} from "@open-draw/document";
 import { worldToScreen, type Camera } from "./camera";
 import { HANDLES, type HandleId } from "./handles";
 import type { ShapeKindRegistry } from "./register-shape-kind";
@@ -89,4 +94,51 @@ export function pickHandle(
     }
   }
   return null;
+}
+
+// Double-click selection drill-down (Idea 5, Milestone 09).
+// Single click selects root container; double click drills into children.
+export function resolveSelectionDrillDown(
+  document: Document,
+  hitShapeId: ShapeId,
+  currentSelectedId: ShapeId | null,
+  isDoubleClick = false,
+): ShapeId {
+  const shape = document.shapes[hitShapeId];
+  if (shape === undefined) {
+    return hitShapeId;
+  }
+  const ancestors = ancestorsOf(document, shape);
+  const path: ShapeId[] = [];
+  for (let i = ancestors.length - 1; i >= 0; i -= 1) {
+    path.push(ancestors[i]!.id);
+  }
+  path.push(hitShapeId);
+
+  if (path.length === 1) {
+    return path[0]!;
+  }
+
+  const selectedShape = currentSelectedId !== null ? document.shapes[currentSelectedId] : undefined;
+
+  let activeDepth = 0;
+  if (selectedShape !== undefined) {
+    const selectedAncestors = ancestorsOf(document, selectedShape);
+    const selectedRootId =
+      selectedAncestors.length > 0
+        ? selectedAncestors[selectedAncestors.length - 1]!.id
+        : selectedShape.id;
+
+    if (selectedRootId === path[0]) {
+      activeDepth = selectedAncestors.length;
+    }
+  }
+
+  if (isDoubleClick) {
+    const targetDepth = Math.min(path.length - 1, activeDepth + 1);
+    return path[targetDepth]!;
+  }
+
+  const targetDepth = Math.min(path.length - 1, activeDepth);
+  return path[targetDepth]!;
 }

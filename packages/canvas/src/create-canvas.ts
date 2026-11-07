@@ -6,9 +6,9 @@ import type { Document } from "@open-draw/document";
 import type { ActionId, KeyboardEventDescriptor } from "@open-draw/input";
 import { resolveKeyBinding } from "@open-draw/input";
 import { type Camera, DEFAULT_CAMERA, panBy, screenToWorld, worldToScreen, zoomAt } from "./camera";
-import type { CanvasEvent } from "./events";
+import { CONTROLLER_EVENTS, type CanvasEvent, type ControllerEvent } from "./events";
 import type { HandleId } from "./handles";
-import { pickHandle, pickShape } from "./hit-test";
+import { pickHandle, pickShape, resolveSelectionDrillDown } from "./hit-test";
 import { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
 import { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 import {
@@ -65,6 +65,10 @@ export interface CanvasController {
   pickShape(doc: Document, worldPoint: Point): ShapeId | null;
   pickHandle(worldBox: BoundingBox, screenPoint: Point): HandleId | null;
   resolveAction(event: KeyboardEventDescriptor): ActionId | undefined;
+  resolveSelectionDrillDown(doc: Document, hitId: ShapeId, isDoubleClick?: boolean): ShapeId;
+
+  subscribe(event: ControllerEvent, listener: () => void): () => void;
+  emit(event: ControllerEvent): void;
 
   getActiveDeviceType(): DeviceType | undefined;
   setActiveDeviceType(deviceType?: DeviceType): void;
@@ -88,6 +92,21 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
         ? createShapeKindRegistry(options.shapeKinds)
         : (options.shapeKinds as ShapeKindRegistry);
 
+  const listeners: Record<ControllerEvent, Set<() => void>> = {
+    [CONTROLLER_EVENTS.documentChanged]: new Set(),
+    [CONTROLLER_EVENTS.selectionChanged]: new Set(),
+    [CONTROLLER_EVENTS.historyChanged]: new Set(),
+  };
+
+  const emit = (event: ControllerEvent): void => {
+    const set = listeners[event];
+    if (set !== undefined) {
+      for (const listener of set) {
+        listener();
+      }
+    }
+  };
+
   return {
     getCamera: () => camera,
     setCamera: (next) => {
@@ -107,15 +126,19 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     getSelectedIds: () => selectedIds(selection),
     select: (id) => {
       selection = selectOne(id);
+      emit(CONTROLLER_EVENTS.selectionChanged);
     },
     selectMany: (ids) => {
       selection = selectMany(ids);
+      emit(CONTROLLER_EVENTS.selectionChanged);
     },
     toggleSelection: (id) => {
       selection = toggleSelection(selection, id);
+      emit(CONTROLLER_EVENTS.selectionChanged);
     },
     clearSelection: () => {
       selection = clearSelection();
+      emit(CONTROLLER_EVENTS.selectionChanged);
     },
     isSelected: (id) => isSelected(selection, id),
 
@@ -137,6 +160,22 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry),
     pickHandle: (box, point) => pickHandle(camera, box, point),
     resolveAction: (event) => resolveKeyBinding(event),
+    resolveSelectionDrillDown: (doc, hitId, isDoubleClick = false) =>
+      resolveSelectionDrillDown(doc, hitId, singleSelected(selection), isDoubleClick),
+
+    subscribe: (event, listener) => {
+      const set = listeners[event];
+      if (set !== undefined) {
+        set.add(listener);
+        return () => {
+          set.delete(listener);
+        };
+      }
+      return () => {};
+    },
+    emit: (event) => {
+      emit(event);
+    },
 
     getActiveDeviceType: () => activeDeviceType,
     setActiveDeviceType: (deviceType) => {

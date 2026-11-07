@@ -5,16 +5,25 @@ import { parseShapeId } from "@open-draw/contracts";
 import { createDocument, createPage, createRect } from "@open-draw/document";
 import { DEFAULT_CAMERA } from "./camera";
 import { HANDLES } from "./handles";
-import { boxIntersectsBox, pickHandle, pickShape, pickShapesInBox, pointInBox } from "./hit-test";
+import {
+  boxIntersectsBox,
+  pickHandle,
+  pickShape,
+  pickShapesInBox,
+  pointInBox,
+  resolveSelectionDrillDown,
+} from "./hit-test";
 
 const pageId = parseShapeId("page-1");
 const firstId = parseShapeId("rect-first");
 const secondId = parseShapeId("rect-second");
+const grandchildId = parseShapeId("rect-grandchild");
 
 const document = createDocument([
   createPage(pageId, { x: 0, y: 0, width: 640, height: 480 }),
   createRect(firstId, { x: 10, y: 10, width: 50, height: 50 }, { parent: pageId }),
   createRect(secondId, { x: 30, y: 30, width: 50, height: 50 }, { parent: pageId }),
+  createRect(grandchildId, { x: 25, y: 25, width: 20, height: 20 }, { parent: firstId }),
 ]);
 
 describe("pointInBox", () => {
@@ -99,5 +108,34 @@ describe("pickShapesInBox (F3, ADR-0006 Option A)", () => {
     const marquee = { x: 500, y: 500, width: 10, height: 10 };
     const picked = pickShapesInBox(document, marquee);
     expect(picked).toEqual([]);
+  });
+});
+
+describe("resolveSelectionDrillDown (Idea 5, Milestone 09)", () => {
+  it("selects top-level root container on single-click when nothing is selected", () => {
+    // Clicking on grandchild or child selects page-1 (root container)
+    expect(resolveSelectionDrillDown(document, grandchildId, null, false)).toBe(pageId);
+    expect(resolveSelectionDrillDown(document, firstId, null, false)).toBe(pageId);
+  });
+
+  it("selects root shape directly on single-click", () => {
+    expect(resolveSelectionDrillDown(document, pageId, null, false)).toBe(pageId);
+  });
+
+  it("retains root container on single-click when root is already selected", () => {
+    expect(resolveSelectionDrillDown(document, grandchildId, pageId, false)).toBe(pageId);
+  });
+
+  it("drills into direct child on double-click from unselected or root-selected state", () => {
+    expect(resolveSelectionDrillDown(document, grandchildId, null, true)).toBe(firstId);
+    expect(resolveSelectionDrillDown(document, grandchildId, pageId, true)).toBe(firstId);
+  });
+
+  it("drills into grandchild on second double-click when child is selected", () => {
+    expect(resolveSelectionDrillDown(document, grandchildId, firstId, true)).toBe(grandchildId);
+  });
+
+  it("selects sibling shape on single-click when already drilled to child depth", () => {
+    expect(resolveSelectionDrillDown(document, secondId, firstId, false)).toBe(secondId);
   });
 });
