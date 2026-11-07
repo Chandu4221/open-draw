@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Allotment } from "allotment";
 import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import {
   applyTransaction,
@@ -9,8 +10,9 @@ import {
   type Command,
   type Document,
   type HistoryState,
+  type Shape,
 } from "@open-draw/document";
-import { TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
+import { CONTROLLER_EVENTS, TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
 import { OdToastHost, useToast } from "@open-draw/ui";
 import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, type Gesture } from "../types";
 import { initCanvas } from "../canvas-init";
@@ -20,6 +22,7 @@ import { Sidebar } from "./Sidebar";
 import { CanvasDock } from "./CanvasDock";
 import { CanvasZoomControls } from "./CanvasZoomControls";
 import { ExportModal, type ExportFormat } from "./ExportModal";
+import { useBatchMutations } from "../use-batch-mutations";
 import { useCanvasInteractions } from "../use-canvas-interactions";
 import { useCanvasKeyboard } from "../use-canvas-keyboard";
 import { useDocumentMutations } from "../use-document-mutations";
@@ -44,7 +47,15 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const toolRef = useRef<ToolId>(TOOLS.select);
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
+  const [selectedShapeIds, setSelectedShapeIds] = useState<readonly ShapeId[]>([]);
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
+
+  useEffect(() => {
+    return canvasRef.current.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
+      setSelectedShapeIds(canvasRef.current.getSelectedIds());
+      setSelectedShapeId(canvasRef.current.getSelectedId());
+    });
+  }, []);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(true);
@@ -152,6 +163,16 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     render,
   });
 
+  const selectedShapes = selectedShapeIds
+    .map((id) => doc.shapes[id])
+    .filter((s): s is Shape => s !== undefined);
+  const batchMutations = useBatchMutations({
+    selectedShapes,
+    canvasRef,
+    commit,
+    render,
+  });
+
   useCanvasInteractions({
     svgRef,
     canvasRef,
@@ -190,64 +211,70 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       style={{
         height: "100%",
         width: "100%",
-        display: "flex",
-        flexDirection: "row",
         minHeight: 0,
         minWidth: 0,
         overflow: "hidden",
       }}
     >
-      <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
-        <div
-          className="od-canvas-brand"
-          onClick={onBackToLanding}
-          style={{ cursor: onBackToLanding ? "pointer" : "default" }}
-          title={onBackToLanding ? "Back to home" : undefined}
-        >
-          <span
-            className="od-label"
-            style={{
-              fontSize: "var(--od-text-sm)",
-              fontWeight: 700,
-              color: "var(--od-text)",
-              letterSpacing: "0.02em",
-            }}
-          >
-            OpenDraw Studio
-          </span>
-        </div>
-        <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
-        {emptyDoc && (
-          <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
-        )}
-        <CanvasDock
-          tool={tool}
-          chooseTool={chooseTool}
-          handleUndo={toolbarActions.handleUndo}
-          handleRedo={toolbarActions.handleRedo}
-          handleDuplicate={toolbarActions.handleDuplicate}
-          handleDelete={toolbarActions.handleDelete}
-          handleLoad={toolbarActions.handleLoad}
-          onOpenExportModal={() => handleOpenExportModal("markdown")}
-        />
-        <CanvasZoomControls
-          zoomPercent={zoomPercent}
-          handleZoom={handleZoom}
-          handleResetZoom={handleResetZoom}
-          showSidebar={showSidebar}
-          setShowSidebar={setShowSidebar}
-        />
-      </div>
-      {showSidebar && (
-        <Sidebar
-          {...inspection}
-          {...mutations}
-          selectedShapeId={selectedShapeId}
-          selectShape={selectShape}
-          showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
-          handleToggleChildChips={handleToggleChildChips}
-        />
-      )}
+      <Allotment className="allotment-module">
+        <Allotment.Pane minSize={400}>
+          <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
+            <div
+              className="od-canvas-brand"
+              onClick={onBackToLanding}
+              style={{ cursor: onBackToLanding ? "pointer" : "default" }}
+              title={onBackToLanding ? "Back to home" : undefined}
+            >
+              <span
+                className="od-label"
+                style={{
+                  fontSize: "var(--od-text-sm)",
+                  fontWeight: 700,
+                  color: "var(--od-text)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                OpenDraw Studio
+              </span>
+            </div>
+            <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
+            {emptyDoc && (
+              <div className="od-canvas-hint">
+                R rect · O ellipse · L line · P pen — wheel to pan
+              </div>
+            )}
+            <CanvasDock
+              tool={tool}
+              chooseTool={chooseTool}
+              handleUndo={toolbarActions.handleUndo}
+              handleRedo={toolbarActions.handleRedo}
+              handleDuplicate={toolbarActions.handleDuplicate}
+              handleDelete={toolbarActions.handleDelete}
+              handleLoad={toolbarActions.handleLoad}
+              onOpenExportModal={() => handleOpenExportModal("markdown")}
+            />
+            <CanvasZoomControls
+              zoomPercent={zoomPercent}
+              handleZoom={handleZoom}
+              handleResetZoom={handleResetZoom}
+              showSidebar={showSidebar}
+              setShowSidebar={setShowSidebar}
+            />
+          </div>
+        </Allotment.Pane>
+        <Allotment.Pane preferredSize={340} minSize={260} maxSize={500} snap visible={showSidebar}>
+          <Sidebar
+            {...inspection}
+            {...mutations}
+            {...batchMutations}
+            selectedShapes={selectedShapes}
+            selectedShapeId={selectedShapeId}
+            selectShape={selectShape}
+            showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
+            handleToggleChildChips={handleToggleChildChips}
+          />
+        </Allotment.Pane>
+      </Allotment>
 
       <ExportModal
         isOpen={isExportModalOpen}

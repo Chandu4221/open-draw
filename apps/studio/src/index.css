@@ -1,3 +1,5 @@
+@import "allotment/dist/style.css";
+
 :root {
   font-family: var(--od-font, "Inter", system-ui, "Segoe UI", Roboto, sans-serif);
   color-scheme: light dark;
@@ -27,4 +29,24 @@ main {
   width: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+.allotment-module {
+  --focus-border: var(--od-accent, #09090b);
+  --separator-border: var(--od-border, #e4e4e7);
+  height: 100%;
+  width: 100%;
+}
+
+.allotment-module .split-view-view {
+  overflow: hidden;
+}
+
+.allotment-module .sash {
+  transition: background-color 0.15s ease;
+}
+
+.allotment-module .sash:hover,
+.allotment-module .sash.active {
+  background-color: var(--od-border-strong, #d4d4d8);
 }

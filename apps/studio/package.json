@@ -21,6 +21,7 @@
     "@open-draw/semantics": "workspace:*",
     "@open-draw/shapes": "workspace:*",
     "@open-draw/ui": "workspace:*",
+    "allotment": "^1.20.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

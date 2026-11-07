@@ -13,6 +13,7 @@ import {
 import type { Shape } from "@open-draw/document";
 import { ContainerInspector } from "./ContainerInspector";
 import { ShapeInspector } from "./ShapeInspector";
+import { MultiSelectInspector } from "./MultiSelectInspector";
 
 export interface InspectorProps {
   readonly selectedShape: Shape | undefined;
@@ -57,6 +58,15 @@ export interface InspectorProps {
   ) => void;
   readonly showChildChips?: boolean | undefined;
   readonly handleToggleChildChips?: ((rootId: ShapeId) => void) | undefined;
+  readonly selectedShapes?: readonly Shape[] | undefined;
+  readonly handleBatchAlign?:
+    ((alignment: "left" | "center" | "right" | "top" | "middle" | "bottom") => void) | undefined;
+  readonly handleBatchDistribute?: ((axis: "horizontal" | "vertical") => void) | undefined;
+  readonly handleBatchStyleChange?:
+    | ((fill?: string | null, stroke?: string | null, strokeWidth?: number | null) => void)
+    | undefined;
+  readonly handleBatchDelete?: (() => void) | undefined;
+  readonly handleClearSelection?: (() => void) | undefined;
 }
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
@@ -86,7 +96,15 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleStyleCommit,
     showChildChips,
     handleToggleChildChips,
+    selectedShapes,
+    handleBatchAlign,
+    handleBatchDistribute,
+    handleBatchStyleChange,
+    handleBatchDelete,
+    handleClearSelection,
   } = props;
+
+  const isMultiSelect = (selectedShapes?.length ?? 0) > 1;
 
   return (
     <div
@@ -105,14 +123,31 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
         }}
       >
         <h2 className="od-panel-title">
-          {!selectedShape
-            ? "Inspector"
-            : isRootId(selectedShape.parentId)
-              ? "Container Inspector"
-              : "Shape Inspector"}
+          {isMultiSelect
+            ? "Multi-Select Inspector"
+            : !selectedShape
+              ? "Inspector"
+              : isRootId(selectedShape.parentId)
+                ? "Container Inspector"
+                : "Shape Inspector"}
         </h2>
       </div>
-      {!selectedShape ? (
+      {isMultiSelect &&
+      selectedShapes &&
+      handleBatchAlign &&
+      handleBatchDistribute &&
+      handleBatchStyleChange &&
+      handleBatchDelete &&
+      handleClearSelection ? (
+        <MultiSelectInspector
+          selectedShapes={selectedShapes}
+          onAlign={handleBatchAlign}
+          onDistribute={handleBatchDistribute}
+          onBatchStyleChange={handleBatchStyleChange}
+          onBatchDelete={handleBatchDelete}
+          onClearSelection={handleClearSelection}
+        />
+      ) : !selectedShape ? (
         <div className="od-empty">
           <span>Select a shape to inspect</span>
         </div>

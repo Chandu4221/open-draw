@@ -49,6 +49,14 @@ export const ICONS = {
   help: "M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z",
   panel:
     "M16 20H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2zm2-14v12h4c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-4zM4 6v12h12V6H4z",
+  "align-left": "M4 22H2V2h2v20zM22 7H6v3h16V7zm-6 7H6v3h10v-3z",
+  "align-center-horizontal": "M11 2h2v5h8v3h-8v4h5v3h-5v5h-2v-5H6v-3h5v-4H3V7h8V2z",
+  "align-right": "M20 2h2v20h-2V2zM2 10h16V7H2v3zm6 7h10v-3H8v3z",
+  "align-top": "M22 2v2H2V2h20zM7 22h3V6H7v16zm7-6h3V6h-3v10z",
+  "align-center-vertical": "M22 11h-5V6h-3v5H10V3H7v8H2v2h5v8h3v-8h4v5h3v-5h5v-2z",
+  "align-bottom": "M22 22v-2H2v2h20zM7 2h3v16H7V2zm7 6h3v10h-3V8z",
+  "distribute-horizontal": "M2 2h2v20H2V2zm18 0h2v20h-2V2zm-9 5h2v10h-2V7z",
+  "distribute-vertical": "M2 2v2h20V2H2zm0 18v2h20v-2H2zm5-9v2h10v-2H7z",
 } as const;
 
 export type IconId = keyof typeof ICONS;
