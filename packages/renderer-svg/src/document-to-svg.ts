@@ -9,7 +9,13 @@ import type {
   ShapeId,
   StyleId,
 } from "@open-draw/contracts";
-import { isRootId, SHAPE_KINDS, SHAPE_KIND_LABELS, STYLE_PROFILES } from "@open-draw/contracts";
+import {
+  EXPORT_CHIP_PREFIX,
+  isRootId,
+  SHAPE_KINDS,
+  SHAPE_KIND_LABELS,
+  STYLE_PROFILES,
+} from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   ancestorsOf,
@@ -51,6 +57,8 @@ export interface RenderOptions {
   readonly styleProfile?: StyleId | undefined;
   readonly onFallback?: (event: RendererFallbackEvent) => void;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
+  readonly includeAnnotations?: boolean;
+  readonly resolveDisplayName?: (shape: Shape) => string;
 }
 
 export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
@@ -187,7 +195,35 @@ export function documentToSvg(document: Document, options?: RenderOptions): stri
         effectiveStyle !== options?.styleProfile || effectiveDevice !== options?.activeDeviceType
           ? { ...options, styleProfile: effectiveStyle, activeDeviceType: effectiveDevice }
           : options;
-      return shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
+      const rendered = shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
+
+      if (options?.includeAnnotations === true) {
+        const chipId = `${EXPORT_CHIP_PREFIX}${shape.id}`;
+        const shapeIdAttr = `data-shape-id="${escapeXml(shape.id)}"`;
+        const chipIdAttr = `data-chip-id="${escapeXml(chipId)}"`;
+        const semanticAttr =
+          shape.meta.semantic !== undefined
+            ? ` data-semantic="${escapeXml(shape.meta.semantic.id)}"`
+            : "";
+        const parentIdAttr = !isRootId(shape.parentId)
+          ? ` data-parent-id="${escapeXml(shape.parentId)}"`
+          : "";
+
+        const displayName =
+          options.resolveDisplayName?.(shape) ??
+          (shape.label !== undefined && shape.label !== ""
+            ? shape.label
+            : shape.kind in SHAPE_KIND_LABELS
+              ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
+              : shape.kind);
+
+        const a11yText = `${chipId} — ${displayName}`;
+        const safeA11yText = escapeXml(a11yText);
+
+        return `<g ${shapeIdAttr} ${chipIdAttr}${semanticAttr}${parentIdAttr} role="img" aria-label="${safeA11yText}"><title>${safeA11yText}</title>${rendered}</g>`;
+      }
+
+      return rendered;
     })
     .join("");
 }
