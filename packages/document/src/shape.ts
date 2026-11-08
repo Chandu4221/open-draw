@@ -148,6 +148,19 @@ function baseInit(
   if (isRootId(id)) {
     throw new DocumentError("invalidShape", `a shape may not use the root id: ${id}`);
   }
+  if (
+    !Number.isFinite(boundingBox.x) ||
+    !Number.isFinite(boundingBox.y) ||
+    !Number.isFinite(boundingBox.width) ||
+    !Number.isFinite(boundingBox.height) ||
+    boundingBox.width <= 0 ||
+    boundingBox.height <= 0
+  ) {
+    throw new DocumentError(
+      "invalidShape",
+      "boundingBox must have finite position and positive dimensions",
+    );
+  }
   return {
     id,
     kind,

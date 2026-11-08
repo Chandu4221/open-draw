@@ -29,10 +29,28 @@ describe("normalizeBox", () => {
       height: MIN_SHAPE_SIZE,
     });
   });
+
+  it("guards against NaN or non-finite start or end coordinates", () => {
+    expect(normalizeBox({ x: NaN, y: 10 }, { x: 50, y: 50 })).toEqual({
+      x: 50,
+      y: 10,
+      width: MIN_SHAPE_SIZE,
+      height: 40,
+    });
+  });
 });
 
 describe("resizeBox", () => {
   const original = { x: 10, y: 10, width: 100, height: 50 };
+
+  it("guards against NaN or non-finite world coordinates", () => {
+    expect(resizeBox(original, HANDLES.se, { x: NaN, y: 100 })).toEqual({
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 90,
+    });
+  });
 
   it("grows from the south-east handle", () => {
     expect(resizeBox(original, HANDLES.se, { x: 150, y: 100 })).toEqual({

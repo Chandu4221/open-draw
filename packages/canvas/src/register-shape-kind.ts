@@ -3,6 +3,7 @@
 import type { BoundingBox, CapabilityId, Point } from "@open-draw/contracts";
 import { CAPABILITY_VALUES } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
+import { CanvasError } from "./errors";
 
 export type ShapeHitTester = (box: BoundingBox, shape: Shape, worldPoint: Point) => boolean;
 
@@ -21,14 +22,14 @@ export interface ShapeKindRegistry {
 
 export function validateRegistration(registration: ShapeKindRegistration): void {
   if (typeof registration.kind !== "string" || registration.kind.trim() === "") {
-    throw new Error("shape kind must be a non-empty string");
+    throw new CanvasError("invalidRegistration", "shape kind must be a non-empty string");
   }
   if (!Array.isArray(registration.capabilities)) {
-    throw new Error("shape capabilities must be an array");
+    throw new CanvasError("invalidRegistration", "shape capabilities must be an array");
   }
   for (const capability of registration.capabilities) {
     if (!CAPABILITY_VALUES.has(capability)) {
-      throw new Error(`unknown capability: ${capability}`);
+      throw new CanvasError("invalidCapability", `unknown capability: ${capability}`);
     }
   }
 }
@@ -41,7 +42,10 @@ export function createShapeKindRegistry(
   for (const reg of initial) {
     validateRegistration(reg);
     if (map[reg.kind] !== undefined) {
-      throw new Error(`duplicate shape kind registration: ${reg.kind}`);
+      throw new CanvasError(
+        "duplicateRegistration",
+        `duplicate shape kind registration: ${reg.kind}`,
+      );
     }
     map[reg.kind] = reg;
   }

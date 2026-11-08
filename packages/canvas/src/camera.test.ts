@@ -29,4 +29,16 @@ describe("camera", () => {
     expect(panned.x).toBe(-100);
     expect(panned.y).toBe(-50);
   });
+
+  it("guards zoomAt against NaN, non-positive, or non-finite factor", () => {
+    expect(zoomAt(DEFAULT_CAMERA, { x: 10, y: 10 }, NaN)).toEqual(DEFAULT_CAMERA);
+    expect(zoomAt(DEFAULT_CAMERA, { x: 10, y: 10 }, Infinity)).toEqual(DEFAULT_CAMERA);
+    expect(zoomAt(DEFAULT_CAMERA, { x: 10, y: 10 }, 0)).toEqual(DEFAULT_CAMERA);
+    expect(zoomAt(DEFAULT_CAMERA, { x: 10, y: 10 }, -2)).toEqual(DEFAULT_CAMERA);
+  });
+
+  it("guards panBy against NaN or non-finite coordinates", () => {
+    expect(panBy(DEFAULT_CAMERA, { x: NaN, y: 0 })).toEqual(DEFAULT_CAMERA);
+    expect(panBy(DEFAULT_CAMERA, { x: 0, y: Infinity })).toEqual(DEFAULT_CAMERA);
+  });
 });

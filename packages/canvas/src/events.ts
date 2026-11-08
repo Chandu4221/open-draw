@@ -18,6 +18,7 @@ export const CONTROLLER_EVENTS = {
   documentChanged: "documentChanged",
   selectionChanged: "selectionChanged",
   historyChanged: "historyChanged",
+  cameraChanged: "cameraChanged",
 } as const;
 
 export type ControllerEvent = (typeof CONTROLLER_EVENTS)[keyof typeof CONTROLLER_EVENTS];

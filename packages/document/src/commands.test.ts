@@ -358,4 +358,56 @@ describe("document commands (milestone 05)", () => {
       ),
     ).toThrow(DocumentError);
   });
+
+  it("rejects SetShapeBoundingBox with non-positive or NaN dimensions", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setShapeBoundingBox,
+            id: rectId,
+            boundingBox: { x: 10, y: 10, width: 0, height: 100 },
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setShapeBoundingBox,
+            id: rectId,
+            boundingBox: { x: 10, y: 10, width: -50, height: 100 },
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setShapeBoundingBox,
+            id: rectId,
+            boundingBox: { x: 10, y: 10, width: 100, height: NaN },
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+  });
+
+  it("rejects shape constructors with non-positive or NaN dimensions", () => {
+    expect(() => createRect(parseShapeId("r-zero"), { x: 0, y: 0, width: 0, height: 100 })).toThrow(
+      DocumentError,
+    );
+
+    expect(() =>
+      createPage(parseShapeId("p-neg"), { x: 0, y: 0, width: 100, height: -10 }),
+    ).toThrow(DocumentError);
+  });
 });

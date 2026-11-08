@@ -48,11 +48,13 @@ function parseBoundingBox(value: unknown): BoundingBox {
     !isFiniteNumber(value.x) ||
     !isFiniteNumber(value.y) ||
     !isFiniteNumber(value.width) ||
-    !isFiniteNumber(value.height)
+    !isFiniteNumber(value.height) ||
+    value.width <= 0 ||
+    value.height <= 0
   ) {
     throw new DocumentError(
       "invalidShape",
-      "boundingBox must be { x, y, width, height } with finite numbers",
+      "boundingBox must be { x, y, width, height } with finite numbers and positive dimensions",
     );
   }
   return { x: value.x, y: value.y, width: value.width, height: value.height };

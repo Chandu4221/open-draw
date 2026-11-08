@@ -13,6 +13,9 @@ export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10;
 
 export function panBy(camera: Camera, screenDelta: Point): Camera {
+  if (!Number.isFinite(screenDelta.x) || !Number.isFinite(screenDelta.y)) {
+    return camera;
+  }
   return {
     ...camera,
     x: camera.x - screenDelta.x / camera.zoom,
@@ -21,6 +24,12 @@ export function panBy(camera: Camera, screenDelta: Point): Camera {
 }
 
 export function zoomAt(camera: Camera, screenPoint: Point, factor: number): Camera {
+  if (!Number.isFinite(factor) || factor <= 0) {
+    return camera;
+  }
+  if (!Number.isFinite(screenPoint.x) || !Number.isFinite(screenPoint.y)) {
+    return camera;
+  }
   const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, camera.zoom * factor));
   const world = screenToWorld(camera, screenPoint);
   return { zoom, x: world.x - screenPoint.x / zoom, y: world.y - screenPoint.y / zoom };

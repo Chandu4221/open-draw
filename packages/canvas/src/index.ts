@@ -25,6 +25,8 @@ export {
   type WheelEvent,
 } from "./events";
 
+export { CanvasError, CANVAS_ERRORS, type CanvasErrorCode } from "./errors";
+
 export {
   MIN_SHAPE_SIZE,
   flipHandle,
@@ -75,6 +77,10 @@ export { type CanvasStateId, STATES } from "./states";
 export { TOOLS, type ToolId } from "./tools";
 
 export { type CanvasController, type CanvasOptions, createCanvas } from "./create-canvas";
+
+export { createEditor, type Editor, type EditorOptions, type EditorOverlayContext } from "./editor";
+
+export { nextShapeId, seedShapeSequence } from "./editor-gestures";
 
 export { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 

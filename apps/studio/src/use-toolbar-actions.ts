@@ -10,7 +10,7 @@ import {
   type Document,
   type HistoryState,
 } from "@open-draw/document";
-import type { CanvasController } from "@open-draw/canvas";
+import { seedShapeSequence, type CanvasController } from "@open-draw/canvas";
 import type { ShapeId } from "@open-draw/contracts";
 import type { useToast } from "@open-draw/ui";
 import { nextShapeId } from "./canvas-gestures";
@@ -104,6 +104,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
     promptLoadDocumentJson(
       (loaded) => {
         documentRef.current = loaded;
+        seedShapeSequence(loaded);
         historyRef.current = EMPTY_HISTORY;
         canvasRef.current.clearSelection();
         setSelectedShapeId(null);

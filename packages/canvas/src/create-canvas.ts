@@ -103,6 +103,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.documentChanged]: new Set(),
     [CONTROLLER_EVENTS.selectionChanged]: new Set(),
     [CONTROLLER_EVENTS.historyChanged]: new Set(),
+    [CONTROLLER_EVENTS.cameraChanged]: new Set(),
   };
 
   const emit = (event: ControllerEvent): void => {
@@ -118,12 +119,15 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     getCamera: () => camera,
     setCamera: (next) => {
       camera = next;
+      emit(CONTROLLER_EVENTS.cameraChanged);
     },
     panBy: (delta) => {
       camera = panBy(camera, delta);
+      emit(CONTROLLER_EVENTS.cameraChanged);
     },
     zoomAt: (point, factor) => {
       camera = zoomAt(camera, point, factor);
+      emit(CONTROLLER_EVENTS.cameraChanged);
     },
     screenToWorld: (point) => screenToWorld(camera, point),
     worldToScreen: (point) => worldToScreen(camera, point),

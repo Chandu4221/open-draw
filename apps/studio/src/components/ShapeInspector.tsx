@@ -1,3 +1,4 @@
+import React, { useRef } from "react";
 import type {
   BoundingBox,
   DeviceType,
@@ -19,8 +20,14 @@ export interface ShapeInspectorProps {
   readonly conflict: SemanticConflict | undefined;
   readonly semanticDef: SemanticDefinition | undefined;
   readonly semanticProps: Record<string, string | number | boolean>;
-  readonly handleSetLabel: (labelStr: string) => void;
-  readonly handleSetContent: (contentStr: string) => void;
+  readonly handleSetLabel: (
+    labelStr: string,
+    options?: { record?: boolean; startVal?: string | null },
+  ) => void;
+  readonly handleSetContent: (
+    contentStr: string,
+    options?: { record?: boolean; startVal?: string | null },
+  ) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn?: ((dt: DeviceType) => void) | undefined;
@@ -66,6 +73,9 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     handleSetBoundingBox,
   } = props;
 
+  const labelStartRef = useRef<string | null>(null);
+  const contentStartRef = useRef<string | null>(null);
+
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       {/* 1. IDENTITY */}
@@ -78,7 +88,19 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
             style={{ width: "100%" }}
             placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
             value={selectedShape.label ?? ""}
-            onChange={(e) => handleSetLabel(e.target.value)}
+            onFocus={() => {
+              labelStartRef.current = selectedShape.label ?? null;
+            }}
+            onChange={(e) => handleSetLabel(e.target.value, { record: false })}
+            onBlur={(e) => {
+              const val = e.target.value.trim().length === 0 ? null : e.target.value;
+              if (labelStartRef.current !== val) {
+                handleSetLabel(e.target.value, { record: true, startVal: labelStartRef.current });
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
           />
         </OdField>
 
@@ -90,7 +112,22 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
             style={{ width: "100%" }}
             placeholder="Text displayed inside shape..."
             value={selectedShape.content ?? ""}
-            onChange={(e) => handleSetContent(e.target.value)}
+            onFocus={() => {
+              contentStartRef.current = selectedShape.content ?? null;
+            }}
+            onChange={(e) => handleSetContent(e.target.value, { record: false })}
+            onBlur={(e) => {
+              const val = e.target.value.trim().length === 0 ? null : e.target.value;
+              if (contentStartRef.current !== val) {
+                handleSetContent(e.target.value, {
+                  record: true,
+                  startVal: contentStartRef.current,
+                });
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
           />
         </OdField>
 

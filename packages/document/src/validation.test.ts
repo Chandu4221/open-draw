@@ -478,4 +478,35 @@ describe("parseDocument", () => {
       expect(parsed?.stroke).toBe("#2563eb");
     });
   });
+
+  describe("boundingBox dimension validation", () => {
+    it("rejects non-positive or NaN boundingBox dimensions", () => {
+      const invalidZeroWidth = serialize([page]) as {
+        shapes: Record<
+          string,
+          { boundingBox: { width: number; height: number; x: number; y: number } }
+        >;
+      };
+      invalidZeroWidth.shapes["page-1"]!.boundingBox.width = 0;
+      expect(() => parseDocument(invalidZeroWidth)).toThrow(DocumentError);
+
+      const invalidNegativeWidth = serialize([page]) as {
+        shapes: Record<
+          string,
+          { boundingBox: { width: number; height: number; x: number; y: number } }
+        >;
+      };
+      invalidNegativeWidth.shapes["page-1"]!.boundingBox.width = -50;
+      expect(() => parseDocument(invalidNegativeWidth)).toThrow(DocumentError);
+
+      const invalidNanHeight = serialize([page]) as {
+        shapes: Record<
+          string,
+          { boundingBox: { width: number; height: number; x: number; y: number } }
+        >;
+      };
+      invalidNanHeight.shapes["page-1"]!.boundingBox.height = NaN;
+      expect(() => parseDocument(invalidNanHeight)).toThrow(DocumentError);
+    });
+  });
 });

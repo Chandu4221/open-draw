@@ -281,8 +281,20 @@ describe("createCanvas", () => {
 
     // Single click unselected: selects root
     expect(canvas.resolveSelectionDrillDown(doc, rectId, false)).toBe(pageId);
-
-    // Double click unselected: drills into child
     expect(canvas.resolveSelectionDrillDown(doc, rectId, true)).toBe(rectId);
+  });
+
+  it("emits cameraChanged event when camera is modified (R-019)", () => {
+    const canvas = createCanvas();
+    let calls = 0;
+    canvas.subscribe(CONTROLLER_EVENTS.cameraChanged, () => {
+      calls += 1;
+    });
+    canvas.setCamera({ x: 50, y: 50, zoom: 2 });
+    expect(calls).toBe(1);
+    canvas.panBy({ x: 10, y: 10 });
+    expect(calls).toBe(2);
+    canvas.zoomAt({ x: 0, y: 0 }, 1.5);
+    expect(calls).toBe(3);
   });
 });
