@@ -19,8 +19,8 @@ This document is the binding single source of truth for the planned milestones f
 | **11**  | **P0 Platform Semantics, Root Theming & AI Directives**           | Expanded P0 semantic catalogs (Web, Android, Flutter, iOS) split under 300 lines (R-010); root brand theme inputs; export popup with 4 AI directives (A11y, Contrast, Stack Detection, Codegen Style)     | `feat/semantics-theming-and-ai-directives` | R-006, R-010, R-016, R-023, R-026, R-040                                                            |
 | **11A** | **Machine-Readable Export Parity** (Completed)                    | Chip ID system (`#s-xxxx`), pure JSON export projection, Markdown tree hierarchy & boxes, deterministic ASCII layout sketch, SVG annotations layer with dependency inversion, on-demand chip-keyed legend | `feat/export-shape-parity`                 | R-002, R-005, R-006, R-008, R-010, R-014, R-016, R-020, R-021, R-025, R-041, R-042, R-043, ADR-0010 |
 | **12**  | **Studio UI Redesign & Floating Chrome (Inspector & Dock)**       | Redesign inspector into collapsible card widgets with 2-column inline inputs (`PX`, `%`) & segmented controls; refine floating dock into distinct tool/action/export pill groups; re-anchor collapse      | `feat/studio-ui-redesign-and-chrome`       | R-004, R-008, R-010, R-014, ADR-0007                                                                |
-| **13**  | **Front Page Showcase (Golden Circle)**                           | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                                 | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                                                                          |
-| **14**  | **Advanced Transformations**                                      | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                         | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021                                                                   |
+| **13**  | **Advanced Transformations**                                      | Shape rotation (`rotation` property, top rotation handle, un-rotated hit testing, SVG rotation) and shape skewing                                                                                         | `feat/shape-transformations`               | R-005, R-006, R-008, R-016, R-021                                                                   |
+| **14**  | **Front Page Showcase (Golden Circle)**                           | OpenDraw marketing landing page (`/`), Simon Sinek Golden Circle copy, live SVG hero render via `@open-draw/renderer-svg`, 3–4 switchable CSS token packs                                                 | `feat/front-page-showcase`                 | R-004, R-010, R-014, R-021                                                                          |
 | **—**   | **Responsive Reflow Add-on (Experimental)**                       | Dedicated `@open-draw/reflow` package: pure layout solver (`derive(doc, deviceType)`).                                                                                                                    | `feat/responsive-reflow-addon`             | R-002, R-004, R-016, R-027, R-030 (PARKED)                                                          |
 
 ---
@@ -207,25 +207,7 @@ Overhaul Studio's visual chrome and inspector panels based on design references,
 
 ---
 
-### Milestone 13 — Front Page Showcase (Golden Circle)
-
-#### Objective
-
-Create the OpenDraw marketing landing page (`/`) implementing Simon Sinek's Golden Circle copy structure, live SVG hero rendering via `@open-draw/renderer-svg`, and 3–4 switchable CSS token packs.
-
-#### Tasks
-
-1. **Golden Circle Landing Copy & Structure:**
-   - Why: Purpose-driven philosophy (pure vectors, AI-ready semantics, zero lock-in).
-   - How: Lightweight standalone engine, clean package boundaries, determinism.
-   - What: High-performance canvas SDK, semantic wireframing studio, AI prompt compiler.
-2. **Live Interactive Hero:**
-   - Render live SVG graphics using `@open-draw/renderer-svg` directly on the landing page.
-   - Provide interactive CSS token pack switcher demonstrating real-time visual style changes.
-
----
-
-### Milestone 14 — Advanced Transformations
+### Milestone 13 — Advanced Transformations
 
 #### Objective
 
@@ -242,6 +224,24 @@ Provide vector editing capabilities for shape rotation and skewing.
 2. **Shape Skewing:**
    - Add `skewX?: number` and `skewY?: number` to `BaseShape`.
    - Implement SVG skew rendering and 2D affine transform matrix hit-testing.
+
+---
+
+### Milestone 14 — Front Page Showcase (Golden Circle)
+
+#### Objective
+
+Create the OpenDraw marketing landing page (`/`) implementing Simon Sinek's Golden Circle copy structure, live SVG hero rendering via `@open-draw/renderer-svg`, and 3–4 switchable CSS token packs.
+
+#### Tasks
+
+1. **Golden Circle Landing Copy & Structure:**
+   - Why: Purpose-driven philosophy (pure vectors, AI-ready semantics, zero lock-in).
+   - How: Lightweight standalone engine, clean package boundaries, determinism.
+   - What: High-performance canvas SDK, semantic wireframing studio, AI prompt compiler.
+2. **Live Interactive Hero:**
+   - Render live SVG graphics using `@open-draw/renderer-svg` directly on the landing page.
+   - Provide interactive CSS token pack switcher demonstrating real-time visual style changes.
 
 ---
 
