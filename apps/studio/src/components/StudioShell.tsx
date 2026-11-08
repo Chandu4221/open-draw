@@ -21,8 +21,10 @@ import { StudioLayout } from "../templates/StudioLayout";
 import { Sidebar } from "./Sidebar";
 import { CanvasBrand } from "./CanvasBrand";
 import { CanvasDock } from "./CanvasDock";
+import { CanvasShortcutsTrigger } from "./CanvasShortcutsTrigger";
 import { CanvasZoomControls } from "./CanvasZoomControls";
 import { ExportModal, type ExportFormat } from "./ExportModal";
+import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal";
 import { useBatchMutations } from "../use-batch-mutations";
 import { useCanvasInteractions } from "../use-canvas-interactions";
 import { useCanvasKeyboard } from "../use-canvas-keyboard";
@@ -63,7 +65,21 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   const handleOpenExportModal = (initial: ExportFormat = "markdown") => {
     setExportInitialFormat(initial);
@@ -222,14 +238,11 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
         ) : undefined
       }
+      shortcutsSlot={<CanvasShortcutsTrigger onOpenShortcuts={() => setIsShortcutsOpen(true)} />}
       dockSlot={
         <CanvasDock
           tool={tool}
           chooseTool={chooseTool}
-          handleUndo={toolbarActions.handleUndo}
-          handleRedo={toolbarActions.handleRedo}
-          handleDuplicate={toolbarActions.handleDuplicate}
-          handleDelete={toolbarActions.handleDelete}
           handleLoad={toolbarActions.handleLoad}
           onOpenExportModal={() => handleOpenExportModal("markdown")}
         />
@@ -257,14 +270,20 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
         />
       }
       modalSlot={
-        <ExportModal
-          isOpen={isExportModalOpen}
-          onClose={() => setIsExportModalOpen(false)}
-          doc={doc}
-          initialFormat={exportInitialFormat}
-          includeLegend={includeLegend}
-          setIncludeLegend={setIncludeLegend}
-        />
+        <>
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            doc={doc}
+            initialFormat={exportInitialFormat}
+            includeLegend={includeLegend}
+            setIncludeLegend={setIncludeLegend}
+          />
+          <KeyboardShortcutsModal
+            isOpen={isShortcutsOpen}
+            onClose={() => setIsShortcutsOpen(false)}
+          />
+        </>
       }
     />
   );

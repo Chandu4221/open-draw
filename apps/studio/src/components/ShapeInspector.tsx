@@ -1,4 +1,3 @@
-import React from "react";
 import type {
   BoundingBox,
   DeviceType,
@@ -6,12 +5,10 @@ import type {
   SemanticConflict,
   SemanticDefinition,
 } from "@open-draw/contracts";
-import { PLATFORMS } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdCard, OdField } from "@open-draw/ui";
 import { GeometrySection } from "./GeometrySection";
-import { ResponsiveControls } from "./ResponsiveControls";
 import { ShapeSemanticSection } from "./ShapeSemanticSection";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
@@ -26,8 +23,8 @@ export interface ShapeInspectorProps {
   readonly handleSetContent: (contentStr: string) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
-  readonly handleToggleHiddenOn: (dt: DeviceType) => void;
-  readonly handleOrderChange: (dt: DeviceType, valStr: string) => void;
+  readonly handleToggleHiddenOn?: ((dt: DeviceType) => void) | undefined;
+  readonly handleOrderChange?: ((dt: DeviceType, valStr: string) => void) | undefined;
   readonly handleStyleChange: (
     fill?: string | null,
     stroke?: string | null,
@@ -63,16 +60,11 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     handleSetContent,
     handleSetSemantic,
     handlePropertyChange,
-    handleToggleHiddenOn,
-    handleOrderChange,
     handleStyleChange,
     handleStylePreview,
     handleStyleCommit,
     handleSetBoundingBox,
   } = props;
-
-  const isWebRoot =
-    rootShape?.meta.platform === PLATFORMS.web || activeProfile?.id === PLATFORMS.web;
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -145,18 +137,6 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
           handleStyleCommit={handleStyleCommit}
         />
       </OdCard>
-
-      {/* 5. RESPONSIVE */}
-      {isWebRoot && (
-        <OdCard title="Responsive" collapsible defaultExpanded>
-          <ResponsiveControls
-            selectedShape={selectedShape}
-            activeProfile={activeProfile}
-            handleToggleHiddenOn={handleToggleHiddenOn}
-            handleOrderChange={handleOrderChange}
-          />
-        </OdCard>
-      )}
     </div>
   );
 }

@@ -568,6 +568,24 @@
   line-height: 1;
 }
 
+.od-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--od-6);
+  font-family: var(--od-font-mono);
+  font-size: var(--od-text-xs);
+  font-weight: 600;
+  color: var(--od-text);
+  background-color: var(--od-bg);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-radius-sm);
+  box-shadow: 0 1px 0 var(--od-border-strong);
+  line-height: 1;
+}
+
 .od-badge--unit {
   font-family: var(--od-font-mono);
   font-size: 10px;
@@ -655,7 +673,7 @@
   min-width: 0;
 }
 
-/* Floating Canvas Dock */
+/* Floating Canvas Dock (Unified Padded Toolbar) */
 .od-dock {
   position: absolute;
   bottom: var(--od-16);
@@ -664,39 +682,93 @@
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: var(--od-8);
-  padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  gap: var(--od-4);
+  padding: var(--od-6) var(--od-8);
+  background-color: var(--od-surface-raised);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-12);
+  box-shadow: var(--od-shadow-floating);
+  backdrop-filter: blur(8px);
 }
 
 .od-dock-group {
   display: flex;
   align-items: center;
   gap: var(--od-2);
-  padding: var(--od-4) var(--od-6);
-  background-color: var(--od-surface-raised);
-  border: var(--od-border-width) solid var(--od-border-strong);
-  border-radius: 9999px;
-  box-shadow: var(--od-shadow-floating);
-  backdrop-filter: blur(8px);
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
-.od-dock-group .od-icon-btn,
+.od-dock .od-divider {
+  height: 18px;
+  margin-inline: var(--od-4);
+  background-color: var(--od-border);
+}
+
+.od-dock .od-icon-btn,
 .od-zoom-controls .od-icon-btn,
-.od-dock-group .od-btn,
+.od-shortcuts-trigger .od-icon-btn,
+.od-dock .od-btn,
 .od-zoom-controls .od-btn {
   border-radius: var(--od-radius);
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--od-text-secondary);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-.od-dock-group .od-icon-btn--active {
+.od-dock .od-icon-btn:hover:not(.od-icon-btn--active),
+.od-zoom-controls .od-icon-btn:hover:not(.od-icon-btn--active),
+.od-shortcuts-trigger .od-icon-btn:hover:not(.od-icon-btn--active),
+.od-dock .od-btn:hover,
+.od-zoom-controls .od-btn:hover {
+  background-color: var(--od-accent-soft);
+  color: var(--od-text);
+  border-color: transparent;
+}
+
+.od-dock .od-icon-btn--active,
+.od-dock-group .od-icon-btn--active,
+.od-zoom-controls .od-icon-btn--active {
   background-color: var(--od-accent);
   border-color: var(--od-accent);
   color: var(--od-text-on-accent);
 }
 
-/* Canvas Floating Overlays (Zoom Controls & Inspector Toggle) */
+.od-dock .od-icon-btn--active:hover,
+.od-dock-group .od-icon-btn--active:hover,
+.od-zoom-controls .od-icon-btn--active:hover {
+  background-color: var(--od-accent);
+  border-color: var(--od-accent);
+  color: var(--od-text-on-accent);
+}
+
+/* Canvas Floating Overlays (Shortcuts, Zoom Controls & Inspector Toggle) */
+.od-canvas-overlay-bottom-left {
+  position: absolute;
+  bottom: var(--od-16);
+  left: var(--od-16);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+}
+
+.od-shortcuts-trigger {
+  display: flex;
+  align-items: center;
+  padding: var(--od-6);
+  background-color: var(--od-surface-raised);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-12);
+  box-shadow: var(--od-shadow-floating);
+  backdrop-filter: blur(8px);
+}
+
 .od-canvas-overlay-bottom-right {
   position: absolute;
   bottom: var(--od-16);
@@ -712,10 +784,10 @@
   display: flex;
   align-items: center;
   gap: var(--od-2);
-  padding: var(--od-4) var(--od-6);
+  padding: var(--od-6) var(--od-8);
   background-color: var(--od-surface-raised);
   border: var(--od-border-width) solid var(--od-border-strong);
-  border-radius: 9999px;
+  border-radius: var(--od-12);
   box-shadow: var(--od-shadow-floating);
   backdrop-filter: blur(8px);
 }
@@ -732,7 +804,7 @@
   color: var(--od-text-secondary);
   background-color: var(--od-surface-raised);
   border: var(--od-border-width) solid var(--od-border-strong);
-  border-radius: 9999px;
+  border-radius: var(--od-12);
   box-shadow: var(--od-shadow-floating);
   backdrop-filter: blur(8px);
   cursor: pointer;
@@ -814,13 +886,13 @@
   outline-offset: -1px;
 }
 
-/* Contiguous Pill Meter (Creativity Gauge) */
+/* Contiguous Meter (Creativity Gauge) */
 .od-meter-track {
   display: flex;
   align-items: stretch;
   background-color: var(--od-border);
   border: var(--od-border-width) solid var(--od-border);
-  border-radius: var(--od-radius-full);
+  border-radius: var(--od-radius);
   padding: 2px;
   gap: 2px;
   width: 100%;
@@ -848,13 +920,13 @@
 }
 
 .od-meter-segment:first-child {
-  border-top-left-radius: var(--od-radius-full);
-  border-bottom-left-radius: var(--od-radius-full);
+  border-top-left-radius: var(--od-radius-sm);
+  border-bottom-left-radius: var(--od-radius-sm);
 }
 
 .od-meter-segment:last-child {
-  border-top-right-radius: var(--od-radius-full);
-  border-bottom-right-radius: var(--od-radius-full);
+  border-top-right-radius: var(--od-radius-sm);
+  border-bottom-right-radius: var(--od-radius-sm);
 }
 
 .od-meter-segment:hover:not(.od-meter-segment--active) {

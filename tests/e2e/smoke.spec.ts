@@ -6,7 +6,7 @@ test.describe("Studio workbench smoke tests", () => {
     await expect(page.locator(".od-canvas-brand")).toContainText("OpenDraw Studio");
     await expect(page.locator(".od-canvas-bg > svg")).toBeVisible();
     await expect(page.locator(".od-dock")).toBeVisible();
-    await expect(page.locator(".od-dock .od-dock-group")).toHaveCount(3);
+    await expect(page.locator(".od-dock .od-dock-group")).toHaveCount(2);
     await expect(page.locator(".allotment-module")).toBeVisible();
     await expect(page.locator("aside.od-panel")).toBeVisible();
   });

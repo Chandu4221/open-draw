@@ -5,25 +5,12 @@ import { OdButton, OdIcon, OdIconButton, OdTooltip } from "@open-draw/ui";
 export interface CanvasDockProps {
   readonly tool: ToolId;
   readonly chooseTool: (tool: ToolId) => void;
-  readonly handleUndo?: () => void;
-  readonly handleRedo?: () => void;
-  readonly handleDuplicate?: () => void;
-  readonly handleDelete?: () => void;
   readonly handleLoad?: () => void;
   readonly onOpenExportModal: () => void;
 }
 
 export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
-  const {
-    tool,
-    chooseTool,
-    handleUndo,
-    handleRedo,
-    handleDuplicate,
-    handleDelete,
-    handleLoad,
-    onOpenExportModal,
-  } = props;
+  const { tool, chooseTool, handleLoad, onOpenExportModal } = props;
 
   return (
     <div className="od-dock" role="toolbar" aria-label="Canvas tools and actions dock">
@@ -85,31 +72,9 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
         </OdTooltip>
       </div>
 
-      {/* Group 2: Edit / History Actions Pill */}
-      <div className="od-dock-group">
-        {handleUndo && (
-          <OdTooltip text="Undo (Ctrl+Z)">
-            <OdIconButton name="undo" aria-label="Undo" ghost onClick={handleUndo} />
-          </OdTooltip>
-        )}
-        {handleRedo && (
-          <OdTooltip text="Redo (Ctrl+Y)">
-            <OdIconButton name="redo" aria-label="Redo" ghost onClick={handleRedo} />
-          </OdTooltip>
-        )}
-        {handleDuplicate && (
-          <OdTooltip text="Duplicate (Ctrl+D)">
-            <OdIconButton name="duplicate" aria-label="Duplicate" ghost onClick={handleDuplicate} />
-          </OdTooltip>
-        )}
-        {handleDelete && (
-          <OdTooltip text="Delete (Del)">
-            <OdIconButton name="delete" aria-label="Delete" ghost onClick={handleDelete} />
-          </OdTooltip>
-        )}
-      </div>
+      <div className="od-divider" />
 
-      {/* Group 3: File & Export Pill */}
+      {/* Group 2: File & Export */}
       <div className="od-dock-group">
         {handleLoad && (
           <OdTooltip text="Open document">

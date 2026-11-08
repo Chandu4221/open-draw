@@ -50,6 +50,7 @@ describe("icons registry", () => {
       "close",
       "help",
       "panel",
+      "keyboard",
     ] as const;
 
     for (const iconId of requiredIcons) {
@@ -174,5 +175,35 @@ describe("accessibility and design tokens", () => {
     expect(contrast(darkDanger, darkSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(darkDanger, darkDangerSoft)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(darkSuccess, darkSurface)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("enforces rounded-rectangle container and non-full-rounded segments in base.css", async () => {
+    const fsModule = "node:fs";
+    const fs = (await import(fsModule)) as unknown as NodeFs;
+    const basePath = new URL("./base.css", import.meta.url).pathname;
+    const css = fs.readFileSync(basePath, "utf-8");
+
+    // .od-dock must be styled as a unified padded container with 12px radius, not transparent/unpadded
+    expect(css).toMatch(/\.od-dock\s*\{[^}]*padding:\s*var\(--od-6\)\s*var\(--od-8\);/);
+    expect(css).toMatch(/\.od-dock\s*\{[^}]*border-radius:\s*var\(--od-12\);/);
+
+    // .od-dock-group must not be a 9999px pill
+    expect(css).not.toMatch(/\.od-dock-group\s*\{[^}]*border-radius:\s*9999px;/);
+
+    // .od-meter-segment first/last must not be full rounded
+    expect(css).not.toMatch(/\.od-meter-segment:first-child\s*\{[^}]*var\(--od-radius-full\);/);
+    expect(css).not.toMatch(/\.od-meter-segment:last-child\s*\{[^}]*var\(--od-radius-full\);/);
+  });
+
+  it("styles keyboard shortcuts trigger and bottom-left canvas overlay in base.css", async () => {
+    const fsModule = "node:fs";
+    const fs = (await import(fsModule)) as unknown as NodeFs;
+    const basePath = new URL("./base.css", import.meta.url).pathname;
+    const css = fs.readFileSync(basePath, "utf-8");
+
+    expect(css).toMatch(/\.od-canvas-overlay-bottom-left\s*\{[^}]*bottom:\s*var\(--od-16\);/);
+    expect(css).toMatch(/\.od-canvas-overlay-bottom-left\s*\{[^}]*left:\s*var\(--od-16\);/);
+    expect(css).toMatch(/\.od-shortcuts-trigger\s*\{[^}]*border-radius:\s*var\(--od-12\);/);
+    expect(css).toMatch(/\.od-kbd\s*\{[^}]*font-family:\s*var\(--od-font-mono\);/);
   });
 });

@@ -11,6 +11,7 @@ export interface StudioLayoutProps {
   readonly dockSlot?: React.ReactNode | undefined;
   readonly zoomSlot?: React.ReactNode | undefined;
   readonly hintSlot?: React.ReactNode | undefined;
+  readonly shortcutsSlot?: React.ReactNode | undefined;
   readonly sidebarSlot: React.ReactNode;
   readonly modalSlot?: React.ReactNode | undefined;
 }
@@ -24,6 +25,7 @@ export function StudioLayout(props: StudioLayoutProps): React.JSX.Element {
     dockSlot,
     zoomSlot,
     hintSlot,
+    shortcutsSlot,
     sidebarSlot,
     modalSlot,
   } = props;
@@ -73,6 +75,7 @@ export function StudioLayout(props: StudioLayoutProps): React.JSX.Element {
             )}
             <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
             {hintSlot}
+            {shortcutsSlot}
             {dockSlot}
             {zoomSlot}
           </div>
