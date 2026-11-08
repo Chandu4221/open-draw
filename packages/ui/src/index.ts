@@ -21,3 +21,6 @@ export {
   type OdToastHostProps,
 } from "./toast";
 export { OdCard, type OdCardProps } from "./card";
+export { OdBadge, type OdBadgeProps, type OdBadgeVariant } from "./badge";
+export { OdInputGroup, type OdInputGroupProps } from "./input-group";
+export { OdPropertyRow, type OdPropertyRowProps } from "./property-row";

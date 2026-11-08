@@ -3,11 +3,14 @@ import {
   ICONS,
   ICON_IDS,
   OD_TOAST_TYPES,
+  OdBadge,
   OdButton,
   OdCard,
   OdField,
   OdIcon,
   OdIconButton,
+  OdInputGroup,
+  OdPropertyRow,
   OdSegmentedControl,
   OdToastHost,
   OdToastProvider,
@@ -71,15 +74,18 @@ describe("toast registry", () => {
 
 describe("public exports", () => {
   it("exports all required UI components and hooks", () => {
+    expect(OdBadge).toBeDefined();
     expect(OdButton).toBeDefined();
     expect(OdCard).toBeDefined();
-    expect(OdIconButton).toBeDefined();
-    expect(OdIcon).toBeDefined();
-    expect(OdTooltip).toBeDefined();
-    expect(OdSegmentedControl).toBeDefined();
     expect(OdField).toBeDefined();
+    expect(OdIcon).toBeDefined();
+    expect(OdIconButton).toBeDefined();
+    expect(OdInputGroup).toBeDefined();
+    expect(OdPropertyRow).toBeDefined();
+    expect(OdSegmentedControl).toBeDefined();
     expect(OdToastHost).toBeDefined();
     expect(OdToastProvider).toBeDefined();
+    expect(OdTooltip).toBeDefined();
     expect(useToast).toBeDefined();
   });
 });

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Allotment } from "allotment";
 import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import {
   applyTransaction,
@@ -13,10 +12,11 @@ import {
   type Shape,
 } from "@open-draw/document";
 import { CONTROLLER_EVENTS, TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
-import { OdIcon, OdToastHost, useToast } from "@open-draw/ui";
-import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, type Gesture } from "../types";
+import { useToast } from "@open-draw/ui";
+import type { Gesture } from "../types";
 import { initCanvas } from "../canvas-init";
 import { renderCanvasSvg } from "../canvas-render";
+import { StudioLayout } from "../templates/StudioLayout";
 
 import { Sidebar } from "./Sidebar";
 import { CanvasBrand } from "./CanvasBrand";
@@ -212,77 +212,60 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const emptyDoc = Object.keys(doc.shapes).length === 0;
 
   return (
-    <main style={{ height: "100%", width: "100%", minHeight: 0, minWidth: 0, overflow: "hidden" }}>
-      <Allotment className="allotment-module">
-        <Allotment.Pane minSize={400}>
-          <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
-            <CanvasBrand onBackToLanding={onBackToLanding} />
-            {!showSidebar && (
-              <button
-                type="button"
-                aria-label="Show Inspector"
-                className="od-panel-toggle-btn"
-                style={{
-                  position: "absolute",
-                  top: "var(--od-16)",
-                  right: "var(--od-16)",
-                  zIndex: 20,
-                }}
-                onClick={() => setShowSidebar(true)}
-              >
-                <span>Inspector</span>
-                <OdIcon name="panel" size={16} />
-              </button>
-            )}
-            <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
-            {emptyDoc && (
-              <div className="od-canvas-hint">
-                R rect · O ellipse · L line · P pen — wheel to pan
-              </div>
-            )}
-            <CanvasDock
-              tool={tool}
-              chooseTool={chooseTool}
-              handleUndo={toolbarActions.handleUndo}
-              handleRedo={toolbarActions.handleRedo}
-              handleDuplicate={toolbarActions.handleDuplicate}
-              handleDelete={toolbarActions.handleDelete}
-              handleLoad={toolbarActions.handleLoad}
-              onOpenExportModal={() => handleOpenExportModal("markdown")}
-            />
-            <CanvasZoomControls
-              zoomPercent={zoomPercent}
-              handleZoom={handleZoom}
-              handleResetZoom={handleResetZoom}
-            />
-          </div>
-        </Allotment.Pane>
-        <Allotment.Pane preferredSize={340} minSize={260} maxSize={500} snap visible={showSidebar}>
-          <Sidebar
-            {...inspection}
-            {...mutations}
-            {...geometryMutations}
-            {...themeMutations}
-            {...batchMutations}
-            selectedShapes={selectedShapes}
-            selectedShapeId={selectedShapeId}
-            selectShape={selectShape}
-            showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
-            handleToggleChildChips={handleToggleChildChips}
-            onClose={() => setShowSidebar(false)}
-          />
-        </Allotment.Pane>
-      </Allotment>
-
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        doc={doc}
-        initialFormat={exportInitialFormat}
-        includeLegend={includeLegend}
-        setIncludeLegend={setIncludeLegend}
-      />
-      <OdToastHost />
-    </main>
+    <StudioLayout
+      svgRef={svgRef}
+      showSidebar={showSidebar}
+      onToggleSidebar={setShowSidebar}
+      brandSlot={<CanvasBrand onBackToLanding={onBackToLanding} />}
+      hintSlot={
+        emptyDoc ? (
+          <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
+        ) : undefined
+      }
+      dockSlot={
+        <CanvasDock
+          tool={tool}
+          chooseTool={chooseTool}
+          handleUndo={toolbarActions.handleUndo}
+          handleRedo={toolbarActions.handleRedo}
+          handleDuplicate={toolbarActions.handleDuplicate}
+          handleDelete={toolbarActions.handleDelete}
+          handleLoad={toolbarActions.handleLoad}
+          onOpenExportModal={() => handleOpenExportModal("markdown")}
+        />
+      }
+      zoomSlot={
+        <CanvasZoomControls
+          zoomPercent={zoomPercent}
+          handleZoom={handleZoom}
+          handleResetZoom={handleResetZoom}
+        />
+      }
+      sidebarSlot={
+        <Sidebar
+          {...inspection}
+          {...mutations}
+          {...geometryMutations}
+          {...themeMutations}
+          {...batchMutations}
+          selectedShapes={selectedShapes}
+          selectedShapeId={selectedShapeId}
+          selectShape={selectShape}
+          showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
+          handleToggleChildChips={handleToggleChildChips}
+          onClose={() => setShowSidebar(false)}
+        />
+      }
+      modalSlot={
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          doc={doc}
+          initialFormat={exportInitialFormat}
+          includeLegend={includeLegend}
+          setIncludeLegend={setIncludeLegend}
+        />
+      }
+    />
   );
 }

@@ -145,4 +145,28 @@ test.describe("Studio workbench smoke tests", () => {
     await reopenBtn.click();
     await expect(page.locator("aside.od-panel")).toBeVisible();
   });
+
+  test("shows reopen button when collapsing inspector via sash drag", async ({ page }) => {
+    await page.goto("/#app");
+    await expect(page.locator("aside.od-panel")).toBeVisible();
+
+    // Find the Allotment sash between panes and drag it towards right edge
+    const sash = page.locator(".allotment-module [role='separator']").first();
+    if (await sash.isVisible()) {
+      const box = (await sash.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      // Drag sash all the way to the right
+      await page.mouse.move(box.x + 500, box.y + box.height / 2);
+      await page.mouse.up();
+
+      // Floating toggle button appears when collapsed
+      const reopenBtn = page.getByRole("button", { name: "Show Inspector" });
+      await expect(reopenBtn).toBeVisible();
+
+      // Reopen sidebar
+      await reopenBtn.click();
+      await expect(page.locator("aside.od-panel")).toBeVisible();
+    }
+  });
 });

@@ -158,7 +158,7 @@
 
 /* Typography & metadata */
 .od-panel-title {
-  font-size: var(--od-text-sm);
+  font-size: var(--od-text-md);
   font-weight: 600;
   color: var(--od-text);
   margin: 0;
@@ -510,6 +510,109 @@
   pointer-events: none;
   user-select: none;
   font-weight: 600;
+}
+
+/* Badges & Units (Atoms) */
+.od-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--od-6);
+  height: 20px;
+  font-size: var(--od-text-xs);
+  font-weight: 600;
+  border-radius: var(--od-radius-sm);
+  background-color: var(--od-accent-soft);
+  color: var(--od-text-secondary);
+  user-select: none;
+  line-height: 1;
+}
+
+.od-badge--unit {
+  font-family: var(--od-font-mono);
+  font-size: 10px;
+  height: auto;
+  padding: 0;
+  background-color: transparent;
+  color: var(--od-text-tertiary);
+  font-weight: 600;
+}
+
+.od-badge--accent {
+  background-color: var(--od-accent);
+  color: var(--od-text-on-accent);
+}
+
+.od-badge--outline {
+  background-color: transparent;
+  border: var(--od-border-width) solid var(--od-border-strong);
+  color: var(--od-text-secondary);
+}
+
+/* Input Group with embedded badge or icon (Molecule) */
+.od-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.od-input-group .od-input {
+  width: 100%;
+}
+
+.od-input-group .od-input--has-suffix {
+  padding-right: 28px;
+}
+
+.od-input-group .od-input--has-prefix {
+  padding-left: 28px;
+}
+
+.od-input-group__prefix {
+  position: absolute;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  color: var(--od-text-tertiary);
+  pointer-events: none;
+  user-select: none;
+}
+
+.od-input-group__suffix {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  color: var(--od-text-tertiary);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Property Row (Molecule) */
+.od-property-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--od-8);
+  min-height: var(--od-control-height);
+  width: 100%;
+}
+
+.od-property-row__label-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--od-4);
+  flex-shrink: 0;
+  min-width: 64px;
+}
+
+.od-property-row__control-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 /* Floating Canvas Dock */
