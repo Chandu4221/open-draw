@@ -1,15 +1,18 @@
 import React from "react";
 import type {
+  BoundingBox,
   DeviceType,
   PlatformProfile,
   SemanticConflict,
   SemanticDefinition,
 } from "@open-draw/contracts";
-import { CONTROL_TYPES, PLATFORMS } from "@open-draw/contracts";
+import { PLATFORMS } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
-import { OdField } from "@open-draw/ui";
+import { OdCard, OdField } from "@open-draw/ui";
+import { GeometrySection } from "./GeometrySection";
 import { ResponsiveControls } from "./ResponsiveControls";
+import { ShapeSemanticSection } from "./ShapeSemanticSection";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
 export interface ShapeInspectorProps {
@@ -45,6 +48,7 @@ export interface ShapeInspectorProps {
       strokeWidth?: number | null;
     },
   ) => void;
+  readonly handleSetBoundingBox?: ((box: BoundingBox) => void) | undefined;
 }
 
 export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
@@ -64,226 +68,94 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     handleStyleChange,
     handleStylePreview,
     handleStyleCommit,
+    handleSetBoundingBox,
   } = props;
-
-  const sortedSemantics = activeProfile
-    ? Object.values(activeProfile.semantics).sort((a, b) =>
-        a.displayName.localeCompare(b.displayName),
-      )
-    : [];
 
   const isWebRoot =
     rootShape?.meta.platform === PLATFORMS.web || activeProfile?.id === PLATFORMS.web;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      {/* 1. SEMANTICS */}
-      <h3 className="od-section-header">Semantics</h3>
-
-      {conflict && (
-        <div
-          style={{
-            backgroundColor: "var(--od-danger-soft)",
-            border: "var(--od-border-width) solid var(--od-danger)",
-            borderRadius: "var(--od-radius-sm)",
-            padding: "var(--od-8)",
-            color: "var(--od-danger)",
-            fontSize: "var(--od-text-xs)",
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: "var(--od-2)" }}>
-            Conflict: {conflict.status}
-          </div>
-          <div style={{ marginBottom: "var(--od-4)" }}>{conflict.reason}</div>
-          <button
-            type="button"
-            className="od-btn od-btn--ghost"
-            style={{ height: "22px", padding: "0 6px", fontSize: "11px" }}
-            onClick={() => handleSetSemantic("")}
-          >
-            Clear Tag
-          </button>
-        </div>
-      )}
-
-      {activeProfile ? (
-        <OdField label="Semantic Tag" htmlFor="shape-semantic-tag">
-          <select
-            id="shape-semantic-tag"
-            className="od-select"
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* 1. IDENTITY */}
+      <OdCard title="Identity" collapsible defaultExpanded>
+        <OdField label="Name" htmlFor="shape-name">
+          <input
+            id="shape-name"
+            type="text"
+            className="od-input"
             style={{ width: "100%" }}
-            value={selectedShape.meta.semantic?.id ?? ""}
-            onChange={(e) => handleSetSemantic(e.target.value)}
-          >
-            <option value="">(None / Baseline)</option>
-            {sortedSemantics.map((def) => (
-              <option key={def.id} value={def.id}>
-                {def.displayName} ({def.id})
-              </option>
-            ))}
-            {selectedShape.meta.semantic &&
-              !activeProfile.semantics[selectedShape.meta.semantic.id] && (
-                <option value={selectedShape.meta.semantic.id}>
-                  [Foreign] {selectedShape.meta.semantic.id} ({selectedShape.meta.semantic.platform}
-                  )
-                </option>
-              )}
-          </select>
+            placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+            value={selectedShape.label ?? ""}
+            onChange={(e) => handleSetLabel(e.target.value)}
+          />
         </OdField>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-4)" }}>
-          <OdField label="Semantic Tag" htmlFor="shape-semantic-tag">
-            <select
-              id="shape-semantic-tag"
-              className="od-select"
-              style={{ width: "100%" }}
-              disabled
-              value=""
-            >
-              <option value="">(None / Platform-Agnostic)</option>
-            </select>
-          </OdField>
-          <span className="od-meta" style={{ fontStyle: "italic" }}>
-            Set a platform profile on container to enable platform semantics.
+
+        <OdField label="Content" htmlFor="shape-content">
+          <input
+            id="shape-content"
+            type="text"
+            className="od-input"
+            style={{ width: "100%" }}
+            placeholder="Text displayed inside shape..."
+            value={selectedShape.content ?? ""}
+            onChange={(e) => handleSetContent(e.target.value)}
+          />
+        </OdField>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-2)" }}>
+          <span className="od-meta">ID: {selectedShape.id}</span>
+          <span className="od-meta">
+            Container:{" "}
+            {rootShape
+              ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
+              : "Canvas"}
           </span>
         </div>
+      </OdCard>
+
+      {/* 2. GEOMETRY */}
+      {handleSetBoundingBox && (
+        <OdCard title="Geometry" collapsible defaultExpanded>
+          <GeometrySection
+            selectedShape={selectedShape}
+            handleSetBoundingBox={handleSetBoundingBox}
+          />
+        </OdCard>
       )}
 
-      {semanticDef?.properties && semanticDef.properties.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-          <span className="od-label" style={{ fontSize: "10px" }}>
-            Properties ({semanticDef.displayName})
-          </span>
-          {semanticDef.properties.map((schema) => {
-            const val = semanticProps[schema.id];
-            const propInputId = `shape-prop-${selectedShape.id}-${schema.id}`;
-            return (
-              <OdField key={schema.id} label={schema.label} htmlFor={propInputId}>
-                {schema.control === CONTROL_TYPES.text && (
-                  <input
-                    id={propInputId}
-                    type="text"
-                    className="od-input"
-                    style={{ width: "100%" }}
-                    value={val !== undefined ? String(val) : ""}
-                    onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
-                  />
-                )}
-                {schema.control === CONTROL_TYPES.number && (
-                  <input
-                    id={propInputId}
-                    type="number"
-                    className="od-input"
-                    style={{ width: "100%" }}
-                    value={val !== undefined ? Number(val) : ""}
-                    onChange={(e) =>
-                      handlePropertyChange(
-                        schema.id,
-                        e.target.value.length === 0 ? 0 : Number(e.target.value),
-                      )
-                    }
-                  />
-                )}
-                {schema.control === CONTROL_TYPES.toggle && (
-                  <label
-                    htmlFor={propInputId}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "var(--od-4)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      id={propInputId}
-                      type="checkbox"
-                      checked={Boolean(val)}
-                      onChange={(e) => handlePropertyChange(schema.id, e.target.checked)}
-                    />
-                    <span style={{ fontSize: "var(--od-text-sm)" }}>Enabled</span>
-                  </label>
-                )}
-                {schema.control === CONTROL_TYPES.select && (
-                  <select
-                    id={propInputId}
-                    className="od-select"
-                    style={{ width: "100%" }}
-                    value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}
-                    onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
-                  >
-                    {schema.options?.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </OdField>
-            );
-          })}
-        </div>
-      )}
-
-      {/* 2. IDENTITY */}
-      <div className="od-divider od-divider--horizontal" />
-      <h3 className="od-section-header">Identity</h3>
-
-      <OdField label="Name" htmlFor="shape-name">
-        <input
-          id="shape-name"
-          type="text"
-          className="od-input"
-          style={{ width: "100%" }}
-          placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
-          value={selectedShape.label ?? ""}
-          onChange={(e) => handleSetLabel(e.target.value)}
+      {/* 3. PLATFORM & SEMANTICS */}
+      <OdCard title="Platform & Semantics" collapsible defaultExpanded>
+        <ShapeSemanticSection
+          selectedShape={selectedShape}
+          activeProfile={activeProfile}
+          conflict={conflict}
+          semanticDef={semanticDef}
+          semanticProps={semanticProps}
+          handleSetSemantic={handleSetSemantic}
+          handlePropertyChange={handlePropertyChange}
         />
-      </OdField>
+      </OdCard>
 
-      <OdField label="Content" htmlFor="shape-content">
-        <input
-          id="shape-content"
-          type="text"
-          className="od-input"
-          style={{ width: "100%" }}
-          placeholder="Text displayed inside shape..."
-          value={selectedShape.content ?? ""}
-          onChange={(e) => handleSetContent(e.target.value)}
+      {/* 4. STYLE */}
+      <OdCard title="Style" collapsible defaultExpanded>
+        <ShapeStyleInspector
+          selectedShape={selectedShape}
+          handleStyleChange={handleStyleChange}
+          handleStylePreview={handleStylePreview}
+          handleStyleCommit={handleStyleCommit}
         />
-      </OdField>
+      </OdCard>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-2)" }}>
-        <span className="od-meta">ID: {selectedShape.id}</span>
-        <span className="od-meta">
-          Container:{" "}
-          {rootShape
-            ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
-            : "Canvas"}
-        </span>
-      </div>
-
-      {/* 3. STYLE */}
-      <div className="od-divider od-divider--horizontal" />
-      <h3 className="od-section-header">Style</h3>
-      <ShapeStyleInspector
-        selectedShape={selectedShape}
-        handleStyleChange={handleStyleChange}
-        handleStylePreview={handleStylePreview}
-        handleStyleCommit={handleStyleCommit}
-      />
-
-      {/* 4. RESPONSIVE */}
+      {/* 5. RESPONSIVE */}
       {isWebRoot && (
-        <>
-          <div className="od-divider od-divider--horizontal" />
-          <h3 className="od-section-header">Responsive</h3>
+        <OdCard title="Responsive" collapsible defaultExpanded>
           <ResponsiveControls
             selectedShape={selectedShape}
             activeProfile={activeProfile}
             handleToggleHiddenOn={handleToggleHiddenOn}
             handleOrderChange={handleOrderChange}
           />
-        </>
+        </OdCard>
       )}
     </div>
   );

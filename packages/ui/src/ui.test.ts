@@ -4,6 +4,7 @@ import {
   ICON_IDS,
   OD_TOAST_TYPES,
   OdButton,
+  OdCard,
   OdField,
   OdIcon,
   OdIconButton,
@@ -71,6 +72,7 @@ describe("toast registry", () => {
 describe("public exports", () => {
   it("exports all required UI components and hooks", () => {
     expect(OdButton).toBeDefined();
+    expect(OdCard).toBeDefined();
     expect(OdIconButton).toBeDefined();
     expect(OdIcon).toBeDefined();
     expect(OdTooltip).toBeDefined();

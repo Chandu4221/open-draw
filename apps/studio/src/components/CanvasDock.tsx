@@ -27,8 +27,8 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
 
   return (
     <div className="od-dock" role="toolbar" aria-label="Canvas tools and actions dock">
-      {/* Group 1: Tools */}
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--od-2)" }}>
+      {/* Group 1: Drawing Tools Pill */}
+      <div className="od-dock-group">
         <OdTooltip text="Select (V)">
           <OdIconButton
             name="select-tool"
@@ -79,10 +79,8 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
         </OdTooltip>
       </div>
 
-      <div className="od-divider" />
-
-      {/* Group 2: Edit actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--od-2)" }}>
+      {/* Group 2: Edit / History Actions Pill */}
+      <div className="od-dock-group">
         {handleUndo && (
           <OdTooltip text="Undo (Ctrl+Z)">
             <OdIconButton name="undo" aria-label="Undo" ghost onClick={handleUndo} />
@@ -105,10 +103,8 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
         )}
       </div>
 
-      <div className="od-divider" />
-
-      {/* Group 3: File & Export actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--od-2)" }}>
+      {/* Group 3: File & Export Pill */}
+      <div className="od-dock-group">
         {handleLoad && (
           <OdTooltip text="Open document">
             <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />

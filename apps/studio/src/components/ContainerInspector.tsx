@@ -4,6 +4,7 @@ import {
   PLATFORMS,
   ROOT_ROLES,
   STYLE_PROFILES,
+  type BoundingBox,
   type DesignStyleId,
   type PlatformId,
   type PlatformProfile,
@@ -16,9 +17,10 @@ import {
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
-import { OdField } from "@open-draw/ui";
+import { OdCard, OdField, OdSegmentedControl } from "@open-draw/ui";
 import { ComponentSemanticSection } from "./ComponentSemanticSection";
 import { DesignStyleSelect } from "./DesignStyleSelect";
+import { GeometrySection } from "./GeometrySection";
 import { ThemePaletteSection } from "./ThemePaletteSection";
 
 export interface ContainerInspectorProps {
@@ -65,6 +67,7 @@ export interface ContainerInspectorProps {
   readonly handleToggleChildChips?: ((rootId: ShapeId) => void) | undefined;
   readonly handleSetTheme?: ((theme: ThemePalette | undefined) => void) | undefined;
   readonly handleSetDarkMode?: ((darkMode: boolean) => void) | undefined;
+  readonly handleSetBoundingBox?: ((box: BoundingBox) => void) | undefined;
 }
 
 export function ContainerInspector(props: ContainerInspectorProps): React.JSX.Element {
@@ -95,132 +98,148 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     handleStyleCommit,
     showChildChips,
     handleToggleChildChips,
+    handleSetBoundingBox,
   } = props;
 
+  const roleItems = [
+    { id: ROOT_ROLES.screen, label: "Screen / Page" },
+    { id: ROOT_ROLES.component, label: "Component" },
+  ];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      {/* PLATFORM & STYLE SECTION */}
-      <h3 className="od-section-header">Platform & Style</h3>
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* 1. IDENTITY & PLATFORM */}
+      <OdCard title="Identity & Platform" collapsible defaultExpanded>
+        <OdField label="Name" htmlFor="container-name">
+          <input
+            id="container-name"
+            type="text"
+            className="od-input"
+            style={{ width: "100%" }}
+            placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
+            value={selectedShape.label ?? ""}
+            onChange={(e) => handleSetLabel(e.target.value)}
+          />
+        </OdField>
 
-      <OdField label="Platform Profile" htmlFor="container-platform-profile">
-        <select
-          id="container-platform-profile"
-          className="od-select"
-          style={{ width: "100%" }}
-          value={rootPlatform ? (PLATFORMS[rootPlatform] ?? rootPlatform) : ""}
-          onChange={(e) => {
-            const val = e.target.value;
-            const platform = val ? (PLATFORM_BY_VALUE[val] ?? (val as PlatformId)) : "";
-            handleSetPlatform(platform);
-          }}
-        >
-          <option value="">(None / Platform-Agnostic)</option>
-          <option value={PLATFORMS.web}>Web</option>
-          <option value={PLATFORMS.androidNative}>Android Native (Material 3)</option>
-          <option value={PLATFORMS.flutter}>Flutter</option>
-          <option value={PLATFORMS.ios}>iOS (Apple HIG)</option>
-        </select>
-      </OdField>
+        <span className="od-meta">ID: {selectedShape.id}</span>
 
-      {rootPlatform !== undefined && handleSetDesignStyle && (
-        <DesignStyleSelect
-          rootDesignStyle={rootDesignStyle}
-          handleSetDesignStyle={handleSetDesignStyle}
-        />
-      )}
-
-      <OdField label="Canvas Render Style" htmlFor="container-canvas-render-style">
-        <select
-          id="container-canvas-render-style"
-          className="od-select"
-          style={{ width: "100%" }}
-          value={rootStyle}
-          onChange={(e) => handleSetStyle(e.target.value as StyleId)}
-        >
-          <option value={STYLE_PROFILES.minimal}>Minimal Wireframe</option>
-          <option value={STYLE_PROFILES.crayon}>Crayon / Hand-drawn</option>
-        </select>
-      </OdField>
-
-      {handleSetRole && (
-        <OdField label="Role" htmlFor="container-role">
+        <OdField label="Platform Profile" htmlFor="container-platform-profile">
           <select
-            id="container-role"
+            id="container-platform-profile"
             className="od-select"
             style={{ width: "100%" }}
-            value={rootRole ?? ROOT_ROLES.screen}
-            onChange={(e) => handleSetRole((e.target.value as RootRole) || ROOT_ROLES.screen)}
+            value={rootPlatform ? (PLATFORMS[rootPlatform] ?? rootPlatform) : ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              const platform = val ? (PLATFORM_BY_VALUE[val] ?? (val as PlatformId)) : "";
+              handleSetPlatform(platform);
+            }}
           >
-            <option value={ROOT_ROLES.screen}>Screen / Page</option>
-            <option value={ROOT_ROLES.component}>Standalone Component</option>
+            <option value="">(None / Platform-Agnostic)</option>
+            <option value={PLATFORMS.web}>Web</option>
+            <option value={PLATFORMS.androidNative}>Android Native (Material 3)</option>
+            <option value={PLATFORMS.flutter}>Flutter</option>
+            <option value={PLATFORMS.ios}>iOS (Apple HIG)</option>
           </select>
         </OdField>
+
+        {handleSetRole && (
+          <OdField label="Root Role">
+            <OdSegmentedControl
+              items={roleItems}
+              value={rootRole ?? ROOT_ROLES.screen}
+              aria-label="Root container role"
+              onSelect={(id) => handleSetRole((id as RootRole) || ROOT_ROLES.screen)}
+            />
+          </OdField>
+        )}
+      </OdCard>
+
+      {/* 2. GEOMETRY */}
+      {handleSetBoundingBox && (
+        <OdCard title="Geometry" collapsible defaultExpanded>
+          <GeometrySection
+            selectedShape={selectedShape}
+            handleSetBoundingBox={handleSetBoundingBox}
+          />
+        </OdCard>
       )}
 
+      {/* 3. DESIGN THEMING */}
+      <OdCard title="Design Theming" collapsible defaultExpanded>
+        {rootPlatform !== undefined && handleSetDesignStyle && (
+          <DesignStyleSelect
+            rootDesignStyle={rootDesignStyle}
+            handleSetDesignStyle={handleSetDesignStyle}
+          />
+        )}
+
+        <OdField label="Canvas Render Style" htmlFor="container-canvas-render-style">
+          <select
+            id="container-canvas-render-style"
+            className="od-select"
+            style={{ width: "100%" }}
+            value={rootStyle}
+            onChange={(e) => handleSetStyle(e.target.value as StyleId)}
+          >
+            <option value={STYLE_PROFILES.minimal}>Minimal Wireframe</option>
+            <option value={STYLE_PROFILES.crayon}>Crayon / Hand-drawn</option>
+          </select>
+        </OdField>
+
+        {handleSetDarkMode && (
+          <OdField label="Dark Mode" htmlFor="container-dark-mode">
+            <label className="od-switch">
+              <input
+                id="container-dark-mode"
+                type="checkbox"
+                role="switch"
+                aria-checked={rootDarkMode ?? false}
+                checked={rootDarkMode ?? false}
+                onChange={(e) => handleSetDarkMode(e.target.checked)}
+              />
+              <span className="od-switch__track" aria-hidden="true">
+                <span className="od-switch__thumb" />
+              </span>
+              <span>Dual Light/Dark AI Directives</span>
+            </label>
+          </OdField>
+        )}
+
+        {handleSetTheme && (
+          <div style={{ marginTop: "var(--od-8)" }}>
+            <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
+              Theme Palette
+            </span>
+            <ThemePaletteSection theme={rootTheme} onThemeChange={handleSetTheme} />
+          </div>
+        )}
+      </OdCard>
+
+      {/* 4. OPTIONS */}
       {handleToggleChildChips && (
-        <OdField label="Semantic Chips" htmlFor="container-show-chips">
-          <label className="od-switch">
-            <input
-              id="container-show-chips"
-              type="checkbox"
-              role="switch"
-              aria-checked={showChildChips ?? false}
-              checked={showChildChips ?? false}
-              onChange={() => handleToggleChildChips(selectedShape.id)}
-            />
-            <span className="od-switch__track" aria-hidden="true">
-              <span className="od-switch__thumb" />
-            </span>
-            <span>Show tags on child components</span>
-          </label>
-        </OdField>
+        <OdCard title="Options" collapsible defaultExpanded>
+          <OdField label="Semantic Chips" htmlFor="container-show-chips">
+            <label className="od-switch">
+              <input
+                id="container-show-chips"
+                type="checkbox"
+                role="switch"
+                aria-checked={showChildChips ?? false}
+                checked={showChildChips ?? false}
+                onChange={() => handleToggleChildChips(selectedShape.id)}
+              />
+              <span className="od-switch__track" aria-hidden="true">
+                <span className="od-switch__thumb" />
+              </span>
+              <span>Show tags on child components</span>
+            </label>
+          </OdField>
+        </OdCard>
       )}
 
-      {handleSetDarkMode && (
-        <OdField label="Dark Mode" htmlFor="container-dark-mode">
-          <label className="od-switch">
-            <input
-              id="container-dark-mode"
-              type="checkbox"
-              role="switch"
-              aria-checked={rootDarkMode ?? false}
-              checked={rootDarkMode ?? false}
-              onChange={(e) => handleSetDarkMode(e.target.checked)}
-            />
-            <span className="od-switch__track" aria-hidden="true">
-              <span className="od-switch__thumb" />
-            </span>
-            <span>Dual Light/Dark AI Directives</span>
-          </label>
-        </OdField>
-      )}
-
-      {handleSetTheme && (
-        <>
-          <div className="od-divider od-divider--horizontal" />
-          <h3 className="od-section-header">Theme Palette</h3>
-          <ThemePaletteSection theme={rootTheme} onThemeChange={handleSetTheme} />
-        </>
-      )}
-
-      {/* IDENTITY SECTION */}
-      <div className="od-divider od-divider--horizontal" />
-      <h3 className="od-section-header">Identity</h3>
-
-      <OdField label="Name" htmlFor="container-name">
-        <input
-          id="container-name"
-          type="text"
-          className="od-input"
-          style={{ width: "100%" }}
-          placeholder={resolveShapeDisplayName(selectedShape, activeProfile)}
-          value={selectedShape.label ?? ""}
-          onChange={(e) => handleSetLabel(e.target.value)}
-        />
-      </OdField>
-
-      <span className="od-meta">ID: {selectedShape.id}</span>
-
+      {/* 5. COMPONENT SEMANTICS (if role === component) */}
       {rootRole === ROOT_ROLES.component &&
         handleSetSemantic &&
         handlePropertyChange &&
@@ -228,19 +247,21 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
         handleStyleChange &&
         handleStylePreview &&
         handleStyleCommit && (
-          <ComponentSemanticSection
-            selectedShape={selectedShape}
-            activeProfile={activeProfile}
-            conflict={conflict}
-            semanticDef={semanticDef}
-            semanticProps={semanticProps ?? {}}
-            handleSetContent={handleSetContent}
-            handleSetSemantic={handleSetSemantic}
-            handlePropertyChange={handlePropertyChange}
-            handleStyleChange={handleStyleChange}
-            handleStylePreview={handleStylePreview}
-            handleStyleCommit={handleStyleCommit}
-          />
+          <OdCard title="Component Semantics" collapsible defaultExpanded>
+            <ComponentSemanticSection
+              selectedShape={selectedShape}
+              activeProfile={activeProfile}
+              conflict={conflict}
+              semanticDef={semanticDef}
+              semanticProps={semanticProps ?? {}}
+              handleSetContent={handleSetContent}
+              handleSetSemantic={handleSetSemantic}
+              handlePropertyChange={handlePropertyChange}
+              handleStyleChange={handleStyleChange}
+              handleStylePreview={handleStylePreview}
+              handleStyleCommit={handleStyleCommit}
+            />
+          </OdCard>
         )}
     </div>
   );

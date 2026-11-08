@@ -20,3 +20,4 @@ export {
   OdToastHost,
   type OdToastHostProps,
 } from "./toast";
+export { OdCard, type OdCardProps } from "./card";

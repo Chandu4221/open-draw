@@ -13,12 +13,13 @@ import {
   type Shape,
 } from "@open-draw/document";
 import { CONTROLLER_EVENTS, TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
-import { OdToastHost, useToast } from "@open-draw/ui";
+import { OdIcon, OdToastHost, useToast } from "@open-draw/ui";
 import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, type Gesture } from "../types";
 import { initCanvas } from "../canvas-init";
 import { renderCanvasSvg } from "../canvas-render";
 
 import { Sidebar } from "./Sidebar";
+import { CanvasBrand } from "./CanvasBrand";
 import { CanvasDock } from "./CanvasDock";
 import { CanvasZoomControls } from "./CanvasZoomControls";
 import { ExportModal, type ExportFormat } from "./ExportModal";
@@ -26,6 +27,7 @@ import { useBatchMutations } from "../use-batch-mutations";
 import { useCanvasInteractions } from "../use-canvas-interactions";
 import { useCanvasKeyboard } from "../use-canvas-keyboard";
 import { useDocumentMutations } from "../use-document-mutations";
+import { useGeometryMutations } from "../use-geometry-mutations";
 import { useInspectionData } from "../use-inspection-data";
 import { useRootThemeMutations } from "../use-root-theme-mutations";
 import { useToolbarActions } from "../use-toolbar-actions";
@@ -83,11 +85,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     canvasRef.current.toggleRootChipsVisible(rootId);
     setVisibleChipRoots((prev) => {
       const next = new Set(prev);
-      if (next.has(rootId)) {
-        next.delete(rootId);
-      } else {
-        next.add(rootId);
-      }
+      if (next.has(rootId)) next.delete(rootId);
+      else next.add(rootId);
       return next;
     });
     render();
@@ -105,6 +104,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     setZoomPercent(100);
     render();
   };
+
   const selectShape = (id: ShapeId): void => {
     canvasRef.current.select(id);
     setSelectedShapeId(id);
@@ -132,10 +132,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     const result = applyTransaction(documentRef.current, createTransaction(commands));
     documentRef.current = result.document;
     if (options?.record !== false) {
-      historyRef.current = recordHistory(
-        historyRef.current,
-        options?.customInverse ?? result.inverse,
-      );
+      const inv = options?.customInverse ?? result.inverse;
+      historyRef.current = recordHistory(historyRef.current, inv);
     }
     setDoc(result.document);
   }
@@ -160,6 +158,11 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     activeDeviceType,
     canvasRef,
     setActiveDeviceType,
+    commit,
+    render,
+  });
+  const geometryMutations = useGeometryMutations({
+    selectedShape: inspection.selectedShape,
     commit,
     render,
   });
@@ -209,36 +212,28 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const emptyDoc = Object.keys(doc.shapes).length === 0;
 
   return (
-    <main
-      style={{
-        height: "100%",
-        width: "100%",
-        minHeight: 0,
-        minWidth: 0,
-        overflow: "hidden",
-      }}
-    >
+    <main style={{ height: "100%", width: "100%", minHeight: 0, minWidth: 0, overflow: "hidden" }}>
       <Allotment className="allotment-module">
         <Allotment.Pane minSize={400}>
           <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
-            <div
-              className="od-canvas-brand"
-              onClick={onBackToLanding}
-              style={{ cursor: onBackToLanding ? "pointer" : "default" }}
-              title={onBackToLanding ? "Back to home" : undefined}
-            >
-              <span
-                className="od-label"
+            <CanvasBrand onBackToLanding={onBackToLanding} />
+            {!showSidebar && (
+              <button
+                type="button"
+                aria-label="Show Inspector"
+                className="od-panel-toggle-btn"
                 style={{
-                  fontSize: "var(--od-text-sm)",
-                  fontWeight: 700,
-                  color: "var(--od-text)",
-                  letterSpacing: "0.02em",
+                  position: "absolute",
+                  top: "var(--od-16)",
+                  right: "var(--od-16)",
+                  zIndex: 20,
                 }}
+                onClick={() => setShowSidebar(true)}
               >
-                OpenDraw Studio
-              </span>
-            </div>
+                <span>Inspector</span>
+                <OdIcon name="panel" size={16} />
+              </button>
+            )}
             <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
             {emptyDoc && (
               <div className="od-canvas-hint">
@@ -259,8 +254,6 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
               zoomPercent={zoomPercent}
               handleZoom={handleZoom}
               handleResetZoom={handleResetZoom}
-              showSidebar={showSidebar}
-              setShowSidebar={setShowSidebar}
             />
           </div>
         </Allotment.Pane>
@@ -268,6 +261,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           <Sidebar
             {...inspection}
             {...mutations}
+            {...geometryMutations}
             {...themeMutations}
             {...batchMutations}
             selectedShapes={selectedShapes}
@@ -275,6 +269,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
             selectShape={selectShape}
             showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
             handleToggleChildChips={handleToggleChildChips}
+            onClose={() => setShowSidebar(false)}
           />
         </Allotment.Pane>
       </Allotment>

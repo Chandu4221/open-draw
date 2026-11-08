@@ -416,6 +416,102 @@
   background-color: var(--od-bg);
 }
 
+/* Collapsible Card Widget */
+.od-card {
+  background-color: var(--od-surface);
+  border: var(--od-border-width) solid var(--od-border);
+  border-radius: var(--od-radius);
+  margin-bottom: var(--od-12);
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.od-card:hover {
+  border-color: var(--od-border-strong);
+}
+.od-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--od-8) var(--od-12);
+  background-color: var(--od-surface-raised);
+  border-bottom: var(--od-border-width) solid var(--od-border);
+  user-select: none;
+}
+.od-card__header--collapsible {
+  cursor: pointer;
+}
+.od-card__header--collapsible:hover {
+  background-color: var(--od-accent-soft);
+}
+.od-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.od-card__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--od-text-tertiary);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.od-card__chevron--expanded {
+  transform: rotate(90deg);
+}
+.od-card__title {
+  font-size: var(--od-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--od-text-secondary);
+  margin: 0;
+  font-family: var(--od-font);
+}
+.od-card__action {
+  display: flex;
+  align-items: center;
+  gap: var(--od-4);
+}
+.od-card__body {
+  padding: var(--od-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--od-12);
+}
+
+/* Compact 2-Column Inline Input Grid */
+.od-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--od-8);
+  width: 100%;
+}
+
+.od-input-badge-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.od-input-badge-wrapper .od-input {
+  width: 100%;
+  padding-right: 28px;
+}
+
+.od-input-badge {
+  position: absolute;
+  right: 6px;
+  font-size: 10px;
+  font-family: var(--od-font-mono);
+  color: var(--od-text-tertiary);
+  pointer-events: none;
+  user-select: none;
+  font-weight: 600;
+}
+
 /* Floating Canvas Dock */
 .od-dock {
   position: absolute;
@@ -425,12 +521,23 @@
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: var(--od-4);
-  padding: var(--od-4) var(--od-8);
-  background-color: var(--od-surface);
+  gap: var(--od-8);
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.od-dock-group {
+  display: flex;
+  align-items: center;
+  gap: var(--od-2);
+  padding: var(--od-4) var(--od-6);
+  background-color: var(--od-surface-raised);
   border: var(--od-border-width) solid var(--od-border-strong);
-  border-radius: var(--od-radius);
+  border-radius: 9999px;
   box-shadow: var(--od-shadow-floating);
+  backdrop-filter: blur(8px);
 }
 
 /* Canvas Floating Overlays (Zoom Controls & Inspector Toggle) */

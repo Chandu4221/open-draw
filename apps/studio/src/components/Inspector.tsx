@@ -1,5 +1,6 @@
 import {
   isRootId,
+  type BoundingBox,
   type DesignStyleId,
   type DeviceType,
   type PlatformId,
@@ -61,6 +62,7 @@ export interface InspectorProps {
       strokeWidth?: number | null;
     },
   ) => void;
+  readonly handleSetBoundingBox?: ((box: BoundingBox) => void) | undefined;
   readonly showChildChips?: boolean | undefined;
   readonly handleToggleChildChips?: ((rootId: ShapeId) => void) | undefined;
   readonly selectedShapes?: readonly Shape[] | undefined;
@@ -103,6 +105,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleStyleChange,
     handleStylePreview,
     handleStyleCommit,
+    handleSetBoundingBox,
     showChildChips,
     handleToggleChildChips,
     selectedShapes,
@@ -186,6 +189,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           handleStyleChange={handleStyleChange}
           handleStylePreview={handleStylePreview}
           handleStyleCommit={handleStyleCommit}
+          handleSetBoundingBox={handleSetBoundingBox}
           showChildChips={showChildChips}
           handleToggleChildChips={handleToggleChildChips}
         />
@@ -206,6 +210,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           handleStyleChange={handleStyleChange}
           handleStylePreview={handleStylePreview}
           handleStyleCommit={handleStyleCommit}
+          handleSetBoundingBox={handleSetBoundingBox}
         />
       )}
     </div>
