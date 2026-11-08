@@ -110,7 +110,7 @@ export function ThemePaletteSection({
                   fontSize: "11px",
                   fontWeight: 500,
                   textTransform: "capitalize",
-                  color: "var(--od-text-muted)",
+                  color: "var(--od-text-secondary)",
                 }}
               >
                 {slot}
@@ -149,7 +149,7 @@ export function ThemePaletteSection({
       {theme !== undefined && (
         <button
           type="button"
-          className="od-btn od-btn--subtle"
+          className="od-btn od-btn--ghost"
           style={{ width: "100%", fontSize: "12px", marginTop: "var(--od-4)" }}
           onClick={() => onThemeChange(undefined)}
         >

@@ -20,7 +20,7 @@
   --od-border-strong: #c4c4c8;
   --od-text: #09090b;
   --od-text-secondary: #52525b;
-  --od-text-tertiary: #71717a;
+  --od-text-tertiary: #6c6c76;
 
   /* Accent — monochromatic black */
   --od-accent: #09090b;
@@ -28,8 +28,8 @@
   --od-accent-border: #09090b;
 
   /* Semantic */
-  --od-success: #16a34a;
-  --od-danger: #dc2626;
+  --od-success: #15803d;
+  --od-danger: #b91c1c;
   --od-danger-soft: #fef2f2;
   --od-text-on-accent: #ffffff;
 
@@ -42,6 +42,7 @@
   /* Spacing scale */
   --od-2: 2px;
   --od-4: 4px;
+  --od-6: 6px;
   --od-8: 8px;
   --od-12: 12px;
   --od-16: 16px;

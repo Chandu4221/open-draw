@@ -54,21 +54,26 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
             return (
               <div
                 key={node.shape.id}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                aria-label={`Select layer ${node.displayName}`}
+                className="od-tree-item"
                 style={{
                   paddingLeft: `calc(${node.depth} * var(--od-12) + var(--od-4))`,
                   paddingTop: "var(--od-2)",
                   paddingBottom: "var(--od-2)",
                   paddingRight: "var(--od-4)",
-                  fontSize: "var(--od-text-xs)",
-                  cursor: "pointer",
-                  borderRadius: "var(--od-radius-sm)",
                   backgroundColor: isSelected ? "var(--od-accent-soft)" : "transparent",
                   color: isSelected ? "var(--od-accent)" : "var(--od-text)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
                 }}
                 onClick={() => selectShape(node.shape.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectShape(node.shape.id);
+                  }
+                }}
               >
                 <span
                   style={{

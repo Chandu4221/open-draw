@@ -146,11 +146,13 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
       <OdCard title="Shared Style" collapsible defaultExpanded>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label className="od-meta" style={{ width: "70px" }}>
+            <label htmlFor="multi-select-fill" className="od-meta" style={{ width: "70px" }}>
               Fill
             </label>
             <input
+              id="multi-select-fill"
               type="color"
+              aria-label="Shared fill color"
               value={fill}
               onChange={(e) => {
                 setFill(e.target.value);
@@ -169,11 +171,13 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label className="od-meta" style={{ width: "70px" }}>
+            <label htmlFor="multi-select-stroke" className="od-meta" style={{ width: "70px" }}>
               Stroke
             </label>
             <input
+              id="multi-select-stroke"
               type="color"
+              aria-label="Shared stroke color"
               value={stroke}
               onChange={(e) => {
                 setStroke(e.target.value);
@@ -192,13 +196,19 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label className="od-meta" style={{ width: "70px" }}>
+            <label
+              htmlFor="multi-select-stroke-width"
+              className="od-meta"
+              style={{ width: "70px" }}
+            >
               Width
             </label>
             <input
+              id="multi-select-stroke-width"
               type="number"
               min={1}
               max={24}
+              aria-label="Shared stroke width in pixels"
               value={strokeWidth}
               onChange={(e) => {
                 const val = Number(e.target.value);

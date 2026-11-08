@@ -349,6 +349,28 @@
   text-align: center;
 }
 
+/* Tree Outline Item */
+.od-tree-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  font-family: var(--od-font);
+  font-size: var(--od-text-xs);
+  border-radius: var(--od-radius-sm);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+  outline: none;
+}
+.od-tree-item:focus-visible {
+  outline: var(--od-focus-ring) solid var(--od-accent);
+  outline-offset: -1px;
+}
+
 /* Canvas background */
 .od-canvas-bg {
   background-color: var(--od-canvas-bg, var(--od-bg));
@@ -451,6 +473,11 @@
 
 .od-card__header--collapsible:hover {
   background-color: var(--od-accent-soft);
+}
+
+.od-card__header--collapsible:focus-visible {
+  outline: var(--od-focus-ring) solid var(--od-accent);
+  outline-offset: -2px;
 }
 
 .od-card__title-row {

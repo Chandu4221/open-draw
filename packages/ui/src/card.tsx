@@ -33,8 +33,20 @@ export function OdCard({
       {title && (
         <header
           className={`od-card__header ${collapsible ? "od-card__header--collapsible" : ""} ${headerClassName}`}
-          onClick={collapsible ? toggle : undefined}
+          role={collapsible ? "button" : undefined}
+          tabIndex={collapsible ? 0 : undefined}
           aria-expanded={collapsible ? expanded : undefined}
+          onClick={collapsible ? toggle : undefined}
+          onKeyDown={
+            collapsible
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggle();
+                  }
+                }
+              : undefined
+          }
         >
           <div className="od-card__title-row">
             {collapsible && (
