@@ -540,6 +540,19 @@
   backdrop-filter: blur(8px);
 }
 
+.od-dock-group .od-icon-btn,
+.od-zoom-controls .od-icon-btn,
+.od-dock-group .od-btn,
+.od-zoom-controls .od-btn {
+  border-radius: var(--od-radius);
+}
+
+.od-dock-group .od-icon-btn--active {
+  background-color: var(--od-accent);
+  border-color: var(--od-accent);
+  color: var(--od-text-on-accent);
+}
+
 /* Canvas Floating Overlays (Zoom Controls & Inspector Toggle) */
 .od-canvas-overlay-bottom-right {
   position: absolute;
@@ -555,28 +568,30 @@
 .od-zoom-controls {
   display: flex;
   align-items: center;
-  gap: var(--od-4);
-  background-color: var(--od-surface);
+  gap: var(--od-2);
+  padding: var(--od-4) var(--od-6);
+  background-color: var(--od-surface-raised);
   border: var(--od-border-width) solid var(--od-border-strong);
-  border-radius: var(--od-radius);
-  padding: 2px;
+  border-radius: 9999px;
   box-shadow: var(--od-shadow-floating);
+  backdrop-filter: blur(8px);
 }
 
 .od-panel-toggle-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--od-8);
-  height: var(--od-control-height);
+  gap: var(--od-6);
+  height: calc(var(--od-control-height) + (var(--od-4) * 2));
   padding: 0 var(--od-12);
   font-family: var(--od-font);
   font-size: var(--od-text-xs);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--od-text-secondary);
-  background-color: var(--od-surface);
+  background-color: var(--od-surface-raised);
   border: var(--od-border-width) solid var(--od-border-strong);
-  border-radius: var(--od-radius);
+  border-radius: 9999px;
   box-shadow: var(--od-shadow-floating);
+  backdrop-filter: blur(8px);
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
@@ -586,6 +601,7 @@
 .od-panel-toggle-btn:hover {
   border-color: var(--od-border-strong);
   color: var(--od-text);
+  background-color: var(--od-accent-soft);
 }
 
 .od-panel-toggle-btn:active {

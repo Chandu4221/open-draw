@@ -34,6 +34,7 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             name="select-tool"
             aria-label="Select tool (V)"
             active={tool === TOOLS.select}
+            ghost
             onClick={() => chooseTool(TOOLS.select)}
           />
         </OdTooltip>
@@ -42,6 +43,7 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             name="rect-tool"
             aria-label="Draw rectangle (R)"
             active={tool === TOOLS.drawRect}
+            ghost
             onClick={() => chooseTool(TOOLS.drawRect)}
           />
         </OdTooltip>
@@ -50,6 +52,7 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             name="ellipse-tool"
             aria-label="Draw ellipse (O)"
             active={tool === TOOLS.drawEllipse}
+            ghost
             onClick={() => chooseTool(TOOLS.drawEllipse)}
           />
         </OdTooltip>
@@ -58,6 +61,7 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             name="line-tool"
             aria-label="Draw line (L)"
             active={tool === TOOLS.drawLine}
+            ghost
             onClick={() => chooseTool(TOOLS.drawLine)}
           />
         </OdTooltip>
@@ -66,6 +70,7 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             name="pen-tool"
             aria-label="Draw pen path (P)"
             active={tool === TOOLS.drawPenPath}
+            ghost
             onClick={() => chooseTool(TOOLS.drawPenPath)}
           />
         </OdTooltip>
@@ -74,6 +79,7 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
             name="text-tool"
             aria-label="Add text (T)"
             active={tool === TOOLS.drawText}
+            ghost
             onClick={() => chooseTool(TOOLS.drawText)}
           />
         </OdTooltip>
