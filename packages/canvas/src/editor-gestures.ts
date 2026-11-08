@@ -26,17 +26,24 @@ import { TOOLS, type ToolId } from "./tools";
 
 let shapeSequence = 0x7a00;
 
-export function nextShapeId(): ShapeId {
+export function nextShapeId(doc?: Document): ShapeId {
   shapeSequence += 1;
-  return `s-${shapeSequence.toString(16)}` as ShapeId;
+  let id = `s-${shapeSequence.toString(16)}` as ShapeId;
+  if (doc !== undefined) {
+    while (doc.shapes[id] !== undefined) {
+      shapeSequence += 1;
+      id = `s-${shapeSequence.toString(16)}` as ShapeId;
+    }
+  }
+  return id;
 }
 
 export function seedShapeSequence(doc: Document): void {
   for (const shapeId of Object.keys(doc.shapes)) {
     const match = /^s-([0-9a-fA-F]+)$/.exec(shapeId);
-    if (match !== null && match[1] !== undefined) {
+    if (match !== null && match[1] !== undefined && match[1].length <= 12) {
       const val = parseInt(match[1], 16);
-      if (Number.isFinite(val) && val > shapeSequence) {
+      if (Number.isFinite(val) && val > shapeSequence && val < Number.MAX_SAFE_INTEGER - 10000) {
         shapeSequence = val;
       }
     }
@@ -55,11 +62,14 @@ export interface ActiveGesture {
   readonly points: readonly Point[];
 }
 
+export type NestingMode = "off" | "containers-only";
+
 export function commitDragGesture(
   doc: Document,
   gesture: ActiveGesture,
   world: Point,
   execute: (commands: readonly Command[]) => void,
+  nestingMode: NestingMode = "off",
 ): void {
   const dx = world.x - gesture.startWorld.x;
   const dy = world.y - gesture.startWorld.y;
@@ -85,7 +95,8 @@ export function commitDragGesture(
       x: droppedWorldBox.x + droppedWorldBox.width / 2,
       y: droppedWorldBox.y + droppedWorldBox.height / 2,
     };
-    const targetParentId = pickDropTarget(doc, center, [id]);
+    const targetParentId =
+      nestingMode === "containers-only" ? pickDropTarget(doc, center, [id]) : shape.parentId;
 
     if (targetParentId !== shape.parentId) {
       const newBoundingBox = computeReparentBoundingBox(
@@ -159,8 +170,9 @@ export function commitDrawGesture(
   world: Point,
   tool: ToolId,
   execute: (commands: readonly Command[]) => void,
+  nestingMode: NestingMode = "off",
 ): void {
-  const parentHit = gesture.parentHit;
+  const parentHit = nestingMode === "containers-only" ? gesture.parentHit : null;
   const targetParentId = parentHit !== null ? pickDropTarget(doc, gesture.startWorld, []) : ROOT_ID;
   const targetParent = !isRootId(targetParentId) ? doc.shapes[targetParentId] : undefined;
 

@@ -19,6 +19,7 @@ export const CONTROLLER_EVENTS = {
   selectionChanged: "selectionChanged",
   historyChanged: "historyChanged",
   cameraChanged: "cameraChanged",
+  toolChanged: "toolChanged",
 } as const;
 
 export type ControllerEvent = (typeof CONTROLLER_EVENTS)[keyof typeof CONTROLLER_EVENTS];
@@ -46,11 +47,12 @@ export interface PointerUpEvent {
   readonly worldPoint: Point;
 }
 
-export interface WheelEvent {
+export interface CanvasWheelEvent {
   readonly type: (typeof CANVAS_EVENTS)["wheel"];
   readonly screenPoint: Point;
   readonly factor: number;
 }
+export type WheelEvent = CanvasWheelEvent;
 
 export interface KeyEscapeEvent {
   readonly type: (typeof CANVAS_EVENTS)["keyEscape"];
@@ -68,5 +70,5 @@ export type CanvasEvent =
   | PointerMoveEvent
   | PointerUpEvent
   | DoubleClickEvent
-  | WheelEvent
+  | CanvasWheelEvent
   | KeyEscapeEvent;

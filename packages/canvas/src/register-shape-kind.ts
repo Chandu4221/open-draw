@@ -37,7 +37,7 @@ export function validateRegistration(registration: ShapeKindRegistration): void 
 export function createShapeKindRegistry(
   initial: readonly ShapeKindRegistration[] = [],
 ): ShapeKindRegistry {
-  const map: Record<string, ShapeKindRegistration> = {};
+  const map: Record<string, ShapeKindRegistration> = Object.create(null);
 
   for (const reg of initial) {
     validateRegistration(reg);
@@ -51,7 +51,7 @@ export function createShapeKindRegistry(
   }
 
   return {
-    registrations: map,
+    registrations: Object.freeze({ ...map }),
     has: (kind) => map[kind] !== undefined,
     hasCapability: (kind, capability) => {
       const reg = map[kind];
@@ -67,7 +67,10 @@ export function registerShapeKind(
 ): ShapeKindRegistry {
   validateRegistration(registration);
   if (registry.has(registration.kind)) {
-    throw new Error(`duplicate shape kind registration: ${registration.kind}`);
+    throw new CanvasError(
+      "duplicateRegistration",
+      `duplicate shape kind registration: ${registration.kind}`,
+    );
   }
   return createShapeKindRegistry([...Object.values(registry.registrations), registration]);
 }

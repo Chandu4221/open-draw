@@ -1,0 +1,49 @@
+// Pure SVG export derivation for standalone editor (R-008, R-016, M2).
+// Produces standalone valid SVG without editor chrome, handles, or overlays.
+import type { DeviceType, ShapeId } from "@open-draw/contracts";
+import { absoluteBoundingBox, type Document } from "@open-draw/document";
+import { documentToSvg, type ShapeSvgRenderer } from "@open-draw/renderer-svg";
+
+export interface SvgExportOptions {
+  readonly activeDeviceType?: DeviceType | undefined;
+  readonly activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>> | undefined;
+  readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>> | undefined;
+  readonly padding?: number | undefined;
+}
+
+export function exportDocumentToSvg(doc: Document, options?: SvgExportOptions): string {
+  const shapes = Object.values(doc.shapes);
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const s of shapes) {
+    const box = absoluteBoundingBox(doc, s);
+    minX = Math.min(minX, box.x);
+    minY = Math.min(minY, box.y);
+    maxX = Math.max(maxX, box.x + box.width);
+    maxY = Math.max(maxY, box.y + box.height);
+  }
+
+  const padding = options?.padding ?? 20;
+  let x = 0;
+  let y = 0;
+  let width = 800;
+  let height = 600;
+
+  if (shapes.length > 0 && Number.isFinite(minX) && Number.isFinite(minY)) {
+    x = Math.floor(minX - padding);
+    y = Math.floor(minY - padding);
+    width = Math.max(1, Math.ceil(maxX - minX + padding * 2));
+    height = Math.max(1, Math.ceil(maxY - minY + padding * 2));
+  }
+
+  const content = documentToSvg(doc, {
+    activeDeviceType: options?.activeDeviceType,
+    activeDeviceTypes: options?.activeDeviceTypes,
+    customRenderers: options?.customRenderers,
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${width} ${height}" width="${width}" height="${height}">${content}</svg>`;
+}

@@ -22,7 +22,8 @@ export {
   type PointerDownEvent,
   type PointerMoveEvent,
   type PointerUpEvent,
-  type WheelEvent,
+  type CanvasWheelEvent,
+  type WheelEvent, // deprecated alias
 } from "./events";
 
 export { CanvasError, CANVAS_ERRORS, type CanvasErrorCode } from "./errors";
@@ -80,7 +81,9 @@ export { type CanvasController, type CanvasOptions, createCanvas } from "./creat
 
 export { createEditor, type Editor, type EditorOptions, type EditorOverlayContext } from "./editor";
 
-export { nextShapeId, seedShapeSequence } from "./editor-gestures";
+export { exportDocumentToSvg, type SvgExportOptions } from "./editor-export";
+
+export { nextShapeId, seedShapeSequence, type NestingMode } from "./editor-gestures";
 
 export { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 

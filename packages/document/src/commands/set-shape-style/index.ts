@@ -48,13 +48,25 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.strokeWidth === null) {
       delete nextShapeData.strokeWidth;
     } else {
+      if (
+        typeof command.strokeWidth !== "number" ||
+        !Number.isFinite(command.strokeWidth) ||
+        command.strokeWidth < 0
+      ) {
+        throw new DocumentError(
+          "invalidCommand",
+          `strokeWidth must be a non-negative finite number: ${command.strokeWidth}`,
+        );
+      }
       nextShapeData.strokeWidth = command.strokeWidth;
     }
   }
 
   const nextShape = nextShapeData as unknown as Shape;
-  const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
-  const next = createDocument([...others, nextShape]);
+  const shapes = Object.values(document.shapes).map((entry) =>
+    entry.id === command.id ? nextShape : entry,
+  );
+  const next = createDocument(shapes);
 
   const inverse: readonly Command[] = [
     {

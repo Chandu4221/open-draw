@@ -30,8 +30,10 @@ export function applySetShapeContent(document: Document, command: SetShapeConten
     command.content === null
       ? withoutContent(shape)
       : ({ ...shape, content: command.content } as Shape);
-  const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
-  const next = createDocument([...others, nextShape]);
+  const shapes = Object.values(document.shapes).map((entry) =>
+    entry.id === command.id ? nextShape : entry,
+  );
+  const next = createDocument(shapes);
   const inverse: readonly Command[] = [
     { type: COMMANDS.setShapeContent, id: command.id, content: previousContent },
   ];

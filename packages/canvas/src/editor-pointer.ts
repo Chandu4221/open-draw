@@ -10,6 +10,7 @@ import { STATES } from "./states";
 import { TOOLS, type ToolId } from "./tools";
 import {
   type ActiveGesture,
+  type NestingMode,
   commitDragGesture,
   commitDrawGesture,
   commitResizeGesture,
@@ -29,6 +30,7 @@ export interface PointerBindingContext {
   readonly getGesture: () => ActiveGesture | null;
   readonly setGesture: (g: ActiveGesture | null) => void;
   readonly setLastWorld: (p: Point) => void;
+  readonly nestingMode?: NestingMode | undefined;
 }
 
 export function attachPointerListeners(ctx: PointerBindingContext): () => void {
@@ -48,14 +50,18 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
 
   let lastScreen: Point = { x: 0, y: 0 };
   let hasPassedDragThreshold = false;
+  let cachedRect: DOMRect | { left: number; top: number; width: number; height: number } | null =
+    null;
 
   function screenPoint(event: MouseEvent | PointerEvent | WheelEvent): Point {
-    const rect = svg.getBoundingClientRect();
+    const rect = cachedRect ?? svg.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
 
   function onPointerDown(event: PointerEvent): void {
+    if (event.button !== 0 && event.button !== 1) return;
     event.preventDefault();
+    cachedRect = svg.getBoundingClientRect();
     const doc = getDoc();
     const tool = getTool();
     const screen = screenPoint(event);
@@ -84,7 +90,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       panRequested,
     });
 
-    if (handle === null && tool === TOOLS.select) {
+    if (handle === null && tool === TOOLS.select && !panRequested) {
       if (event.shiftKey && hit !== null) {
         canvas.toggleSelection(hit);
       } else if (hit !== null) {
@@ -94,7 +100,12 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       }
     }
 
-    svg.setPointerCapture(event.pointerId);
+    try {
+      svg.setPointerCapture(event.pointerId);
+    } catch {
+      // In non-DOM or unsupported test environments
+    }
+
     const state = canvas.getMachineState();
     const kind: GestureKind =
       state.stateId === STATES.panning
@@ -189,11 +200,11 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
 
     if (hasPassedDragThreshold) {
       if (before === STATES.draggingShape && gesture.shapeIds.length > 0) {
-        commitDragGesture(doc, gesture, world, execute);
+        commitDragGesture(doc, gesture, world, execute, ctx.nestingMode);
       } else if (before === STATES.resizingShape) {
         commitResizeGesture(doc, canvas, gesture, world, execute);
       } else if (before === STATES.drawingShape) {
-        commitDrawGesture(doc, canvas, gesture, world, tool, execute);
+        commitDrawGesture(doc, canvas, gesture, world, tool, execute, ctx.nestingMode);
         setTool(TOOLS.select);
       } else if (before === STATES.selecting || gesture.kind === GESTURE_KINDS.select) {
         const marqueeBox = normalizeBox(gesture.startWorld, world);
@@ -210,7 +221,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       }
     } else {
       if (before === STATES.drawingShape && tool === TOOLS.drawText) {
-        commitDrawGesture(doc, canvas, gesture, world, tool, execute);
+        commitDrawGesture(doc, canvas, gesture, world, tool, execute, ctx.nestingMode);
         setTool(TOOLS.select);
       } else if (before === STATES.idle && gesture.kind === GESTURE_KINDS.press) {
         canvas.clearSelection();
@@ -219,16 +230,40 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
 
     setGesture(null);
     hasPassedDragThreshold = false;
+    cachedRect = null;
     render();
+  }
+
+  function onPointerCancel(): void {
+    if (getGesture() !== null) {
+      setGesture(null);
+      hasPassedDragThreshold = false;
+      cachedRect = null;
+      render();
+    }
+  }
+
+  function onBlur(): void {
+    onPointerCancel();
   }
 
   svg.addEventListener("pointerdown", onPointerDown);
   svg.addEventListener("pointermove", onPointerMove);
   svg.addEventListener("pointerup", onPointerUp);
+  svg.addEventListener("pointercancel", onPointerCancel);
+  svg.addEventListener("lostpointercapture", onPointerCancel);
+  if (typeof window !== "undefined") {
+    window.addEventListener("blur", onBlur);
+  }
 
   return () => {
     svg.removeEventListener("pointerdown", onPointerDown);
     svg.removeEventListener("pointermove", onPointerMove);
     svg.removeEventListener("pointerup", onPointerUp);
+    svg.removeEventListener("pointercancel", onPointerCancel);
+    svg.removeEventListener("lostpointercapture", onPointerCancel);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("blur", onBlur);
+    }
   };
 }

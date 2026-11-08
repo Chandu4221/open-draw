@@ -6,6 +6,7 @@ import type { Document } from "../../document";
 import { createDocument } from "../../document";
 import { DocumentError } from "../../errors";
 import type { Shape } from "../../shape";
+import { parseShape } from "../../validation";
 import { COMMANDS } from "../registry";
 
 export interface CreateShape {
@@ -14,7 +15,7 @@ export interface CreateShape {
 }
 
 export function applyCreateShape(document: Document, command: CreateShape): CommandResult {
-  const { shape } = command;
+  const shape = parseShape(command.shape);
   if (document.shapes[shape.id] !== undefined) {
     throw new DocumentError("duplicateShapeId", `shape already exists: ${shape.id}`);
   }

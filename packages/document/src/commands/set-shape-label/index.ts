@@ -28,8 +28,10 @@ export function applySetShapeLabel(document: Document, command: SetShapeLabel): 
   const previousLabel = shape.label === undefined ? null : shape.label;
   const nextShape =
     command.label === null ? withoutLabel(shape) : ({ ...shape, label: command.label } as Shape);
-  const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
-  const next = createDocument([...others, nextShape]);
+  const shapes = Object.values(document.shapes).map((entry) =>
+    entry.id === command.id ? nextShape : entry,
+  );
+  const next = createDocument(shapes);
   const inverse: readonly Command[] = [
     { type: COMMANDS.setShapeLabel, id: command.id, label: previousLabel },
   ];

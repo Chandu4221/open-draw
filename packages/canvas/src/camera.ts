@@ -12,6 +12,14 @@ export const DEFAULT_CAMERA: Camera = { x: 0, y: 0, zoom: 1 };
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10;
 
+export function clampCamera(camera: Camera): Camera {
+  const x = Number.isFinite(camera.x) ? camera.x : 0;
+  const y = Number.isFinite(camera.y) ? camera.y : 0;
+  const zoomCandidate = Number.isFinite(camera.zoom) && camera.zoom > 0 ? camera.zoom : 1;
+  const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomCandidate));
+  return { x, y, zoom };
+}
+
 export function panBy(camera: Camera, screenDelta: Point): Camera {
   if (!Number.isFinite(screenDelta.x) || !Number.isFinite(screenDelta.y)) {
     return camera;

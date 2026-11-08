@@ -26,6 +26,7 @@ import { validateDocumentDepth } from "./depth-validation";
 
 export { validateDocumentDepth } from "./depth-validation";
 export { parseMeta, parseSemantic, parseDeviceType } from "./meta-validation";
+export { parseShape };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

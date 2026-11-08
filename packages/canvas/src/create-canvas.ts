@@ -5,7 +5,15 @@ import type { BoundingBox, CapabilityId, DeviceType, Point, ShapeId } from "@ope
 import type { Document } from "@open-draw/document";
 import type { ActionId, KeyboardEventDescriptor } from "@open-draw/input";
 import { resolveKeyBinding } from "@open-draw/input";
-import { type Camera, DEFAULT_CAMERA, panBy, screenToWorld, worldToScreen, zoomAt } from "./camera";
+import {
+  type Camera,
+  clampCamera,
+  DEFAULT_CAMERA,
+  panBy,
+  screenToWorld,
+  worldToScreen,
+  zoomAt,
+} from "./camera";
 import { CONTROLLER_EVENTS, type CanvasEvent, type ControllerEvent } from "./events";
 import type { HandleId } from "./handles";
 import { pickHandle, pickShape, resolveSelectionDrillDown } from "./hit-test";
@@ -104,6 +112,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.selectionChanged]: new Set(),
     [CONTROLLER_EVENTS.historyChanged]: new Set(),
     [CONTROLLER_EVENTS.cameraChanged]: new Set(),
+    [CONTROLLER_EVENTS.toolChanged]: new Set(),
   };
 
   const emit = (event: ControllerEvent): void => {
@@ -118,7 +127,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
   return {
     getCamera: () => camera,
     setCamera: (next) => {
-      camera = next;
+      camera = clampCamera(next);
       emit(CONTROLLER_EVENTS.cameraChanged);
     },
     panBy: (delta) => {
