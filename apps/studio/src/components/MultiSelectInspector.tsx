@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { Shape } from "@open-draw/document";
-import { OdButton, OdIconButton } from "@open-draw/ui";
+import { OdButton, OdCard, OdIconButton } from "@open-draw/ui";
 
 export interface MultiSelectInspectorProps {
   readonly selectedShapes: readonly Shape[];
@@ -32,15 +32,18 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
   const canDistribute = selectedShapes.length >= 3;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-16)" }}>
+    <div style={{ display: "flex", flexDirection: "column" }}>
       {/* Header Info */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingBottom: "var(--od-8)",
-          borderBottom: "var(--od-border-width) solid var(--od-border)",
+          padding: "var(--od-8) var(--od-12)",
+          marginBottom: "var(--od-12)",
+          backgroundColor: "var(--od-surface-raised)",
+          border: "var(--od-border-width) solid var(--od-border)",
+          borderRadius: "var(--od-radius)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "var(--od-6)" }}>
@@ -69,11 +72,8 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
         </OdButton>
       </div>
 
-      {/* Alignment Tools */}
-      <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
-          Align
-        </span>
+      {/* Alignment Tools Card */}
+      <OdCard title="Alignment" collapsible defaultExpanded>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "var(--od-4)" }}>
           <OdIconButton
             name="align-left"
@@ -118,13 +118,10 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
             style={{ width: "100%", height: "28px" }}
           />
         </div>
-      </div>
+      </OdCard>
 
-      {/* Distribution Tools */}
-      <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
-          Distribute
-        </span>
+      {/* Distribution Tools Card */}
+      <OdCard title="Distribution" collapsible defaultExpanded>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--od-8)" }}>
           <OdIconButton
             name="distribute-horizontal"
@@ -143,20 +140,19 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
             style={{ width: "100%", height: "28px" }}
           />
         </div>
-      </div>
+      </OdCard>
 
-      {/* Batch Styling */}
-      <div>
-        <span className="od-label" style={{ display: "block", marginBottom: "var(--od-6)" }}>
-          Shared Style
-        </span>
+      {/* Shared Style Card */}
+      <OdCard title="Shared Style" collapsible defaultExpanded>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label className="od-meta" style={{ width: "70px" }}>
+            <label htmlFor="multi-select-fill" className="od-meta" style={{ width: "70px" }}>
               Fill
             </label>
             <input
+              id="multi-select-fill"
               type="color"
+              aria-label="Shared fill color"
               value={fill}
               onChange={(e) => {
                 setFill(e.target.value);
@@ -175,11 +171,13 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label className="od-meta" style={{ width: "70px" }}>
+            <label htmlFor="multi-select-stroke" className="od-meta" style={{ width: "70px" }}>
               Stroke
             </label>
             <input
+              id="multi-select-stroke"
               type="color"
+              aria-label="Shared stroke color"
               value={stroke}
               onChange={(e) => {
                 setStroke(e.target.value);
@@ -198,13 +196,19 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label className="od-meta" style={{ width: "70px" }}>
+            <label
+              htmlFor="multi-select-stroke-width"
+              className="od-meta"
+              style={{ width: "70px" }}
+            >
               Width
             </label>
             <input
+              id="multi-select-stroke-width"
               type="number"
               min={1}
               max={24}
+              aria-label="Shared stroke width in pixels"
               value={strokeWidth}
               onChange={(e) => {
                 const val = Number(e.target.value);
@@ -218,7 +222,7 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
             />
           </div>
         </div>
-      </div>
+      </OdCard>
 
       {/* Batch Delete */}
       <div style={{ marginTop: "var(--od-8)" }}>

@@ -16,7 +16,7 @@ import {
 import { absoluteBoundingBox, type Command, type Document } from "@open-draw/document";
 import type { Gesture } from "./types";
 import { commitDragGesture, commitDrawGesture, commitResizeGesture } from "./canvas-gestures";
-import { pickAnyRootChip, pickAnyRootDeviceButton } from "./canvas-overlays";
+import { pickAnyRootChip } from "./canvas-overlays";
 
 export interface CanvasInteractionsProps {
   readonly svgRef: React.RefObject<SVGSVGElement | null>;
@@ -30,7 +30,7 @@ export interface CanvasInteractionsProps {
   readonly chooseTool: (tool: ToolId) => void;
   readonly setSelectedShapeId: (id: ShapeId | null) => void;
   readonly setZoomPercent: (pct: number) => void;
-  readonly handleDeviceChange: (deviceType?: DeviceType) => void;
+  readonly handleDeviceChange?: ((deviceType?: DeviceType) => void) | undefined;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }
@@ -48,7 +48,6 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     chooseTool,
     setSelectedShapeId,
     setZoomPercent,
-    handleDeviceChange,
     commit,
     render,
   } = props;
@@ -75,14 +74,6 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
     const doc = documentRef.current;
 
     const zoom = canvas.getCamera().zoom;
-    const hitDevice = pickAnyRootDeviceButton(doc, world, zoom);
-    if (hitDevice !== null) {
-      const nextType = hitDevice.item === "all" ? undefined : hitDevice.item;
-      canvas.setActiveDeviceType(nextType, hitDevice.rootId);
-      handleDeviceChange(nextType);
-      render();
-      return;
-    }
     const hitRootChip = pickAnyRootChip(doc, world, zoom);
     if (hitRootChip !== null) {
       canvas.toggleRootChipsVisible(hitRootChip);
@@ -205,10 +196,9 @@ export function useCanvasInteractions(props: CanvasInteractionsProps): void {
 
     if (gesture === null) {
       const zoom = canvas.getCamera().zoom;
-      const hitDevice = pickAnyRootDeviceButton(documentRef.current, world, zoom);
       const hitChip = pickAnyRootChip(documentRef.current, world, zoom);
       if (svgRef.current) {
-        if (hitDevice !== null || hitChip !== null) {
+        if (hitChip !== null) {
           svgRef.current.style.cursor = "pointer";
         } else if (svgRef.current.style.cursor === "pointer") {
           svgRef.current.style.cursor = "";

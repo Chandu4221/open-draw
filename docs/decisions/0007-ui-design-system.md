@@ -63,13 +63,13 @@ All colors, spacing, borders, radii, and typography are centralized in `tokens.c
 | Border Strong  | `--od-border-strong`  | `#d4d4d8`   | `#3f3f46`  | Hovered/active borders         |
 | Text Primary   | `--od-text`           | `#09090b`   | `#fafafa`  | Primary typography             |
 | Text Secondary | `--od-text-secondary` | `#52525b`   | `#a1a1aa`  | Subdued text, icons, labels    |
-| Text Tertiary  | `--od-text-tertiary`  | `#a1a1aa`   | `#71717a`  | Empty states, metadata, hints  |
+| Text Tertiary  | `--od-text-tertiary`  | `#6c6c76`   | `#a1a1aa`  | Empty states, metadata, hints  |
 | Accent         | `--od-accent`         | `#09090b`   | `#fafafa`  | Monochromatic brand accent     |
 | Accent Soft    | `--od-accent-soft`    | `#e4e4e7`   | `#27272a`  | Active tool background tint    |
 | Accent Border  | `--od-accent-border`  | `#09090b`   | `#fafafa`  | Active tool border stroke      |
 | Text on Accent | `--od-text-on-accent` | `#ffffff`   | `#09090b`  | Text on primary buttons        |
-| Semantic       | `--od-success`        | `#16a34a`   | `#22c55e`  | Success toasts                 |
-| Semantic       | `--od-danger`         | `#dc2626`   | `#ef4444`  | Errors and destructive buttons |
+| Semantic       | `--od-success`        | `#15803d`   | `#22c55e`  | Success toasts                 |
+| Semantic       | `--od-danger`         | `#b91c1c`   | `#ef4444`  | Errors and destructive buttons |
 | Semantic       | `--od-danger-soft`    | `#fef2f2`   | `#261416`  | Error toast background         |
 | Radius         | `--od-radius-sm`      | `4px`       | `4px`      | Controls, inputs, buttons      |
 | Radius         | `--od-radius`         | `6px`       | `6px`      | Panels, toasts                 |

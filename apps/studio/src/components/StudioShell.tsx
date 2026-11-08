@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Allotment } from "allotment";
 import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import {
   applyTransaction,
@@ -13,19 +12,24 @@ import {
   type Shape,
 } from "@open-draw/document";
 import { CONTROLLER_EVENTS, TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
-import { OdToastHost, useToast } from "@open-draw/ui";
-import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE, type Gesture } from "../types";
+import { useToast } from "@open-draw/ui";
+import type { Gesture } from "../types";
 import { initCanvas } from "../canvas-init";
 import { renderCanvasSvg } from "../canvas-render";
+import { StudioLayout } from "../templates/StudioLayout";
 
 import { Sidebar } from "./Sidebar";
+import { CanvasBrand } from "./CanvasBrand";
 import { CanvasDock } from "./CanvasDock";
+import { CanvasShortcutsTrigger } from "./CanvasShortcutsTrigger";
 import { CanvasZoomControls } from "./CanvasZoomControls";
 import { ExportModal, type ExportFormat } from "./ExportModal";
+import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal";
 import { useBatchMutations } from "../use-batch-mutations";
 import { useCanvasInteractions } from "../use-canvas-interactions";
 import { useCanvasKeyboard } from "../use-canvas-keyboard";
 import { useDocumentMutations } from "../use-document-mutations";
+import { useGeometryMutations } from "../use-geometry-mutations";
 import { useInspectionData } from "../use-inspection-data";
 import { useRootThemeMutations } from "../use-root-theme-mutations";
 import { useToolbarActions } from "../use-toolbar-actions";
@@ -61,7 +65,21 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   const handleOpenExportModal = (initial: ExportFormat = "markdown") => {
     setExportInitialFormat(initial);
@@ -83,11 +101,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     canvasRef.current.toggleRootChipsVisible(rootId);
     setVisibleChipRoots((prev) => {
       const next = new Set(prev);
-      if (next.has(rootId)) {
-        next.delete(rootId);
-      } else {
-        next.add(rootId);
-      }
+      if (next.has(rootId)) next.delete(rootId);
+      else next.add(rootId);
       return next;
     });
     render();
@@ -105,6 +120,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     setZoomPercent(100);
     render();
   };
+
   const selectShape = (id: ShapeId): void => {
     canvasRef.current.select(id);
     setSelectedShapeId(id);
@@ -132,10 +148,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     const result = applyTransaction(documentRef.current, createTransaction(commands));
     documentRef.current = result.document;
     if (options?.record !== false) {
-      historyRef.current = recordHistory(
-        historyRef.current,
-        options?.customInverse ?? result.inverse,
-      );
+      const inv = options?.customInverse ?? result.inverse;
+      historyRef.current = recordHistory(historyRef.current, inv);
     }
     setDoc(result.document);
   }
@@ -160,6 +174,11 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     activeDeviceType,
     canvasRef,
     setActiveDeviceType,
+    commit,
+    render,
+  });
+  const geometryMutations = useGeometryMutations({
+    selectedShape: inspection.selectedShape,
     commit,
     render,
   });
@@ -209,85 +228,63 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const emptyDoc = Object.keys(doc.shapes).length === 0;
 
   return (
-    <main
-      style={{
-        height: "100%",
-        width: "100%",
-        minHeight: 0,
-        minWidth: 0,
-        overflow: "hidden",
-      }}
-    >
-      <Allotment className="allotment-module">
-        <Allotment.Pane minSize={400}>
-          <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
-            <div
-              className="od-canvas-brand"
-              onClick={onBackToLanding}
-              style={{ cursor: onBackToLanding ? "pointer" : "default" }}
-              title={onBackToLanding ? "Back to home" : undefined}
-            >
-              <span
-                className="od-label"
-                style={{
-                  fontSize: "var(--od-text-sm)",
-                  fontWeight: 700,
-                  color: "var(--od-text)",
-                  letterSpacing: "0.02em",
-                }}
-              >
-                OpenDraw Studio
-              </span>
-            </div>
-            <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
-            {emptyDoc && (
-              <div className="od-canvas-hint">
-                R rect · O ellipse · L line · P pen — wheel to pan
-              </div>
-            )}
-            <CanvasDock
-              tool={tool}
-              chooseTool={chooseTool}
-              handleUndo={toolbarActions.handleUndo}
-              handleRedo={toolbarActions.handleRedo}
-              handleDuplicate={toolbarActions.handleDuplicate}
-              handleDelete={toolbarActions.handleDelete}
-              handleLoad={toolbarActions.handleLoad}
-              onOpenExportModal={() => handleOpenExportModal("markdown")}
-            />
-            <CanvasZoomControls
-              zoomPercent={zoomPercent}
-              handleZoom={handleZoom}
-              handleResetZoom={handleResetZoom}
-              showSidebar={showSidebar}
-              setShowSidebar={setShowSidebar}
-            />
-          </div>
-        </Allotment.Pane>
-        <Allotment.Pane preferredSize={340} minSize={260} maxSize={500} snap visible={showSidebar}>
-          <Sidebar
-            {...inspection}
-            {...mutations}
-            {...themeMutations}
-            {...batchMutations}
-            selectedShapes={selectedShapes}
-            selectedShapeId={selectedShapeId}
-            selectShape={selectShape}
-            showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
-            handleToggleChildChips={handleToggleChildChips}
+    <StudioLayout
+      svgRef={svgRef}
+      showSidebar={showSidebar}
+      onToggleSidebar={setShowSidebar}
+      brandSlot={<CanvasBrand onBackToLanding={onBackToLanding} />}
+      hintSlot={
+        emptyDoc ? (
+          <div className="od-canvas-hint">R rect · O ellipse · L line · P pen — wheel to pan</div>
+        ) : undefined
+      }
+      shortcutsSlot={<CanvasShortcutsTrigger onOpenShortcuts={() => setIsShortcutsOpen(true)} />}
+      dockSlot={
+        <CanvasDock
+          tool={tool}
+          chooseTool={chooseTool}
+          handleLoad={toolbarActions.handleLoad}
+          onOpenExportModal={() => handleOpenExportModal("markdown")}
+        />
+      }
+      zoomSlot={
+        <CanvasZoomControls
+          zoomPercent={zoomPercent}
+          handleZoom={handleZoom}
+          handleResetZoom={handleResetZoom}
+        />
+      }
+      sidebarSlot={
+        <Sidebar
+          {...inspection}
+          {...mutations}
+          {...geometryMutations}
+          {...themeMutations}
+          {...batchMutations}
+          selectedShapes={selectedShapes}
+          selectedShapeId={selectedShapeId}
+          selectShape={selectShape}
+          showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
+          handleToggleChildChips={handleToggleChildChips}
+          onClose={() => setShowSidebar(false)}
+        />
+      }
+      modalSlot={
+        <>
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            doc={doc}
+            initialFormat={exportInitialFormat}
+            includeLegend={includeLegend}
+            setIncludeLegend={setIncludeLegend}
           />
-        </Allotment.Pane>
-      </Allotment>
-
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        doc={doc}
-        initialFormat={exportInitialFormat}
-        includeLegend={includeLegend}
-        setIncludeLegend={setIncludeLegend}
-      />
-      <OdToastHost />
-    </main>
+          <KeyboardShortcutsModal
+            isOpen={isShortcutsOpen}
+            onClose={() => setIsShortcutsOpen(false)}
+          />
+        </>
+      }
+    />
   );
 }

@@ -4,12 +4,9 @@ import { absoluteBoundingBox, ancestorsOf, type Document } from "@open-draw/docu
 import {
   chipOverlayToSvg,
   pickChip,
-  pickRootDeviceButton,
   previewBoxToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
-  rootDeviceBarToSvg,
-  type RootDeviceItem,
   selectionOverlayToSvg,
 } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
@@ -151,27 +148,6 @@ export function computeCanvasOverlays(options: OverlayOptions): string[] {
     }
   }
 
-  // Render responsive device bar at top-right of web root containers (R-023, R-028, R-031)
-  for (const shape of Object.values(doc.shapes)) {
-    if (isRootId(shape.parentId) && shape.meta.platform === "web") {
-      let box = absoluteBoundingBox(doc, shape);
-      const isShapeMoved =
-        gesture !== null &&
-        gesture.kind === GESTURE_KINDS.move &&
-        (gesture.shapeIds.includes(shape.id) ||
-          ancestorsOf(doc, shape).some((a) => gesture.shapeIds.includes(a.id)));
-      if (isShapeMoved) {
-        box = {
-          ...box,
-          x: box.x + (lastWorld.x - gesture.startWorld.x),
-          y: box.y + (lastWorld.y - gesture.startWorld.y),
-        };
-      }
-      const effectiveDevice = options.activeDeviceTypes?.[shape.id] ?? options.activeDeviceType;
-      overlays.push(rootDeviceBarToSvg(box, effectiveDevice, zoom));
-    }
-  }
-
   return overlays;
 }
 
@@ -185,26 +161,6 @@ export function pickAnyRootChip(doc: Document, world: Point, zoom: number): Shap
       if (pickChip(chipLabel, box, world, zoom)) {
         return shape.id;
       }
-    }
-  }
-  return null;
-}
-
-export interface RootDeviceHit {
-  readonly rootId: ShapeId;
-  readonly item: RootDeviceItem;
-}
-
-export function pickAnyRootDeviceButton(
-  doc: Document,
-  world: Point,
-  zoom: number,
-): RootDeviceHit | null {
-  for (const shape of Object.values(doc.shapes)) {
-    if (isRootId(shape.parentId) && shape.meta.platform === "web") {
-      const box = absoluteBoundingBox(doc, shape);
-      const hit = pickRootDeviceButton(box, world, zoom);
-      if (hit !== null) return { rootId: shape.id, item: hit };
     }
   }
   return null;

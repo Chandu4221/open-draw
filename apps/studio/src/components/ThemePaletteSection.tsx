@@ -74,6 +74,15 @@ export function ThemePaletteSection({
     }
   };
 
+  const activePreset = React.useMemo(() => {
+    if (!theme) return "";
+    for (const [name, preset] of Object.entries(PALETTE_PRESETS)) {
+      const match = THEME_PALETTE_SLOTS.every((slot) => theme[slot] === preset[slot]);
+      if (match) return name;
+    }
+    return "";
+  }, [theme]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
       <OdField label="Theme Palette Preset" htmlFor="theme-preset-select">
@@ -81,7 +90,7 @@ export function ThemePaletteSection({
           id="theme-preset-select"
           className="od-select"
           style={{ width: "100%" }}
-          defaultValue=""
+          value={activePreset}
           onChange={(e) => handlePresetSelect(e.target.value)}
         >
           <option value="">Custom / None</option>
@@ -110,7 +119,7 @@ export function ThemePaletteSection({
                   fontSize: "11px",
                   fontWeight: 500,
                   textTransform: "capitalize",
-                  color: "var(--od-text-muted)",
+                  color: "var(--od-text-secondary)",
                 }}
               >
                 {slot}
@@ -149,7 +158,7 @@ export function ThemePaletteSection({
       {theme !== undefined && (
         <button
           type="button"
-          className="od-btn od-btn--subtle"
+          className="od-btn od-btn--ghost"
           style={{ width: "100%", fontSize: "12px", marginTop: "var(--od-4)" }}
           onClick={() => onThemeChange(undefined)}
         >
