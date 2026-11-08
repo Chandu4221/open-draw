@@ -1,4 +1,5 @@
 import React from "react";
+import { Allotment } from "allotment";
 import type { ShapeId } from "@open-draw/contracts";
 import type { SemanticTreeNode } from "@open-draw/semantics";
 import { OdIconButton } from "@open-draw/ui";
@@ -9,7 +10,7 @@ export interface SidebarProps extends InspectorProps {
   readonly treeNodes: readonly SemanticTreeNode[];
   readonly selectedShapeId: ShapeId | null;
   readonly selectShape: (id: ShapeId) => void;
-  readonly onClose?: () => void;
+  readonly onClose?: (() => void) | undefined;
 }
 
 export function Sidebar(props: SidebarProps): React.JSX.Element {
@@ -27,9 +28,9 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         borderBottom: "none",
         borderRight: "none",
         borderRadius: 0,
-        overflowY: "auto",
-        overflowX: "hidden",
-        padding: "var(--od-16)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
         flexShrink: 0,
       }}
     >
@@ -38,13 +39,13 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "var(--od-12)",
-          paddingBottom: "var(--od-8)",
+          padding: "var(--od-12) var(--od-16)",
           borderBottom: "var(--od-border-width) solid var(--od-border)",
+          flexShrink: 0,
         }}
       >
         <span className="od-panel-title" style={{ letterSpacing: "0.02em" }}>
-          INSPECTOR
+          PROPERTIES
         </span>
         {onClose && (
           <OdIconButton
@@ -57,12 +58,30 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         )}
       </div>
 
-      <Inspector {...inspectorProps} />
-      <TreeOutline
-        treeNodes={treeNodes}
-        selectedShapeId={selectedShapeId}
-        selectShape={selectShape}
-      />
+      <div style={{ flex: 1, minHeight: 0, width: "100%" }}>
+        <Allotment vertical className="allotment-module">
+          <Allotment.Pane preferredSize="60%" minSize={160}>
+            <div style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}>
+              <Inspector {...inspectorProps} />
+            </div>
+          </Allotment.Pane>
+          <Allotment.Pane preferredSize="40%" minSize={100} snap>
+            <div
+              style={{
+                height: "100%",
+                overflow: "hidden",
+                borderTop: "var(--od-border-width) solid var(--od-border)",
+              }}
+            >
+              <TreeOutline
+                treeNodes={treeNodes}
+                selectedShapeId={selectedShapeId}
+                selectShape={selectShape}
+              />
+            </div>
+          </Allotment.Pane>
+        </Allotment>
+      </div>
     </aside>
   );
 }

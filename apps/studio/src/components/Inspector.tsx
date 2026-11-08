@@ -119,31 +119,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   const isMultiSelect = (selectedShapes?.length ?? 0) > 1;
 
   return (
-    <div
-      style={{
-        marginBottom: "var(--od-16)",
-        borderBottom: "var(--od-border-width) solid var(--od-border)",
-        paddingBottom: "var(--od-16)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "var(--od-12)",
-        }}
-      >
-        <h2 className="od-panel-title">
-          {isMultiSelect
-            ? "Multi-Select Inspector"
-            : !selectedShape
-              ? "Inspector"
-              : isRootId(selectedShape.parentId)
-                ? "Container Inspector"
-                : "Shape Inspector"}
-        </h2>
-      </div>
+    <div className="od-inspector-content">
       {isMultiSelect &&
       selectedShapes &&
       handleBatchAlign &&

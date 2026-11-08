@@ -1,6 +1,7 @@
 import React from "react";
 import type { ShapeId } from "@open-draw/contracts";
 import type { walkSemanticTree } from "@open-draw/semantics";
+import { OdBadge } from "@open-draw/ui";
 
 type TreeNodes = ReturnType<typeof walkSemanticTree>;
 
@@ -14,23 +15,38 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
   const { treeNodes, selectedShapeId, selectShape } = props;
 
   return (
-    <div>
-      <h2 className="od-panel-title" style={{ marginBottom: "var(--od-8)" }}>
-        Tree Outline
-      </h2>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
       <div
         style={{
-          maxHeight: "220px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "var(--od-8) var(--od-16)",
+          borderBottom: "var(--od-border-width) solid var(--od-border)",
+          flexShrink: 0,
+        }}
+      >
+        <span className="od-section-header">LAYERS</span>
+        <OdBadge>{treeNodes.length}</OdBadge>
+      </div>
+      <div
+        style={{
+          flex: 1,
           overflowY: "auto",
-          border: "var(--od-border-width) solid var(--od-border)",
-          borderRadius: "var(--od-radius-sm)",
-          padding: "var(--od-4)",
-          backgroundColor: "var(--od-bg)",
+          padding: "var(--od-4) var(--od-8)",
         }}
       >
         {treeNodes.length === 0 ? (
-          <div className="od-empty" style={{ padding: "var(--od-12)" }}>
-            <span>Empty tree</span>
+          <div className="od-empty" style={{ padding: "var(--od-16)" }}>
+            <span>No layers</span>
           </div>
         ) : (
           treeNodes.map((node) => {

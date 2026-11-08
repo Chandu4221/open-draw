@@ -417,39 +417,48 @@
 }
 
 /* Collapsible Card Widget */
+/* Collapsible Accordion Section (Flush Workstation Style) */
 .od-card {
+  background-color: transparent;
+  border: none;
+  border-bottom: var(--od-border-width) solid var(--od-border);
+  border-radius: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.od-card--boxed {
   background-color: var(--od-surface);
   border: var(--od-border-width) solid var(--od-border);
   border-radius: var(--od-radius);
   margin-bottom: var(--od-12);
-  overflow: hidden;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
 }
-.od-card:hover {
-  border-color: var(--od-border-strong);
-}
+
 .od-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--od-8) var(--od-12);
-  background-color: var(--od-surface-raised);
-  border-bottom: var(--od-border-width) solid var(--od-border);
+  padding: var(--od-8) var(--od-16);
+  background-color: transparent;
+  border-bottom: none;
   user-select: none;
 }
+
 .od-card__header--collapsible {
   cursor: pointer;
 }
+
 .od-card__header--collapsible:hover {
   background-color: var(--od-accent-soft);
 }
+
 .od-card__title-row {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .od-card__chevron {
   display: inline-flex;
   align-items: center;
@@ -457,9 +466,11 @@
   color: var(--od-text-tertiary);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .od-card__chevron--expanded {
   transform: rotate(90deg);
 }
+
 .od-card__title {
   font-size: var(--od-text-xs);
   font-weight: 700;
@@ -469,13 +480,15 @@
   margin: 0;
   font-family: var(--od-font);
 }
+
 .od-card__action {
   display: flex;
   align-items: center;
   gap: var(--od-4);
 }
+
 .od-card__body {
-  padding: var(--od-12);
+  padding: 0 var(--od-16) var(--od-16);
   display: flex;
   flex-direction: column;
   gap: var(--od-12);
