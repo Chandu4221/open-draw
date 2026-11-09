@@ -1,5 +1,10 @@
 import React from "react";
-import type { ShapeId } from "@open-draw/contracts";
+import {
+  isRootId,
+  SHAPE_KIND_LABELS,
+  type BuiltinShapeKind,
+  type ShapeId,
+} from "@open-draw/contracts";
 import type { walkSemanticTree } from "@open-draw/semantics";
 import { OdBadge } from "@open-draw/ui";
 
@@ -51,15 +56,31 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
         ) : (
           treeNodes.map((node) => {
             const isSelected = node.shape.id === selectedShapeId;
+            const itemName =
+              node.shape.label && node.shape.label.trim().length > 0
+                ? node.shape.label
+                : (SHAPE_KIND_LABELS[node.shape.kind as BuiltinShapeKind] ?? node.shape.kind);
+            const semanticChip =
+              node.semantic?.displayName ??
+              (isRootId(node.shape.parentId) && node.shape.meta.role
+                ? node.shape.meta.role === "component"
+                  ? "Component"
+                  : "Screen"
+                : undefined);
+
             return (
               <div
                 key={node.shape.id}
                 role="button"
                 tabIndex={0}
                 aria-pressed={isSelected}
-                aria-label={`Select layer ${node.displayName}`}
+                aria-label={`Select layer ${itemName}`}
                 className="od-tree-item"
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "var(--od-8)",
                   paddingLeft: `calc(${node.depth} * var(--od-12) + var(--od-4))`,
                   paddingTop: "var(--od-2)",
                   paddingBottom: "var(--od-2)",
@@ -80,27 +101,50 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
+                    flex: 1,
+                    minWidth: 0,
                   }}
                 >
-                  {node.displayName}
+                  {itemName}
                 </span>
-                {node.conflict && (
-                  <span
-                    style={{
-                      backgroundColor: "var(--od-danger-soft)",
-                      color: "var(--od-danger)",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      padding: "1px 4px",
-                      borderRadius: "var(--od-radius-sm)",
-                      marginLeft: "var(--od-4)",
-                      flexShrink: 0,
-                    }}
-                    title={node.conflict.reason}
-                  >
-                    conflict
-                  </span>
-                )}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--od-4)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {semanticChip && (
+                    <OdBadge
+                      variant="outline"
+                      style={{
+                        fontSize: "10px",
+                        height: "18px",
+                        padding: "0 6px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {semanticChip}
+                    </OdBadge>
+                  )}
+                  {node.conflict && (
+                    <span
+                      style={{
+                        backgroundColor: "var(--od-danger-soft)",
+                        color: "var(--od-danger)",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        padding: "1px 4px",
+                        borderRadius: "var(--od-radius-sm)",
+                        flexShrink: 0,
+                      }}
+                      title={node.conflict.reason}
+                    >
+                      conflict
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })
