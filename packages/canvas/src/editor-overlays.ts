@@ -1,5 +1,4 @@
-// Interaction overlay SVG generators for standalone editor (R-018, R-031).
-import type { Point, ShapeId } from "@open-draw/contracts";
+import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
 import { absoluteBoundingBox, ancestorsOf, type Document } from "@open-draw/document";
 import {
   previewBoxToSvg,
@@ -9,7 +8,7 @@ import {
 } from "@open-draw/renderer-svg";
 import type { ActiveGesture } from "./editor-gestures";
 import { GESTURE_KINDS } from "./gestures";
-import { normalizeBox, resizeBox } from "./geometry";
+import { normalizeBox, resizeBox, unionBoxes } from "./geometry";
 import { TOOLS, type ToolId } from "./tools";
 
 export interface EditorOverlayOptions {
@@ -58,9 +57,10 @@ export function computeEditorOverlays(options: EditorOverlayOptions): readonly s
       overlays.push(selectionOverlayToSvg(box, zoom));
     }
   } else if (activeSelectedIds.length > 1) {
+    const boxes: BoundingBox[] = [];
     for (const id of activeSelectedIds) {
       const shape = doc.shapes[id];
-      if (shape !== undefined) {
+      if (shape !== undefined && shape.kind !== "page") {
         let box = absoluteBoundingBox(doc, shape);
         const isSelectedMoved =
           gesture !== null &&
@@ -74,10 +74,24 @@ export function computeEditorOverlays(options: EditorOverlayOptions): readonly s
             y: box.y + (lastWorld.y - gesture.startWorld.y),
           };
         }
+        boxes.push(box);
         overlays.push(
           `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="var(--od-accent, #000000)" stroke-dasharray="4 4" />`,
         );
       }
+    }
+    const collectiveBox = unionBoxes(boxes);
+    if (collectiveBox !== null) {
+      let handleBox = collectiveBox;
+      if (
+        gesture !== null &&
+        gesture.kind === GESTURE_KINDS.resize &&
+        gesture.originalBox !== null &&
+        gesture.handleId !== null
+      ) {
+        handleBox = resizeBox(gesture.originalBox, gesture.handleId, lastWorld);
+      }
+      overlays.push(selectionOverlayToSvg(handleBox, zoom));
     }
   }
 

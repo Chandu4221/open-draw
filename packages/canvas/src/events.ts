@@ -20,6 +20,7 @@ export const CONTROLLER_EVENTS = {
   historyChanged: "historyChanged",
   cameraChanged: "cameraChanged",
   toolChanged: "toolChanged",
+  machineChanged: "machineChanged",
 } as const;
 
 export type ControllerEvent = (typeof CONTROLLER_EVENTS)[keyof typeof CONTROLLER_EVENTS];

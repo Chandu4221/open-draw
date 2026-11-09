@@ -9,6 +9,7 @@ import {
   normalizeBox,
   resizeBox,
   resizeBoxWithHandle,
+  unionBoxes,
 } from "./geometry";
 
 describe("normalizeBox", () => {
@@ -219,5 +220,38 @@ describe("resizeBoxWithHandle", () => {
       height: 30,
     });
     expect(result.handle).toBe(HANDLES.s);
+  });
+});
+
+describe("unionBoxes", () => {
+  it("returns null when box collection is empty", () => {
+    expect(unionBoxes([])).toBeNull();
+  });
+
+  it("returns the exact bounds when a single box is provided", () => {
+    const box = { x: 20, y: 30, width: 100, height: 80 };
+    expect(unionBoxes([box])).toEqual(box);
+  });
+
+  it("computes the union of multiple disjoint and overlapping boxes", () => {
+    const b1 = { x: 10, y: 20, width: 50, height: 40 };
+    const b2 = { x: 100, y: 50, width: 40, height: 70 };
+    expect(unionBoxes([b1, b2])).toEqual({
+      x: 10,
+      y: 20,
+      width: 130,
+      height: 100,
+    });
+  });
+
+  it("handles negative coordinates properly", () => {
+    const b1 = { x: -50, y: -20, width: 30, height: 40 };
+    const b2 = { x: 10, y: -40, width: 20, height: 10 };
+    expect(unionBoxes([b1, b2])).toEqual({
+      x: -50,
+      y: -40,
+      width: 80,
+      height: 60,
+    });
   });
 });

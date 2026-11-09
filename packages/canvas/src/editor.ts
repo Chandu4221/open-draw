@@ -1,8 +1,9 @@
 // Batteries-included standalone canvas editor (R-004, R-008, R-010, R-016, R-018, ADR-0008).
 // Mounts an interactive SVG drawing canvas into any DOM container with zero framework dependencies.
-import type { Point } from "@open-draw/contracts";
+import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import {
   applyTransaction,
+  COMMANDS,
   createDocument,
   createTransaction,
   EMPTY_HISTORY,
@@ -12,6 +13,7 @@ import {
   serializeDocument,
   undo,
   type Command,
+  type Document,
   type HistoryState,
 } from "@open-draw/document";
 import { documentToSvg } from "@open-draw/renderer-svg";
@@ -19,19 +21,24 @@ import { DEFAULT_CAMERA } from "./camera";
 import { createCanvas } from "./create-canvas";
 import { CONTROLLER_EVENTS } from "./events";
 import { TOOLS, type ToolId } from "./tools";
-import { type ActiveGesture, seedShapeSequence } from "./editor-gestures";
+import { type ActiveGesture, createShapeIdGenerator } from "./editor-gestures";
 import { computeEditorOverlays } from "./editor-overlays";
 import { attachPointerListeners } from "./editor-pointer";
 import { attachKeyboardListeners } from "./editor-keyboard";
 import { exportDocumentToSvg } from "./editor-export";
-import type { Editor, EditorOptions } from "./editor-types";
+import type { Editor, EditorOptions, SetDocumentOptions } from "./editor-types";
 
-export type { Editor, EditorOptions, EditorOverlayContext } from "./editor-types";
+export type {
+  Editor,
+  EditorOptions,
+  EditorOverlayContext,
+  SetDocumentOptions,
+} from "./editor-types";
 
 export function createEditor(container: HTMLElement, options: EditorOptions = {}): Editor {
   const canvas = createCanvas(options.canvasOptions);
   let doc = options.document ?? createDocument([]);
-  seedShapeSequence(doc);
+  const idSequence = createShapeIdGenerator(doc);
   let history: HistoryState = EMPTY_HISTORY;
   let activeTool: ToolId = options.tool ?? TOOLS.select;
   let gesture: ActiveGesture | null = null;
@@ -170,6 +177,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       lastWorld = p;
     },
     nestingMode: options.nestingMode,
+    nextShapeId: idSequence.nextShapeId,
   });
 
   const detachKeyboard = attachKeyboardListeners({
@@ -198,6 +206,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     },
     execute: (cmds) => execute(cmds),
     render: () => renderOverlays(),
+    nextShapeId: idSequence.nextShapeId,
   });
 
   const unsubCamera = canvas.subscribe(CONTROLLER_EVENTS.cameraChanged, () => {
@@ -210,32 +219,39 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   render();
 
+  function resetDoc(nextDoc: Document, preserveHistory?: boolean): void {
+    doc = nextDoc;
+    idSequence.seed(nextDoc);
+    if (!preserveHistory) {
+      history = EMPTY_HISTORY;
+      canvas.emit(CONTROLLER_EVENTS.historyChanged);
+    }
+    canvas.clearSelection();
+    canvas.emit(CONTROLLER_EVENTS.documentChanged);
+    renderDocument();
+    renderOverlays();
+  }
+
+  function applyHistory(result: { document: Document; history: HistoryState } | null): boolean {
+    if (result === null) return false;
+    doc = result.document;
+    history = result.history;
+    reconcileSelection();
+    canvas.emit(CONTROLLER_EVENTS.historyChanged);
+    canvas.emit(CONTROLLER_EVENTS.documentChanged);
+    renderDocument();
+    renderOverlays();
+    return true;
+  }
+
   return {
     container,
     svg,
     canvas,
     getDocument: () => doc,
-    setDocument: (nextDoc) => {
-      doc = nextDoc;
-      seedShapeSequence(nextDoc);
-      history = EMPTY_HISTORY;
-      canvas.clearSelection();
-      canvas.emit(CONTROLLER_EVENTS.historyChanged);
-      canvas.emit(CONTROLLER_EVENTS.documentChanged);
-      renderDocument();
-      renderOverlays();
-    },
-    loadJson: (json) => {
-      const loaded = parseDocument(json);
-      doc = loaded;
-      seedShapeSequence(loaded);
-      history = EMPTY_HISTORY;
-      canvas.clearSelection();
-      canvas.emit(CONTROLLER_EVENTS.historyChanged);
-      canvas.emit(CONTROLLER_EVENTS.documentChanged);
-      renderDocument();
-      renderOverlays();
-    },
+    setDocument: (nextDoc, opts?: SetDocumentOptions) => resetDoc(nextDoc, opts?.preserveHistory),
+    loadJson: (json, opts?: SetDocumentOptions) =>
+      resetDoc(parseDocument(json), opts?.preserveHistory),
     toJson: () => serializeDocument(doc),
     toSvg: () =>
       exportDocumentToSvg(doc, {
@@ -243,31 +259,18 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
         activeDeviceTypes: canvas.getActiveDeviceTypes(),
         customRenderers: options.customRenderers,
       }),
+    setTextContent: (id: ShapeId, content: string | null) => {
+      execute([{ type: COMMANDS.setShapeContent, id, content }]);
+    },
+    setShapeStyle: (id: ShapeId, style) => {
+      execute([{ type: COMMANDS.setShapeStyle, id, ...style }]);
+    },
+    setShapeOrder: (id: ShapeId, deviceType: DeviceType, order: number | null) => {
+      execute([{ type: COMMANDS.setShapeOrder, id, deviceType, order }]);
+    },
     execute,
-    undo: () => {
-      const undone = undo(doc, history);
-      if (undone === null) return false;
-      doc = undone.document;
-      history = undone.history;
-      reconcileSelection();
-      canvas.emit(CONTROLLER_EVENTS.historyChanged);
-      canvas.emit(CONTROLLER_EVENTS.documentChanged);
-      renderDocument();
-      renderOverlays();
-      return true;
-    },
-    redo: () => {
-      const redone = redo(doc, history);
-      if (redone === null) return false;
-      doc = redone.document;
-      history = redone.history;
-      reconcileSelection();
-      canvas.emit(CONTROLLER_EVENTS.historyChanged);
-      canvas.emit(CONTROLLER_EVENTS.documentChanged);
-      renderDocument();
-      renderOverlays();
-      return true;
-    },
+    undo: () => applyHistory(undo(doc, history)),
+    redo: () => applyHistory(redo(doc, history)),
     canUndo: () => history.undoStack.length > 0,
     canRedo: () => history.redoStack.length > 0,
     getTool: () => activeTool,

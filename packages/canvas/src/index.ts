@@ -34,6 +34,7 @@ export {
   normalizeBox,
   resizeBox,
   resizeBoxWithHandle,
+  unionBoxes,
 } from "./geometry";
 
 export { type GestureKind, GESTURE_KINDS } from "./gestures";
@@ -79,11 +80,24 @@ export { TOOLS, type ToolId } from "./tools";
 
 export { type CanvasController, type CanvasOptions, createCanvas } from "./create-canvas";
 
-export { createEditor, type Editor, type EditorOptions, type EditorOverlayContext } from "./editor";
+export {
+  createEditor,
+  type Editor,
+  type EditorOptions,
+  type EditorOverlayContext,
+  type SetDocumentOptions,
+} from "./editor";
 
 export { exportDocumentToSvg, type SvgExportOptions } from "./editor-export";
 
-export { nextShapeId, seedShapeSequence, type NestingMode } from "./editor-gestures";
+export {
+  createShapeIdGenerator,
+  type ShapeIdGenerator,
+  type ShapeIdSequence,
+  nextShapeId,
+  seedShapeSequence,
+  type NestingMode,
+} from "./editor-gestures";
 
 export { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 

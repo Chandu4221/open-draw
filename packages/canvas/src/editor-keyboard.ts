@@ -9,6 +9,7 @@ import {
   type Command,
   type Document,
   type HistoryState,
+  type Shape,
 } from "@open-draw/document";
 import {
   ACTIONS,
@@ -32,6 +33,7 @@ export interface KeyboardBindingContext {
   readonly resetGesture: () => void;
   readonly execute: (commands: readonly Command[]) => void;
   readonly render: () => void;
+  readonly nextShapeId?: ((doc?: Document) => ShapeId) | undefined;
 }
 
 export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void {
@@ -47,6 +49,12 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     execute,
     render,
   } = ctx;
+
+  let clipboard: {
+    readonly shapes: readonly Shape[];
+    readonly topLevelIds: readonly ShapeId[];
+    count: number;
+  } | null = null;
 
   function onKeyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement | null;
@@ -72,6 +80,58 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     if (action === undefined) return;
 
     switch (action) {
+      case ACTIONS.copy: {
+        const ids = canvas.getSelectedIds();
+        if (ids.length > 0) {
+          event.preventDefault();
+          const doc = getDoc();
+          const topLevelIds = pruneSelectedDescendants(doc, ids);
+          const shapes: Shape[] = [];
+          for (const topId of topLevelIds) {
+            shapes.push(...subtreeOf(doc, topId));
+          }
+          clipboard = { shapes, topLevelIds, count: 0 };
+        }
+        break;
+      }
+      case ACTIONS.paste: {
+        if (clipboard !== null && clipboard.shapes.length > 0) {
+          event.preventDefault();
+          clipboard.count += 1;
+          const offset = 20 * clipboard.count;
+          const doc = getDoc();
+          const generateId = ctx.nextShapeId ?? nextShapeId;
+          const idMap = new Map<ShapeId, ShapeId>();
+          for (const s of clipboard.shapes) {
+            idMap.set(s.id, generateId(doc));
+          }
+          const topLevelSet = new Set<ShapeId>(clipboard.topLevelIds);
+          const pastedShapes: Shape[] = clipboard.shapes.map((shape): Shape => {
+            const isTopLevel = topLevelSet.has(shape.id);
+            const newId = idMap.get(shape.id)!;
+            const newParentId = isTopLevel
+              ? shape.parentId
+              : (idMap.get(shape.parentId) ?? shape.parentId);
+            const newBoundingBox = isTopLevel
+              ? {
+                  ...shape.boundingBox,
+                  x: shape.boundingBox.x + offset,
+                  y: shape.boundingBox.y + offset,
+                }
+              : shape.boundingBox;
+            return {
+              ...shape,
+              id: newId,
+              parentId: newParentId,
+              boundingBox: newBoundingBox,
+            };
+          });
+          execute(pastedShapes.map((shape) => ({ type: COMMANDS.createShape, shape })));
+          const newTopLevelIds = clipboard.topLevelIds.map((id) => idMap.get(id)!);
+          canvas.selectMany(newTopLevelIds);
+        }
+        break;
+      }
       case ACTIONS.cancel:
         event.preventDefault();
         canvas.resetMachine();
@@ -120,10 +180,11 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
         if (ids.length > 0) {
           const doc = getDoc();
           const topLevelIds = pruneSelectedDescendants(doc, ids);
+          const generateId = ctx.nextShapeId ?? nextShapeId;
           const newShapeIds: Record<ShapeId, ShapeId> = {};
           for (const topId of topLevelIds) {
             for (const s of subtreeOf(doc, topId)) {
-              newShapeIds[s.id] = nextShapeId();
+              newShapeIds[s.id] = generateId(doc);
             }
           }
           execute([

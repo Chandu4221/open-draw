@@ -1,11 +1,10 @@
-// Pointer interaction handlers for standalone editor (R-008, R-010, R-018).
-import type { Point, ShapeId } from "@open-draw/contracts";
+import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
 import { absoluteBoundingBox, type Command, type Document } from "@open-draw/document";
 import type { CanvasController } from "./create-canvas";
 import { CANVAS_EVENTS } from "./events";
 import { GESTURE_KINDS, type GestureKind } from "./gestures";
 import { pickShapesInBox } from "./hit-test";
-import { normalizeBox } from "./geometry";
+import { normalizeBox, unionBoxes } from "./geometry";
 import { STATES } from "./states";
 import { TOOLS, type ToolId } from "./tools";
 import {
@@ -31,6 +30,7 @@ export interface PointerBindingContext {
   readonly setGesture: (g: ActiveGesture | null) => void;
   readonly setLastWorld: (p: Point) => void;
   readonly nestingMode?: NestingMode | undefined;
+  readonly nextShapeId?: ((doc?: Document) => ShapeId) | undefined;
 }
 
 export function attachPointerListeners(ctx: PointerBindingContext): () => void {
@@ -66,13 +66,28 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const tool = getTool();
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
+    const selectedIds = canvas.getSelectedIds();
     const selectedId = canvas.getSelectedId();
 
     let handle = null;
-    if (selectedId !== null) {
-      const shape = doc.shapes[selectedId];
+    let originalBox: BoundingBox | null = null;
+    if (selectedIds.length === 1) {
+      const shape = doc.shapes[selectedIds[0]!];
       if (shape !== undefined && shape.kind !== "page") {
-        handle = canvas.pickHandle(absoluteBoundingBox(doc, shape), screen);
+        originalBox = absoluteBoundingBox(doc, shape);
+        handle = canvas.pickHandle(originalBox, screen);
+      }
+    } else if (selectedIds.length > 1) {
+      const boxes: BoundingBox[] = [];
+      for (const id of selectedIds) {
+        const s = doc.shapes[id];
+        if (s !== undefined && s.kind !== "page") {
+          boxes.push(absoluteBoundingBox(doc, s));
+        }
+      }
+      originalBox = unionBoxes(boxes);
+      if (originalBox !== null) {
+        handle = canvas.pickHandle(originalBox, screen);
       }
     }
 
@@ -125,6 +140,8 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       shapeIds = canvas.isSelected(state.activeShapeId)
         ? canvas.getSelectedIds()
         : [state.activeShapeId];
+    } else if (state.stateId === STATES.pointingHandle) {
+      shapeIds = selectedIds;
     }
 
     setGesture({
@@ -133,10 +150,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       startWorld: world,
       shapeIds,
       handleId: state.activeHandleId,
-      originalBox:
-        selectedId !== null && doc.shapes[selectedId] !== undefined
-          ? absoluteBoundingBox(doc, doc.shapes[selectedId]!)
-          : null,
+      originalBox,
       parentHit: hit,
       targetShapeId: selectedId,
       points: [world],
@@ -204,7 +218,16 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       } else if (before === STATES.resizingShape) {
         commitResizeGesture(doc, canvas, gesture, world, execute);
       } else if (before === STATES.drawingShape) {
-        commitDrawGesture(doc, canvas, gesture, world, tool, execute, ctx.nestingMode);
+        commitDrawGesture(
+          doc,
+          canvas,
+          gesture,
+          world,
+          tool,
+          execute,
+          ctx.nestingMode,
+          ctx.nextShapeId,
+        );
         setTool(TOOLS.select);
       } else if (before === STATES.selecting || gesture.kind === GESTURE_KINDS.select) {
         const marqueeBox = normalizeBox(gesture.startWorld, world);
@@ -221,7 +244,16 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       }
     } else {
       if (before === STATES.drawingShape && tool === TOOLS.drawText) {
-        commitDrawGesture(doc, canvas, gesture, world, tool, execute, ctx.nestingMode);
+        commitDrawGesture(
+          doc,
+          canvas,
+          gesture,
+          world,
+          tool,
+          execute,
+          ctx.nestingMode,
+          ctx.nextShapeId,
+        );
         setTool(TOOLS.select);
       } else if (before === STATES.idle && gesture.kind === GESTURE_KINDS.press) {
         canvas.clearSelection();

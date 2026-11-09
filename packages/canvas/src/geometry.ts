@@ -20,6 +20,21 @@ export function normalizeBox(start: Point, end: Point): BoundingBox {
   };
 }
 
+export function unionBoxes(boxes: readonly BoundingBox[]): BoundingBox | null {
+  if (boxes.length === 0) return null;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const box of boxes) {
+    minX = Math.min(minX, box.x);
+    minY = Math.min(minY, box.y);
+    maxX = Math.max(maxX, box.x + box.width);
+    maxY = Math.max(maxY, box.y + box.height);
+  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
 function normalizeSpan(anchor: number, dragged: number): { min: number; size: number } {
   if (dragged >= anchor) {
     return {

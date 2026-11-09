@@ -26,15 +26,29 @@ export interface EditorOptions {
   readonly onFallback?: (message: string) => void;
 }
 
+export interface SetDocumentOptions {
+  readonly preserveHistory?: boolean | undefined;
+}
+
 export interface Editor {
   readonly container: HTMLElement;
   readonly svg: SVGSVGElement;
   readonly canvas: CanvasController;
   getDocument(): Document;
-  setDocument(doc: Document): void;
-  loadJson(json: string): void;
+  setDocument(doc: Document, options?: SetDocumentOptions): void;
+  loadJson(json: string, options?: SetDocumentOptions): void;
   toJson(): string;
   toSvg(): string;
+  setTextContent(id: ShapeId, content: string | null): void;
+  setShapeStyle(
+    id: ShapeId,
+    style: {
+      readonly fill?: string | null | undefined;
+      readonly stroke?: string | null | undefined;
+      readonly strokeWidth?: number | null | undefined;
+    },
+  ): void;
+  setShapeOrder(id: ShapeId, deviceType: DeviceType, order: number | null): void;
   execute(commands: Command | readonly Command[], options?: { record?: boolean }): void;
   undo(): boolean;
   redo(): boolean;

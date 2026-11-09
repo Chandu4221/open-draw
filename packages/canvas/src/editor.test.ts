@@ -402,4 +402,293 @@ describe("createEditor", () => {
 
     expect(editor.getSelection()).toEqual([rect.id]);
   });
+
+  it("preserves undo/redo history on setDocument and loadJson when preserveHistory is enabled (P1-3)", () => {
+    editor = createEditor(container as unknown as HTMLElement);
+    const rect1 = createRect(parseShapeId("rect-hist-1"), { x: 0, y: 0, width: 50, height: 50 });
+    editor.execute({ type: COMMANDS.createShape, shape: rect1 });
+    expect(editor.canUndo()).toBe(true);
+
+    const rect2 = createRect(parseShapeId("rect-hist-2"), { x: 60, y: 0, width: 50, height: 50 });
+    const nextDoc = createDocument([rect1, rect2]);
+
+    editor.setDocument(nextDoc, { preserveHistory: true });
+    expect(editor.canUndo()).toBe(true);
+
+    const json = JSON.stringify({
+      schema: { version: 1 },
+      shapes: { [rect1.id]: rect1, [rect2.id]: rect2 },
+    });
+    editor.loadJson(json, { preserveHistory: true });
+    expect(editor.canUndo()).toBe(true);
+  });
+
+  it("isolates shape ID sequences across independent editor instances (P0-4)", () => {
+    const containerA = new MockDomNode("div");
+    const containerB = new MockDomNode("div");
+    const shapeA = createRect(parseShapeId("seed-a"), { x: 0, y: 0, width: 20, height: 20 });
+    const shapeB = createRect(parseShapeId("seed-b"), { x: 0, y: 0, width: 20, height: 20 });
+    const edA = createEditor(containerA as unknown as HTMLElement, {
+      document: createDocument([shapeA]),
+    });
+    const edB = createEditor(containerB as unknown as HTMLElement, {
+      document: createDocument([shapeB]),
+    });
+
+    const mockWin = (
+      globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+    ).window;
+
+    // Duplicate in editor A
+    edA.select(shapeA.id);
+    mockWin.dispatch("keydown", {
+      code: "KeyD",
+      key: "d",
+      ctrlKey: true,
+      metaKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: () => {},
+    });
+
+    // Check duplicate shape ID in editor A
+    const idsA = Object.keys(edA.getDocument().shapes).filter((id) => id !== "seed-a");
+    expect(idsA).toHaveLength(1);
+
+    // Actions in editor A must not advance or affect editor B's independent ID generator
+    edB.select(shapeB.id);
+    mockWin.dispatch("keydown", {
+      code: "KeyD",
+      key: "d",
+      ctrlKey: true,
+      metaKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: () => {},
+    });
+
+    const idsB = Object.keys(edB.getDocument().shapes).filter((id) => id !== "seed-b");
+    expect(idsB).toHaveLength(1);
+    // Editor B starts from its own independent sequence (same base ID as edA started with)
+    expect(idsB[0]).toBe(idsA[0]);
+
+    edA.destroy();
+    edB.destroy();
+  });
+
+  it("handles copy and paste shortcuts for selected shapes (P0-1)", () => {
+    const rect = createRect(parseShapeId("rect-cp"), { x: 10, y: 10, width: 60, height: 40 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+    editor.select(rect.id);
+
+    const mockWin = (
+      globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+    ).window;
+
+    let copyPrevented = false;
+    mockWin.dispatch("keydown", {
+      code: "KeyC",
+      key: "c",
+      ctrlKey: true,
+      metaKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: () => {
+        copyPrevented = true;
+      },
+    });
+    expect(copyPrevented).toBe(true);
+
+    let pastePrevented = false;
+    mockWin.dispatch("keydown", {
+      code: "KeyV",
+      key: "v",
+      ctrlKey: true,
+      metaKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: () => {
+        pastePrevented = true;
+      },
+    });
+    expect(pastePrevented).toBe(true);
+
+    const allShapes = Object.values(editor.getDocument().shapes);
+    expect(allShapes).toHaveLength(2);
+    const pasted = allShapes.find((s) => s.id !== rect.id)!;
+    expect(pasted).toBeDefined();
+    expect(pasted.boundingBox.x).toBe(30);
+    expect(pasted.boundingBox.y).toBe(30);
+    expect(editor.getSelection()).toEqual([pasted.id]);
+  });
+
+  it("updates text content and supports text editing API (P0-2)", () => {
+    const rect = createRect(parseShapeId("rect-txt"), { x: 0, y: 0, width: 100, height: 40 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    (editor as unknown as { setTextContent: (id: string, text: string) => void }).setTextContent(
+      rect.id,
+      "New Heading",
+    );
+    expect(editor.getDocument().shapes[rect.id]?.content).toBe("New Heading");
+    expect(editor.canUndo()).toBe(true);
+
+    editor.undo();
+    expect(editor.getDocument().shapes[rect.id]?.content).toBeUndefined();
+  });
+
+  it("provides style and responsive layer ordering APIs (P1-1)", () => {
+    const rect = createRect(parseShapeId("rect-style"), { x: 0, y: 0, width: 100, height: 40 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    (
+      editor as unknown as {
+        setShapeStyle: (
+          id: string,
+          style: { fill?: string; stroke?: string; strokeWidth?: number },
+        ) => void;
+      }
+    ).setShapeStyle(rect.id, { fill: "#ff0000", stroke: "#000000", strokeWidth: 2 });
+    const styled = editor.getDocument().shapes[rect.id]!;
+    expect(styled.fill).toBe("#ff0000");
+    expect(styled.stroke).toBe("#000000");
+    expect(styled.strokeWidth).toBe(2);
+
+    (
+      editor as unknown as {
+        setShapeOrder: (id: string, deviceType: string, order: number | null) => void;
+      }
+    ).setShapeOrder(rect.id, "mobile", 3);
+    const ordered = editor.getDocument().shapes[rect.id]!;
+    expect(ordered.meta.order["mobile"]).toBe(3);
+  });
+
+  it("emits machineChanged when interaction state changes (P1-2)", () => {
+    editor = createEditor(container as unknown as HTMLElement);
+    let count = 0;
+    editor.subscribe("machineChanged" as unknown as "toolChanged", () => {
+      count += 1;
+    });
+
+    editor.canvas.dispatch({
+      type: "pointerDown",
+      screenPoint: { x: 10, y: 10 },
+      worldPoint: { x: 10, y: 10 },
+      hit: null,
+      handle: null,
+      selectedShapeId: null,
+      tool: TOOLS.select,
+      panRequested: true,
+    });
+    expect(count).toBe(1);
+  });
+
+  it("resizes multiple selected shapes proportionately from collective bounds (P0-3)", () => {
+    const rect1 = createRect(parseShapeId("multi-1"), { x: 0, y: 0, width: 100, height: 100 });
+    const rect2 = createRect(parseShapeId("multi-2"), { x: 100, y: 0, width: 100, height: 100 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect1, rect2]),
+    });
+
+    editor.selectMany([rect1.id, rect2.id]);
+    expect(editor.getSelection()).toHaveLength(2);
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const upFn = mockSvg.listeners["pointerup"]?.[0];
+    expect(downFn).toBeDefined();
+    expect(moveFn).toBeDefined();
+    expect(upFn).toBeDefined();
+
+    // Collective bounding box is (0, 0, 200, 100). Southeast handle is at (200, 100).
+    downFn!({ button: 0, clientX: 200, clientY: 100, pointerId: 1, preventDefault: () => {} });
+    // Drag SE handle to (400, 200) -> scale 2x
+    moveFn!({ clientX: 400, clientY: 200, pointerId: 1, preventDefault: () => {} });
+    upFn!({ clientX: 400, clientY: 200, pointerId: 1, preventDefault: () => {} });
+
+    const doc = editor.getDocument();
+    const updated1 = doc.shapes[rect1.id]!;
+    const updated2 = doc.shapes[rect2.id]!;
+
+    expect(updated1.boundingBox.width).toBe(200);
+    expect(updated1.boundingBox.height).toBe(200);
+    expect(updated2.boundingBox.x).toBe(200);
+    expect(updated2.boundingBox.width).toBe(200);
+    expect(updated2.boundingBox.height).toBe(200);
+  });
+
+  it("suppresses drag gesture when pointer movement is below 3px threshold (P1-4)", () => {
+    const rect = createRect(parseShapeId("rect-thresh"), { x: 20, y: 20, width: 50, height: 50 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+    editor.select(rect.id);
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const upFn = mockSvg.listeners["pointerup"]?.[0];
+    expect(downFn).toBeDefined();
+    expect(moveFn).toBeDefined();
+    expect(upFn).toBeDefined();
+
+    // Point on shape at (30, 30)
+    downFn!({ button: 0, clientX: 30, clientY: 30, pointerId: 1, preventDefault: () => {} });
+    // Move by only 1px (below DRAG_THRESHOLD_PX = 3)
+    moveFn!({ clientX: 31, clientY: 31, pointerId: 1, preventDefault: () => {} });
+    upFn!({ clientX: 31, clientY: 31, pointerId: 1, preventDefault: () => {} });
+
+    // Shape was not moved
+    const shape = editor.getDocument().shapes[rect.id]!;
+    expect(shape.boundingBox.x).toBe(20);
+    expect(shape.boundingBox.y).toBe(20);
+    expect(editor.canUndo()).toBe(false);
+  });
+
+  it("adds to existing selection on Shift+marquee gesture (P1-4)", () => {
+    const rect1 = createRect(parseShapeId("rect-m-1"), { x: 10, y: 10, width: 40, height: 40 });
+    const rect2 = createRect(parseShapeId("rect-m-2"), { x: 100, y: 100, width: 40, height: 40 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect1, rect2]),
+    });
+    editor.select(rect1.id);
+    expect(editor.getSelection()).toEqual([rect1.id]);
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const upFn = mockSvg.listeners["pointerup"]?.[0];
+    expect(downFn).toBeDefined();
+    expect(moveFn).toBeDefined();
+    expect(upFn).toBeDefined();
+
+    downFn!({
+      button: 0,
+      clientX: 80,
+      clientY: 80,
+      shiftKey: true,
+      pointerId: 1,
+      preventDefault: () => {},
+    });
+    moveFn!({ clientX: 160, clientY: 160, shiftKey: true, pointerId: 1, preventDefault: () => {} });
+    upFn!({ clientX: 160, clientY: 160, shiftKey: true, pointerId: 1, preventDefault: () => {} });
+
+    const selected = editor.getSelection();
+    expect(selected).toContain(rect1.id);
+    expect(selected).toContain(rect2.id);
+    expect(selected).toHaveLength(2);
+  });
 });

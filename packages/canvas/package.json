@@ -32,7 +32,8 @@
   },
   "files": [
     "dist",
-    "readme.md"
+    "readme.md",
+    "changelog.md"
   ],
   "publishConfig": {
     "access": "public",

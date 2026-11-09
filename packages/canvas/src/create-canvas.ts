@@ -113,6 +113,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.historyChanged]: new Set(),
     [CONTROLLER_EVENTS.cameraChanged]: new Set(),
     [CONTROLLER_EVENTS.toolChanged]: new Set(),
+    [CONTROLLER_EVENTS.machineChanged]: new Set(),
   };
 
   const emit = (event: ControllerEvent): void => {
@@ -164,11 +165,18 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
 
     getMachineState: () => machine,
     dispatch: (event) => {
-      machine = transition(machine, event);
+      const next = transition(machine, event);
+      if (next !== machine) {
+        machine = next;
+        emit(CONTROLLER_EVENTS.machineChanged);
+      }
       return machine;
     },
     resetMachine: () => {
-      machine = INITIAL_MACHINE_STATE;
+      if (machine !== INITIAL_MACHINE_STATE) {
+        machine = INITIAL_MACHINE_STATE;
+        emit(CONTROLLER_EVENTS.machineChanged);
+      }
     },
 
     getShapeKindRegistry: () => shapeKindRegistry,
