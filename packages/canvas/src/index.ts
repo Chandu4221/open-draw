@@ -96,8 +96,6 @@ export {
   createShapeIdGenerator,
   type ShapeIdGenerator,
   type ShapeIdSequence,
-  nextShapeId,
-  seedShapeSequence,
   type NestingMode,
 } from "./editor-gestures";
 

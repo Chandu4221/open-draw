@@ -20,7 +20,6 @@ import {
 import type { CanvasController } from "./create-canvas";
 import { CONTROLLER_EVENTS } from "./events";
 import { TOOLS, type ToolId } from "./tools";
-import { nextShapeId } from "./editor-gestures";
 
 export interface KeyboardBindingContext {
   readonly canvas: CanvasController;
@@ -33,7 +32,7 @@ export interface KeyboardBindingContext {
   readonly resetGesture: () => void;
   readonly execute: (commands: readonly Command[]) => void;
   readonly render: () => void;
-  readonly nextShapeId?: ((doc?: Document) => ShapeId) | undefined;
+  readonly nextShapeId: (doc?: Document) => ShapeId;
 }
 
 export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void {
@@ -63,7 +62,7 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
   ): void {
     const offset = 20 * count;
     const doc = getDoc();
-    const generateId = ctx.nextShapeId ?? nextShapeId;
+    const generateId = ctx.nextShapeId;
     const idMap = new Map<ShapeId, ShapeId>();
     for (const s of shapesToPaste) {
       idMap.set(s.id, generateId(doc));
@@ -220,7 +219,7 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
         if (ids.length > 0) {
           const doc = getDoc();
           const topLevelIds = pruneSelectedDescendants(doc, ids);
-          const generateId = ctx.nextShapeId ?? nextShapeId;
+          const generateId = ctx.nextShapeId;
           const newShapeIds: Record<ShapeId, ShapeId> = {};
           for (const topId of topLevelIds) {
             for (const s of subtreeOf(doc, topId)) {

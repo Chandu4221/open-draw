@@ -6,7 +6,6 @@ import type {
   StyleId,
 } from "@open-draw/contracts";
 import { isRootId, PLATFORMS } from "@open-draw/contracts";
-import type { CanvasController } from "@open-draw/canvas";
 import { COMMANDS, type Command, type Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 
@@ -15,7 +14,6 @@ export interface DocumentMutationsProps {
   readonly rootShape: Shape | undefined;
   readonly activeProfile: import("@open-draw/contracts").PlatformProfile | undefined;
   readonly activeDeviceType: DeviceType | undefined;
-  readonly canvasRef: React.MutableRefObject<CanvasController>;
   readonly setActiveDeviceType: (dt: DeviceType | undefined) => void;
   readonly commit: (
     commands: readonly Command[],
@@ -69,7 +67,6 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     rootShape,
     activeProfile,
     activeDeviceType,
-    canvasRef,
     setActiveDeviceType,
     commit,
     render,
@@ -95,7 +92,6 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
         !nextProfile.deviceTypes.includes(activeDeviceType))
     ) {
       setActiveDeviceType(undefined);
-      canvasRef.current.setActiveDeviceType(undefined);
     }
     render();
   }

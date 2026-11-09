@@ -1,9 +1,8 @@
-import type { CanvasController } from "@open-draw/canvas";
 import { COMMANDS, type Command, type Shape } from "@open-draw/document";
 
 export interface BatchMutationsProps {
   readonly selectedShapes: readonly Shape[];
-  readonly canvasRef: React.MutableRefObject<CanvasController>;
+  readonly clearSelection: () => void;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }
@@ -23,7 +22,7 @@ export interface BatchMutations {
 }
 
 export function useBatchMutations(props: BatchMutationsProps): BatchMutations {
-  const { selectedShapes, canvasRef, commit, render } = props;
+  const { selectedShapes, clearSelection, commit, render } = props;
 
   function handleBatchAlign(
     alignment: "left" | "center" | "right" | "top" | "middle" | "bottom",
@@ -147,13 +146,13 @@ export function useBatchMutations(props: BatchMutationsProps): BatchMutations {
       type: COMMANDS.deleteShape,
       id: shape.id,
     }));
-    canvasRef.current.clearSelection();
+    clearSelection();
     commit(commands);
     render();
   }
 
   function handleClearSelection(): void {
-    canvasRef.current.clearSelection();
+    clearSelection();
     render();
   }
 

@@ -30,7 +30,7 @@ export interface PointerBindingContext {
   readonly setGesture: (g: ActiveGesture | null) => void;
   readonly setLastWorld: (p: Point) => void;
   readonly nestingMode?: NestingMode | undefined;
-  readonly nextShapeId?: ((doc?: Document) => ShapeId) | undefined;
+  readonly nextShapeId: (doc?: Document) => ShapeId;
   readonly onDoubleClick?: ((shapeId: ShapeId) => void) | undefined;
   readonly interceptPointerDown?:
     | ((

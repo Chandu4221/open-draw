@@ -59,16 +59,6 @@ export function createShapeIdGenerator(initialDoc?: Document): ShapeIdSequence {
   return { nextShapeId, seed };
 }
 
-const defaultIdGen = createShapeIdGenerator();
-/**
- * @deprecated Use `createShapeIdGenerator(doc)` to isolate ID sequences per editor instance (R-008).
- */
-export const nextShapeId: ShapeIdGenerator = (doc?: Document) => defaultIdGen.nextShapeId(doc);
-/**
- * @deprecated Use `createShapeIdGenerator(doc)` to isolate ID sequences per editor instance (R-008).
- */
-export const seedShapeSequence = (doc: Document): void => defaultIdGen.seed(doc);
-
 export interface ActiveGesture {
   readonly kind: string;
   readonly startScreen: Point;
@@ -204,7 +194,7 @@ export function commitDrawGesture(
   tool: ToolId,
   execute: (commands: readonly Command[]) => void,
   nestingMode: NestingMode = "off",
-  idGen: ShapeIdGenerator = nextShapeId,
+  idGen: ShapeIdGenerator = (doc?: Document) => createShapeIdGenerator(doc).nextShapeId(doc),
 ): void {
   const parentHit = nestingMode === "containers-only" ? gesture.parentHit : null;
   const targetParentId = parentHit !== null ? pickDropTarget(doc, gesture.startWorld, []) : ROOT_ID;

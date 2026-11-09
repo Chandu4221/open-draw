@@ -22,6 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tiered Geometry Export (P1-5)**: `unionBoxes()` exported from SDK entry point alongside core bounding box helpers.
 - **Documented Architecture Boundaries & Non-Goals (P1-6, P1-7)**: Documented wheel/machine separation and declared rotation, snapping, image shapes, rich text, and native file drag-and-drop as v1 non-goals in README.
 
-### Deprecated
+### Removed
 
-- **Module-Level `nextShapeId` and `seedShapeSequence`**: Deprecated in favor of instance-scoped `createShapeIdGenerator(doc)` (R-008).
+- **Module-Level `nextShapeId` and `seedShapeSequence`**: Removed in favor of instance-scoped `createShapeIdGenerator(doc)` to eliminate global ID collision hazards across instances (R-008).

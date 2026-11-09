@@ -1,23 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { DeviceType, ShapeId } from "@open-draw/contracts";
-import {
-  createDocument,
-  EMPTY_HISTORY,
-  type Command,
-  type Document,
-  type HistoryState,
-  type Shape,
-} from "@open-draw/document";
+import { createDocument, type Command, type Document, type Shape } from "@open-draw/document";
 import {
   CONTROLLER_EVENTS,
   createEditor,
   TOOLS,
-  type CanvasController,
   type Editor,
   type ToolId,
 } from "@open-draw/canvas";
 import { useToast } from "@open-draw/ui";
-import { initCanvas } from "../canvas-init";
 import { computeSemanticChipOverlays, pickAnyRootChip } from "../canvas-overlays";
 import { StudioLayout } from "../templates/StudioLayout";
 
@@ -43,10 +34,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const toast = useToast();
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
-  const canvasRef = useRef<CanvasController>(initCanvas());
   const [doc, setDoc] = useState<Document>(() => createDocument([]));
   const documentRef = useRef<Document>(doc);
-  const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
   const toastRef = useRef(toast);
   useEffect(() => {
     documentRef.current = doc;
@@ -97,7 +86,6 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     });
 
     editorRef.current = editor;
-    canvasRef.current = editor.canvas;
 
     const unsubDoc = editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
       const nextDoc = editor.getDocument();
@@ -196,8 +184,6 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
 
   const toolbarActions = useToolbarActions({
     documentRef,
-    historyRef,
-    canvasRef,
     editorRef,
     includeLegend,
     toast,
@@ -213,7 +199,6 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     rootShape: inspection.rootShape,
     activeProfile: inspection.activeProfile,
     activeDeviceType,
-    canvasRef,
     setActiveDeviceType: handleDeviceChange,
     commit,
     render,
@@ -227,7 +212,12 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const selectedShapes = selectedShapeIds
     .map((id) => doc.shapes[id])
     .filter((s): s is Shape => s !== undefined);
-  const batchMutations = useBatchMutations({ selectedShapes, canvasRef, commit, render });
+  const batchMutations = useBatchMutations({
+    selectedShapes,
+    clearSelection: () => editorRef.current?.clearSelection(),
+    commit,
+    render,
+  });
   const themeMutations = useRootThemeMutations({
     selectedShape: inspection.selectedShape,
     rootShape: inspection.rootShape,
