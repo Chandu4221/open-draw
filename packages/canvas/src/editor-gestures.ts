@@ -60,7 +60,13 @@ export function createShapeIdGenerator(initialDoc?: Document): ShapeIdSequence {
 }
 
 const defaultIdGen = createShapeIdGenerator();
+/**
+ * @deprecated Use `createShapeIdGenerator(doc)` to isolate ID sequences per editor instance (R-008).
+ */
 export const nextShapeId: ShapeIdGenerator = (doc?: Document) => defaultIdGen.nextShapeId(doc);
+/**
+ * @deprecated Use `createShapeIdGenerator(doc)` to isolate ID sequences per editor instance (R-008).
+ */
 export const seedShapeSequence = (doc: Document): void => defaultIdGen.seed(doc);
 
 export interface ActiveGesture {

@@ -11,11 +11,16 @@ class MockDomNode {
   readonly attributes: Record<string, string> = {};
   readonly children: MockDomNode[] = [];
   innerHTML = "";
+  value = "";
+  className = "";
   listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
 
   constructor(tagName: string) {
     this.tagName = tagName;
   }
+
+  focus(): void {}
+  select(): void {}
 
   get outerHTML(): string {
     return `<${this.tagName}>${this.innerHTML}</${this.tagName}>`;
@@ -45,7 +50,9 @@ class MockDomNode {
   querySelector<T extends MockDomNode>(selector: string): T | null {
     const className = selector.replace(/^\./, "");
     for (const child of this.children) {
-      if (child.attributes["class"] === className) return child as unknown as T;
+      if (child.attributes["class"] === className || child.className === className) {
+        return child as unknown as T;
+      }
       const found = child.querySelector<T>(selector);
       if (found !== null) return found;
     }
@@ -358,7 +365,7 @@ describe("createEditor", () => {
     expect(editor.getSelection()).toHaveLength(0);
   });
 
-  it("does not prevent default on unhandled clipboard actions like copy (M1)", () => {
+  it("preserves native copy event when selection is empty (M1)", () => {
     editor = createEditor(container as unknown as HTMLElement);
     const mockWin = (
       globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
@@ -522,6 +529,53 @@ describe("createEditor", () => {
     expect(pasted.boundingBox.x).toBe(30);
     expect(pasted.boundingBox.y).toBe(30);
     expect(editor.getSelection()).toEqual([pasted.id]);
+  });
+
+  it("serializes payload to system clipboard on copy (P1-2)", async () => {
+    let writtenText = "";
+    const origDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        clipboard: {
+          writeText: async (text: string) => {
+            writtenText = text;
+          },
+        },
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      const rect = createRect(parseShapeId("rect-sys-cp"), { x: 10, y: 10, width: 60, height: 40 });
+      editor = createEditor(container as unknown as HTMLElement, {
+        document: createDocument([rect]),
+      });
+      editor.select(rect.id);
+
+      const mockWin = (
+        globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+      ).window;
+
+      mockWin.dispatch("keydown", {
+        code: "KeyC",
+        key: "c",
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: false,
+        altKey: false,
+        preventDefault: () => {},
+      });
+
+      expect(writtenText).toContain("open-draw/clipboard");
+      expect(writtenText).toContain("rect-sys-cp");
+    } finally {
+      if (origDescriptor) {
+        Object.defineProperty(globalThis, "navigator", origDescriptor);
+      } else {
+        delete (globalThis as unknown as { navigator?: unknown }).navigator;
+      }
+    }
   });
 
   it("updates text content and supports text editing API (P0-2)", () => {
@@ -690,5 +744,34 @@ describe("createEditor", () => {
     expect(selected).toContain(rect1.id);
     expect(selected).toContain(rect2.id);
     expect(selected).toHaveLength(2);
+  });
+
+  it("mounts inline text editor on double-click and commits content on enter (P1-1)", () => {
+    const rect = createRect(parseShapeId("rect-dbl"), { x: 50, y: 50, width: 120, height: 60 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const dblFn = mockSvg.listeners["dblclick"]?.[0];
+    expect(dblFn).toBeDefined();
+
+    dblFn!({ clientX: 70, clientY: 70, preventDefault: () => {} });
+
+    const textarea = container.querySelector<MockDomNode>(".od-inline-text-editor");
+    expect(textarea).not.toBeNull();
+    expect(textarea?.tagName.toLowerCase()).toBe("textarea");
+
+    textarea!.value = "Heading Text";
+    const keyFn = textarea!.listeners["keydown"]?.[0];
+    expect(keyFn).toBeDefined();
+
+    keyFn!({ key: "Enter", shiftKey: false, preventDefault: () => {} });
+
+    expect(editor.getDocument().shapes[rect.id]?.content).toBe("Heading Text");
+    expect(container.querySelector(".od-inline-text-editor")).toBeNull();
+    expect(editor.canUndo()).toBe(true);
   });
 });

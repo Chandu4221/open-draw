@@ -25,6 +25,7 @@ import { type ActiveGesture, createShapeIdGenerator } from "./editor-gestures";
 import { computeEditorOverlays } from "./editor-overlays";
 import { attachPointerListeners } from "./editor-pointer";
 import { attachKeyboardListeners } from "./editor-keyboard";
+import { mountInlineTextEditor } from "./editor-text";
 import { exportDocumentToSvg } from "./editor-export";
 import type { Editor, EditorOptions, SetDocumentOptions } from "./editor-types";
 
@@ -44,6 +45,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   let gesture: ActiveGesture | null = null;
   let lastWorld: Point = { x: 0, y: 0 };
   let spacePressed = false;
+  let activeInlineEditor: (() => void) | null = null;
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
@@ -178,6 +180,25 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     },
     nestingMode: options.nestingMode,
     nextShapeId: idSequence.nextShapeId,
+    onDoubleClick: (hitId) => {
+      if (activeInlineEditor !== null) {
+        activeInlineEditor();
+        activeInlineEditor = null;
+      }
+      activeInlineEditor = mountInlineTextEditor({
+        container,
+        doc,
+        shapeId: hitId,
+        camera: canvas.getCamera(),
+        onCommit: (id, content) => {
+          activeInlineEditor = null;
+          execute([{ type: COMMANDS.setShapeContent, id, content }]);
+        },
+        onCancel: () => {
+          activeInlineEditor = null;
+        },
+      });
+    },
   });
 
   const detachKeyboard = attachKeyboardListeners({
@@ -297,6 +318,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     subscribe: (event, listener) => canvas.subscribe(event, listener),
     render,
     destroy: () => {
+      if (activeInlineEditor !== null) {
+        activeInlineEditor();
+        activeInlineEditor = null;
+      }
       detachPointer();
       detachKeyboard();
       unsubCamera();

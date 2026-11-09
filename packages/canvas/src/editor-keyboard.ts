@@ -56,6 +56,44 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     count: number;
   } | null = null;
 
+  function pasteShapes(
+    shapesToPaste: readonly Shape[],
+    topIdsToPaste: readonly ShapeId[],
+    count: number,
+  ): void {
+    const offset = 20 * count;
+    const doc = getDoc();
+    const generateId = ctx.nextShapeId ?? nextShapeId;
+    const idMap = new Map<ShapeId, ShapeId>();
+    for (const s of shapesToPaste) {
+      idMap.set(s.id, generateId(doc));
+    }
+    const topLevelSet = new Set<ShapeId>(topIdsToPaste);
+    const pastedShapes: Shape[] = shapesToPaste.map((shape): Shape => {
+      const isTopLevel = topLevelSet.has(shape.id);
+      const newId = idMap.get(shape.id)!;
+      const newParentId = isTopLevel
+        ? shape.parentId
+        : (idMap.get(shape.parentId) ?? shape.parentId);
+      const newBoundingBox = isTopLevel
+        ? {
+            ...shape.boundingBox,
+            x: shape.boundingBox.x + offset,
+            y: shape.boundingBox.y + offset,
+          }
+        : shape.boundingBox;
+      return {
+        ...shape,
+        id: newId,
+        parentId: newParentId,
+        boundingBox: newBoundingBox,
+      };
+    });
+    execute(pastedShapes.map((shape) => ({ type: COMMANDS.createShape, shape })));
+    const newTopLevelIds = topIdsToPaste.map((id) => idMap.get(id)!);
+    canvas.selectMany(newTopLevelIds);
+  }
+
   function onKeyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement | null;
     const isEditable =
@@ -91,6 +129,19 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
             shapes.push(...subtreeOf(doc, topId));
           }
           clipboard = { shapes, topLevelIds, count: 0 };
+          if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+            try {
+              const serialized = JSON.stringify({
+                type: "open-draw/clipboard",
+                version: 1,
+                shapes,
+                topLevelIds,
+              });
+              void navigator.clipboard.writeText(serialized).catch(() => {});
+            } catch {
+              // Ignore clipboard write failures in non-secure contexts
+            }
+          }
         }
         break;
       }
@@ -98,37 +149,26 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
         if (clipboard !== null && clipboard.shapes.length > 0) {
           event.preventDefault();
           clipboard.count += 1;
-          const offset = 20 * clipboard.count;
-          const doc = getDoc();
-          const generateId = ctx.nextShapeId ?? nextShapeId;
-          const idMap = new Map<ShapeId, ShapeId>();
-          for (const s of clipboard.shapes) {
-            idMap.set(s.id, generateId(doc));
-          }
-          const topLevelSet = new Set<ShapeId>(clipboard.topLevelIds);
-          const pastedShapes: Shape[] = clipboard.shapes.map((shape): Shape => {
-            const isTopLevel = topLevelSet.has(shape.id);
-            const newId = idMap.get(shape.id)!;
-            const newParentId = isTopLevel
-              ? shape.parentId
-              : (idMap.get(shape.parentId) ?? shape.parentId);
-            const newBoundingBox = isTopLevel
-              ? {
-                  ...shape.boundingBox,
-                  x: shape.boundingBox.x + offset,
-                  y: shape.boundingBox.y + offset,
+          pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
+        } else if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+          event.preventDefault();
+          void navigator.clipboard
+            .readText()
+            .then((text) => {
+              try {
+                const data = JSON.parse(text);
+                if (
+                  data?.type === "open-draw/clipboard" &&
+                  Array.isArray(data.shapes) &&
+                  Array.isArray(data.topLevelIds)
+                ) {
+                  pasteShapes(data.shapes, data.topLevelIds, 1);
                 }
-              : shape.boundingBox;
-            return {
-              ...shape,
-              id: newId,
-              parentId: newParentId,
-              boundingBox: newBoundingBox,
-            };
-          });
-          execute(pastedShapes.map((shape) => ({ type: COMMANDS.createShape, shape })));
-          const newTopLevelIds = clipboard.topLevelIds.map((id) => idMap.get(id)!);
-          canvas.selectMany(newTopLevelIds);
+              } catch {
+                // Ignore non-open-draw clipboard text
+              }
+            })
+            .catch(() => {});
         }
         break;
       }

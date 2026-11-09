@@ -45,9 +45,22 @@ editor.resetZoom();
 // Export standalone SVG markup
 const svgMarkup = editor.toSvg();
 
+// Programmatic text editing
+editor.setTextContent(rectId, "Updated text");
+
 // Clean up when unmounting
 // editor.destroy();
 ```
+
+### Text Editing
+
+- **Inline UX**: Double-click any shape to open a floating inline text editor overlay. Press `Enter` (without `Shift`) or click outside to commit, or press `Escape` to cancel.
+- **Programmatic API**: Use `editor.setTextContent(shapeId, text)` to update visible content directly via recorded transactions.
+
+### Clipboard
+
+- **In-Editor Clipboard**: Copy (`Mod+C` / `Ctrl+C`) and Paste (`Mod+V` / `Ctrl+V`) clone selected shape subtrees with automated fresh IDs and position cascading.
+- **System Clipboard**: When browser permissions permit, JSON payloads are copied to `navigator.clipboard` for cross-editor transfers. When no selection exists, native browser copy events pass through unhindered.
 
 ## Advanced: Headless Controller
 
@@ -85,14 +98,17 @@ const hitShapeId = canvas.pickShape(doc, { x: 100, y: 80 });
 - **Document is Truth (R-016)**: The document tree is immutable and canonical; mutations occur exclusively through typed transactions.
 - **Camera is a Transform (R-017)**: Pan and zoom transforms never alter shape geometry coordinates.
 - **Machine & Viewport Separation (R-008, R-009)**: The state machine consumes pure pointer events. Wheel events are ignored by the state table and handled directly as camera viewport transforms by the imperative editor shell.
+- **Instance State Isolation (R-008)**: Editors instantiate their own shape ID generators via `createShapeIdGenerator()`, preventing cross-canvas sequence leakage.
 
 ## Scope & Non-Goals for v1
 
 The v1 release focuses on diagramming, wireframing, and vector sketching primitives:
 
-- **Shape Rotation**: Non-goal for v1 (axis-aligned bounding boxes only).
+- **Shape Rotation & Skew**: Non-goal for v1 (axis-aligned bounding boxes only).
 - **Grid / Object Snapping**: Non-goal for v1 (reserved for extension layer).
 - **Image / Raster Asset Shapes**: Non-goal for v1 (vector primitives and text only).
+- **Rich Text & Inline Spans**: Non-goal for v1 (uniform text content only).
+- **Native OS File Drag-and-Drop**: Non-goal for v1 (document JSON serialization and file loading APIs only).
 
 ## License
 

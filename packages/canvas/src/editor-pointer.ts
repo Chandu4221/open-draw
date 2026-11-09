@@ -31,6 +31,7 @@ export interface PointerBindingContext {
   readonly setLastWorld: (p: Point) => void;
   readonly nestingMode?: NestingMode | undefined;
   readonly nextShapeId?: ((doc?: Document) => ShapeId) | undefined;
+  readonly onDoubleClick?: ((shapeId: ShapeId) => void) | undefined;
 }
 
 export function attachPointerListeners(ctx: PointerBindingContext): () => void {
@@ -279,11 +280,22 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     onPointerCancel();
   }
 
+  function onDoubleClick(event: MouseEvent): void {
+    if (event.button !== undefined && event.button !== 0) return;
+    const screen = screenPoint(event);
+    const world = canvas.screenToWorld(screen);
+    const hit = canvas.pickShape(getDoc(), world);
+    if (hit !== null && ctx.onDoubleClick !== undefined) {
+      ctx.onDoubleClick(hit);
+    }
+  }
+
   svg.addEventListener("pointerdown", onPointerDown);
   svg.addEventListener("pointermove", onPointerMove);
   svg.addEventListener("pointerup", onPointerUp);
   svg.addEventListener("pointercancel", onPointerCancel);
   svg.addEventListener("lostpointercapture", onPointerCancel);
+  svg.addEventListener("dblclick", onDoubleClick);
   if (typeof window !== "undefined") {
     window.addEventListener("blur", onBlur);
   }
@@ -294,6 +306,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     svg.removeEventListener("pointerup", onPointerUp);
     svg.removeEventListener("pointercancel", onPointerCancel);
     svg.removeEventListener("lostpointercapture", onPointerCancel);
+    svg.removeEventListener("dblclick", onDoubleClick);
     if (typeof window !== "undefined") {
       window.removeEventListener("blur", onBlur);
     }

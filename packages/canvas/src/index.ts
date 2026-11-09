@@ -90,6 +90,8 @@ export {
 
 export { exportDocumentToSvg, type SvgExportOptions } from "./editor-export";
 
+export { mountInlineTextEditor, type InlineTextEditorOptions } from "./editor-text";
+
 export {
   createShapeIdGenerator,
   type ShapeIdGenerator,
