@@ -1,4 +1,4 @@
-import { parseDocument, type Document, type Shape } from "@open-draw/document";
+import { parseDocument, serializeDocument, type Document, type Shape } from "@open-draw/document";
 import { exportJson, exportMarkdown } from "@open-draw/export-markdown";
 import { documentToSvgWithLegend, type LegendItem } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
@@ -52,6 +52,16 @@ export function generateExportSvg(doc: Document, options?: SvgExportOptions | bo
   });
 }
 
+function safeRevokeUrl(url: string): void {
+  const isTest =
+    (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV === "test";
+  if (typeof window !== "undefined" && typeof window.setTimeout === "function" && !isTest) {
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } else {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function exportDocumentSvg(doc: Document, options?: SvgExportOptions | boolean): void {
   const svg = generateExportSvg(doc, options);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
@@ -60,7 +70,7 @@ export function exportDocumentSvg(doc: Document, options?: SvgExportOptions | bo
   a.href = url;
   a.download = "opendraw-diagram.svg";
   a.click();
-  URL.revokeObjectURL(url);
+  safeRevokeUrl(url);
 }
 
 export function exportDocumentPng(
@@ -74,15 +84,19 @@ export function exportDocumentPng(
   const img = new Image();
   img.onload = () => {
     try {
+      const scale = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+      const baseWidth = img.naturalWidth || img.width;
+      const baseHeight = img.naturalHeight || img.height;
       const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
+      canvas.width = Math.round(baseWidth * scale);
+      canvas.height = Math.round(baseHeight * scale);
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         throw new Error("Unable to create canvas 2D context");
       }
+      ctx.scale(scale, scale);
       ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
+      safeRevokeUrl(url);
       canvas.toBlob((pngBlob) => {
         if (!pngBlob) {
           onError?.(new Error("Unable to generate PNG blob from canvas"));
@@ -93,15 +107,15 @@ export function exportDocumentPng(
         a.href = pngUrl;
         a.download = "opendraw-diagram.png";
         a.click();
-        URL.revokeObjectURL(pngUrl);
+        safeRevokeUrl(pngUrl);
       }, "image/png");
     } catch (err) {
-      URL.revokeObjectURL(url);
+      safeRevokeUrl(url);
       onError?.(err);
     }
   };
   img.onerror = (err) => {
-    URL.revokeObjectURL(url);
+    safeRevokeUrl(url);
     onError?.(err);
   };
   img.src = url;
@@ -118,17 +132,21 @@ export async function copyDocumentPng(
     const img = new Image();
     img.onload = () => {
       try {
+        const scale = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+        const baseWidth = img.naturalWidth || img.width;
+        const baseHeight = img.naturalHeight || img.height;
         const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
+        canvas.width = Math.round(baseWidth * scale);
+        canvas.height = Math.round(baseHeight * scale);
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          URL.revokeObjectURL(url);
+          safeRevokeUrl(url);
           reject(new Error("Unable to create canvas 2D context"));
           return;
         }
+        ctx.scale(scale, scale);
         ctx.drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
+        safeRevokeUrl(url);
         canvas.toBlob(async (pngBlob) => {
           if (!pngBlob) {
             reject(new Error("Unable to generate PNG blob"));
@@ -142,12 +160,12 @@ export async function copyDocumentPng(
           }
         }, "image/png");
       } catch (err) {
-        URL.revokeObjectURL(url);
+        safeRevokeUrl(url);
         reject(err);
       }
     };
     img.onerror = (err) => {
-      URL.revokeObjectURL(url);
+      safeRevokeUrl(url);
       reject(err);
     };
     img.src = url;
@@ -173,6 +191,21 @@ export function generateExportMarkdown(
   return exportMarkdown(doc, { creativityLevel, includeLegend, includeAsciiSketch });
 }
 
+export function generateSaveDocumentJson(doc: Document): string {
+  return serializeDocument(doc);
+}
+
+export function saveDocumentJson(doc: Document): void {
+  const json = generateSaveDocumentJson(doc);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "opendraw-document.json";
+  a.click();
+  safeRevokeUrl(url);
+}
+
 export function exportDocumentJson(doc: Document, creativityLevel?: CreativityLevel): void {
   const json = generateExportJson(doc, creativityLevel);
   const blob = new Blob([json], { type: "application/json" });
@@ -181,7 +214,7 @@ export function exportDocumentJson(doc: Document, creativityLevel?: CreativityLe
   a.href = url;
   a.download = "opendraw-document.json";
   a.click();
-  URL.revokeObjectURL(url);
+  safeRevokeUrl(url);
 }
 
 export function exportDocumentMarkdown(
@@ -195,8 +228,10 @@ export function exportDocumentMarkdown(
   a.href = url;
   a.download = "opendraw-document.md";
   a.click();
-  URL.revokeObjectURL(url);
+  safeRevokeUrl(url);
 }
+
+export const MAX_LOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export function promptLoadDocumentJson(
   onLoaded: (doc: Document) => void,
@@ -209,11 +244,18 @@ export function promptLoadDocumentJson(
     const file = input.files?.[0];
     if (!file) return;
     try {
+      if (file.size > MAX_LOAD_FILE_SIZE_BYTES) {
+        throw new Error(
+          `File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds maximum allowed limit (10 MB)`,
+        );
+      }
       const text = await file.text();
       const loaded = parseDocument(text);
       onLoaded(loaded);
     } catch (err) {
       onError(err);
+    } finally {
+      input.value = "";
     }
   };
   input.click();

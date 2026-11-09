@@ -7,7 +7,13 @@ import {
   ROOT_ID,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
-import { createDocument, createPage, createRect, createSection } from "@open-draw/document";
+import {
+  createDocument,
+  createPage,
+  createRect,
+  createSection,
+  type Shape,
+} from "@open-draw/document";
 import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
@@ -477,6 +483,26 @@ describe("hierarchical tree walk", () => {
     const desktopWalk = walkSemanticTree(doc, root1, undefined, { [root1]: DEVICE_TYPES.desktop });
     expect(desktopWalk[1]?.shape.id).toBe(child1A);
     expect(desktopWalk[2]?.shape.id).toBe(child1B);
+  });
+
+  it("walks large document hierarchies in linear time without quadratic slowdown", () => {
+    const pageId = parseShapeId("perf-page");
+    const shapes: Shape[] = [createPage(pageId, { x: 0, y: 0, width: 2000, height: 2000 })];
+    for (let i = 0; i < 2000; i++) {
+      shapes.push(
+        createRect(
+          parseShapeId(`s-${i}`),
+          { x: (i % 20) * 50, y: Math.floor(i / 20) * 50, width: 40, height: 40 },
+          { parent: pageId },
+        ),
+      );
+    }
+    const doc = createDocument(shapes);
+    const start = Date.now();
+    const nodes = walkSemanticTree(doc, pageId);
+    const duration = Date.now() - start;
+    expect(nodes).toHaveLength(2001);
+    expect(duration).toBeLessThan(100);
   });
 });
 

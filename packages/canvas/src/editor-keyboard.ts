@@ -23,6 +23,8 @@ import { TOOLS, type ToolId } from "./tools";
 
 export interface KeyboardBindingContext {
   readonly canvas: CanvasController;
+  readonly container?: HTMLElement | undefined;
+  readonly svg?: SVGSVGElement | undefined;
   readonly getDoc: () => Document;
   readonly setDoc: (doc: Document) => void;
   readonly getHistory: () => HistoryState;
@@ -100,6 +102,27 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
       (typeof HTMLTextAreaElement !== "undefined" && target instanceof HTMLTextAreaElement) ||
       (typeof HTMLSelectElement !== "undefined" && target instanceof HTMLSelectElement) ||
       Boolean(target?.isContentEditable);
+
+    const activeEl = typeof document !== "undefined" ? document.activeElement : null;
+    if (
+      activeEl &&
+      activeEl !== (typeof document !== "undefined" ? document.body : null) &&
+      ctx.container &&
+      !ctx.container.contains(activeEl as Node) &&
+      (activeEl as Node) !== ctx.svg
+    ) {
+      return;
+    }
+    if (
+      target &&
+      target !== (typeof window !== "undefined" ? (window as unknown as HTMLElement) : null) &&
+      target !== (typeof document !== "undefined" ? document.body : null) &&
+      ctx.container &&
+      !ctx.container.contains(target) &&
+      (target as Node) !== ctx.svg
+    ) {
+      return;
+    }
 
     const descriptor: KeyboardEventDescriptor = {
       code: event.code,

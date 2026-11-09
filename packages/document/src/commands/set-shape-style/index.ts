@@ -7,6 +7,7 @@ import { createDocument } from "../../document";
 import { DocumentError } from "../../errors";
 import type { Shape } from "../../shape";
 import { COMMANDS } from "../registry";
+import { parseColor, parseStrokeWidth } from "../../style-validation";
 
 export interface SetShapeStyle {
   readonly type: (typeof COMMANDS)["setShapeStyle"];
@@ -32,7 +33,7 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.fill === null) {
       delete nextShapeData.fill;
     } else {
-      nextShapeData.fill = command.fill;
+      nextShapeData.fill = parseColor(command.fill, "fill");
     }
   }
 
@@ -40,7 +41,7 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.stroke === null) {
       delete nextShapeData.stroke;
     } else {
-      nextShapeData.stroke = command.stroke;
+      nextShapeData.stroke = parseColor(command.stroke, "stroke");
     }
   }
 
@@ -48,17 +49,7 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.strokeWidth === null) {
       delete nextShapeData.strokeWidth;
     } else {
-      if (
-        typeof command.strokeWidth !== "number" ||
-        !Number.isFinite(command.strokeWidth) ||
-        command.strokeWidth < 0
-      ) {
-        throw new DocumentError(
-          "invalidCommand",
-          `strokeWidth must be a non-negative finite number: ${command.strokeWidth}`,
-        );
-      }
-      nextShapeData.strokeWidth = command.strokeWidth;
+      nextShapeData.strokeWidth = parseStrokeWidth(command.strokeWidth);
     }
   }
 

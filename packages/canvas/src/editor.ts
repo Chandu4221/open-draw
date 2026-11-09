@@ -26,6 +26,7 @@ import { computeEditorOverlays } from "./editor-overlays";
 import { attachPointerListeners } from "./editor-pointer";
 import { attachKeyboardListeners } from "./editor-keyboard";
 import { exportDocumentToSvg } from "./editor-export";
+import { resolveToolCursor } from "./cursor";
 import type { Editor, EditorOptions, SetDocumentOptions } from "./editor-types";
 
 export type {
@@ -44,6 +45,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   let gesture: ActiveGesture | null = null;
   let lastWorld: Point = { x: 0, y: 0 };
   let spacePressed = false;
+  let isDestroyed = false;
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
@@ -86,6 +88,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   }
 
   function renderDocument(): void {
+    if (isDestroyed) return;
     docScene.innerHTML = documentToSvg(doc, {
       activeDeviceType: canvas.getActiveDeviceType(),
       activeDeviceTypes: canvas.getActiveDeviceTypes(),
@@ -97,6 +100,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   }
 
   function renderOverlays(): void {
+    if (isDestroyed) return;
     const cam = canvas.getCamera();
     const activeDeviceType = canvas.getActiveDeviceType();
     const customOverlays = options.renderCustomOverlays?.({
@@ -121,12 +125,14 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   }
 
   function render(): void {
+    if (isDestroyed) return;
     updateCameraTransform();
     renderDocument();
     renderOverlays();
   }
 
   function execute(commands: Command | readonly Command[], opts?: { record?: boolean }): void {
+    if (isDestroyed) return;
     const cmds = Array.isArray(commands) ? commands : [commands];
     if (cmds.length === 0) return;
     const result = applyTransaction(doc, createTransaction(cmds));
@@ -157,6 +163,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   svg.addEventListener("wheel", onWheel, { passive: false });
 
+  function updateCursor(): void {
+    svg.style.cursor = resolveToolCursor(activeTool, spacePressed);
+  }
+
   const detachPointer = attachPointerListeners({
     svg,
     canvas,
@@ -165,6 +175,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     setTool: (t) => {
       activeTool = t;
       canvas.emit(CONTROLLER_EVENTS.toolChanged);
+      updateCursor();
       renderOverlays();
     },
     getSpacePressed: () => spacePressed,
@@ -187,6 +198,8 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   const detachKeyboard = attachKeyboardListeners({
     canvas,
+    container,
+    svg,
     getDoc: () => doc,
     setDoc: (nextDoc) => {
       doc = nextDoc;
@@ -201,10 +214,12 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     setTool: (t) => {
       activeTool = t;
       canvas.emit(CONTROLLER_EVENTS.toolChanged);
+      updateCursor();
       renderOverlays();
     },
     setSpacePressed: (pressed) => {
       spacePressed = pressed;
+      updateCursor();
     },
     resetGesture: () => {
       gesture = null;
@@ -223,6 +238,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   });
 
   render();
+  updateCursor();
 
   function resetDoc(nextDoc: Document, preserveHistory?: boolean): void {
     doc = nextDoc;
@@ -282,8 +298,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     setTool: (nextTool) => {
       activeTool = nextTool;
       canvas.emit(CONTROLLER_EVENTS.toolChanged);
+      updateCursor();
       renderOverlays();
     },
+
     getSelection: () => canvas.getSelectedIds(),
     select: (id) => canvas.select(id),
     selectMany: (ids) => canvas.selectMany(ids),
@@ -302,10 +320,12 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     subscribe: (event, listener) => canvas.subscribe(event, listener),
     render,
     destroy: () => {
+      isDestroyed = true;
       detachPointer();
       detachKeyboard();
       unsubCamera();
       unsubSelection();
+      canvas.clearListeners();
       svg.removeEventListener("wheel", onWheel);
       if (container.contains(svg)) container.removeChild(svg);
     },

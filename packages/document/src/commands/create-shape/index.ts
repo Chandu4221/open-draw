@@ -3,7 +3,7 @@
 import type { ShapeId } from "@open-draw/contracts";
 import type { Command, CommandResult } from "..";
 import type { Document } from "../../document";
-import { createDocument } from "../../document";
+import { createDocumentFromMap } from "../../document";
 import { DocumentError } from "../../errors";
 import type { Shape } from "../../shape";
 import { parseShape } from "../../validation";
@@ -14,12 +14,20 @@ export interface CreateShape {
   readonly shape: Shape;
 }
 
-export function applyCreateShape(document: Document, command: CreateShape): CommandResult {
+export function mutateCreateShape(
+  shapes: Record<ShapeId, Shape>,
+  command: CreateShape,
+): readonly Command[] {
   const shape = parseShape(command.shape);
-  if (document.shapes[shape.id] !== undefined) {
+  if (shapes[shape.id] !== undefined) {
     throw new DocumentError("duplicateShapeId", `shape already exists: ${shape.id}`);
   }
-  const next = createDocument([...Object.values(document.shapes), shape]);
-  const inverse: readonly Command[] = [{ type: COMMANDS.deleteShape, id: shape.id as ShapeId }];
-  return { document: next, inverse };
+  shapes[shape.id] = shape;
+  return [{ type: COMMANDS.deleteShape, id: shape.id as ShapeId }];
+}
+
+export function applyCreateShape(document: Document, command: CreateShape): CommandResult {
+  const shapes = { ...document.shapes };
+  const inverse = mutateCreateShape(shapes, command);
+  return { document: createDocumentFromMap(shapes), inverse };
 }

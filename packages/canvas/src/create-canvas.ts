@@ -78,6 +78,7 @@ export interface CanvasController {
 
   subscribe(event: ControllerEvent, listener: () => void): () => void;
   emit(event: ControllerEvent): void;
+  clearListeners(): void;
 
   getActiveDeviceType(rootId?: ShapeId): DeviceType | undefined;
   setActiveDeviceType(deviceType?: DeviceType, rootId?: ShapeId): void;
@@ -90,7 +91,7 @@ export interface CanvasController {
 }
 
 export function createCanvas(options: CanvasOptions = {}): CanvasController {
-  let camera = options.camera ?? DEFAULT_CAMERA;
+  let camera = clampCamera(options.camera ?? DEFAULT_CAMERA);
   let selection = options.selection ?? EMPTY_SELECTION;
   let activeDeviceType = options.activeDeviceType;
   const scopedDeviceTypes = new Map<ShapeId, DeviceType | undefined>(
@@ -203,6 +204,11 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     },
     emit: (event) => {
       emit(event);
+    },
+    clearListeners: () => {
+      for (const set of Object.values(listeners)) {
+        set.clear();
+      }
     },
 
     getActiveDeviceType: (rootId) => {

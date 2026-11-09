@@ -54,7 +54,6 @@ editor.setTextContent(rectId, "Updated text");
 
 ### Text Editing
 
-- **Inline UX**: Double-click any shape to open a floating inline text editor overlay. Press `Enter` (without `Shift`) or click outside to commit, or press `Escape` to cancel.
 - **Programmatic API**: Use `editor.setTextContent(shapeId, text)` to update visible content directly via recorded transactions.
 
 ### Clipboard

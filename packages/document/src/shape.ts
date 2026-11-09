@@ -17,6 +17,7 @@ import type {
 } from "@open-draw/contracts";
 import { ROOT_ID, SHAPE_KINDS, SHAPE_KIND_VALUES, isRootId } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
+import { parseColor, parseStrokeWidth } from "./style-validation";
 
 // Section flow direction: stored and validated now, consumed by the derive
 // pipeline later (ADR-0002 D7).
@@ -161,6 +162,18 @@ function baseInit(
       "boundingBox must have finite position and positive dimensions",
     );
   }
+  let fill: string | undefined;
+  if (init.fill !== undefined) {
+    fill = parseColor(init.fill, "fill");
+  }
+  let stroke: string | undefined;
+  if (init.stroke !== undefined) {
+    stroke = parseColor(init.stroke, "stroke");
+  }
+  let strokeWidth: number | undefined;
+  if (init.strokeWidth !== undefined) {
+    strokeWidth = parseStrokeWidth(init.strokeWidth);
+  }
   return {
     id,
     kind,
@@ -168,9 +181,9 @@ function baseInit(
     boundingBox,
     ...(init.label === undefined ? {} : { label: init.label }),
     ...(init.content === undefined ? {} : { content: init.content }),
-    ...(init.fill === undefined ? {} : { fill: init.fill }),
-    ...(init.stroke === undefined ? {} : { stroke: init.stroke }),
-    ...(init.strokeWidth === undefined ? {} : { strokeWidth: init.strokeWidth }),
+    ...(fill === undefined ? {} : { fill }),
+    ...(stroke === undefined ? {} : { stroke }),
+    ...(strokeWidth === undefined ? {} : { strokeWidth }),
     meta: init.meta ?? DEFAULT_META,
   };
 }

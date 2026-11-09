@@ -20,7 +20,7 @@ export interface DuplicateShapes {
   readonly newShapeIds?: Readonly<Record<ShapeId, ShapeId>>;
 }
 
-function deriveDeterministicId(
+export function deriveDeterministicId(
   document: Document,
   usedIds: ReadonlySet<ShapeId>,
   originalId: ShapeId,

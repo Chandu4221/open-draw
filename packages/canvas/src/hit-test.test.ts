@@ -138,4 +138,25 @@ describe("resolveSelectionDrillDown (Idea 5, Milestone 09)", () => {
   it("selects sibling shape on single-click when already drilled to child depth", () => {
     expect(resolveSelectionDrillDown(document, secondId, firstId, false)).toBe(secondId);
   });
+
+  it("does not skip intermediate containers when drilling down across different branches (B3)", () => {
+    const secA = parseShapeId("sec-a");
+    const cardA = parseShapeId("card-a");
+    const btnA = parseShapeId("btn-a");
+    const secB = parseShapeId("sec-b");
+    const cardB = parseShapeId("card-b");
+    const btnB = parseShapeId("btn-b");
+
+    const multiBranchDoc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 1000, height: 1000 }),
+      createRect(secA, { x: 10, y: 10, width: 400, height: 400 }, { parent: pageId }),
+      createRect(cardA, { x: 20, y: 20, width: 200, height: 200 }, { parent: secA }),
+      createRect(btnA, { x: 30, y: 30, width: 100, height: 50 }, { parent: cardA }),
+      createRect(secB, { x: 500, y: 10, width: 400, height: 400 }, { parent: pageId }),
+      createRect(cardB, { x: 520, y: 20, width: 200, height: 200 }, { parent: secB }),
+      createRect(btnB, { x: 530, y: 30, width: 100, height: 50 }, { parent: cardB }),
+    ]);
+
+    expect(resolveSelectionDrillDown(multiBranchDoc, btnB, btnA, true)).toBe(secB);
+  });
 });

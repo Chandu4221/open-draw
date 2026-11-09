@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PLATFORMS, ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import { createDocument, type Document, type Shape } from "@open-draw/document";
+import { createDocument, parseDocument, type Document, type Shape } from "@open-draw/document";
 import {
   extractDocumentLegendItems,
   generateExportJson,
   generateExportMarkdown,
   generateExportSvg,
+  generateSaveDocumentJson,
   exportDocumentJson,
   exportDocumentMarkdown,
   exportDocumentSvg,
+  saveDocumentJson,
   promptLoadDocumentJson,
 } from "./document-io";
 
@@ -150,6 +152,36 @@ describe("document-io", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-svg-url");
   });
 
+  it("serializes full document for save and round-trips via parseDocument", () => {
+    const s1 = createMockShape("s1");
+    const doc = createDocument([s1]);
+    const jsonStr = generateSaveDocumentJson(doc);
+    const parsed = parseDocument(jsonStr);
+    expect(parsed.schema.version).toBe(1);
+    expect(parsed.shapes[s1.id]?.id).toBe(s1.id);
+  });
+
+  it("triggers document save download with opendraw-document.json", () => {
+    const doc = createDocument();
+    const mockAnchor = { href: "", download: "", click: vi.fn() };
+    const createObjectURL = vi.fn().mockReturnValue("blob:mock-save-url");
+    const revokeObjectURL = vi.fn();
+
+    // @ts-expect-error mock DOM
+    globalThis.document = {
+      createElement: vi.fn().mockReturnValue(mockAnchor),
+    };
+    // @ts-expect-error mock URL
+    globalThis.URL = { createObjectURL, revokeObjectURL };
+
+    saveDocumentJson(doc);
+
+    expect(mockAnchor.download).toBe("opendraw-document.json");
+    expect(mockAnchor.href).toBe("blob:mock-save-url");
+    expect(mockAnchor.click).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-save-url");
+  });
+
   it("triggers JSON document export download", () => {
     const doc = createDocument();
     const mockAnchor = { href: "", download: "", click: vi.fn() };
@@ -232,5 +264,39 @@ describe("document-io", () => {
 
     expect(onLoaded).toHaveBeenCalledTimes(1);
     expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("rejects files exceeding MAX_LOAD_FILE_SIZE_BYTES (10 MB) and clears input value", async () => {
+    const mockFile = {
+      size: 15 * 1024 * 1024,
+      text: vi.fn(),
+    };
+    const mockInput = {
+      type: "",
+      accept: "",
+      value: "something.json",
+      files: [mockFile],
+      onchange: null as (() => Promise<void>) | null,
+      click: vi.fn(),
+    };
+
+    // @ts-expect-error mock DOM
+    globalThis.document = {
+      createElement: vi.fn().mockReturnValue(mockInput),
+    };
+
+    const onLoaded = vi.fn();
+    const onError = vi.fn();
+
+    promptLoadDocumentJson(onLoaded, onError);
+    await mockInput.onchange?.();
+
+    expect(onLoaded).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("exceeds maximum allowed limit"),
+      }),
+    );
+    expect(mockInput.value).toBe("");
   });
 });

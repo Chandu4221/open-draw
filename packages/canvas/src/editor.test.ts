@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseShapeId } from "@open-draw/contracts";
 import { COMMANDS, createDocument, createRect } from "@open-draw/document";
 import { createEditor, type Editor } from "./editor";
+import { CONTROLLER_EVENTS } from "./events";
+import { STATES } from "./states";
 import { TOOLS } from "./tools";
 
 class MockDomNode {
@@ -91,7 +93,9 @@ describe("createEditor", () => {
       createElementNS: (_ns: string, tag: string) => new MockDomNode(tag),
       createElement: (tag: string) => new MockDomNode(tag),
       body: new MockDomNode("body"),
+      activeElement: null as unknown,
     };
+
     const windowListeners: Record<string, ((event: unknown) => void)[]> = {};
     const mockWin = {
       addEventListener: (evt: string, fn: (event: unknown) => void) => {
@@ -936,5 +940,113 @@ describe("createEditor", () => {
     expect(dragged.boundingBox.y).toBe(80);
     expect(dragged.boundingBox.width).toBe(60);
     expect(dragged.boundingBox.height).toBe(40);
+  });
+
+  it("resets machine state to idle on pointercancel (B1)", () => {
+    const shape = createRect(parseShapeId("rect-cancel"), {
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([shape]),
+    });
+    editor.select(shape.id);
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const cancelFn = mockSvg.listeners["pointercancel"]?.[0];
+
+    downFn!({ button: 0, clientX: 20, clientY: 20, pointerId: 1, preventDefault: () => {} });
+    moveFn!({ button: 0, clientX: 50, clientY: 50, pointerId: 1, preventDefault: () => {} });
+
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    cancelFn!({});
+
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+    expect(editor.getDocument().shapes[shape.id]!.boundingBox.x).toBe(10);
+  });
+
+  it("isolates keyboard shortcuts so focused editor handles delete without deleting in other editors", () => {
+    const shape1 = createRect(parseShapeId("rect-ed1"), { x: 10, y: 10, width: 50, height: 50 });
+    const shape2 = createRect(parseShapeId("rect-ed2"), { x: 100, y: 100, width: 50, height: 50 });
+
+    const container1 = new MockDomNode("div");
+    const container2 = new MockDomNode("div");
+
+    const editor1 = createEditor(container1 as unknown as HTMLElement, {
+      document: createDocument([shape1]),
+    });
+    const editor2 = createEditor(container2 as unknown as HTMLElement, {
+      document: createDocument([shape2]),
+    });
+
+    editor1.select(shape1.id);
+    editor2.select(shape2.id);
+
+    // Set focus to editor 2 SVG
+    (globalThis as unknown as { document: { activeElement: unknown } }).document.activeElement =
+      editor2.svg;
+
+    const mockWin = (
+      globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+    ).window;
+
+    mockWin.dispatch("keydown", {
+      code: "Delete",
+      key: "Delete",
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: () => {},
+    });
+
+    // Editor 2 was focused: shape2 deleted
+    expect(editor2.getDocument().shapes[shape2.id]).toBeUndefined();
+    // Editor 1 was NOT focused: shape1 MUST be preserved
+    expect(editor1.getDocument().shapes[shape1.id]).toBeDefined();
+
+    editor1.destroy();
+    editor2.destroy();
+  });
+
+  it("stops emitting events after editor is destroyed", () => {
+    const shape = createRect(parseShapeId("rect-dest"), { x: 10, y: 10, width: 50, height: 50 });
+    const ed = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([shape]),
+    });
+
+    let calls = 0;
+    ed.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+      calls += 1;
+    });
+
+    ed.destroy();
+
+    // After destroy, operations should not fire subscribers
+    ed.execute([{ type: COMMANDS.deleteShape, id: shape.id }]);
+    ed.canvas.emit(CONTROLLER_EVENTS.documentChanged);
+
+    expect(calls).toBe(0);
+  });
+
+  it("updates cursor style according to active tool and handle hover", () => {
+    editor = createEditor(container as unknown as HTMLElement);
+    expect(editor.svg.style.cursor).toBe("default");
+
+    editor.setTool(TOOLS.drawRect);
+    expect(editor.svg.style.cursor).toBe("crosshair");
+
+    editor.setTool(TOOLS.drawText);
+    expect(editor.svg.style.cursor).toBe("text");
+
+    editor.setTool(TOOLS.select);
+    expect(editor.svg.style.cursor).toBe("default");
   });
 });

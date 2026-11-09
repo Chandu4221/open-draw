@@ -2,14 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   CREATIVITY_LEVELS,
   EXPORT_CHIP_PREFIX,
+  parseCustomShapeKind,
   parseShapeId,
   PLATFORMS,
+  ROOT_ID,
 } from "@open-draw/contracts";
 import {
+  createCustomShape,
   createDocument,
   createLine,
   createPenPath,
   createRect,
+  DocumentError,
   parseDocument,
 } from "@open-draw/document";
 import { SEMANTICS_REGISTRY_VERSION } from "@open-draw/semantics";
@@ -243,5 +247,38 @@ describe("exportJson parity (Milestone 11A Work Package A)", () => {
 
     // Assert z-order sequence matches
     expect(parsed.shapeOrder).toEqual(Object.keys(parsed.shapes));
+  });
+
+  it("filters exported shapes to only the specified rootId subtree", () => {
+    const page1 = parseShapeId("screen-1");
+    const child1 = parseShapeId("button-1");
+    const page2 = parseShapeId("screen-2");
+    const child2 = parseShapeId("button-2");
+    const doc = createDocument([
+      createRect(page1, { x: 0, y: 0, width: 300, height: 600 }),
+      createRect(child1, { x: 10, y: 10, width: 100, height: 40 }, { parent: page1 }),
+      createRect(page2, { x: 400, y: 0, width: 300, height: 600 }),
+      createRect(child2, { x: 10, y: 10, width: 100, height: 40 }, { parent: page2 }),
+    ]);
+
+    const exported = JSON.parse(exportJson(doc, { rootId: page1 }));
+    expect(Object.keys(exported.shapes)).toEqual(["screen-1", "button-1"]);
+    expect(exported.shapeOrder).toEqual(["screen-1", "button-1"]);
+  });
+
+  it("rejects customData attempting to override reserved shape properties (C7)", () => {
+    const customId = parseShapeId("custom-1");
+    const kind = parseCustomShapeKind("vendor:widget");
+    const doc = createDocument([
+      createCustomShape(
+        customId,
+        kind,
+        { x: 10, y: 10, width: 100, height: 100 },
+        { id: "overridden-id", validKey: "validValue" },
+        { parent: ROOT_ID },
+      ),
+    ]);
+
+    expect(() => exportJson(doc)).toThrow(DocumentError);
   });
 });

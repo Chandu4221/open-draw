@@ -10,11 +10,11 @@ import { createShapeIdGenerator, type Editor } from "@open-draw/canvas";
 import type { ShapeId } from "@open-draw/contracts";
 import type { useToast } from "@open-draw/ui";
 import {
-  exportDocumentJson,
   exportDocumentMarkdown,
   exportDocumentPng,
   exportDocumentSvg,
   promptLoadDocumentJson,
+  saveDocumentJson,
 } from "./document-io";
 
 export interface UseToolbarActionsProps {
@@ -42,7 +42,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
 
   function handleSave(): void {
     try {
-      exportDocumentJson(documentRef.current);
+      saveDocumentJson(documentRef.current);
       toast.push({ type: "success", text: "Document saved successfully" });
     } catch (err) {
       toast.push({

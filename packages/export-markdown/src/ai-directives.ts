@@ -137,16 +137,20 @@ export function compileAiDirectives(doc: Document, options?: MarkdownExportOptio
       const rootLabel = root.label ?? "Root Container";
       lines.push(`- **Theme Palette Tokens (${escapeMarkdownText(rootLabel)})**:`);
 
-      if (platform === "web") {
-        lines.push(...formatTokensForWeb(theme).map((l) => `  ${l}`));
-      } else if (platform === "androidNative") {
-        lines.push(...formatTokensForAndroid(theme).map((l) => `  ${l}`));
-      } else if (platform === "flutter") {
-        lines.push(...formatTokensForFlutter(theme).map((l) => `  ${l}`));
-      } else if (platform === "ios") {
-        lines.push(...formatTokensForIos(theme).map((l) => `  ${l}`));
-      } else {
-        lines.push(...formatTokensForWeb(theme).map((l) => `  ${l}`));
+      switch (platform) {
+        case "androidNative":
+          lines.push(...formatTokensForAndroid(theme).map((l) => `  ${l}`));
+          break;
+        case "flutter":
+          lines.push(...formatTokensForFlutter(theme).map((l) => `  ${l}`));
+          break;
+        case "ios":
+          lines.push(...formatTokensForIos(theme).map((l) => `  ${l}`));
+          break;
+        case "web":
+        default:
+          lines.push(...formatTokensForWeb(theme).map((l) => `  ${l}`));
+          break;
       }
     }
   }

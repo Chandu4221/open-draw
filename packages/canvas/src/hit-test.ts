@@ -1,6 +1,6 @@
 // Pure hit-testing over the canonical document (R-016: no cached truth, ADR-0003 D1/D5).
 // Topmost = last in the pre-order walk. Handles are picked in screen space.
-import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
+import { isRootId, type BoundingBox, type Point, type ShapeId } from "@open-draw/contracts";
 import {
   absoluteBoundingBox,
   ancestorsOf,
@@ -120,25 +120,40 @@ export function resolveSelectionDrillDown(
   }
 
   const selectedShape = currentSelectedId !== null ? document.shapes[currentSelectedId] : undefined;
+  if (selectedShape === undefined) {
+    return isDoubleClick ? path[1]! : path[0]!;
+  }
 
-  let activeDepth = 0;
-  if (selectedShape !== undefined) {
-    const selectedAncestors = ancestorsOf(document, selectedShape);
-    const selectedRootId =
-      selectedAncestors.length > 0
-        ? selectedAncestors[selectedAncestors.length - 1]!.id
-        : selectedShape.id;
+  // Sibling direct selection: if already drilled to the same parent, select sibling directly on single click
+  if (!isDoubleClick && selectedShape.parentId === shape.parentId && !isRootId(shape.parentId)) {
+    return hitShapeId;
+  }
 
-    if (selectedRootId === path[0]) {
-      activeDepth = selectedAncestors.length;
-    }
+  const selectedAncestors = ancestorsOf(document, selectedShape);
+  const selectedPath: ShapeId[] = [];
+  for (let i = selectedAncestors.length - 1; i >= 0; i -= 1) {
+    selectedPath.push(selectedAncestors[i]!.id);
+  }
+  selectedPath.push(selectedShape.id);
+
+  let commonDepth = 0;
+  while (
+    commonDepth < selectedPath.length &&
+    commonDepth < path.length &&
+    selectedPath[commonDepth] === path[commonDepth]
+  ) {
+    commonDepth += 1;
+  }
+
+  if (commonDepth === 0) {
+    return isDoubleClick ? path[1]! : path[0]!;
   }
 
   if (isDoubleClick) {
-    const targetDepth = Math.min(path.length - 1, activeDepth + 1);
+    const targetDepth = Math.min(path.length - 1, commonDepth);
     return path[targetDepth]!;
   }
 
-  const targetDepth = Math.min(path.length - 1, activeDepth);
+  const targetDepth = Math.max(0, commonDepth - 1);
   return path[targetDepth]!;
 }

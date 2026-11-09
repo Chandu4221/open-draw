@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { DeviceType, ShapeId } from "@open-draw/contracts";
-import { createDocument, type Command, type Document, type Shape } from "@open-draw/document";
+import type { Command, Document, Shape } from "@open-draw/document";
 import {
   CONTROLLER_EVENTS,
   createEditor,
@@ -22,9 +22,10 @@ import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal";
 import { useBatchMutations } from "../use-batch-mutations";
 import { useDocumentMutations } from "../use-document-mutations";
 import { useGeometryMutations } from "../use-geometry-mutations";
-import { useInspectionData } from "../use-inspection-data";
+import { computeInspectionData } from "../use-inspection-data";
 import { useRootThemeMutations } from "../use-root-theme-mutations";
 import { useToolbarActions } from "../use-toolbar-actions";
+import { loadInitialDocument, saveDraftDocument, useStudioDraft } from "../use-studio-draft";
 
 export interface StudioShellProps {
   readonly onBackToLanding?: () => void;
@@ -34,15 +35,14 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const toast = useToast();
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
-  const [doc, setDoc] = useState<Document>(() => createDocument([]));
+  const [doc, setDoc] = useState<Document>(() => loadInitialDocument());
   const documentRef = useRef<Document>(doc);
   const toastRef = useRef(toast);
+  useStudioDraft(documentRef);
   useEffect(() => {
     documentRef.current = doc;
-  }, [doc]);
-  useEffect(() => {
     toastRef.current = toast;
-  }, [toast]);
+  }, [doc, toast]);
 
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
@@ -92,6 +92,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       const nextDoc = editor.getDocument();
       documentRef.current = nextDoc;
       setDoc(nextDoc);
+      saveDraftDocument(nextDoc);
     });
     const unsubSel = editor.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
       setSelectedShapeIds(editor.getSelection());
@@ -116,8 +117,18 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const tag = target.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable ||
+        Boolean(target.closest?.("[contenteditable='true']"))
+      ) {
+        return;
+      }
       if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
         setIsShortcutsOpen((prev) => !prev);
@@ -194,7 +205,10 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     render,
   });
 
-  const inspection = useInspectionData(doc, selectedShapeId, activeDeviceType);
+  const inspection = useMemo(
+    () => computeInspectionData(doc, selectedShapeId, activeDeviceType),
+    [doc, selectedShapeId, activeDeviceType],
+  );
   const mutations = useDocumentMutations({
     selectedShape: inspection.selectedShape,
     rootShape: inspection.rootShape,
@@ -210,9 +224,10 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     render,
   });
 
-  const selectedShapes = selectedShapeIds
-    .map((id) => doc.shapes[id])
-    .filter((s): s is Shape => s !== undefined);
+  const selectedShapes = useMemo(
+    () => selectedShapeIds.map((id) => doc.shapes[id]).filter((s): s is Shape => s !== undefined),
+    [doc, selectedShapeIds],
+  );
   const batchMutations = useBatchMutations({
     selectedShapes,
     clearSelection: () => editorRef.current?.clearSelection(),

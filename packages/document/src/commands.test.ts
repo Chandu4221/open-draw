@@ -5,6 +5,7 @@ import {
   parseShapeId,
   PLATFORMS,
   STYLE_PROFILES,
+  type ThemePalette,
 } from "@open-draw/contracts";
 import {
   applyTransaction,
@@ -324,6 +325,51 @@ describe("document commands (milestone 05)", () => {
     ).toThrow(DocumentError);
   });
 
+  it("rejects SetRootTheme with invalid hex color values (B14)", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setRootTheme,
+            id: pageId,
+            theme: { primary: "not-a-color" },
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setRootTheme,
+            id: pageId,
+            theme: { primary: "#12345" },
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+  });
+
+  it("rejects SetRootTheme with unknown theme slots outside THEME_PALETTE_SLOTS (B15)", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setRootTheme,
+            id: pageId,
+            theme: { invalidSlot: "#1d4ed8" } as unknown as ThemePalette,
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+  });
+
   it("applies SetRootDarkMode on root shapes and inverts cleanly (R-026)", () => {
     const doc = createBaseDoc();
     const result = applyTransaction(
@@ -408,6 +454,49 @@ describe("document commands (milestone 05)", () => {
 
     expect(() =>
       createPage(parseShapeId("p-neg"), { x: 0, y: 0, width: 100, height: -10 }),
+    ).toThrow(DocumentError);
+  });
+
+  it("rejects shape constructors with string strokeWidth or invalid colors", () => {
+    expect(() =>
+      createRect(
+        parseShapeId("r-stroke"),
+        { x: 0, y: 0, width: 100, height: 100 },
+        { strokeWidth: "2" as unknown as number },
+      ),
+    ).toThrow(DocumentError);
+
+    expect(() =>
+      createRect(parseShapeId("r-color"), { x: 0, y: 0, width: 100, height: 100 }, { fill: "red" }),
+    ).toThrow(DocumentError);
+  });
+
+  it("rejects SetShapeStyle with string strokeWidth or invalid colors", () => {
+    const doc = createBaseDoc();
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setShapeStyle,
+            id: rectId,
+            strokeWidth: "2" as unknown as number,
+          },
+        ]),
+      ),
+    ).toThrow(DocumentError);
+
+    expect(() =>
+      applyTransaction(
+        doc,
+        createTransaction([
+          {
+            type: COMMANDS.setShapeStyle,
+            id: rectId,
+            fill: "not-a-color",
+          },
+        ]),
+      ),
     ).toThrow(DocumentError);
   });
 });

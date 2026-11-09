@@ -1,6 +1,7 @@
 // Camera behavior (R-015: describe = subject, it = behavior).
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CAMERA, MAX_ZOOM, MIN_ZOOM, panBy, screenToWorld, zoomAt } from "./camera";
+import { createCanvas } from "./create-canvas";
 
 describe("camera", () => {
   it("maps screen points to world points at zoom 1", () => {
@@ -40,5 +41,10 @@ describe("camera", () => {
   it("guards panBy against NaN or non-finite coordinates", () => {
     expect(panBy(DEFAULT_CAMERA, { x: NaN, y: 0 })).toEqual(DEFAULT_CAMERA);
     expect(panBy(DEFAULT_CAMERA, { x: 0, y: Infinity })).toEqual(DEFAULT_CAMERA);
+  });
+
+  it("clamps camera on initial options in createCanvas", () => {
+    const canvas = createCanvas({ camera: { x: NaN, y: NaN, zoom: -1 } });
+    expect(canvas.getCamera()).toEqual({ x: 0, y: 0, zoom: 1 });
   });
 });

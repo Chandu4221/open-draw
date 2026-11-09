@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Interactive Editor (`createEditor`)**: DOM-mountable SVG canvas editor with zero runtime dependencies (R-002, R-004, ADR-0008).
-- **Inline Text Editing UX**: Floating textarea overlay mounted on shape double-click, committing via `COMMANDS.setShapeContent` on Enter and canceling on Escape.
 - **In-Memory & System Clipboard (P0-1)**: Copy (`Mod+C`) and paste (`Mod+V`) shortcuts with subtree cloning, offset cascading, automatic child-parent ID remapping, and `navigator.clipboard` synchronization.
 - **Text Content API (P0-2)**: `setTextContent(id, text)` programmatic method on `Editor` executing `COMMANDS.setShapeContent` (R-016).
 - **Proportional Multi-Resize (P0-3)**: Multi-selection handles anchored to collective selection bounds (`unionBoxes()`), resizing child shapes proportionately.

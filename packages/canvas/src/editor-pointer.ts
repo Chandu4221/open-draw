@@ -14,6 +14,7 @@ import {
   commitDrawGesture,
   commitResizeGesture,
 } from "./editor-gestures";
+import { resolveHandleCursor, resolveToolCursor } from "./cursor";
 
 export const DRAG_THRESHOLD_PX = 3;
 
@@ -75,6 +76,11 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   function onPointerDown(event: PointerEvent): void {
     if (event.button !== 0 && event.button !== 1) return;
     event.preventDefault();
+    try {
+      svg.focus();
+    } catch {
+      // Environments without focus support
+    }
     cachedRect = svg.getBoundingClientRect();
     const doc = getDoc();
     const tool = getTool();
@@ -216,6 +222,14 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       worldPoint: world,
     });
 
+    if (gesture.kind === GESTURE_KINDS.pan) {
+      svg.style.cursor = "grabbing";
+    } else if (gesture.kind === GESTURE_KINDS.move) {
+      svg.style.cursor = "move";
+    } else if (gesture.kind === GESTURE_KINDS.resize && gesture.handleId) {
+      svg.style.cursor = resolveHandleCursor(gesture.handleId);
+    }
+
     const state = canvas.getMachineState();
     if (state.stateId === STATES.panning) {
       canvas.panBy({ x: screen.x - lastScreen.x, y: screen.y - lastScreen.y });
@@ -295,14 +309,21 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     setGesture(null);
     hasPassedDragThreshold = false;
     cachedRect = null;
+    svg.style.cursor = resolveToolCursor(tool, getSpacePressed());
     render();
   }
 
   function onPointerCancel(): void {
-    if (getGesture() !== null) {
+    if (getGesture() !== null || canvas.getMachineState().stateId !== STATES.idle) {
+      canvas.dispatch({
+        type: CANVAS_EVENTS.pointerUp,
+        screenPoint: lastScreen,
+        worldPoint: canvas.screenToWorld(lastScreen),
+      });
       setGesture(null);
       hasPassedDragThreshold = false;
       cachedRect = null;
+      svg.style.cursor = resolveToolCursor(getTool(), getSpacePressed());
       render();
     }
   }

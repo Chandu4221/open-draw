@@ -42,10 +42,25 @@ export function computeSceneBounds(document: Document): BoundingBox {
 
   for (const shape of shapes) {
     const box = absoluteBoundingBox(document, shape);
-    minX = Math.min(minX, box.x);
-    minY = Math.min(minY, box.y);
-    maxX = Math.max(maxX, box.x + box.width);
-    maxY = Math.max(maxY, box.y + box.height);
+    const strokePad =
+      typeof shape.strokeWidth === "number" &&
+      Number.isFinite(shape.strokeWidth) &&
+      shape.strokeWidth > 0
+        ? shape.strokeWidth / 2
+        : 0;
+    minX = Math.min(minX, box.x - strokePad);
+    minY = Math.min(minY, box.y - strokePad);
+    maxX = Math.max(maxX, box.x + box.width + strokePad);
+    maxY = Math.max(maxY, box.y + box.height + strokePad);
+  }
+
+  if (
+    !Number.isFinite(minX) ||
+    !Number.isFinite(minY) ||
+    !Number.isFinite(maxX) ||
+    !Number.isFinite(maxY)
+  ) {
+    return { x: 0, y: 0, width: 800, height: 600 };
   }
 
   return {

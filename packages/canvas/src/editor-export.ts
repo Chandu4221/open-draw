@@ -20,10 +20,14 @@ export function exportDocumentToSvg(doc: Document, options?: SvgExportOptions): 
 
   for (const s of shapes) {
     const box = absoluteBoundingBox(doc, s);
-    minX = Math.min(minX, box.x);
-    minY = Math.min(minY, box.y);
-    maxX = Math.max(maxX, box.x + box.width);
-    maxY = Math.max(maxY, box.y + box.height);
+    const strokePad =
+      typeof s.strokeWidth === "number" && Number.isFinite(s.strokeWidth) && s.strokeWidth > 0
+        ? s.strokeWidth / 2
+        : 0;
+    minX = Math.min(minX, box.x - strokePad);
+    minY = Math.min(minY, box.y - strokePad);
+    maxX = Math.max(maxX, box.x + box.width + strokePad);
+    maxY = Math.max(maxY, box.y + box.height + strokePad);
   }
 
   const padding = options?.padding ?? 20;
@@ -32,7 +36,13 @@ export function exportDocumentToSvg(doc: Document, options?: SvgExportOptions): 
   let width = 800;
   let height = 600;
 
-  if (shapes.length > 0 && Number.isFinite(minX) && Number.isFinite(minY)) {
+  if (
+    shapes.length > 0 &&
+    Number.isFinite(minX) &&
+    Number.isFinite(minY) &&
+    Number.isFinite(maxX) &&
+    Number.isFinite(maxY)
+  ) {
     x = Math.floor(minX - padding);
     y = Math.floor(minY - padding);
     width = Math.max(1, Math.ceil(maxX - minX + padding * 2));

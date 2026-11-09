@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { parseShapeId } from "@open-draw/contracts";
 import { createDocument, createPage, createRect } from "@open-draw/document";
-import { documentToSvgWithLegend } from "./export-image";
+import { computeSceneBounds, documentToSvgWithLegend } from "./export-image";
 import { documentToSvg } from "./document-to-svg";
 
 describe("documentToSvgWithLegend (F4, ADR-0006 Option A)", () => {
@@ -136,6 +136,21 @@ describe("documentToSvgWithLegend (F4, ADR-0006 Option A)", () => {
       const liveSvg = documentToSvg(taggedDoc);
       expect(liveSvg).not.toContain('data-shape-id="');
       expect(liveSvg).not.toContain('class="annotation-chips"');
+    });
+
+    it("accounts for strokeWidth in exported scene bounds to prevent stroke clipping", () => {
+      const strokeDoc = createDocument([
+        createRect(
+          parseShapeId("thick-rect"),
+          { x: 100, y: 100, width: 200, height: 100 },
+          { stroke: "#000000", strokeWidth: 20 },
+        ),
+      ]);
+      const bounds = computeSceneBounds(strokeDoc);
+      expect(bounds.x).toBe(90);
+      expect(bounds.y).toBe(90);
+      expect(bounds.width).toBe(220);
+      expect(bounds.height).toBe(120);
     });
   });
 });
