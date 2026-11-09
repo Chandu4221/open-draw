@@ -169,4 +169,49 @@ test.describe("Studio workbench smoke tests", () => {
       await expect(page.locator("aside.od-panel")).toBeVisible();
     }
   });
+
+  test("can open export modal and switch format tabs", async ({ page }) => {
+    await page.goto("/#app");
+
+    // Click Export in dock
+    await page.getByLabel("Export wireframe").click();
+
+    // Verify modal is open with title
+    const modalTitle = page.locator("#od-export-modal-title");
+    await expect(modalTitle).toHaveText("Export Wireframe");
+
+    // Switch to SVG tab
+    await page.getByText("SVG (.svg)").click();
+    await expect(page.locator(".od-code-block")).toContainText("<svg");
+
+    // Switch to JSON tab
+    await page.getByText("JSON (.json)").click();
+    await expect(page.locator(".od-code-block")).toContainText('"schema"');
+
+    // Close modal
+    await page.getByLabel("Close export modal").click();
+    await expect(page.locator(".od-modal")).toBeHidden();
+  });
+
+  test("allows selecting platform profile for a root container shape", async ({ page }) => {
+    await page.goto("/#app");
+    const svg = page.locator(".od-canvas-bg > svg");
+    await expect(svg).toBeVisible();
+    const box = (await svg.boundingBox())!;
+
+    // Draw a root container rectangle
+    await page.getByLabel("Draw rectangle (R)").click();
+    await page.mouse.move(box.x + 100, box.y + 100);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 350, box.y + 300);
+    await page.mouse.up();
+
+    // Inspector shows Identity & Platform card
+    const select = page.locator("#container-platform-profile");
+    await expect(select).toBeVisible();
+
+    // Change platform to Flutter
+    await select.selectOption({ label: "Flutter" });
+    await expect(select).toHaveValue("flutter");
+  });
 });

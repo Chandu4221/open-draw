@@ -7,6 +7,7 @@ A modular, framework-agnostic vector canvas SDK and semantic wireframing engine.
 ## Features
 
 - **Framework-Agnostic Canvas Controller:** Interaction state machine handling shape creation, selection, translation, corner and edge resizing, viewport panning, and zooming with zero DOM or UI framework dependencies.
+- **Reactive Controller Events:** Typed event subscriptions (`documentChanged`, `selectionChanged`, `historyChanged`, `cameraChanged`, `toolChanged`, `machineChanged`) allowing host shells to observe changes with zero global state.
 - **Canonical Document Model:** Pure, immutable document tree supporting transactional commands, history tracking (undo/redo), hierarchical nesting, and JSON serialization.
 - **Pluggable Vector Rendering:** SVG rendering pipeline supporting presentation styles (minimal clean lines and deterministic hand-drawn crayon style) without altering underlying geometry.
 - **Semantic Wireframing:** Platform profiles (Web, Android Native, Flutter, iOS) with dynamic semantic tags, device visibility filters, and visual chip overlays.
@@ -51,8 +52,8 @@ pnpm check
 
 ## Current Limitations
 
-- **No Change-Notification Events:** The canvas controller does not emit reactive change-notification events; consumer shells manage renders on dispatch boundaries (R-019 named events planned in Milestone 09).
-- **No Grouping:** Hierarchical composition is managed via container shapes (Pages and Sections); arbitrary grouping (`group` shape) is not implemented.
+- **Hierarchical Containers Only (No Arbitrary Grouping):** Composition is managed through semantic containers (Pages and Sections); freeform shape grouping (`group` shape) is not implemented.
+- **Single-Line Plain Text:** Text shapes support plain UTF-8 text editing; rich-text styling (bold, italics, lists) and arbitrary rotation are declared non-goals.
 
 ## License
 
