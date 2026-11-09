@@ -1,7 +1,13 @@
 // Profile-aware display name chain resolver (ADR-0004 D2, Ruling 9, R-042).
 // Full chain: label -> semantic display name (from profile data) -> shape kind label.
-import type { PlatformProfile } from "@open-draw/contracts";
-import { ROOT_ROLES, SHAPE_KINDS, SHAPE_KIND_LABELS, isRootId } from "@open-draw/contracts";
+import type { BuiltinShapeKind, PlatformProfile } from "@open-draw/contracts";
+import {
+  PLATFORMS,
+  ROOT_ROLES,
+  SHAPE_KINDS,
+  SHAPE_KIND_LABELS,
+  isRootId,
+} from "@open-draw/contracts";
 import { getDisplayName, type Shape } from "@open-draw/document";
 
 const ROOT_SEMANTIC_DISPLAY_NAMES: Readonly<Record<string, string>> = Object.freeze({
@@ -48,4 +54,59 @@ export function resolveShapeDisplayName(shape: Shape, profile?: PlatformProfile)
     }
   }
   return getDisplayName(shape);
+}
+
+/**
+ * Resolves the semantic type classification for a shape (e.g. for Layers panel badges)
+ * following R-023, R-024, R-026, R-042:
+ * 1. Root shape:
+ *    - Platform-Agnostic / None: default geometric shape kind label (e.g. "Rectangle", "Ellipse", "Text")
+ *    - Component role: "Component" (or semantic displayName if tagged)
+ *    - Web platform: "Page"
+ *    - Android / Flutter / iOS / other platforms: "Screen"
+ * 2. Child shape:
+ *    - Tagged with semantic: semantic displayName from active profile
+ *    - Untagged: undefined (no badge)
+ */
+export function resolveShapeSemanticType(
+  shape: Shape,
+  profile?: PlatformProfile,
+): string | undefined {
+  if (isRootId(shape.parentId)) {
+    // Platform-Agnostic mode (R-024, Ruling 10)
+    if (shape.meta.platform === undefined) {
+      return SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind] ?? shape.kind;
+    }
+
+    // Root component role
+    if (shape.meta.role === ROOT_ROLES.component) {
+      if (shape.meta.semantic !== undefined && profile !== undefined) {
+        const definition = profile.semantics[shape.meta.semantic.id];
+        if (definition !== undefined && definition.displayName !== "") {
+          return definition.displayName;
+        }
+      }
+      return "Component";
+    }
+
+    // Root screen / page role (defaults to screen role per R-024)
+    const platform = shape.meta.platform ?? profile?.id;
+    if (
+      platform === PLATFORMS.web ||
+      profile?.id === PLATFORMS.web ||
+      profile?.rootSemantic === "page"
+    ) {
+      return "Page";
+    }
+    return "Screen";
+  }
+
+  // Child shape: returns profile semantic displayName if tagged, undefined if untagged
+  if (shape.meta.semantic !== undefined && profile !== undefined) {
+    const definition = profile.semantics[shape.meta.semantic.id];
+    if (definition !== undefined && definition.displayName !== "") {
+      return definition.displayName;
+    }
+  }
+  return undefined;
 }

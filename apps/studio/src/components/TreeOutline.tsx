@@ -1,11 +1,10 @@
-import React from "react";
 import {
   isRootId,
   SHAPE_KIND_LABELS,
   type BuiltinShapeKind,
   type ShapeId,
 } from "@open-draw/contracts";
-import type { walkSemanticTree } from "@open-draw/semantics";
+import { resolveShapeSemanticType, type walkSemanticTree } from "@open-draw/semantics";
 import { OdBadge } from "@open-draw/ui";
 
 type TreeNodes = ReturnType<typeof walkSemanticTree>;
@@ -61,12 +60,9 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                 ? node.shape.label
                 : (SHAPE_KIND_LABELS[node.shape.kind as BuiltinShapeKind] ?? node.shape.kind);
             const semanticChip =
+              node.semanticType ??
               node.semantic?.displayName ??
-              (isRootId(node.shape.parentId) && node.shape.meta.role
-                ? node.shape.meta.role === "component"
-                  ? "Component"
-                  : "Screen"
-                : undefined);
+              (isRootId(node.shape.parentId) ? resolveShapeSemanticType(node.shape) : undefined);
 
             return (
               <div

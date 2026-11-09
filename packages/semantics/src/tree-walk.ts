@@ -11,7 +11,7 @@ import {
 import { childrenOf, type Document, type Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { computeSemanticConflict } from "./compute-conflict";
-import { resolveShapeDisplayName } from "./display-name";
+import { resolveShapeDisplayName, resolveShapeSemanticType } from "./display-name";
 import { resolveRootPlatform, resolveRootShape } from "./resolve-root";
 import { resolveSemantic, type ResolvedSemantic } from "./resolve-semantic";
 
@@ -19,6 +19,7 @@ export interface SemanticTreeNode {
   readonly shape: Shape;
   readonly depth: number;
   readonly displayName: string;
+  readonly semanticType?: string;
   readonly semantic?: ResolvedSemantic;
   readonly conflict?: SemanticConflict;
 }
@@ -40,11 +41,13 @@ export function walkSemanticTree(
     const semantic = resolveSemantic(shapeProfile, shape.meta.semantic);
     const conflict = computeSemanticConflict(doc, shape, shapeProfile);
     const displayName = resolveShapeDisplayName(shape, shapeProfile);
+    const semanticType = resolveShapeSemanticType(shape, shapeProfile);
 
     nodes.push({
       shape,
       depth,
       displayName,
+      ...(semanticType !== undefined ? { semanticType } : {}),
       ...(semantic !== undefined ? { semantic } : {}),
       ...(conflict !== undefined ? { conflict } : {}),
     });

@@ -101,10 +101,16 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     handleSetBoundingBox,
   } = props;
 
-  const roleItems = [
-    { id: ROOT_ROLES.screen, label: "Screen / Page" },
-    { id: ROOT_ROLES.component, label: "Component" },
-  ];
+  const roleItems =
+    rootPlatform === PLATFORMS.web
+      ? [
+          { id: ROOT_ROLES.screen, label: "Page" },
+          { id: ROOT_ROLES.component, label: "Component" },
+        ]
+      : [
+          { id: ROOT_ROLES.screen, label: "Screen" },
+          { id: ROOT_ROLES.component, label: "Component" },
+        ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -144,7 +150,7 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
           </select>
         </OdField>
 
-        {handleSetRole && (
+        {rootPlatform !== undefined && handleSetRole && (
           <OdField label="Root Role">
             <OdSegmentedControl
               items={roleItems}
