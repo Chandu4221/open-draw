@@ -774,4 +774,32 @@ describe("createEditor", () => {
     expect(container.querySelector(".od-inline-text-editor")).toBeNull();
     expect(editor.canUndo()).toBe(true);
   });
+
+  it("allows interceptPointerDown to consume pointer events before default selection", () => {
+    let intercepted = false;
+    const rect = createRect(parseShapeId("rect-intercept"), {
+      x: 50,
+      y: 50,
+      width: 120,
+      height: 60,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+      interceptPointerDown: () => {
+        intercepted = true;
+        return true;
+      },
+    });
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    expect(downFn).toBeDefined();
+
+    downFn!({ button: 0, clientX: 70, clientY: 70, pointerId: 1, preventDefault: () => {} });
+
+    expect(intercepted).toBe(true);
+    expect(editor.getSelection()).toHaveLength(0);
+  });
 });

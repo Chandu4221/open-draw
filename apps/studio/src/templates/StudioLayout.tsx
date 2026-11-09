@@ -1,10 +1,10 @@
 import React from "react";
 import { Allotment } from "allotment";
 import { OdIcon, OdToastHost } from "@open-draw/ui";
-import { CANVAS_CONTAINER_STYLE, CANVAS_WIRE_STYLE } from "../types";
+import { CANVAS_CONTAINER_STYLE } from "../types";
 
 export interface StudioLayoutProps {
-  readonly svgRef: React.RefObject<SVGSVGElement | null>;
+  readonly canvasContainerRef: React.RefObject<HTMLDivElement | null>;
   readonly showSidebar: boolean;
   readonly onToggleSidebar: (show: boolean) => void;
   readonly brandSlot?: React.ReactNode | undefined;
@@ -18,7 +18,7 @@ export interface StudioLayoutProps {
 
 export function StudioLayout(props: StudioLayoutProps): React.JSX.Element {
   const {
-    svgRef,
+    canvasContainerRef,
     showSidebar,
     onToggleSidebar,
     brandSlot,
@@ -54,7 +54,7 @@ export function StudioLayout(props: StudioLayoutProps): React.JSX.Element {
         onVisibleChange={handleVisibleChange}
       >
         <Allotment.Pane minSize={400}>
-          <div className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
+          <div ref={canvasContainerRef} className="od-canvas-bg" style={CANVAS_CONTAINER_STYLE}>
             {brandSlot}
             {!showSidebar && (
               <button
@@ -73,7 +73,6 @@ export function StudioLayout(props: StudioLayoutProps): React.JSX.Element {
                 <OdIcon name="panel" size={16} />
               </button>
             )}
-            <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" style={CANVAS_WIRE_STYLE} />
             {hintSlot}
             {shortcutsSlot}
             {dockSlot}

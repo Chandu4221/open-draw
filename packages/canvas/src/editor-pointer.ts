@@ -32,6 +32,17 @@ export interface PointerBindingContext {
   readonly nestingMode?: NestingMode | undefined;
   readonly nextShapeId?: ((doc?: Document) => ShapeId) | undefined;
   readonly onDoubleClick?: ((shapeId: ShapeId) => void) | undefined;
+  readonly interceptPointerDown?:
+    | ((
+        event: PointerEvent,
+        context: {
+          readonly world: Point;
+          readonly screen: Point;
+          readonly canvas: CanvasController;
+          readonly doc: Document;
+        },
+      ) => boolean | void)
+    | undefined;
 }
 
 export function attachPointerListeners(ctx: PointerBindingContext): () => void {
@@ -50,6 +61,8 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   } = ctx;
 
   let lastScreen: Point = { x: 0, y: 0 };
+  let lastDownTime = 0;
+  let lastDownPos: Point = { x: 0, y: 0 };
   let hasPassedDragThreshold = false;
   let cachedRect: DOMRect | { left: number; top: number; width: number; height: number } | null =
     null;
@@ -67,6 +80,18 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const tool = getTool();
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
+
+    if (ctx.interceptPointerDown?.(event, { world, screen, canvas, doc })) {
+      return;
+    }
+
+    const now = Date.now();
+    const dt = now - lastDownTime;
+    const dist = Math.hypot(screen.x - lastDownPos.x, screen.y - lastDownPos.y);
+    const isDoubleClick = event.detail >= 2 || (dt > 0 && dt <= 350 && dist <= 6);
+    lastDownTime = now;
+    lastDownPos = screen;
+
     const selectedIds = canvas.getSelectedIds();
     const selectedId = canvas.getSelectedId();
 
@@ -93,7 +118,13 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     }
 
     const panRequested = event.button === 1 || getSpacePressed();
-    const hit = panRequested ? null : canvas.pickShape(doc, world);
+    const rawHit = panRequested ? null : canvas.pickShape(doc, world);
+    const hit =
+      rawHit !== null && tool === TOOLS.select
+        ? event.metaKey || event.ctrlKey
+          ? rawHit
+          : canvas.resolveSelectionDrillDown(doc, rawHit, isDoubleClick)
+        : rawHit;
 
     canvas.dispatch({
       type: CANVAS_EVENTS.pointerDown,
@@ -284,7 +315,8 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     if (event.button !== undefined && event.button !== 0) return;
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
-    const hit = canvas.pickShape(getDoc(), world);
+    const rawHit = canvas.pickShape(getDoc(), world);
+    const hit = rawHit !== null ? canvas.resolveSelectionDrillDown(getDoc(), rawHit, true) : null;
     if (hit !== null && ctx.onDoubleClick !== undefined) {
       ctx.onDoubleClick(hit);
     }

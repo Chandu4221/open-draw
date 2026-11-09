@@ -1,21 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
+import type { DeviceType, ShapeId } from "@open-draw/contracts";
 import {
-  applyTransaction,
   createDocument,
-  createTransaction,
   EMPTY_HISTORY,
-  recordHistory,
   type Command,
   type Document,
   type HistoryState,
   type Shape,
 } from "@open-draw/document";
-import { CONTROLLER_EVENTS, TOOLS, type CanvasController, type ToolId } from "@open-draw/canvas";
+import {
+  CONTROLLER_EVENTS,
+  createEditor,
+  TOOLS,
+  type CanvasController,
+  type Editor,
+  type ToolId,
+} from "@open-draw/canvas";
 import { useToast } from "@open-draw/ui";
-import type { Gesture } from "../types";
 import { initCanvas } from "../canvas-init";
-import { renderCanvasSvg } from "../canvas-render";
+import { computeSemanticChipOverlays, pickAnyRootChip } from "../canvas-overlays";
 import { StudioLayout } from "../templates/StudioLayout";
 
 import { Sidebar } from "./Sidebar";
@@ -26,8 +29,6 @@ import { CanvasZoomControls } from "./CanvasZoomControls";
 import { ExportModal, type ExportFormat } from "./ExportModal";
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal";
 import { useBatchMutations } from "../use-batch-mutations";
-import { useCanvasInteractions } from "../use-canvas-interactions";
-import { useCanvasKeyboard } from "../use-canvas-keyboard";
 import { useDocumentMutations } from "../use-document-mutations";
 import { useGeometryMutations } from "../use-geometry-mutations";
 import { useInspectionData } from "../use-inspection-data";
@@ -40,33 +41,89 @@ export interface StudioShellProps {
 
 export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.Element {
   const toast = useToast();
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<Editor | null>(null);
   const canvasRef = useRef<CanvasController>(initCanvas());
   const [doc, setDoc] = useState<Document>(() => createDocument([]));
   const documentRef = useRef<Document>(doc);
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
-  const gestureRef = useRef<Gesture | null>(null);
-  const lastScreenRef = useRef<Point>({ x: 0, y: 0 });
-  const lastWorldRef = useRef<Point>({ x: 0, y: 0 });
-  const spaceRef = useRef(false);
-  const toolRef = useRef<ToolId>(TOOLS.select);
+  const toastRef = useRef(toast);
+  useEffect(() => {
+    documentRef.current = doc;
+  }, [doc]);
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
   const [selectedShapeIds, setSelectedShapeIds] = useState<readonly ShapeId[]>([]);
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
-
-  useEffect(() => {
-    return canvasRef.current.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
-      setSelectedShapeIds(canvasRef.current.getSelectedIds());
-      setSelectedShapeId(canvasRef.current.getSelectedId());
-    });
-  }, []);
+  const [visibleChipRoots, setVisibleChipRoots] = useState<ReadonlySet<ShapeId>>(() => new Set());
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [exportInitialFormat, setExportInitialFormat] = useState<ExportFormat>("markdown");
+
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (container === null) return;
+
+    const editor = createEditor(container, {
+      document: documentRef.current,
+      tool: TOOLS.select,
+      onFallback: (msg) => toastRef.current.push({ type: "info", text: msg }),
+      renderCustomOverlays: (ctx) => {
+        return computeSemanticChipOverlays({
+          doc: ctx.doc,
+          selectedIds: ctx.selectedIds,
+          zoom: ctx.zoom,
+          visibleChipRootIds: ctx.canvas.getVisibleChipRootIds(),
+        });
+      },
+      interceptPointerDown: (_event, { world, canvas, doc: curDoc }) => {
+        const zoom = canvas.getCamera().zoom;
+        const hitChip = pickAnyRootChip(curDoc, world, zoom);
+        if (hitChip !== null) {
+          canvas.toggleRootChipsVisible(hitChip);
+          setVisibleChipRoots(new Set(canvas.getVisibleChipRootIds()));
+          editor.render();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    editorRef.current = editor;
+    canvasRef.current = editor.canvas;
+
+    const unsubDoc = editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+      const nextDoc = editor.getDocument();
+      documentRef.current = nextDoc;
+      setDoc(nextDoc);
+    });
+    const unsubSel = editor.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
+      setSelectedShapeIds(editor.getSelection());
+      setSelectedShapeId(editor.canvas.getSelectedId());
+    });
+    const unsubTool = editor.subscribe(CONTROLLER_EVENTS.toolChanged, () => {
+      setTool(editor.getTool());
+    });
+    const unsubCam = editor.subscribe(CONTROLLER_EVENTS.cameraChanged, () => {
+      setZoomPercent(Math.round(editor.getCamera().zoom * 100));
+    });
+
+    return () => {
+      unsubDoc();
+      unsubSel();
+      unsubTool();
+      unsubCam();
+      editor.destroy();
+      editorRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -87,77 +144,61 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   };
 
   const chooseTool = (next: ToolId): void => {
-    toolRef.current = next;
+    editorRef.current?.setTool(next);
     setTool(next);
   };
+
   const handleDeviceChange = (deviceType?: DeviceType): void => {
-    canvasRef.current.setActiveDeviceType(deviceType);
+    const editor = editorRef.current;
+    if (editor) {
+      editor.canvas.setActiveDeviceType(deviceType);
+      editor.render();
+    }
     setActiveDeviceType(deviceType);
-    render();
   };
-  const [visibleChipRoots, setVisibleChipRoots] = useState<ReadonlySet<ShapeId>>(() => new Set());
 
   const handleToggleChildChips = (rootId: ShapeId): void => {
-    canvasRef.current.toggleRootChipsVisible(rootId);
-    setVisibleChipRoots((prev) => {
-      const next = new Set(prev);
-      if (next.has(rootId)) next.delete(rootId);
-      else next.add(rootId);
-      return next;
-    });
-    render();
+    const editor = editorRef.current;
+    if (editor === null) return;
+    editor.canvas.toggleRootChipsVisible(rootId);
+    setVisibleChipRoots(new Set(editor.canvas.getVisibleChipRootIds()));
+    editor.render();
   };
+
   const handleZoom = (factor: number): void => {
-    const svg = svgRef.current;
-    if (svg === null) return;
-    const rect = svg.getBoundingClientRect();
-    canvasRef.current.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, factor);
-    setZoomPercent(Math.round(canvasRef.current.getCamera().zoom * 100));
-    render();
+    const editor = editorRef.current;
+    if (editor === null) return;
+    if (factor > 1) {
+      editor.zoomIn();
+    } else {
+      editor.zoomOut();
+    }
+    setZoomPercent(Math.round(editor.getCamera().zoom * 100));
   };
+
   const handleResetZoom = (): void => {
-    canvasRef.current.setCamera({ x: 0, y: 0, zoom: 1 });
+    editorRef.current?.resetZoom();
     setZoomPercent(100);
-    render();
   };
 
   const selectShape = (id: ShapeId): void => {
-    canvasRef.current.select(id);
+    editorRef.current?.select(id);
     setSelectedShapeId(id);
-    render();
   };
 
   function render(): void {
-    const svg = svgRef.current;
-    if (svg === null) return;
-    renderCanvasSvg({
-      svg,
-      canvas: canvasRef.current,
-      doc: documentRef.current,
-      gesture: gestureRef.current,
-      tool: toolRef.current,
-      lastWorld: lastWorldRef.current,
-      onFallback: (msg) => toast.push({ type: "info", text: msg }),
-    });
+    editorRef.current?.render();
   }
 
-  function commit(
-    commands: readonly Command[],
-    options?: { record?: boolean; customInverse?: readonly Command[] },
-  ): void {
-    const result = applyTransaction(documentRef.current, createTransaction(commands));
-    documentRef.current = result.document;
-    if (options?.record !== false) {
-      const inv = options?.customInverse ?? result.inverse;
-      historyRef.current = recordHistory(historyRef.current, inv);
-    }
-    setDoc(result.document);
+  function commit(commands: readonly Command[], options?: { record?: boolean }): void {
+    editorRef.current?.execute(commands, options);
   }
 
   const toolbarActions = useToolbarActions({
     documentRef,
     historyRef,
     canvasRef,
+    editorRef,
     includeLegend,
     toast,
     setDoc,
@@ -173,7 +214,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     activeProfile: inspection.activeProfile,
     activeDeviceType,
     canvasRef,
-    setActiveDeviceType,
+    setActiveDeviceType: handleDeviceChange,
     commit,
     render,
   });
@@ -194,42 +235,11 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     render,
   });
 
-  useCanvasInteractions({
-    svgRef,
-    canvasRef,
-    documentRef,
-    gestureRef,
-    lastScreenRef,
-    lastWorldRef,
-    spaceRef,
-    toolRef,
-    chooseTool,
-    setSelectedShapeId,
-    setZoomPercent,
-    handleDeviceChange,
-    commit,
-    render,
-  });
-
-  useCanvasKeyboard({
-    canvasRef,
-    documentRef,
-    historyRef,
-    gestureRef,
-    spaceRef,
-    setSelectedShapeId,
-    setStatusMessage: (msg) => toast.push({ type: "info", text: msg }),
-    setDoc,
-    chooseTool,
-    commit,
-    render,
-  });
-
   const emptyDoc = Object.keys(doc.shapes).length === 0;
 
   return (
     <StudioLayout
-      svgRef={svgRef}
+      canvasContainerRef={canvasContainerRef}
       showSidebar={showSidebar}
       onToggleSidebar={setShowSidebar}
       brandSlot={<CanvasBrand onBackToLanding={onBackToLanding} />}

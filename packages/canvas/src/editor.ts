@@ -107,6 +107,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       camera: cam,
       zoom: cam.zoom,
       activeDeviceType,
+      canvas,
     });
     const overlays = computeEditorOverlays({
       doc,
@@ -180,6 +181,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     },
     nestingMode: options.nestingMode,
     nextShapeId: idSequence.nextShapeId,
+    interceptPointerDown: options.interceptPointerDown,
     onDoubleClick: (hitId) => {
       if (activeInlineEditor !== null) {
         activeInlineEditor();

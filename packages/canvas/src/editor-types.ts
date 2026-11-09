@@ -1,5 +1,5 @@
 // Editor types and options contracts (R-005, R-010, R-014).
-import type { DeviceType, ShapeId } from "@open-draw/contracts";
+import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
 import type { Command, Document } from "@open-draw/document";
 import type { ShapeSvgRenderer } from "@open-draw/renderer-svg";
 import type { Camera } from "./camera";
@@ -14,6 +14,7 @@ export interface EditorOverlayContext {
   readonly camera: Camera;
   readonly zoom: number;
   readonly activeDeviceType?: DeviceType | undefined;
+  readonly canvas: CanvasController;
 }
 
 export interface EditorOptions {
@@ -23,6 +24,17 @@ export interface EditorOptions {
   readonly nestingMode?: NestingMode;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
   readonly renderCustomOverlays?: (context: EditorOverlayContext) => readonly string[];
+  readonly interceptPointerDown?:
+    | ((
+        event: PointerEvent,
+        context: {
+          readonly world: Point;
+          readonly screen: Point;
+          readonly canvas: CanvasController;
+          readonly doc: Document;
+        },
+      ) => boolean | void)
+    | undefined;
   readonly onFallback?: (message: string) => void;
 }
 
