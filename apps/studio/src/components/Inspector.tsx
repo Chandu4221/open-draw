@@ -12,7 +12,7 @@ import {
   type StyleId,
   type ThemePalette,
 } from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+import { CONTAINER_KINDS, type Shape } from "@open-draw/document";
 import { ContainerInspector } from "./ContainerInspector";
 import { ShapeInspector } from "./ShapeInspector";
 import { MultiSelectInspector } from "./MultiSelectInspector";
@@ -117,6 +117,10 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   } = props;
 
   const isMultiSelect = (selectedShapes?.length ?? 0) > 1;
+  const isContainer =
+    selectedShape !== undefined &&
+    isRootId(selectedShape.parentId) &&
+    (CONTAINER_KINDS.has(selectedShape.kind) || selectedShape.meta.platform !== undefined);
 
   return (
     <div className="od-inspector-content">
@@ -139,7 +143,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
         <div className="od-empty">
           <span>Select a shape to inspect</span>
         </div>
-      ) : isRootId(selectedShape.parentId) ? (
+      ) : isContainer ? (
         <ContainerInspector
           selectedShape={selectedShape}
           rootPlatform={rootPlatform}

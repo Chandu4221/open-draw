@@ -214,4 +214,47 @@ test.describe("Studio workbench smoke tests", () => {
     await select.selectOption({ label: "Flutter" });
     await expect(select).toHaveValue("flutter");
   });
+
+  test("parents text shape drawn inside a container rectangle and inspects as child shape", async ({
+    page,
+  }) => {
+    await page.goto("/#app");
+    const svg = page.locator(".od-canvas-bg > svg");
+    await expect(svg).toBeVisible();
+    const box = (await svg.boundingBox())!;
+
+    // 1. Draw a root container rectangle
+    await page.getByLabel("Draw rectangle (R)").click();
+    await page.mouse.move(box.x + 100, box.y + 100);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 400, box.y + 400);
+    await page.mouse.up();
+
+    // Configure as Web Component
+    const platformSelect = page.locator("#container-platform-profile");
+    await expect(platformSelect).toBeVisible();
+    await platformSelect.selectOption({ label: "Web" });
+
+    const roleSelect = page.locator("#container-root-role");
+    await expect(roleSelect).toBeVisible();
+    await roleSelect.selectOption({ label: "Component" });
+
+    // 2. Draw text inside the container rectangle
+    await page.getByLabel("Add text (T)").click();
+    await page.mouse.click(box.x + 200, box.y + 200);
+
+    // 3. Newly inserted text is selected: Inspector shows ShapeInspector (Content input), NOT ContainerInspector
+    const contentInput = page.locator("#shape-content");
+    await expect(contentInput).toBeVisible();
+    await expect(page.locator("#container-platform-profile")).toBeHidden();
+
+    // 4. Verify meta shows container reference
+    const metaContainer = page.locator(".od-meta").filter({ hasText: "Container:" });
+    await expect(metaContainer).toBeVisible();
+    await expect(metaContainer).not.toContainText("Canvas");
+
+    // 5. Verify Layers list shows 2 items with nested structure
+    const layerItems = page.locator(".od-tree-item");
+    await expect(layerItems).toHaveCount(2);
+  });
 });

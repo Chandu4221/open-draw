@@ -179,7 +179,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     setLastWorld: (p) => {
       lastWorld = p;
     },
-    nestingMode: options.nestingMode,
+    nestingMode: options.nestingMode ?? "containers-only",
     nextShapeId: idSequence.nextShapeId,
     interceptPointerDown: options.interceptPointerDown,
     onDoubleClick: (hitId) => {

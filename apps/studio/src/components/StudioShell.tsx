@@ -63,6 +63,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     const editor = createEditor(container, {
       document: documentRef.current,
       tool: TOOLS.select,
+      nestingMode: "containers-only",
       onFallback: (msg) => toastRef.current.push({ type: "info", text: msg }),
       renderCustomOverlays: (ctx) => {
         return computeSemanticChipOverlays({

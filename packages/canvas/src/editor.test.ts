@@ -802,4 +802,115 @@ describe("createEditor", () => {
     expect(intercepted).toBe(true);
     expect(editor.getSelection()).toHaveLength(0);
   });
+
+  it("parents newly drawn shapes to enclosing container and supports N levels of nested parenting", () => {
+    // Level 1: root container (0, 0, 800, 600)
+    const rootContainer = createRect(parseShapeId("c-root"), {
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+    });
+    // Level 2: nested container (100, 100, 400, 400) inside rootContainer => world (100, 100, 400, 400)
+    const nestedContainer = createRect(
+      parseShapeId("c-nested"),
+      { x: 100, y: 100, width: 400, height: 400 },
+      { parent: rootContainer.id },
+    );
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rootContainer, nestedContainer]),
+    });
+
+    // 1. Draw a text shape inside nestedContainer at world (150, 150)
+    editor.setTool(TOOLS.drawText);
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const upFn = mockSvg.listeners["pointerup"]?.[0];
+    expect(downFn).toBeDefined();
+    expect(upFn).toBeDefined();
+
+    downFn!({ button: 0, clientX: 150, clientY: 150, pointerId: 1, preventDefault: () => {} });
+    upFn!({ button: 0, clientX: 150, clientY: 150, pointerId: 1, preventDefault: () => {} });
+
+    // The newly drawn text shape should be a child of nestedContainer (Level 2), NOT rootContainer or ROOT_ID!
+    const docAfterText = editor.getDocument();
+    const textShape = Object.values(docAfterText.shapes).find((s) => s.kind === "text");
+    expect(textShape).toBeDefined();
+    expect(textShape!.parentId).toBe(nestedContainer.id);
+    // Local coordinates should be relative to nestedContainer: world (150, 150) - nestedContainer world (100, 100) = (50, 50)
+    expect(textShape!.boundingBox.x).toBe(50);
+    expect(textShape!.boundingBox.y).toBe(50);
+
+    // 2. Draw another rectangle inside rootContainer but outside nestedContainer at world (600, 200)
+    editor.setTool(TOOLS.drawRect);
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    downFn!({ button: 0, clientX: 600, clientY: 200, pointerId: 2, preventDefault: () => {} });
+    moveFn!({ button: 0, clientX: 700, clientY: 300, pointerId: 2, preventDefault: () => {} });
+    upFn!({ button: 0, clientX: 700, clientY: 300, pointerId: 2, preventDefault: () => {} });
+
+    const docAfterRect = editor.getDocument();
+    const newRect = Object.values(docAfterRect.shapes).find(
+      (s) => s.id !== rootContainer.id && s.id !== nestedContainer.id && s.kind === "rect",
+    );
+    expect(newRect).toBeDefined();
+    expect(newRect!.parentId).toBe(rootContainer.id);
+    expect(newRect!.boundingBox.x).toBe(600);
+    expect(newRect!.boundingBox.y).toBe(200);
+    expect(newRect!.boundingBox.width).toBe(100);
+    expect(newRect!.boundingBox.height).toBe(100);
+  });
+
+  it("reparents dragged shape into nested container at level N when dragged over it", () => {
+    // Level 1: root container (0, 0, 800, 600)
+    const rootContainer = createRect(parseShapeId("drag-root"), {
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+    });
+    // Level 2: nested container (100, 100, 400, 400) inside drag-root => world (100, 100, 400, 400)
+    const nestedContainer = createRect(
+      parseShapeId("drag-nested"),
+      { x: 100, y: 100, width: 400, height: 400 },
+      { parent: rootContainer.id },
+    );
+    // Free shape outside on ROOT_ID at world (900, 100, 60, 40)
+    const freeShape = createRect(parseShapeId("drag-free"), {
+      x: 900,
+      y: 100,
+      width: 60,
+      height: 40,
+    });
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rootContainer, nestedContainer, freeShape]),
+    });
+
+    editor.select(freeShape.id);
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const upFn = mockSvg.listeners["pointerup"]?.[0];
+
+    // Drag freeShape center from (930, 120) to (200, 200) inside nestedContainer
+    // dx = 200 - 930 = -730, dy = 200 - 120 = 80
+    // freeShape top-left was 900, 100 -> new top-left is (170, 180) in world
+    downFn!({ button: 0, clientX: 930, clientY: 120, pointerId: 1, preventDefault: () => {} });
+    moveFn!({ button: 0, clientX: 200, clientY: 200, pointerId: 1, preventDefault: () => {} });
+    upFn!({ button: 0, clientX: 200, clientY: 200, pointerId: 1, preventDefault: () => {} });
+
+    const docAfterDrag = editor.getDocument();
+    const dragged = docAfterDrag.shapes[freeShape.id]!;
+    expect(dragged.parentId).toBe(nestedContainer.id);
+    // nestedContainer world origin is (100, 100). Local bounding box should be (170 - 100, 180 - 100) = (70, 80)
+    expect(dragged.boundingBox.x).toBe(70);
+    expect(dragged.boundingBox.y).toBe(80);
+    expect(dragged.boundingBox.width).toBe(60);
+    expect(dragged.boundingBox.height).toBe(40);
+  });
 });

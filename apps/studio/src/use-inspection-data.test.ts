@@ -128,4 +128,67 @@ describe("useInspectionData", () => {
     expect(result.treeNodes[0]?.depth).toBe(0);
     expect(result.treeNodes[1]?.depth).toBe(1);
   });
+
+  it("resolves root shape and properties for N-level deep nested child shapes", () => {
+    // Level 0: root container
+    const rootShape = createMockShape("screen-root", ROOT_ID, {
+      order: {},
+      platform: PLATFORMS.web,
+      style: STYLE_PROFILES.minimal,
+      role: ROOT_ROLES.screen,
+    });
+    // Level 1: section
+    const sectionShape = createMockShape("section-nested", "screen-root" as ShapeId, {
+      order: {},
+    });
+    // Level 2: card
+    const cardShape = createMockShape("card-nested", "section-nested" as ShapeId, {
+      order: {},
+    });
+    // Level 3: leaf text element
+    const textShape: Shape = {
+      id: "text-leaf" as ShapeId,
+      parentId: "card-nested" as ShapeId,
+      kind: SHAPE_KINDS.text,
+      boundingBox: { x: 10, y: 10, width: 100, height: 30 },
+      content: "Nested Text",
+      meta: {
+        order: {},
+        semantic: {
+          id: "heading",
+          platform: PLATFORMS.web,
+        },
+      },
+    };
+
+    const doc: Document = {
+      ...createDocument(),
+      shapes: {
+        [rootShape.id]: rootShape,
+        [sectionShape.id]: sectionShape,
+        [cardShape.id]: cardShape,
+        [textShape.id]: textShape,
+      },
+    };
+
+    const result = useInspectionData(doc, "text-leaf" as ShapeId, undefined);
+
+    expect(result.selectedShape).toBe(textShape);
+    expect(result.rootShape).toBe(rootShape);
+    expect(result.rootPlatform).toBe(PLATFORMS.web);
+    expect(result.rootRole).toBe(ROOT_ROLES.screen);
+    expect(result.semanticDef).toBeDefined();
+
+    expect(result.treeNodes).toHaveLength(4);
+    expect(result.treeNodes.map((n) => n.shape.id)).toEqual([
+      "screen-root",
+      "section-nested",
+      "card-nested",
+      "text-leaf",
+    ]);
+    expect(result.treeNodes[0]?.depth).toBe(0);
+    expect(result.treeNodes[1]?.depth).toBe(1);
+    expect(result.treeNodes[2]?.depth).toBe(2);
+    expect(result.treeNodes[3]?.depth).toBe(3);
+  });
 });

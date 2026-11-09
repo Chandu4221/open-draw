@@ -78,7 +78,7 @@ export function commitDragGesture(
   gesture: ActiveGesture,
   world: Point,
   execute: (commands: readonly Command[]) => void,
-  nestingMode: NestingMode = "off",
+  nestingMode: NestingMode = "containers-only",
 ): void {
   const dx = world.x - gesture.startWorld.x;
   const dy = world.y - gesture.startWorld.y;
@@ -193,34 +193,29 @@ export function commitDrawGesture(
   world: Point,
   tool: ToolId,
   execute: (commands: readonly Command[]) => void,
-  nestingMode: NestingMode = "off",
+  nestingMode: NestingMode = "containers-only",
   idGen: ShapeIdGenerator = (doc?: Document) => createShapeIdGenerator(doc).nextShapeId(doc),
 ): void {
-  const parentHit = nestingMode === "containers-only" ? gesture.parentHit : null;
-  const targetParentId = parentHit !== null ? pickDropTarget(doc, gesture.startWorld, []) : ROOT_ID;
+  const targetParentId =
+    nestingMode === "containers-only" ? pickDropTarget(doc, gesture.startWorld, []) : ROOT_ID;
   const targetParent = !isRootId(targetParentId) ? doc.shapes[targetParentId] : undefined;
+  const parentBox =
+    targetParent !== undefined ? absoluteBoundingBox(doc, targetParent) : { x: 0, y: 0 };
 
   if (tool === TOOLS.drawLine) {
     const { boundingBox, start, end } = deriveLineBoundingBox(gesture.startWorld, world);
-    if (targetParent !== undefined) {
-      const parentBox = absoluteBoundingBox(doc, targetParent);
-      const line = createLine(
-        idGen(doc),
-        {
-          x: boundingBox.x - parentBox.x,
-          y: boundingBox.y - parentBox.y,
-          width: boundingBox.width,
-          height: boundingBox.height,
-        },
-        start,
-        end,
-        { parent: targetParent.id },
-      );
-      execute([{ type: COMMANDS.createShape, shape: line }]);
-      canvas.select(line.id);
-      return;
-    }
-    const line = createLine(idGen(doc), boundingBox, start, end, { parent: ROOT_ID });
+    const line = createLine(
+      idGen(doc),
+      {
+        x: boundingBox.x - parentBox.x,
+        y: boundingBox.y - parentBox.y,
+        width: boundingBox.width,
+        height: boundingBox.height,
+      },
+      start,
+      end,
+      { parent: targetParentId },
+    );
     execute([{ type: COMMANDS.createShape, shape: line }]);
     canvas.select(line.id);
     return;
@@ -229,80 +224,50 @@ export function commitDrawGesture(
   if (tool === TOOLS.drawPenPath) {
     const allPoints = gesture.points.length > 0 ? gesture.points : [gesture.startWorld, world];
     const { boundingBox, points } = derivePenPathBoundingBox(allPoints);
-    if (targetParent !== undefined) {
-      const parentBox = absoluteBoundingBox(doc, targetParent);
-      const pen = createPenPath(
-        idGen(doc),
-        {
-          x: boundingBox.x - parentBox.x,
-          y: boundingBox.y - parentBox.y,
-          width: boundingBox.width,
-          height: boundingBox.height,
-        },
-        points,
-        { parent: targetParent.id },
-      );
-      execute([{ type: COMMANDS.createShape, shape: pen }]);
-      canvas.select(pen.id);
-      return;
-    }
-    const pen = createPenPath(idGen(doc), boundingBox, points, { parent: ROOT_ID });
+    const pen = createPenPath(
+      idGen(doc),
+      {
+        x: boundingBox.x - parentBox.x,
+        y: boundingBox.y - parentBox.y,
+        width: boundingBox.width,
+        height: boundingBox.height,
+      },
+      points,
+      { parent: targetParentId },
+    );
     execute([{ type: COMMANDS.createShape, shape: pen }]);
     canvas.select(pen.id);
     return;
   }
 
   if (tool === TOOLS.drawText) {
-    const textWidth = 100;
-    const textHeight = 32;
-    const localBox: BoundingBox = {
-      x: gesture.startWorld.x,
-      y: gesture.startWorld.y,
-      width: textWidth,
-      height: textHeight,
-    };
-    if (targetParent !== undefined) {
-      const parentBox = absoluteBoundingBox(doc, targetParent);
-      const textShape = createText(
-        idGen(doc),
-        {
-          x: localBox.x - parentBox.x,
-          y: localBox.y - parentBox.y,
-          width: localBox.width,
-          height: localBox.height,
-        },
-        { parentId: targetParent.id },
-      );
-      execute([{ type: COMMANDS.createShape, shape: textShape }]);
-      canvas.select(textShape.id);
-      return;
-    }
-    const textShape = createText(idGen(doc), localBox, { parentId: ROOT_ID });
+    const textShape = createText(
+      idGen(doc),
+      {
+        x: gesture.startWorld.x - parentBox.x,
+        y: gesture.startWorld.y - parentBox.y,
+        width: 100,
+        height: 32,
+      },
+      { parentId: targetParentId },
+    );
     execute([{ type: COMMANDS.createShape, shape: textShape }]);
     canvas.select(textShape.id);
     return;
   }
 
   const box = normalizeBox(gesture.startWorld, world);
-  const createDrawnShape = (parent: ShapeId, localBox: BoundingBox): RectShape | EllipseShape =>
+  const localBox: BoundingBox = {
+    x: box.x - parentBox.x,
+    y: box.y - parentBox.y,
+    width: box.width,
+    height: box.height,
+  };
+  const shape: RectShape | EllipseShape =
     tool === TOOLS.drawEllipse
-      ? createEllipse(idGen(doc), localBox, { parent })
-      : createRect(idGen(doc), localBox, { parent });
+      ? createEllipse(idGen(doc), localBox, { parent: targetParentId })
+      : createRect(idGen(doc), localBox, { parent: targetParentId });
 
-  if (targetParent !== undefined) {
-    const parentBox = absoluteBoundingBox(doc, targetParent);
-    const shape = createDrawnShape(targetParent.id, {
-      x: box.x - parentBox.x,
-      y: box.y - parentBox.y,
-      width: box.width,
-      height: box.height,
-    });
-    execute([{ type: COMMANDS.createShape, shape }]);
-    canvas.select(shape.id);
-    return;
-  }
-
-  const shape = createDrawnShape(ROOT_ID, box);
   execute([{ type: COMMANDS.createShape, shape }]);
   canvas.select(shape.id);
 }
