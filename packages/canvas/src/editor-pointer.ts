@@ -316,7 +316,9 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
     const rawHit = canvas.pickShape(getDoc(), world);
-    const hit = rawHit !== null ? canvas.resolveSelectionDrillDown(getDoc(), rawHit, true) : null;
+    const hit =
+      canvas.getSelectedId() ??
+      (rawHit !== null ? canvas.resolveSelectionDrillDown(getDoc(), rawHit, true) : null);
     if (hit !== null && ctx.onDoubleClick !== undefined) {
       ctx.onDoubleClick(hit);
     }

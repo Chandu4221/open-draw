@@ -55,6 +55,20 @@ describe("reparent helpers and N-level deep hierarchies", () => {
       expect(isContainerShape(doc.shapes[freeRectId]!)).toBe(true);
     });
 
+    it("identifies rectangle with semantic tag as a container even when empty", () => {
+      const avatarRect = createRect(
+        parseShapeId("rect-avatar"),
+        { x: 20, y: 20, width: 80, height: 80 },
+        {
+          meta: {
+            order: {},
+            semantic: { id: "avatar", platform: "web" },
+          },
+        },
+      );
+      expect(isContainerShape(avatarRect)).toBe(true);
+    });
+
     it("rejects open strokes (lines and pen paths)", () => {
       const lineShape = createLine(
         parseShapeId("line-1"),

@@ -1,10 +1,11 @@
-import React, { useRef } from "react";
-import type {
-  BoundingBox,
-  DeviceType,
-  PlatformProfile,
-  SemanticConflict,
-  SemanticDefinition,
+import React, { useEffect, useRef } from "react";
+import {
+  SHAPE_KINDS,
+  type BoundingBox,
+  type DeviceType,
+  type PlatformProfile,
+  type SemanticConflict,
+  type SemanticDefinition,
 } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
@@ -75,6 +76,14 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
 
   const labelStartRef = useRef<string | null>(null);
   const contentStartRef = useRef<string | null>(null);
+  const contentInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (selectedShape.kind === SHAPE_KINDS.text) {
+      contentInputRef.current?.focus();
+      contentInputRef.current?.select();
+    }
+  }, [selectedShape.id, selectedShape.kind]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -106,6 +115,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
 
         <OdField label="Content" htmlFor="shape-content">
           <input
+            ref={contentInputRef}
             id="shape-content"
             type="text"
             className="od-input"

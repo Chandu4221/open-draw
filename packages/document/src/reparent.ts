@@ -23,26 +23,23 @@ export function pointInBox(box: BoundingBox, point: Point): boolean {
 const LEAF_SEMANTICS: ReadonlySet<string> = new Set([
   "button",
   "input",
-  "heading",
   "checkbox",
   "radio",
   "switch",
   "slider",
-  "avatar",
-  "badge",
-  "icon",
-  "image",
-  "text",
-  "link",
 ]);
 
 /**
  * Checks whether a shape qualifies as a drop-target container.
- * Freeform open paths (lines, pen paths) and leaf semantic controls
- * (buttons, inputs) cannot be containers unless they already hold children.
+ * Open strokes (lines, pen paths), leaf text shapes, and atomic interactive
+ * controls (buttons, inputs) cannot be containers unless they already hold children.
  */
 export function isContainerShape(shape: Shape, doc?: Document): boolean {
-  if (shape.kind === SHAPE_KINDS.line || shape.kind === SHAPE_KINDS.penPath) {
+  if (
+    shape.kind === SHAPE_KINDS.line ||
+    shape.kind === SHAPE_KINDS.penPath ||
+    shape.kind === SHAPE_KINDS.text
+  ) {
     return false;
   }
   if (shape.meta.semantic !== undefined && LEAF_SEMANTICS.has(shape.meta.semantic.id)) {

@@ -746,32 +746,56 @@ describe("createEditor", () => {
     expect(selected).toHaveLength(2);
   });
 
-  it("mounts inline text editor on double-click and commits content on enter (P1-1)", () => {
-    const rect = createRect(parseShapeId("rect-dbl"), { x: 50, y: 50, width: 120, height: 60 });
+  it("drills down selection on double-click without mounting inline textarea overlay", () => {
+    const parentRect = createRect(parseShapeId("rect-parent"), {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+    });
+    const childRect = createRect(
+      parseShapeId("rect-child"),
+      { x: 20, y: 20, width: 80, height: 80 },
+      { parentId: parentRect.id },
+    );
     editor = createEditor(container as unknown as HTMLElement, {
-      document: createDocument([rect]),
+      document: createDocument([parentRect, childRect]),
     });
 
     const mockSvg = editor.svg as unknown as {
       listeners: Record<string, ((evt: unknown) => void)[]>;
     };
+    const pointerDownFn = mockSvg.listeners["pointerdown"]?.[0];
     const dblFn = mockSvg.listeners["dblclick"]?.[0];
+    expect(pointerDownFn).toBeDefined();
     expect(dblFn).toBeDefined();
 
-    dblFn!({ clientX: 70, clientY: 70, preventDefault: () => {} });
+    // 1. Single click on child selects parent container
+    pointerDownFn!({
+      button: 0,
+      clientX: 30,
+      clientY: 30,
+      detail: 1,
+      preventDefault: () => {},
+    });
+    expect(editor.getSelection()).toEqual([parentRect.id]);
 
-    const textarea = container.querySelector<MockDomNode>(".od-inline-text-editor");
-    expect(textarea).not.toBeNull();
-    expect(textarea?.tagName.toLowerCase()).toBe("textarea");
+    // 2. Double-click drills down into child shape and does NOT mount textarea overlay
+    pointerDownFn!({
+      button: 0,
+      clientX: 30,
+      clientY: 30,
+      detail: 2,
+      preventDefault: () => {},
+    });
+    dblFn!({ button: 0, clientX: 30, clientY: 30, preventDefault: () => {} });
 
-    textarea!.value = "Heading Text";
-    const keyFn = textarea!.listeners["keydown"]?.[0];
-    expect(keyFn).toBeDefined();
-
-    keyFn!({ key: "Enter", shiftKey: false, preventDefault: () => {} });
-
-    expect(editor.getDocument().shapes[rect.id]?.content).toBe("Heading Text");
+    expect(editor.getSelection()).toEqual([childRect.id]);
     expect(container.querySelector(".od-inline-text-editor")).toBeNull();
+
+    // 3. Text content is set programmatically or via inspector via setTextContent
+    editor.setTextContent(childRect.id, "Updated Text");
+    expect(editor.getDocument().shapes[childRect.id]?.content).toBe("Updated Text");
     expect(editor.canUndo()).toBe(true);
   });
 

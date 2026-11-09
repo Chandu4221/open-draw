@@ -36,6 +36,7 @@ export interface EditorOptions {
       ) => boolean | void)
     | undefined;
   readonly onFallback?: (message: string) => void;
+  readonly onDoubleClick?: ((shapeId: ShapeId) => void) | undefined;
 }
 
 export interface SetDocumentOptions {
