@@ -5,6 +5,21 @@ All notable changes to the `@open-draw/canvas` package are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Container Resize Handling (R-008, R-016)**: Integrated `ResizeObserver` on editor container with zero-dimension hidden state skipping and automatic viewport recalibration.
+- **Custom Shape Extensions (ADR-0003, R-005, R-006)**: `CustomShapeContract` extension API with runtime registration, validation, default shape factory, and hit-testing hooks.
+- **Document JSON Paste Support (R-006, R-016, R-018)**: Native clipboard ingestion of full document JSON trees (`schema.version: 1`) with shape limit enforcement and ID remapping.
+- **Multi-Editor Browser Isolation (R-008, ADR-0008)**: Independent gesture controllers, history stacks, and camera state verified in Chromium.
+- **Macro Performance Benchmarks (ADR-0008)**: Viewport culling and hit-test benchmarks scaling to 20,000 shapes (2x safety margin).
+
+### Fixed
+
+- **Select Tool Marquee Overlay (R-008, R-016)**: Marquee selection rectangle rendered with `fill="none"` borders only to eliminate solid background color occlusion.
+- **Pointer & Clipboard Isolation (R-006, R-008, ADR-0002)**: Resolved clipboard envelope shadowing, pointer capture release leaks, and paste shape boundaries across concurrent editors.
+
 ## [0.9.0] - 2026-11-10
 
 ### Added
