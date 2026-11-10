@@ -99,7 +99,7 @@ export function computeEditorOverlays(options: EditorOverlayOptions): readonly s
   if (gesture !== null && gesture.kind === GESTURE_KINDS.select) {
     const box = normalizeBox(gesture.startWorld, lastWorld);
     overlays.push(
-      `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="var(--od-accent-soft, rgba(0, 0, 0, 0.08))" stroke="var(--od-accent, #000000)" stroke-dasharray="4 4" />`,
+      `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="var(--od-accent, #000000)" stroke-dasharray="4 4" />`,
     );
   }
 

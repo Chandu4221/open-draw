@@ -241,4 +241,29 @@ test.describe("Standalone Canvas browser integration tests", () => {
     expect(camA).toEqual({ x: 100, y: 150, zoom: 2 });
     expect(camB).toEqual({ x: 0, y: 0, zoom: 1 });
   });
+
+  test("renders multi-select marquee rectangle with transparent background (borders only) during drag gesture in Chromium", async ({
+    page,
+  }) => {
+    const primarySvg = page.locator("#editor-primary svg");
+    const box = (await primarySvg.boundingBox())!;
+
+    // Ensure select tool is active
+    await page.evaluate(() => {
+      window.__editorPrimary?.setTool("select");
+    });
+
+    // Start dragging in empty space (300, 300) to (450, 450)
+    await page.mouse.move(box.x + 300, box.y + 300);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 450, box.y + 450);
+
+    // Verify marquee rectangle in overlay scene has fill="none"
+    const marqueeRect = primarySvg.locator(".od-overlay-scene rect");
+    await expect(marqueeRect).toBeVisible();
+    await expect(marqueeRect).toHaveAttribute("fill", "none");
+    await expect(marqueeRect).toHaveAttribute("stroke-dasharray", "4 4");
+
+    await page.mouse.up();
+  });
 });
