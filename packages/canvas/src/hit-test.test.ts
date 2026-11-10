@@ -2,7 +2,7 @@
 // document, never cached).
 import { describe, expect, it } from "vitest";
 import { parseShapeId } from "@open-draw/contracts";
-import { createDocument, createPage, createRect } from "@open-draw/document";
+import { createDocument, createPage, createRect, type Shape } from "@open-draw/document";
 import { DEFAULT_CAMERA } from "./camera";
 import { HANDLES } from "./handles";
 import {
@@ -13,6 +13,7 @@ import {
   pointInBox,
   resolveSelectionDrillDown,
 } from "./hit-test";
+import { buildSpatialIndexFromDocument } from "./spatial/spatial-index";
 
 const pageId = parseShapeId("page-1");
 const firstId = parseShapeId("rect-first");
@@ -158,5 +159,51 @@ describe("resolveSelectionDrillDown (Idea 5, Milestone 09)", () => {
     ]);
 
     expect(resolveSelectionDrillDown(multiBranchDoc, btnB, btnA, true)).toBe(secB);
+  });
+});
+
+describe("Differential Fuzz: Spatial Index vs Brute Force Equivalence (ADR-0011)", () => {
+  it("yields 100% equivalent results across 100+ randomized shapes for pickShape and pickShapesInBox", () => {
+    const parentPage = parseShapeId("fuzz-page");
+    const shapes: Shape[] = [createPage(parentPage, { x: 0, y: 0, width: 4000, height: 4000 })];
+
+    // Seed 120 deterministic shapes with varying positions and overlaps
+    for (let i = 1; i <= 120; i += 1) {
+      const x = ((i * 73) % 2000) + 20;
+      const y = ((i * 109) % 2000) + 20;
+      const width = ((i * 37) % 150) + 30;
+      const height = ((i * 53) % 150) + 30;
+      shapes.push(
+        createRect(parseShapeId(`fuzz-rect-${i}`), { x, y, width, height }, { parent: parentPage }),
+      );
+    }
+
+    const doc = createDocument(shapes);
+    const spatialIndex = buildSpatialIndexFromDocument(doc);
+
+    // 1. Point hit-test equivalence across 60 probe points
+    for (let p = 1; p <= 60; p += 1) {
+      const probePoint = {
+        x: (p * 97) % 2200,
+        y: (p * 131) % 2200,
+      };
+      const bruteHit = pickShape(doc, probePoint);
+      const indexHit = pickShape(doc, probePoint, undefined, spatialIndex);
+      expect(indexHit).toBe(bruteHit);
+    }
+
+    // 2. Box query equivalence across 20 probe boxes
+    for (let b = 1; b <= 20; b += 1) {
+      const probeBox = {
+        x: (b * 127) % 1800,
+        y: (b * 163) % 1800,
+        width: ((b * 41) % 300) + 50,
+        height: ((b * 59) % 300) + 50,
+      };
+      const bruteHits = pickShapesInBox(doc, probeBox);
+      const indexHits = pickShapesInBox(doc, probeBox, spatialIndex);
+
+      expect(new Set(indexHits)).toEqual(new Set(bruteHits));
+    }
   });
 });

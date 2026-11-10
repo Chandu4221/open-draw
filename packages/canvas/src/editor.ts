@@ -88,7 +88,23 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     );
   }
 
-  function renderDocument(): void {
+  let renderedDoc: Document | null = null;
+  let renderedVisibleIds: ReadonlySet<ShapeId> | undefined = undefined;
+
+  function setsEqual(
+    a: ReadonlySet<ShapeId> | undefined,
+    b: ReadonlySet<ShapeId> | undefined,
+  ): boolean {
+    if (a === undefined && b === undefined) return true;
+    if (a === undefined || b === undefined) return false;
+    if (a.size !== b.size) return false;
+    for (const item of a) {
+      if (!b.has(item)) return false;
+    }
+    return true;
+  }
+
+  function renderDocument(force?: boolean): void {
     if (isDestroyed) return;
     const cam = canvas.getCamera();
     let visibleShapeIds: ReadonlySet<ShapeId> | undefined;
@@ -98,7 +114,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     const height = rect.height > 0 ? rect.height : container.clientHeight;
     if (width > 0 && height > 0) {
       const spatialIndex = canvas.getSpatialIndex(doc);
-      const viewportBox = cameraToViewportBox(cam, width, height, 64);
+      const viewportBox = cameraToViewportBox(cam, width, height, 128);
       const hits = querySpatialIndexBox(spatialIndex, viewportBox);
       const set = new Set(hits.map((h) => h.id));
       for (const id of canvas.getSelectedIds()) {
@@ -106,6 +122,13 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       }
       visibleShapeIds = set;
     }
+
+    if (!force && doc === renderedDoc && setsEqual(renderedVisibleIds, visibleShapeIds)) {
+      return;
+    }
+
+    renderedDoc = doc;
+    renderedVisibleIds = visibleShapeIds;
 
     docScene.innerHTML = documentToSvg(doc, {
       activeDeviceType: canvas.getActiveDeviceType(),

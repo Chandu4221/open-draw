@@ -43,10 +43,11 @@ export function exportDocumentToSvg(doc: Document, options?: SvgExportOptions): 
     Number.isFinite(maxX) &&
     Number.isFinite(maxY)
   ) {
-    x = Math.floor(minX - padding);
-    y = Math.floor(minY - padding);
-    width = Math.max(1, Math.ceil(maxX - minX + padding * 2));
-    height = Math.max(1, Math.ceil(maxY - minY + padding * 2));
+    const MAX_EXPORT_BOUND = 100_000;
+    x = Math.max(-MAX_EXPORT_BOUND, Math.min(MAX_EXPORT_BOUND, Math.floor(minX - padding)));
+    y = Math.max(-MAX_EXPORT_BOUND, Math.min(MAX_EXPORT_BOUND, Math.floor(minY - padding)));
+    width = Math.max(1, Math.min(MAX_EXPORT_BOUND, Math.ceil(maxX - minX + padding * 2)));
+    height = Math.max(1, Math.min(MAX_EXPORT_BOUND, Math.ceil(maxY - minY + padding * 2)));
   }
 
   const content = documentToSvg(doc, {

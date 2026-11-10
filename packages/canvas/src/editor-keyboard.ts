@@ -37,6 +37,8 @@ export interface KeyboardBindingContext {
   readonly nextShapeId: (doc?: Document) => ShapeId;
 }
 
+let activeEditorCanvas: CanvasController | null = null;
+
 export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void {
   const {
     canvas,
@@ -50,6 +52,16 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     execute,
     render,
   } = ctx;
+
+  const onInteract = (): void => {
+    activeEditorCanvas = canvas;
+  };
+  if (ctx.container && typeof ctx.container.addEventListener === "function") {
+    ctx.container.addEventListener("pointerdown", onInteract, { capture: true, passive: true });
+  }
+  if (ctx.svg && typeof ctx.svg.addEventListener === "function") {
+    ctx.svg.addEventListener("pointerdown", onInteract, { capture: true, passive: true });
+  }
 
   let clipboard: {
     readonly shapes: readonly Shape[];
@@ -104,6 +116,11 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
       Boolean(target?.isContentEditable);
 
     const activeEl = typeof document !== "undefined" ? document.activeElement : null;
+    const isBodyActive =
+      !activeEl || activeEl === (typeof document !== "undefined" ? document.body : null);
+    if (isBodyActive && activeEditorCanvas !== null && activeEditorCanvas !== canvas) {
+      return;
+    }
     if (
       activeEl &&
       activeEl !== (typeof document !== "undefined" ? document.body : null) &&
@@ -184,7 +201,34 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
                   Array.isArray(data.shapes) &&
                   Array.isArray(data.topLevelIds)
                 ) {
-                  pasteShapes(data.shapes, data.topLevelIds, 1);
+                  const sanitizedShapes: Shape[] = [];
+                  for (const raw of data.shapes) {
+                    if (
+                      typeof raw === "object" &&
+                      raw !== null &&
+                      !Object.prototype.hasOwnProperty.call(raw, "__proto__") &&
+                      typeof raw.id === "string" &&
+                      typeof raw.kind === "string" &&
+                      typeof raw.parentId === "string" &&
+                      typeof raw.boundingBox === "object" &&
+                      raw.boundingBox !== null &&
+                      typeof raw.boundingBox.x === "number" &&
+                      Number.isFinite(raw.boundingBox.x) &&
+                      typeof raw.boundingBox.y === "number" &&
+                      Number.isFinite(raw.boundingBox.y) &&
+                      typeof raw.boundingBox.width === "number" &&
+                      Number.isFinite(raw.boundingBox.width) &&
+                      raw.boundingBox.width > 0 &&
+                      typeof raw.boundingBox.height === "number" &&
+                      Number.isFinite(raw.boundingBox.height) &&
+                      raw.boundingBox.height > 0
+                    ) {
+                      sanitizedShapes.push(raw as Shape);
+                    }
+                  }
+                  if (sanitizedShapes.length > 0) {
+                    pasteShapes(sanitizedShapes, data.topLevelIds, 1);
+                  }
                 }
               } catch {
                 // Ignore non-open-draw clipboard text
@@ -300,5 +344,14 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
   return () => {
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
+    if (ctx.container && typeof ctx.container.removeEventListener === "function") {
+      ctx.container.removeEventListener("pointerdown", onInteract);
+    }
+    if (ctx.svg && typeof ctx.svg.removeEventListener === "function") {
+      ctx.svg.removeEventListener("pointerdown", onInteract);
+    }
+    if (activeEditorCanvas === canvas) {
+      activeEditorCanvas = null;
+    }
   };
 }

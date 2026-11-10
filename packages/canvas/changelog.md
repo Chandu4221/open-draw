@@ -5,6 +5,17 @@ All notable changes to the `@open-draw/canvas` package are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-11-10
+
+### Added
+
+- **In-Tree Spatial Index (ADR-0011)**: Sort-Tile-Recursive (STR) packed 2D R-Tree providing $O(\log N + K)$ point hit-testing, box-picking, and viewport culling with zero runtime dependencies (R-002).
+- **Magnetic Alignment Snapping**: Pure snap solver for edge-to-edge, center-to-center, and handle-constrained resize snapping with live counter-scaled SVG guide lines.
+- **Multi-Touch Gestures**: Two-finger pinch-to-zoom and pan via pure `TouchTracker`, with pointer capture lifecycle management and `pointerType === "touch"` filtering.
+- **Transform-Only Camera Optimization (R-017, R-018)**: Hardware-accelerated viewport transforms decoupled from document scene re-serialization, eliminating frame drops during pan and zoom.
+- **Platform-Aware Reparenting (R-004, R-024, R-026)**: Enforced neutral canvas non-reparenting for geometric rectangles while enabling structural parenting inside platform roots.
+- **Clipboard & Security Hardening (R-006)**: Validated shape boundary schemas and prototype pollution guards on OS clipboard paste.
+
 ## [0.8.0] - 2026-11-09
 
 ### Added

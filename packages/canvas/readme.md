@@ -97,14 +97,15 @@ const hitShapeId = canvas.pickShape(doc, { x: 100, y: 80 });
 - **Document is Truth (R-016)**: The document tree is immutable and canonical; mutations occur exclusively through typed transactions.
 - **Camera is a Transform (R-017)**: Pan and zoom transforms never alter shape geometry coordinates.
 - **Machine & Viewport Separation (R-008, R-009)**: The state machine consumes pure pointer events. Wheel events are ignored by the state table and handled directly as camera viewport transforms by the imperative editor shell.
-- **Instance State Isolation (R-008)**: Editors instantiate their own shape ID generators via `createShapeIdGenerator()`, preventing cross-canvas sequence leakage.
+- **Spatial Acceleration & Viewport Culling (ADR-0011)**: In-tree zero-dependency Sort-Tile-Recursive (STR) R-Tree accelerates hit-testing, box-picking, and viewport culling.
+- **Magnetic Alignment Snapping**: Edge and center alignment snapping with counter-scaled SVG guide lines during translation and handle resizing.
+- **Multi-Touch Gestures**: TouchTracker for two-finger pinch-to-zoom and pan with pointer capture lifecycle management.
 
 ## Scope & Non-Goals for v1
 
 The v1 release focuses on diagramming, wireframing, and vector sketching primitives:
 
 - **Shape Rotation & Skew**: Non-goal for v1 (axis-aligned bounding boxes only).
-- **Grid / Object Snapping**: Non-goal for v1 (reserved for extension layer).
 - **Image / Raster Asset Shapes**: Non-goal for v1 (vector primitives and text only).
 - **Rich Text & Inline Spans**: Non-goal for v1 (uniform text content only).
 - **Native OS File Drag-and-Drop**: Non-goal for v1 (document JSON serialization and file loading APIs only).

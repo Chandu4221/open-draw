@@ -25,6 +25,8 @@ import type { HandleId } from "./handles";
 import { normalizeBox, resizeBox } from "./geometry";
 import { TOOLS, type ToolId } from "./tools";
 
+export const DEFAULT_TEXT_SHAPE_DIMENSIONS = { width: 100, height: 32 } as const;
+
 export type ShapeIdGenerator = (doc?: Document) => ShapeId;
 
 export interface ShapeIdSequence {
@@ -249,8 +251,8 @@ export function commitDrawGesture(
       {
         x: gesture.startWorld.x - parentBox.x,
         y: gesture.startWorld.y - parentBox.y,
-        width: 100,
-        height: 32,
+        width: DEFAULT_TEXT_SHAPE_DIMENSIONS.width,
+        height: DEFAULT_TEXT_SHAPE_DIMENSIONS.height,
       },
       { parentId: targetParentId },
     );

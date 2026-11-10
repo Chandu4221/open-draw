@@ -48,11 +48,36 @@ describe("reparent helpers and N-level deep hierarchies", () => {
   ]);
 
   describe("isContainerShape", () => {
-    it("identifies page, section, rect, and root shapes as containers", () => {
-      expect(isContainerShape(doc.shapes[pageId]!)).toBe(true);
-      expect(isContainerShape(doc.shapes[sectionId]!)).toBe(true);
-      expect(isContainerShape(doc.shapes[cardId]!)).toBe(true);
-      expect(isContainerShape(doc.shapes[freeRectId]!)).toBe(true);
+    it("identifies page and section as structural containers", () => {
+      expect(isContainerShape(doc.shapes[pageId]!, doc)).toBe(true);
+      expect(isContainerShape(doc.shapes[sectionId]!, doc)).toBe(true);
+    });
+
+    it("does not treat plain rectangle on platform-agnostic canvas as a drop container (R-004, R-024, R-026)", () => {
+      // free-rect-1 is a plain rectangle on ROOT_ID with no platform metadata
+      expect(isContainerShape(doc.shapes[freeRectId]!, doc)).toBe(false);
+    });
+
+    it("treats rectangle inside a platform-tagged screen or with platform semantics as a container", () => {
+      const platformPageId = parseShapeId("screen-web");
+      const cardInsidePlatformId = parseShapeId("card-platform");
+      const platformDoc = createDocument([
+        createPage(
+          platformPageId,
+          { x: 0, y: 0, width: 800, height: 600 },
+          {
+            meta: { order: {}, platform: "web" },
+          },
+        ),
+        createRect(
+          cardInsidePlatformId,
+          { x: 10, y: 10, width: 200, height: 200 },
+          {
+            parent: platformPageId,
+          },
+        ),
+      ]);
+      expect(isContainerShape(platformDoc.shapes[cardInsidePlatformId]!, platformDoc)).toBe(true);
     });
 
     it("identifies rectangle with semantic tag as a container even when empty", () => {

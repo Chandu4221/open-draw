@@ -259,6 +259,7 @@ export function querySpatialIndexBox(
     }
   }
 
+  results.sort((a, b) => b.zIndex - a.zIndex);
   return results;
 }
 

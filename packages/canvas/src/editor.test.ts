@@ -1,6 +1,6 @@
 // Standalone editor behavior tests (R-015: describe = subject, it = behavior).
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseShapeId } from "@open-draw/contracts";
+import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
 import { COMMANDS, createDocument, createRect } from "@open-draw/document";
 import { createEditor, type Editor } from "./editor";
 import { CONTROLLER_EVENTS } from "./events";
@@ -850,13 +850,17 @@ describe("createEditor", () => {
   });
 
   it("parents newly drawn shapes to enclosing container and supports N levels of nested parenting", () => {
-    // Level 1: root container (0, 0, 800, 600)
-    const rootContainer = createRect(parseShapeId("c-root"), {
-      x: 0,
-      y: 0,
-      width: 800,
-      height: 600,
-    });
+    // Level 1: root container (0, 0, 800, 600) with platform metadata (R-024, R-026)
+    const rootContainer = createRect(
+      parseShapeId("c-root"),
+      {
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      },
+      { meta: { order: {}, platform: "web" } },
+    );
     // Level 2: nested container (100, 100, 400, 400) inside rootContainer => world (100, 100, 400, 400)
     const nestedContainer = createRect(
       parseShapeId("c-nested"),
@@ -909,13 +913,17 @@ describe("createEditor", () => {
   });
 
   it("reparents dragged shape into nested container at level N when dragged over it", () => {
-    // Level 1: root container (0, 0, 800, 600)
-    const rootContainer = createRect(parseShapeId("drag-root"), {
-      x: 0,
-      y: 0,
-      width: 800,
-      height: 600,
-    });
+    // Level 1: root container (0, 0, 800, 600) with platform metadata (R-024, R-026)
+    const rootContainer = createRect(
+      parseShapeId("drag-root"),
+      {
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      },
+      { meta: { order: {}, platform: "web" } },
+    );
     // Level 2: nested container (100, 100, 400, 400) inside drag-root => world (100, 100, 400, 400)
     const nestedContainer = createRect(
       parseShapeId("drag-nested"),
@@ -958,6 +966,43 @@ describe("createEditor", () => {
     expect(dragged.boundingBox.y).toBe(80);
     expect(dragged.boundingBox.width).toBe(60);
     expect(dragged.boundingBox.height).toBe(40);
+  });
+
+  it("does not reparent shape when dragged over another rectangle on a platform-agnostic canvas (R-004, R-024, R-026)", () => {
+    // Both shapes are on ROOT_ID with no platform metadata
+    const baseRect = createRect(parseShapeId("base-rect"), {
+      x: 0,
+      y: 0,
+      width: 500,
+      height: 500,
+    });
+    const movingShape = createRect(parseShapeId("moving-rect"), {
+      x: 600,
+      y: 100,
+      width: 60,
+      height: 40,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([baseRect, movingShape]),
+    });
+    editor.select(movingShape.id);
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const upFn = mockSvg.listeners["pointerup"]?.[0];
+
+    // Drag movingShape over baseRect at world (200, 200)
+    downFn!({ button: 0, clientX: 630, clientY: 120, pointerId: 1, preventDefault: () => {} });
+    moveFn!({ button: 0, clientX: 200, clientY: 200, pointerId: 1, preventDefault: () => {} });
+    upFn!({ button: 0, clientX: 200, clientY: 200, pointerId: 1, preventDefault: () => {} });
+
+    const docAfterDrag = editor.getDocument();
+    const dragged = docAfterDrag.shapes[movingShape.id]!;
+    // On platform-agnostic canvas, default parenting is OFF: stays on ROOT_ID
+    expect(dragged.parentId).toBe(ROOT_ID);
   });
 
   it("resets machine state to idle on pointercancel (B1)", () => {
@@ -1116,6 +1161,7 @@ describe("createEditor", () => {
     mockSvg.dispatch("pointerdown", {
       button: 0,
       pointerId: 1,
+      pointerType: "touch",
       clientX: 100,
       clientY: 100,
       preventDefault: () => {},
@@ -1123,20 +1169,41 @@ describe("createEditor", () => {
     mockSvg.dispatch("pointerdown", {
       button: 0,
       pointerId: 2,
+      pointerType: "touch",
       clientX: 200,
       clientY: 100,
       preventDefault: () => {},
     });
 
     // Expand distance to 200 (2x zoom) centered at (150, 100)
-    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 50, clientY: 100 });
-    mockSvg.dispatch("pointermove", { pointerId: 2, clientX: 250, clientY: 100 });
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 50,
+      clientY: 100,
+    });
+    mockSvg.dispatch("pointermove", {
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 250,
+      clientY: 100,
+    });
 
     expect(editor.getCamera().zoom).toBeCloseTo(2);
 
     // Lift both touches
-    mockSvg.dispatch("pointerup", { pointerId: 1, clientX: 50, clientY: 100 });
-    mockSvg.dispatch("pointerup", { pointerId: 2, clientX: 250, clientY: 100 });
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 50,
+      clientY: 100,
+    });
+    mockSvg.dispatch("pointerup", {
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 250,
+      clientY: 100,
+    });
 
     expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
   });
@@ -1151,17 +1218,24 @@ describe("createEditor", () => {
     mockSvg.dispatch("pointerdown", {
       button: 0,
       pointerId: 1,
+      pointerType: "touch",
       clientX: 50,
       clientY: 50,
       preventDefault: () => {},
     });
-    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 150, clientY: 150 });
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 150,
+      clientY: 150,
+    });
     expect(editor.canvas.getMachineState().stateId).toBe(STATES.drawingShape);
 
     // Second finger touches down -> cancels drawing gesture
     mockSvg.dispatch("pointerdown", {
       button: 0,
       pointerId: 2,
+      pointerType: "touch",
       clientX: 200,
       clientY: 200,
       preventDefault: () => {},
@@ -1169,8 +1243,18 @@ describe("createEditor", () => {
     expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
 
     // Lift fingers
-    mockSvg.dispatch("pointerup", { pointerId: 1, clientX: 150, clientY: 150 });
-    mockSvg.dispatch("pointerup", { pointerId: 2, clientX: 200, clientY: 200 });
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 150,
+      clientY: 150,
+    });
+    mockSvg.dispatch("pointerup", {
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 200,
+      clientY: 200,
+    });
 
     // No shape was created
     expect(Object.keys(editor.getDocument().shapes)).toHaveLength(0);

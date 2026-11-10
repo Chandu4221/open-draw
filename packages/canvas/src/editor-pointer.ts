@@ -98,18 +98,20 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
 
-    touchTracker = addTouchPointer(touchTracker, event.pointerId, screen);
-    if (touchTracker.pointers.size === 2) {
-      if (getGesture() !== null || canvas.getMachineState().stateId !== STATES.idle) {
-        canvas.dispatch({ type: CANVAS_EVENTS.pointerCancel });
-        setGesture(null);
-        hasPassedDragThreshold = false;
-        render();
+    if (event.pointerType === "touch") {
+      touchTracker = addTouchPointer(touchTracker, event.pointerId, screen);
+      if (touchTracker.pointers.size === 2) {
+        if (getGesture() !== null || canvas.getMachineState().stateId !== STATES.idle) {
+          canvas.dispatch({ type: CANVAS_EVENTS.pointerCancel });
+          setGesture(null);
+          hasPassedDragThreshold = false;
+          render();
+        }
+        return;
       }
-      return;
-    }
-    if (touchTracker.pointers.size > 2) {
-      return;
+      if (touchTracker.pointers.size > 2) {
+        return;
+      }
     }
 
     if (ctx.interceptPointerDown?.(event, { world, screen, canvas, doc })) {
@@ -207,6 +209,24 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       shapeIds = selectedIds;
     }
 
+    if (originalBox === null && shapeIds.length > 0) {
+      if (shapeIds.length === 1) {
+        const s = doc.shapes[shapeIds[0]!];
+        if (s !== undefined && s.kind !== "page") {
+          originalBox = absoluteBoundingBox(doc, s);
+        }
+      } else {
+        const boxes: BoundingBox[] = [];
+        for (const id of shapeIds) {
+          const s = doc.shapes[id];
+          if (s !== undefined && s.kind !== "page") {
+            boxes.push(absoluteBoundingBox(doc, s));
+          }
+        }
+        originalBox = unionBoxes(boxes);
+      }
+    }
+
     setGesture({
       kind,
       startScreen: screen,
@@ -226,17 +246,19 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
 
   function onPointerMove(event: PointerEvent): void {
     const screen = screenPoint(event);
-    if (touchTracker.pointers.size === 2 && touchTracker.pointers.has(event.pointerId)) {
-      const res = updateTouchPointer(touchTracker, event.pointerId, screen);
-      touchTracker = res.tracker;
-      if (res.pinchDelta !== null) {
-        canvas.panBy(res.pinchDelta.panDelta);
-        canvas.zoomAt(res.pinchDelta.center, res.pinchDelta.zoomFactor);
+    if (event.pointerType === "touch") {
+      if (touchTracker.pointers.size === 2 && touchTracker.pointers.has(event.pointerId)) {
+        const res = updateTouchPointer(touchTracker, event.pointerId, screen);
+        touchTracker = res.tracker;
+        if (res.pinchDelta !== null) {
+          canvas.panBy(res.pinchDelta.panDelta);
+          canvas.zoomAt(res.pinchDelta.center, res.pinchDelta.zoomFactor);
+        }
+        return;
       }
-      return;
-    }
-    if (touchTracker.pointers.size > 2) {
-      return;
+      if (touchTracker.pointers.size > 2) {
+        return;
+      }
     }
 
     const gesture = getGesture();
@@ -314,6 +336,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
         viewportBox,
         zoom: canvas.getCamera().zoom,
         thresholdPx,
+        activeDeviceType: canvas.getActiveDeviceType(),
       });
       effectiveWorld = snapRes.snappedWorld;
       snapGuides = snapRes.guides;
@@ -336,7 +359,9 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
 
   function onPointerUp(event: PointerEvent): void {
     const wasPinching = touchTracker.pointers.size >= 2;
-    touchTracker = removeTouchPointer(touchTracker, event.pointerId);
+    if (event.pointerType === "touch") {
+      touchTracker = removeTouchPointer(touchTracker, event.pointerId);
+    }
     try {
       if (typeof svg.hasPointerCapture === "function" && svg.hasPointerCapture(event.pointerId)) {
         svg.releasePointerCapture(event.pointerId);
@@ -463,9 +488,8 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
     const rawHit = canvas.pickShape(getDoc(), world);
-    const hit =
-      canvas.getSelectedId() ??
-      (rawHit !== null ? canvas.resolveSelectionDrillDown(getDoc(), rawHit, true) : null);
+    if (rawHit === null) return;
+    const hit = canvas.resolveSelectionDrillDown(getDoc(), rawHit, true);
     if (hit !== null && ctx.onDoubleClick !== undefined) {
       ctx.onDoubleClick(hit);
     }

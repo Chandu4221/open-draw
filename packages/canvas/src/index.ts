@@ -1,7 +1,7 @@
 /// @open-draw/canvas — public SDK contract surface (R-004, R-010, R-036, ADR-0008).
 /// Pure interaction core and batteries-included visual canvas controller.
 
-export const CANVAS_VERSION = "0.8.0" as const;
+export const CANVAS_VERSION = "0.9.0" as const;
 
 export {
   type Camera,
@@ -144,6 +144,7 @@ export {
   type ShapeIdGenerator,
   type ShapeIdSequence,
   type NestingMode,
+  DEFAULT_TEXT_SHAPE_DIMENSIONS,
 } from "./editor-gestures";
 
 export { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
