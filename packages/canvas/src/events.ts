@@ -8,6 +8,7 @@ export const CANVAS_EVENTS = {
   pointerDown: "pointerDown",
   pointerMove: "pointerMove",
   pointerUp: "pointerUp",
+  pointerCancel: "pointerCancel",
   doubleClick: "doubleClick",
   wheel: "wheel",
   keyEscape: "keyEscape",
@@ -55,6 +56,10 @@ export interface CanvasWheelEvent {
 }
 export type WheelEvent = CanvasWheelEvent;
 
+export interface PointerCancelEvent {
+  readonly type: (typeof CANVAS_EVENTS)["pointerCancel"];
+}
+
 export interface KeyEscapeEvent {
   readonly type: (typeof CANVAS_EVENTS)["keyEscape"];
 }
@@ -70,6 +75,7 @@ export type CanvasEvent =
   | PointerDownEvent
   | PointerMoveEvent
   | PointerUpEvent
+  | PointerCancelEvent
   | DoubleClickEvent
   | CanvasWheelEvent
   | KeyEscapeEvent;

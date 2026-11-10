@@ -60,6 +60,7 @@ export interface RenderOptions {
   readonly includeAnnotations?: boolean | undefined;
   readonly resolveDisplayName?: ((shape: Shape) => string) | undefined;
   readonly instanceId?: string | undefined;
+  readonly visibleShapeIds?: ReadonlySet<ShapeId> | undefined;
 }
 
 function num(val: unknown, fallback = 0): number {
@@ -188,7 +189,13 @@ function resolveShapeRootId(document: Document, shape: Shape): ShapeId | undefin
 // Style selection is root-resolved (R-026).
 // Fallback emission surfaces via the pure options callback without singletons (R-008, ADR-0003 D3).
 export function documentToSvg(document: Document, options?: RenderOptions): string {
-  return shapeListInOrder(document)
+  const ordered = shapeListInOrder(document);
+  const shapes =
+    options?.visibleShapeIds !== undefined
+      ? ordered.filter((shape) => options.visibleShapeIds!.has(shape.id))
+      : ordered;
+
+  return shapes
     .map((shape) => {
       const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
       const rootId = resolveShapeRootId(document, shape);

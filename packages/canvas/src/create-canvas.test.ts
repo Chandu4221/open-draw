@@ -297,4 +297,39 @@ describe("createCanvas", () => {
     canvas.zoomAt({ x: 0, y: 0 }, 1.5);
     expect(calls).toBe(3);
   });
+
+  it("caches spatial index for same document and re-indexes on new document (ADR-0011)", () => {
+    const canvas = createCanvas();
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc1 = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    const index1 = canvas.getSpatialIndex(doc1);
+    const index2 = canvas.getSpatialIndex(doc1);
+    expect(index1).toBe(index2);
+    expect(index1.count).toBe(2);
+
+    const doc2 = createDocument([createPage(pageId, { x: 0, y: 0, width: 500, height: 500 })]);
+    const index3 = canvas.getSpatialIndex(doc2);
+    expect(index3).not.toBe(index1);
+    expect(index3.count).toBe(1);
+  });
+
+  it("performs marquee box picking through spatial index via canvas.pickShapesInBox (ADR-0011)", () => {
+    const canvas = createCanvas();
+    const pageId = parseShapeId("page-1");
+    const rect1 = parseShapeId("rect-1");
+    const rect2 = parseShapeId("rect-2");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 800, height: 600 }),
+      createRect(rect1, { x: 10, y: 10, width: 50, height: 50 }, { parent: pageId }),
+      createRect(rect2, { x: 100, y: 100, width: 50, height: 50 }, { parent: pageId }),
+    ]);
+
+    const picked = canvas.pickShapesInBox(doc, { x: 5, y: 5, width: 40, height: 40 });
+    expect(picked).toEqual([rect1]);
+  });
 });

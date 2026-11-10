@@ -69,7 +69,8 @@ export function transition(previous: MachineState, event: CanvasEvent): MachineS
       }
       return previous;
     }
-    case CANVAS_EVENTS.pointerUp: {
+    case CANVAS_EVENTS.pointerUp:
+    case CANVAS_EVENTS.pointerCancel: {
       return INITIAL_MACHINE_STATE;
     }
     case CANVAS_EVENTS.doubleClick: {

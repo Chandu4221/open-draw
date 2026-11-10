@@ -17,6 +17,11 @@ export interface EditorOverlayContext {
   readonly canvas: CanvasController;
 }
 
+export interface SnapConfig {
+  readonly enabled?: boolean | undefined;
+  readonly thresholdPx?: number | undefined;
+}
+
 export interface EditorOptions {
   readonly document?: Document;
   readonly canvasOptions?: CanvasOptions;
@@ -24,6 +29,7 @@ export interface EditorOptions {
   readonly nestingMode?: NestingMode;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
   readonly renderCustomOverlays?: (context: EditorOverlayContext) => readonly string[];
+  readonly snapping?: boolean | SnapConfig | undefined;
   readonly interceptPointerDown?:
     | ((
         event: PointerEvent,

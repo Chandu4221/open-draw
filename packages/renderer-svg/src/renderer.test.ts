@@ -493,4 +493,25 @@ describe("visible text on shapes (F2, ADR-0006 Option A / shape.content)", () =>
     expect(svg).toContain('pointer-events="none"');
     expect(svg).toContain('user-select="none"');
   });
+
+  it("filters shapes when visibleShapeIds is provided while preserving stacking order", () => {
+    const s1 = parseShapeId("shape-1");
+    const s2 = parseShapeId("shape-2");
+    const s3 = parseShapeId("shape-3");
+    const doc = createDocument([
+      createRect(s1, { x: 0, y: 0, width: 50, height: 50 }),
+      createRect(s2, { x: 100, y: 100, width: 50, height: 50 }),
+      createRect(s3, { x: 200, y: 200, width: 50, height: 50 }),
+    ]);
+
+    const svg = documentToSvg(doc, {
+      visibleShapeIds: new Set([s1, s3]),
+    });
+
+    expect(svg).toContain('width="50" height="50"');
+    // s1 and s3 should be rendered, s2 must be culled
+    expect(svg).toContain('x="0" y="0"');
+    expect(svg).not.toContain('x="100" y="100"');
+    expect(svg).toContain('x="200" y="200"');
+  });
 });

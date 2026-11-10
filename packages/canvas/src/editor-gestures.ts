@@ -2,6 +2,7 @@
 // Translates pointer completion into typed document commands.
 import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
 import { isRootId, ROOT_ID } from "@open-draw/contracts";
+import type { SnapGuide } from "./snap-solver";
 import {
   absoluteBoundingBox,
   COMMANDS,
@@ -69,6 +70,8 @@ export interface ActiveGesture {
   readonly parentHit: ShapeId | null;
   readonly targetShapeId: ShapeId | null;
   readonly points: readonly Point[];
+  readonly snapGuides?: readonly SnapGuide[] | undefined;
+  readonly snappedWorld?: Point | undefined;
 }
 
 export type NestingMode = "off" | "containers-only";

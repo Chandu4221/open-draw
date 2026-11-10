@@ -76,7 +76,25 @@ class MockDomNode {
     }
   }
 
-  setPointerCapture(): void {}
+  capturedPointers: Set<number> = new Set();
+
+  setPointerCapture(id: number): void {
+    this.capturedPointers.add(id);
+  }
+
+  hasPointerCapture(id: number): boolean {
+    return this.capturedPointers.has(id);
+  }
+
+  releasePointerCapture(id: number): void {
+    this.capturedPointers.delete(id);
+  }
+
+  dispatch(event: string, arg: unknown): void {
+    for (const fn of this.listeners[event] ?? []) {
+      fn(arg);
+    }
+  }
 }
 
 describe("createEditor", () => {
@@ -1048,5 +1066,258 @@ describe("createEditor", () => {
 
     editor.setTool(TOOLS.select);
     expect(editor.svg.style.cursor).toBe("default");
+  });
+
+  it("culls off-screen shapes from the rendered DOM while preserving visible and selected shapes", () => {
+    const visibleShape = createRect(parseShapeId("rect-vis"), {
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 100,
+    });
+    const offScreenShape = createRect(parseShapeId("rect-offscreen"), {
+      x: 5000,
+      y: 5000,
+      width: 100,
+      height: 100,
+    });
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([visibleShape, offScreenShape]),
+    });
+
+    const docScene = (editor.svg as unknown as MockDomNode).querySelector(".od-document-scene");
+    expect(docScene).not.toBeNull();
+    expect(docScene!.innerHTML).toContain('x="10"');
+    expect(docScene!.innerHTML).not.toContain('x="5000"');
+
+    // Moving camera to (5000, 5000) brings offScreenShape into view and culls visibleShape
+    editor.setCamera({ x: 5000, y: 5000, zoom: 1 });
+    expect(docScene!.innerHTML).not.toContain('x="10"');
+    expect(docScene!.innerHTML).toContain('x="5000"');
+
+    // Pan back to origin
+    editor.setCamera({ x: 0, y: 0, zoom: 1 });
+    expect(docScene!.innerHTML).toContain('x="10"');
+    expect(docScene!.innerHTML).not.toContain('x="5000"');
+
+    // Selecting an off-screen shape preserves it in the rendered DOM
+    editor.select(offScreenShape.id);
+    expect(docScene!.innerHTML).toContain('x="10"');
+    expect(docScene!.innerHTML).toContain('x="5000"');
+  });
+
+  it("handles multi-touch pinch-to-zoom and two-finger pan gestures", () => {
+    editor = createEditor(container as unknown as HTMLElement);
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    expect(editor.getCamera().zoom).toBe(1);
+
+    // Touch 1 down at (100, 100), Touch 2 down at (200, 100) -> distance 100, center (150, 100)
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 100,
+      clientY: 100,
+      preventDefault: () => {},
+    });
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 2,
+      clientX: 200,
+      clientY: 100,
+      preventDefault: () => {},
+    });
+
+    // Expand distance to 200 (2x zoom) centered at (150, 100)
+    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 50, clientY: 100 });
+    mockSvg.dispatch("pointermove", { pointerId: 2, clientX: 250, clientY: 100 });
+
+    expect(editor.getCamera().zoom).toBeCloseTo(2);
+
+    // Lift both touches
+    mockSvg.dispatch("pointerup", { pointerId: 1, clientX: 50, clientY: 100 });
+    mockSvg.dispatch("pointerup", { pointerId: 2, clientX: 250, clientY: 100 });
+
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+  });
+
+  it("cancels single-pointer drawing gesture when a second touch pointer lands", () => {
+    editor = createEditor(container as unknown as HTMLElement);
+    editor.setTool(TOOLS.drawRect);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // Start drawing with finger 1
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 50,
+      clientY: 50,
+      preventDefault: () => {},
+    });
+    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 150, clientY: 150 });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.drawingShape);
+
+    // Second finger touches down -> cancels drawing gesture
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 2,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+
+    // Lift fingers
+    mockSvg.dispatch("pointerup", { pointerId: 1, clientX: 150, clientY: 150 });
+    mockSvg.dispatch("pointerup", { pointerId: 2, clientX: 200, clientY: 200 });
+
+    // No shape was created
+    expect(Object.keys(editor.getDocument().shapes)).toHaveLength(0);
+  });
+
+  it("resets active dragging gesture and releases pointer capture on lostpointercapture", () => {
+    const rect = createRect(parseShapeId("rect-lpc"), { x: 10, y: 10, width: 100, height: 100 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+    editor.select(rect.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // Drag shape
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 20,
+      clientY: 20,
+      preventDefault: () => {},
+    });
+    expect(mockSvg.hasPointerCapture(1)).toBe(true);
+
+    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 60, clientY: 60 });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    // Lost pointer capture event occurs
+    mockSvg.dispatch("lostpointercapture", { pointerId: 1 });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+    expect(mockSvg.hasPointerCapture(1)).toBe(false);
+
+    // Shape position remains unchanged at (10, 10)
+    expect(editor.getDocument().shapes[rect.id]!.boundingBox.x).toBe(10);
+  });
+
+  it("aborts in-flight gesture on window blur", () => {
+    const rect = createRect(parseShapeId("rect-blur"), { x: 10, y: 10, width: 100, height: 100 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+    editor.select(rect.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 20,
+      clientY: 20,
+      preventDefault: () => {},
+    });
+    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 50, clientY: 50 });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    const mockWin = (
+      globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+    ).window;
+    mockWin.dispatch("blur", {});
+
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+    expect(editor.getDocument().shapes[rect.id]!.boundingBox.x).toBe(10);
+  });
+
+  it("snaps moving shape to nearby target shape and renders alignment guides in overlay scene", () => {
+    const target = createRect(parseShapeId("rect-target"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    const moving = createRect(parseShapeId("rect-moving"), {
+      x: 300,
+      y: 300,
+      width: 80,
+      height: 80,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([target, moving]),
+    });
+    editor.select(moving.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    // Pointer down on moving shape at (310, 310)
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 310,
+      clientY: 310,
+      preventDefault: () => {},
+    });
+
+    // Move by (-198, 0) to (112, 310) -> candidate left is at 300 - 198 = 102 (within 2px of target left at 100)
+    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 112, clientY: 310 });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    // Overlays should include the vertical snap guide at x="100"
+    const overlayScene = mockSvg.querySelector<MockDomNode>(".od-overlay-scene");
+    expect(overlayScene).not.toBeNull();
+    expect(overlayScene!.innerHTML).toContain('<line x1="100"');
+    expect(overlayScene!.innerHTML).toContain('stroke="var(--od-snap-guide, #ff007a)"');
+
+    // Release pointer
+    mockSvg.dispatch("pointerup", { pointerId: 1, clientX: 112, clientY: 310 });
+
+    // Committed shape X coordinate must be snapped exactly to 100 (not 102)
+    const docAfterMove = editor.getDocument();
+    expect(docAfterMove.shapes[moving.id]!.boundingBox.x).toBe(100);
+  });
+
+  it("bypasses snapping when altKey is pressed during drag", () => {
+    const target = createRect(parseShapeId("rect-target-alt"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    const moving = createRect(parseShapeId("rect-moving-alt"), {
+      x: 300,
+      y: 300,
+      width: 80,
+      height: 80,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([target, moving]),
+    });
+    editor.select(moving.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 310,
+      clientY: 310,
+      preventDefault: () => {},
+    });
+
+    // Move to (112, 310) with altKey: true
+    mockSvg.dispatch("pointermove", { pointerId: 1, clientX: 112, clientY: 310, altKey: true });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    const overlayScene = mockSvg.querySelector<MockDomNode>(".od-overlay-scene");
+    expect(overlayScene!.innerHTML).not.toContain('stroke="var(--od-snap-guide, #ff007a)"');
+
+    mockSvg.dispatch("pointerup", { pointerId: 1, clientX: 112, clientY: 310, altKey: true });
+
+    // Committed shape X coordinate remains unconstrained at 102
+    const docAfterMove = editor.getDocument();
+    expect(docAfterMove.shapes[moving.id]!.boundingBox.x).toBe(102);
   });
 });

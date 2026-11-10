@@ -16,7 +16,8 @@ import {
 } from "./camera";
 import { CONTROLLER_EVENTS, type CanvasEvent, type ControllerEvent } from "./events";
 import type { HandleId } from "./handles";
-import { pickHandle, pickShape, resolveSelectionDrillDown } from "./hit-test";
+import { pickHandle, pickShape, pickShapesInBox, resolveSelectionDrillDown } from "./hit-test";
+import { buildSpatialIndexFromDocument, type SpatialIndex } from "./spatial/spatial-index";
 import { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
 import { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 import {
@@ -72,6 +73,8 @@ export interface CanvasController {
   hasCapability(kind: string, capability: CapabilityId): boolean;
 
   pickShape(doc: Document, worldPoint: Point): ShapeId | null;
+  pickShapesInBox(doc: Document, marqueeBox: BoundingBox): readonly ShapeId[];
+  getSpatialIndex(doc: Document): SpatialIndex;
   pickHandle(worldBox: BoundingBox, screenPoint: Point): HandleId | null;
   resolveAction(event: KeyboardEventDescriptor): ActionId | undefined;
   resolveSelectionDrillDown(doc: Document, hitId: ShapeId, isDoubleClick?: boolean): ShapeId;
@@ -125,6 +128,18 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
       }
     }
   };
+
+  let cachedSpatialDoc: Document | null = null;
+  let cachedSpatialIndex: SpatialIndex | null = null;
+
+  function ensureSpatialIndex(doc: Document): SpatialIndex {
+    if (cachedSpatialIndex !== null && cachedSpatialDoc === doc) {
+      return cachedSpatialIndex;
+    }
+    cachedSpatialDoc = doc;
+    cachedSpatialIndex = buildSpatialIndexFromDocument(doc);
+    return cachedSpatialIndex;
+  }
 
   return {
     getCamera: () => camera,
@@ -186,7 +201,9 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     },
     hasCapability: (kind, capability) => shapeKindRegistry.hasCapability(kind, capability),
 
-    pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry),
+    getSpatialIndex: (doc) => ensureSpatialIndex(doc),
+    pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry, ensureSpatialIndex(doc)),
+    pickShapesInBox: (doc, box) => pickShapesInBox(doc, box, ensureSpatialIndex(doc)),
     pickHandle: (box, point) => pickHandle(camera, box, point),
     resolveAction: (event) => resolveKeyBinding(event),
     resolveSelectionDrillDown: (doc, hitId, isDoubleClick = false) =>

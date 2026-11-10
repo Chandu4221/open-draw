@@ -10,6 +10,11 @@ import {
 import { worldToScreen, type Camera } from "./camera";
 import { HANDLES, type HandleId } from "./handles";
 import type { ShapeKindRegistry } from "./register-shape-kind";
+import {
+  querySpatialIndexBox,
+  querySpatialIndexPoint,
+  type SpatialIndex,
+} from "./spatial/spatial-index";
 
 export const HANDLE_PICK_RADIUS_PX = 8;
 
@@ -26,8 +31,29 @@ export function boxIntersectsBox(a: BoundingBox, b: BoundingBox): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
-export function pickShapesInBox(document: Document, marqueeBox: BoundingBox): readonly ShapeId[] {
+export function pickShapesInBox(
+  document: Document,
+  marqueeBox: BoundingBox,
+  spatialIndex?: SpatialIndex,
+): readonly ShapeId[] {
   const result: ShapeId[] = [];
+  if (spatialIndex !== undefined) {
+    const candidates = querySpatialIndexBox(spatialIndex, marqueeBox);
+    for (const item of candidates) {
+      const box = item.box;
+      const enclosesMarquee =
+        box.x <= marqueeBox.x &&
+        box.y <= marqueeBox.y &&
+        box.x + box.width >= marqueeBox.x + marqueeBox.width &&
+        box.y + box.height >= marqueeBox.y + marqueeBox.height;
+
+      if (!enclosesMarquee && boxIntersectsBox(box, marqueeBox)) {
+        result.push(item.id);
+      }
+    }
+    return result;
+  }
+
   for (const shape of Object.values(document.shapes)) {
     const box = absoluteBoundingBox(document, shape);
     const enclosesMarquee =
@@ -47,7 +73,25 @@ export function pickShape(
   document: Document,
   worldPoint: Point,
   registry?: ShapeKindRegistry,
+  spatialIndex?: SpatialIndex,
 ): ShapeId | null {
+  if (spatialIndex !== undefined) {
+    const candidates = querySpatialIndexPoint(spatialIndex, worldPoint, 8);
+    for (const item of candidates) {
+      const shape = document.shapes[item.id];
+      if (shape === undefined) continue;
+      const customTester = registry?.get(shape.kind)?.hitTest;
+      if (customTester !== undefined) {
+        if (customTester(item.box, shape, worldPoint)) {
+          return shape.id;
+        }
+      } else if (pointInBox(item.box, worldPoint)) {
+        return shape.id;
+      }
+    }
+    return null;
+  }
+
   const ordered = shapeListInOrder(document);
   for (let index = ordered.length - 1; index >= 0; index -= 1) {
     const shape = ordered[index]!;

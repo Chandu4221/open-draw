@@ -17,8 +17,9 @@ import {
   type HistoryState,
 } from "@open-draw/document";
 import { documentToSvg } from "@open-draw/renderer-svg";
-import { DEFAULT_CAMERA } from "./camera";
+import { cameraToViewportBox, DEFAULT_CAMERA } from "./camera";
 import { createCanvas } from "./create-canvas";
+import { querySpatialIndexBox } from "./spatial/spatial-index";
 import { CONTROLLER_EVENTS } from "./events";
 import { TOOLS, type ToolId } from "./tools";
 import { type ActiveGesture, createShapeIdGenerator } from "./editor-gestures";
@@ -89,10 +90,28 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   function renderDocument(): void {
     if (isDestroyed) return;
+    const cam = canvas.getCamera();
+    let visibleShapeIds: ReadonlySet<ShapeId> | undefined;
+
+    const rect = svg.getBoundingClientRect();
+    const width = rect.width > 0 ? rect.width : container.clientWidth;
+    const height = rect.height > 0 ? rect.height : container.clientHeight;
+    if (width > 0 && height > 0) {
+      const spatialIndex = canvas.getSpatialIndex(doc);
+      const viewportBox = cameraToViewportBox(cam, width, height, 64);
+      const hits = querySpatialIndexBox(spatialIndex, viewportBox);
+      const set = new Set(hits.map((h) => h.id));
+      for (const id of canvas.getSelectedIds()) {
+        set.add(id);
+      }
+      visibleShapeIds = set;
+    }
+
     docScene.innerHTML = documentToSvg(doc, {
       activeDeviceType: canvas.getActiveDeviceType(),
       activeDeviceTypes: canvas.getActiveDeviceTypes(),
       customRenderers: options.customRenderers,
+      visibleShapeIds,
       onFallback: (evt) => {
         options.onFallback?.(`Fallback render: ${evt.shapeId} (${evt.kind})`);
       },
@@ -194,6 +213,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     onDoubleClick: (hitId) => {
       options.onDoubleClick?.(hitId);
     },
+    snapConfig: options.snapping,
   });
 
   const detachKeyboard = attachKeyboardListeners({
@@ -231,9 +251,11 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   const unsubCamera = canvas.subscribe(CONTROLLER_EVENTS.cameraChanged, () => {
     updateCameraTransform();
+    renderDocument();
     renderOverlays();
   });
   const unsubSelection = canvas.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
+    renderDocument();
     renderOverlays();
   });
 

@@ -3,7 +3,6 @@ import { absoluteBoundingBox, type Command, type Document } from "@open-draw/doc
 import type { CanvasController } from "./create-canvas";
 import { CANVAS_EVENTS } from "./events";
 import { GESTURE_KINDS, type GestureKind } from "./gestures";
-import { pickShapesInBox } from "./hit-test";
 import { normalizeBox, unionBoxes } from "./geometry";
 import { STATES } from "./states";
 import { TOOLS, type ToolId } from "./tools";
@@ -15,6 +14,16 @@ import {
   commitResizeGesture,
 } from "./editor-gestures";
 import { resolveHandleCursor, resolveToolCursor } from "./cursor";
+import {
+  addTouchPointer,
+  createTouchTracker,
+  removeTouchPointer,
+  updateTouchPointer,
+} from "./touch-gesture";
+
+import { cameraToViewportBox } from "./camera";
+import type { SnapConfig } from "./editor-types";
+import { resolvePointerSnap } from "./snap-solver";
 
 export const DRAG_THRESHOLD_PX = 3;
 
@@ -33,6 +42,7 @@ export interface PointerBindingContext {
   readonly nestingMode?: NestingMode | undefined;
   readonly nextShapeId: (doc?: Document) => ShapeId;
   readonly onDoubleClick?: ((shapeId: ShapeId) => void) | undefined;
+  readonly snapConfig?: SnapConfig | boolean | undefined;
   readonly interceptPointerDown?:
     | ((
         event: PointerEvent,
@@ -67,6 +77,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   let hasPassedDragThreshold = false;
   let cachedRect: DOMRect | { left: number; top: number; width: number; height: number } | null =
     null;
+  let touchTracker = createTouchTracker();
 
   function screenPoint(event: MouseEvent | PointerEvent | WheelEvent): Point {
     const rect = cachedRect ?? svg.getBoundingClientRect();
@@ -86,6 +97,20 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const tool = getTool();
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
+
+    touchTracker = addTouchPointer(touchTracker, event.pointerId, screen);
+    if (touchTracker.pointers.size === 2) {
+      if (getGesture() !== null || canvas.getMachineState().stateId !== STATES.idle) {
+        canvas.dispatch({ type: CANVAS_EVENTS.pointerCancel });
+        setGesture(null);
+        hasPassedDragThreshold = false;
+        render();
+      }
+      return;
+    }
+    if (touchTracker.pointers.size > 2) {
+      return;
+    }
 
     if (ctx.interceptPointerDown?.(event, { world, screen, canvas, doc })) {
       return;
@@ -200,9 +225,22 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   }
 
   function onPointerMove(event: PointerEvent): void {
+    const screen = screenPoint(event);
+    if (touchTracker.pointers.size === 2 && touchTracker.pointers.has(event.pointerId)) {
+      const res = updateTouchPointer(touchTracker, event.pointerId, screen);
+      touchTracker = res.tracker;
+      if (res.pinchDelta !== null) {
+        canvas.panBy(res.pinchDelta.panDelta);
+        canvas.zoomAt(res.pinchDelta.center, res.pinchDelta.zoomFactor);
+      }
+      return;
+    }
+    if (touchTracker.pointers.size > 2) {
+      return;
+    }
+
     const gesture = getGesture();
     if (gesture === null) return;
-    const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
 
     if (!hasPassedDragThreshold) {
@@ -235,15 +273,87 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       canvas.panBy({ x: screen.x - lastScreen.x, y: screen.y - lastScreen.y });
     }
 
-    if (gesture.kind === GESTURE_KINDS.draw && getTool() === TOOLS.drawPenPath) {
-      setGesture({ ...gesture, points: [...gesture.points, world] });
+    let effectiveWorld = world;
+    let snapGuides = gesture.snapGuides ?? [];
+
+    const isSnapDisabled =
+      event.altKey ||
+      ctx.snapConfig === false ||
+      (typeof ctx.snapConfig === "object" && ctx.snapConfig.enabled === false);
+
+    const isSnappableGesture =
+      gesture.kind === GESTURE_KINDS.move ||
+      gesture.kind === GESTURE_KINDS.resize ||
+      (gesture.kind === GESTURE_KINDS.draw && getTool() !== TOOLS.drawPenPath);
+
+    if (!isSnapDisabled && isSnappableGesture) {
+      const mode =
+        gesture.kind === GESTURE_KINDS.resize
+          ? "resize"
+          : gesture.kind === GESTURE_KINDS.draw
+            ? "draw"
+            : "move";
+      const rect = cachedRect ?? svg.getBoundingClientRect();
+      const width = rect.width > 0 ? rect.width : 1000;
+      const height = rect.height > 0 ? rect.height : 800;
+      const viewportBox = cameraToViewportBox(canvas.getCamera(), width, height, 64);
+      const thresholdPx =
+        typeof ctx.snapConfig === "object" && ctx.snapConfig.thresholdPx !== undefined
+          ? ctx.snapConfig.thresholdPx
+          : undefined;
+
+      const snapRes = resolvePointerSnap({
+        mode,
+        rawWorld: world,
+        originalBox: gesture.originalBox,
+        startWorld: gesture.startWorld,
+        handleId: gesture.handleId,
+        movingShapeIds: gesture.shapeIds,
+        doc: getDoc(),
+        spatialIndex: canvas.getSpatialIndex(getDoc()),
+        viewportBox,
+        zoom: canvas.getCamera().zoom,
+        thresholdPx,
+      });
+      effectiveWorld = snapRes.snappedWorld;
+      snapGuides = snapRes.guides;
+    } else if (isSnapDisabled && snapGuides.length > 0) {
+      snapGuides = [];
     }
+
+    setGesture({
+      ...gesture,
+      snapGuides,
+      snappedWorld: effectiveWorld,
+      ...(gesture.kind === GESTURE_KINDS.draw && getTool() === TOOLS.drawPenPath
+        ? { points: [...gesture.points, world] }
+        : {}),
+    });
     lastScreen = screen;
-    setLastWorld(world);
+    setLastWorld(effectiveWorld);
     render();
   }
 
   function onPointerUp(event: PointerEvent): void {
+    const wasPinching = touchTracker.pointers.size >= 2;
+    touchTracker = removeTouchPointer(touchTracker, event.pointerId);
+    try {
+      if (typeof svg.hasPointerCapture === "function" && svg.hasPointerCapture(event.pointerId)) {
+        svg.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Environments without pointer capture support
+    }
+
+    if (wasPinching) {
+      setGesture(null);
+      hasPassedDragThreshold = false;
+      cachedRect = null;
+      svg.style.cursor = resolveToolCursor(getTool(), getSpacePressed());
+      render();
+      return;
+    }
+
     const gesture = getGesture();
     if (gesture === null) return;
     const doc = getDoc();
@@ -251,24 +361,25 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     const screen = screenPoint(event);
     const world = canvas.screenToWorld(screen);
     const before = canvas.getMachineState().stateId;
+    const commitWorld = gesture.snappedWorld ?? world;
 
     canvas.dispatch({
       type: CANVAS_EVENTS.pointerUp,
       screenPoint: screen,
-      worldPoint: world,
+      worldPoint: commitWorld,
     });
 
     if (hasPassedDragThreshold) {
       if (before === STATES.draggingShape && gesture.shapeIds.length > 0) {
-        commitDragGesture(doc, gesture, world, execute, ctx.nestingMode);
+        commitDragGesture(doc, gesture, commitWorld, execute, ctx.nestingMode);
       } else if (before === STATES.resizingShape) {
-        commitResizeGesture(doc, canvas, gesture, world, execute);
+        commitResizeGesture(doc, canvas, gesture, commitWorld, execute);
       } else if (before === STATES.drawingShape) {
         commitDrawGesture(
           doc,
           canvas,
           gesture,
-          world,
+          commitWorld,
           tool,
           execute,
           ctx.nestingMode,
@@ -278,7 +389,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       } else if (before === STATES.selecting || gesture.kind === GESTURE_KINDS.select) {
         const marqueeBox = normalizeBox(gesture.startWorld, world);
         if (marqueeBox.width > 2 || marqueeBox.height > 2) {
-          const picked = pickShapesInBox(doc, marqueeBox);
+          const picked = canvas.pickShapesInBox(doc, marqueeBox);
           if (event.shiftKey) {
             canvas.selectMany(Array.from(new Set([...canvas.getSelectedIds(), ...picked])));
           } else {
@@ -313,13 +424,22 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     render();
   }
 
-  function onPointerCancel(): void {
+  function onPointerCancel(event?: PointerEvent): void {
+    if (event !== undefined && event.pointerId !== undefined) {
+      touchTracker = removeTouchPointer(touchTracker, event.pointerId);
+      try {
+        if (typeof svg.hasPointerCapture === "function" && svg.hasPointerCapture(event.pointerId)) {
+          svg.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // Environments without pointer capture support
+      }
+    } else {
+      touchTracker = createTouchTracker();
+    }
+
     if (getGesture() !== null || canvas.getMachineState().stateId !== STATES.idle) {
-      canvas.dispatch({
-        type: CANVAS_EVENTS.pointerUp,
-        screenPoint: lastScreen,
-        worldPoint: canvas.screenToWorld(lastScreen),
-      });
+      canvas.dispatch({ type: CANVAS_EVENTS.pointerCancel });
       setGesture(null);
       hasPassedDragThreshold = false;
       cachedRect = null;
@@ -330,6 +450,12 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
 
   function onBlur(): void {
     onPointerCancel();
+  }
+
+  function onVisibilityChange(): void {
+    if (typeof document !== "undefined" && document.hidden) {
+      onPointerCancel();
+    }
   }
 
   function onDoubleClick(event: MouseEvent): void {
@@ -354,6 +480,9 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   if (typeof window !== "undefined") {
     window.addEventListener("blur", onBlur);
   }
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+    document.addEventListener("visibilitychange", onVisibilityChange);
+  }
 
   return () => {
     svg.removeEventListener("pointerdown", onPointerDown);
@@ -364,6 +493,9 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     svg.removeEventListener("dblclick", onDoubleClick);
     if (typeof window !== "undefined") {
       window.removeEventListener("blur", onBlur);
+    }
+    if (typeof document !== "undefined" && typeof document.removeEventListener === "function") {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     }
   };
 }

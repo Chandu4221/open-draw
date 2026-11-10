@@ -9,6 +9,7 @@ import {
 import type { ActiveGesture } from "./editor-gestures";
 import { GESTURE_KINDS } from "./gestures";
 import { normalizeBox, resizeBox, unionBoxes } from "./geometry";
+import { snapGuidesToSvg } from "./snap-solver";
 import { TOOLS, type ToolId } from "./tools";
 
 export interface EditorOverlayOptions {
@@ -110,6 +111,10 @@ export function computeEditorOverlays(options: EditorOverlayOptions): readonly s
     } else if (tool !== TOOLS.drawText) {
       overlays.push(previewBoxToSvg(normalizeBox(gesture.startWorld, lastWorld)));
     }
+  }
+
+  if (gesture?.snapGuides !== undefined && gesture.snapGuides.length > 0) {
+    overlays.push(snapGuidesToSvg(gesture.snapGuides, zoom));
   }
 
   if (customOverlays !== undefined && customOverlays.length > 0) {

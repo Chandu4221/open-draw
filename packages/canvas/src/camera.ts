@@ -1,6 +1,6 @@
 // Camera as a transform, never geometry (R-017): pan/zoom never rewrites
 // shape coordinates. All functions pure (R-008).
-import type { Point } from "@open-draw/contracts";
+import type { BoundingBox, Point } from "@open-draw/contracts";
 
 export interface Camera {
   readonly x: number;
@@ -54,5 +54,26 @@ export function worldToScreen(camera: Camera, worldPoint: Point): Point {
   return {
     x: (worldPoint.x - camera.x) * camera.zoom,
     y: (worldPoint.y - camera.y) * camera.zoom,
+  };
+}
+
+/**
+ * Computes the absolute world-space bounding box visible in the camera viewport,
+ * with optional screen-space padding.
+ */
+export function cameraToViewportBox(
+  camera: Camera,
+  screenWidth: number,
+  screenHeight: number,
+  padding = 0,
+): BoundingBox {
+  const width = Math.max(0, screenWidth) / camera.zoom;
+  const height = Math.max(0, screenHeight) / camera.zoom;
+  const pad = padding / camera.zoom;
+  return {
+    x: camera.x - pad,
+    y: camera.y - pad,
+    width: width + pad * 2,
+    height: height + pad * 2,
   };
 }
