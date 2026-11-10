@@ -109,7 +109,12 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     const cam = canvas.getCamera();
     let visibleShapeIds: ReadonlySet<ShapeId> | undefined;
 
-    const rect = svg.getBoundingClientRect();
+    const hasZeroContainer =
+      typeof container.clientWidth === "number" &&
+      typeof container.clientHeight === "number" &&
+      (container.clientWidth === 0 || container.clientHeight === 0);
+
+    const rect = hasZeroContainer ? { width: 0, height: 0 } : svg.getBoundingClientRect();
     const width = rect.width > 0 ? rect.width : container.clientWidth;
     const height = rect.height > 0 ? rect.height : container.clientHeight;
     if (width > 0 && height > 0) {
@@ -121,6 +126,8 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
         set.add(id);
       }
       visibleShapeIds = set;
+    } else {
+      visibleShapeIds = new Set();
     }
 
     if (!force && doc === renderedDoc && setsEqual(renderedVisibleIds, visibleShapeIds)) {
@@ -282,6 +289,16 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     renderOverlays();
   });
 
+  let resizeObserver: ResizeObserver | null = null;
+  if (typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(() => {
+      if (isDestroyed) return;
+      renderDocument();
+      renderOverlays();
+    });
+    resizeObserver.observe(container);
+  }
+
   render();
   updateCursor();
 
@@ -372,6 +389,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       unsubSelection();
       canvas.clearListeners();
       svg.removeEventListener("wheel", onWheel);
+      if (resizeObserver !== null) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
       if (container.contains(svg)) container.removeChild(svg);
     },
   };

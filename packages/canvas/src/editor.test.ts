@@ -1673,4 +1673,244 @@ describe("createEditor", () => {
       }
     }
   });
+
+  it("pastes full OpenDraw document JSON directly into canvas (R-006, R-016)", async () => {
+    let clipboardText = "";
+    const origDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        clipboard: {
+          readText: async () => clipboardText,
+          writeText: async (t: string) => {
+            clipboardText = t;
+          },
+        },
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      editor = createEditor(container as unknown as HTMLElement);
+      const mockWin = (
+        globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+      ).window;
+
+      // Full OpenDraw document payload with schema, shapes dictionary, shapeOrder
+      clipboardText = JSON.stringify({
+        schema: { version: 1 },
+        semantics: { version: 1 },
+        shapeOrder: ["s-7a05", "s-7a06", "s-7a07", "s-7a08"],
+        shapes: {
+          "s-7a05": {
+            id: "s-7a05",
+            chipId: "#s-7a05",
+            kind: "ellipse",
+            parentId: "canvas:root",
+            boundingBox: { x: 358.29, y: 78.06, width: 339.35, height: 329.45 },
+            meta: { semantic: null },
+          },
+          "s-7a06": {
+            id: "s-7a06",
+            chipId: "#s-7a06",
+            kind: "ellipse",
+            parentId: "canvas:root",
+            boundingBox: { x: 807, y: 130.15, width: 234.68, height: 318.75 },
+            meta: { semantic: null },
+          },
+          "s-7a07": {
+            id: "s-7a07",
+            chipId: "#s-7a07",
+            kind: "ellipse",
+            parentId: "canvas:root",
+            boundingBox: { x: 247.95, y: 267.04, width: 310.84, height: 241.02 },
+            meta: { semantic: null },
+          },
+          "s-7a08": {
+            id: "s-7a08",
+            chipId: "#s-7a08",
+            kind: "rect",
+            parentId: "canvas:root",
+            boundingBox: { x: 598.96, y: 407.51, width: 466.38, height: 191.98 },
+            meta: { semantic: null },
+          },
+        },
+      });
+
+      mockWin.dispatch("keydown", {
+        code: "KeyV",
+        key: "v",
+        ctrlKey: true,
+        preventDefault: () => {},
+      });
+      await new Promise((r) => setTimeout(r, 10));
+
+      const shapes = Object.values(editor.getDocument().shapes);
+      expect(shapes).toHaveLength(4);
+      const ellipses = shapes.filter((s) => s.kind === "ellipse");
+      const rects = shapes.filter((s) => s.kind === "rect");
+      expect(ellipses).toHaveLength(3);
+      expect(rects).toHaveLength(1);
+      expect(editor.getSelection()).toHaveLength(4);
+    } finally {
+      if (origDescriptor) {
+        Object.defineProperty(globalThis, "navigator", origDescriptor);
+      } else {
+        delete (globalThis as unknown as { navigator?: unknown }).navigator;
+      }
+    }
+  });
+
+  it("recalculates viewport visibility and renders shapes when container resizes via ResizeObserver", () => {
+    let observerCallback: ResizeObserverCallback | null = null;
+    let disconnected = false;
+
+    class MockResizeObserver {
+      constructor(cb: ResizeObserverCallback) {
+        observerCallback = cb;
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {
+        disconnected = true;
+      }
+    }
+
+    const origRO = globalThis.ResizeObserver;
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = MockResizeObserver;
+
+    try {
+      const rect = createRect(parseShapeId("rect-ro"), {
+        x: 100,
+        y: 100,
+        width: 100,
+        height: 100,
+      });
+
+      // Initially zero dimensions (hidden container)
+      const mockContainer = {
+        ...container,
+        clientWidth: 0,
+        clientHeight: 0,
+        appendChild: () => {},
+        contains: () => true,
+        removeChild: () => {},
+      };
+
+      editor = createEditor(mockContainer as unknown as HTMLElement, {
+        document: createDocument([rect]),
+      });
+
+      expect(observerCallback).not.toBeNull();
+      const initialDocScene = (editor.svg as unknown as MockDomNode).querySelector(
+        ".od-document-scene",
+      );
+      expect(initialDocScene?.innerHTML).toBe("");
+
+      // Trigger ResizeObserver transition to visible (800x600)
+      (mockContainer as { clientWidth: number; clientHeight: number }).clientWidth = 800;
+      (mockContainer as { clientWidth: number; clientHeight: number }).clientHeight = 600;
+
+      observerCallback!(
+        [
+          {
+            contentRect: {
+              width: 800,
+              height: 600,
+              x: 0,
+              y: 0,
+              top: 0,
+              bottom: 600,
+              left: 0,
+              right: 800,
+            },
+            target: mockContainer as unknown as Element,
+          } as unknown as ResizeObserverEntry,
+        ],
+        {} as ResizeObserver,
+      );
+
+      // Verify shape was rendered into document scene
+      const docScene = (editor.svg as unknown as MockDomNode).querySelector(".od-document-scene");
+      expect(docScene).not.toBeNull();
+      expect(docScene!.innerHTML).toContain('x="100"');
+
+      // Verify observer disconnect on destroy
+      editor.destroy();
+      expect(disconnected).toBe(true);
+    } finally {
+      if (origRO) {
+        globalThis.ResizeObserver = origRO;
+      } else {
+        delete (globalThis as unknown as { ResizeObserver?: unknown }).ResizeObserver;
+      }
+    }
+  });
+
+  it("handles 50 rapid sequential resize cycles safely (2x Safety)", () => {
+    let observerCallback: ResizeObserverCallback | null = null;
+
+    class MockResizeObserver {
+      constructor(cb: ResizeObserverCallback) {
+        observerCallback = cb;
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+
+    const origRO = globalThis.ResizeObserver;
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = MockResizeObserver;
+
+    try {
+      const rect = createRect(parseShapeId("rect-rapid"), {
+        x: 50,
+        y: 50,
+        width: 100,
+        height: 100,
+      });
+
+      editor = createEditor(container as unknown as HTMLElement, {
+        document: createDocument([rect]),
+      });
+
+      expect(observerCallback).not.toBeNull();
+
+      // 50 rapid resize trigger cycles with alternating dimensions
+      for (let i = 0; i < 50; i++) {
+        const w = 400 + (i % 10) * 50;
+        const h = 300 + (i % 10) * 40;
+        observerCallback!(
+          [
+            {
+              contentRect: {
+                width: w,
+                height: h,
+                x: 0,
+                y: 0,
+                top: 0,
+                bottom: h,
+                left: 0,
+                right: w,
+              },
+              target: container as unknown as Element,
+            } as unknown as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver,
+        );
+      }
+
+      // Assert editor remains functional and responsive
+      expect(editor.getDocument().shapes[rect.id]).toBeDefined();
+      const docScene = (editor.svg as unknown as MockDomNode).querySelector(".od-document-scene");
+      expect(docScene).not.toBeNull();
+      expect(docScene!.innerHTML).toContain('x="50"');
+    } finally {
+      if (origRO) {
+        globalThis.ResizeObserver = origRO;
+      } else {
+        delete (globalThis as unknown as { ResizeObserver?: unknown }).ResizeObserver;
+      }
+    }
+  });
 });
