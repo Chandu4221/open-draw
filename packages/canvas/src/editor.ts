@@ -1,6 +1,12 @@
 // Batteries-included standalone canvas editor (R-004, R-008, R-010, R-016, R-018, ADR-0008).
 // Mounts an interactive SVG drawing canvas into any DOM container with zero framework dependencies.
-import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
+import type {
+  BoundingBox,
+  CustomShapeKind,
+  DeviceType,
+  Point,
+  ShapeId,
+} from "@open-draw/contracts";
 import {
   applyTransaction,
   COMMANDS,
@@ -15,8 +21,9 @@ import {
   type Command,
   type Document,
   type HistoryState,
+  type Shape,
 } from "@open-draw/document";
-import { documentToSvg } from "@open-draw/renderer-svg";
+import { documentToSvg, type ShapeSvgRenderer } from "@open-draw/renderer-svg";
 import { cameraToViewportBox, DEFAULT_CAMERA } from "./camera";
 import { createCanvas } from "./create-canvas";
 import { querySpatialIndexBox } from "./spatial/spatial-index";
@@ -28,6 +35,12 @@ import { attachPointerListeners } from "./editor-pointer";
 import { attachKeyboardListeners } from "./editor-keyboard";
 import { exportDocumentToSvg } from "./editor-export";
 import { resolveToolCursor } from "./cursor";
+import {
+  createDefaultCustomShape,
+  validateCustomShapeExtension,
+  type CustomShapeCreateOptions,
+  type CustomShapeExtension,
+} from "./extension";
 import type { Editor, EditorOptions, SetDocumentOptions } from "./editor-types";
 
 export type {
@@ -47,6 +60,23 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   let lastWorld: Point = { x: 0, y: 0 };
   let spacePressed = false;
   let isDestroyed = false;
+
+  const customShapeRegistry: Record<string, CustomShapeExtension> = Object.create(null);
+  const activeCustomRenderers: Record<string, ShapeSvgRenderer> = {
+    ...(options.customRenderers ?? {}),
+  };
+
+  function registerCustomShape(extension: CustomShapeExtension): void {
+    validateCustomShapeExtension(extension);
+    canvas.registerShapeKind({
+      kind: extension.kind,
+      capabilities: extension.capabilities,
+      ...(extension.hitTest !== undefined ? { hitTest: extension.hitTest } : {}),
+    });
+    activeCustomRenderers[extension.kind] = extension.render;
+    customShapeRegistry[extension.kind] = extension;
+    renderDocument(true);
+  }
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
@@ -140,7 +170,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     docScene.innerHTML = documentToSvg(doc, {
       activeDeviceType: canvas.getActiveDeviceType(),
       activeDeviceTypes: canvas.getActiveDeviceTypes(),
-      customRenderers: options.customRenderers,
+      customRenderers: activeCustomRenderers,
       visibleShapeIds,
       onFallback: (evt) => {
         options.onFallback?.(`Fallback render: ${evt.shapeId} (${evt.kind})`);
@@ -299,6 +329,12 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     resizeObserver.observe(container);
   }
 
+  if (options.customShapes) {
+    for (const ext of options.customShapes) {
+      registerCustomShape(ext);
+    }
+  }
+
   render();
   updateCursor();
 
@@ -340,7 +376,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       exportDocumentToSvg(doc, {
         activeDeviceType: canvas.getActiveDeviceType(),
         activeDeviceTypes: canvas.getActiveDeviceTypes(),
-        customRenderers: options.customRenderers,
+        customRenderers: activeCustomRenderers,
       }),
     setTextContent: (id: ShapeId, content: string | null) => {
       execute([{ type: COMMANDS.setShapeContent, id, content }]);
@@ -380,6 +416,36 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     },
     resetZoom: () => canvas.setCamera(DEFAULT_CAMERA),
     subscribe: (event, listener) => canvas.subscribe(event, listener),
+    registerCustomShape,
+    getCustomShape: (kind: CustomShapeKind | string) => customShapeRegistry[kind],
+    getCustomShapes: () => Object.values(customShapeRegistry),
+    insertCustomShape: (
+      kind: CustomShapeKind,
+      box: BoundingBox,
+      opts?: CustomShapeCreateOptions,
+    ): Shape => {
+      const ext = customShapeRegistry[kind];
+      const shapeId = idSequence.nextShapeId(doc);
+      const shape = ext
+        ? createDefaultCustomShape(ext, shapeId, box, opts)
+        : createDefaultCustomShape(
+            {
+              kind,
+              label: kind,
+              capabilities: [],
+              render: () => "",
+            },
+            shapeId,
+            box,
+            opts,
+          );
+      if (ext?.validate) {
+        ext.validate(shape);
+      }
+      execute([{ type: COMMANDS.createShape, shape }]);
+      canvas.select(shapeId);
+      return shape;
+    },
     render,
     destroy: () => {
       isDestroyed = true;
