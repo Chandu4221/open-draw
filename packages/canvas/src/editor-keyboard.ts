@@ -1,5 +1,5 @@
 // Keyboard shortcut interaction handlers for standalone editor (R-008, R-010, R-018).
-import type { ShapeId } from "@open-draw/contracts";
+import { MAX_COORDINATE_BOUND, MAX_PASTE_SHAPE_COUNT, type ShapeId } from "@open-draw/contracts";
 import {
   COMMANDS,
   pruneSelectedDescendants,
@@ -63,7 +63,9 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     ctx.svg.addEventListener("pointerdown", onInteract, { capture: true, passive: true });
   }
 
+  let copySequence = 0;
   let clipboard: {
+    readonly copyId: string;
     readonly shapes: readonly Shape[];
     readonly topLevelIds: readonly ShapeId[];
     count: number;
@@ -167,12 +169,15 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
           for (const topId of topLevelIds) {
             shapes.push(...subtreeOf(doc, topId));
           }
-          clipboard = { shapes, topLevelIds, count: 0 };
+          copySequence += 1;
+          const copyId = `cp-${copySequence}`;
+          clipboard = { copyId, shapes, topLevelIds, count: 0 };
           if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
             try {
               const serialized = JSON.stringify({
                 type: "open-draw/clipboard",
                 version: 1,
+                copyId,
                 shapes,
                 topLevelIds,
               });
@@ -185,12 +190,15 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
         break;
       }
       case ACTIONS.paste: {
-        if (clipboard !== null && clipboard.shapes.length > 0) {
-          event.preventDefault();
-          clipboard.count += 1;
-          pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
-        } else if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
-          event.preventDefault();
+        event.preventDefault();
+        const fallbackToLocal = (): void => {
+          if (clipboard !== null && clipboard.shapes.length > 0) {
+            clipboard.count += 1;
+            pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
+          }
+        };
+
+        if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
           void navigator.clipboard
             .readText()
             .then((text) => {
@@ -201,6 +209,20 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
                   Array.isArray(data.shapes) &&
                   Array.isArray(data.topLevelIds)
                 ) {
+                  if (
+                    clipboard !== null &&
+                    typeof data.copyId === "string" &&
+                    data.copyId === clipboard.copyId
+                  ) {
+                    clipboard.count += 1;
+                    pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
+                    return;
+                  }
+
+                  if (data.shapes.length > MAX_PASTE_SHAPE_COUNT) {
+                    return;
+                  }
+
                   const sanitizedShapes: Shape[] = [];
                   for (const raw of data.shapes) {
                     if (
@@ -214,27 +236,49 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
                       raw.boundingBox !== null &&
                       typeof raw.boundingBox.x === "number" &&
                       Number.isFinite(raw.boundingBox.x) &&
+                      Math.abs(raw.boundingBox.x) <= MAX_COORDINATE_BOUND &&
                       typeof raw.boundingBox.y === "number" &&
                       Number.isFinite(raw.boundingBox.y) &&
+                      Math.abs(raw.boundingBox.y) <= MAX_COORDINATE_BOUND &&
                       typeof raw.boundingBox.width === "number" &&
                       Number.isFinite(raw.boundingBox.width) &&
                       raw.boundingBox.width > 0 &&
+                      raw.boundingBox.width <= MAX_COORDINATE_BOUND &&
                       typeof raw.boundingBox.height === "number" &&
                       Number.isFinite(raw.boundingBox.height) &&
-                      raw.boundingBox.height > 0
+                      raw.boundingBox.height > 0 &&
+                      raw.boundingBox.height <= MAX_COORDINATE_BOUND
                     ) {
-                      sanitizedShapes.push(raw as Shape);
+                      const meta =
+                        typeof raw.meta === "object" &&
+                        raw.meta !== null &&
+                        !Array.isArray(raw.meta)
+                          ? raw.meta
+                          : {};
+                      sanitizedShapes.push({ ...(raw as Shape), meta });
                     }
                   }
-                  if (sanitizedShapes.length > 0) {
+                  if (sanitizedShapes.length === data.shapes.length && sanitizedShapes.length > 0) {
+                    clipboard = {
+                      copyId: typeof data.copyId === "string" ? data.copyId : "external",
+                      shapes: sanitizedShapes,
+                      topLevelIds: data.topLevelIds,
+                      count: 1,
+                    };
                     pasteShapes(sanitizedShapes, data.topLevelIds, 1);
+                    return;
                   }
                 }
               } catch {
                 // Ignore non-open-draw clipboard text
               }
+              fallbackToLocal();
             })
-            .catch(() => {});
+            .catch(() => {
+              fallbackToLocal();
+            });
+        } else {
+          fallbackToLocal();
         }
         break;
       }

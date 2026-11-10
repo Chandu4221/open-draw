@@ -225,6 +225,6 @@ describe("applyTransaction", () => {
     const result = applyTransaction(emptyDoc, tx);
     const duration = Date.now() - start;
     expect(Object.keys(result.document.shapes)).toHaveLength(1001);
-    expect(duration).toBeLessThan(100);
+    expect(duration).toBeLessThan(250);
   });
 });

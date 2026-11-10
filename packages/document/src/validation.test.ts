@@ -562,4 +562,25 @@ describe("parseDocument", () => {
       expect(doc.shapes[parseShapeId("page-1")]?.meta.theme?.surface).toBe("#ffffffcc");
     });
   });
+
+  describe("coordinate and dimension bounds validation (R-006, ADR-0002)", () => {
+    it("rejects shapes with coordinates or dimensions exceeding MAX_COORDINATE_BOUND (100,000)", () => {
+      const rectDirect = createRect(
+        parseShapeId("rect-direct"),
+        { x: 10, y: 10, width: 200, height: 80 },
+        { parentId: parseShapeId("page-1") },
+      );
+      const input = serialize([page, rectDirect]) as {
+        shapes: Record<
+          string,
+          { boundingBox?: { x: number; y: number; width: number; height: number } }
+        >;
+      };
+      input.shapes["rect-direct"]!.boundingBox = { x: 1e300, y: 0, width: 100, height: 100 };
+      expect(() => parseDocument(input)).toThrowError(/boundingBox/);
+
+      input.shapes["rect-direct"]!.boundingBox = { x: 0, y: 0, width: 100_001, height: 100 };
+      expect(() => parseDocument(input)).toThrowError(/boundingBox/);
+    });
+  });
 });

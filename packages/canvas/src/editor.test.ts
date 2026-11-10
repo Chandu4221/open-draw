@@ -1404,4 +1404,273 @@ describe("createEditor", () => {
     const docAfterMove = editor.getDocument();
     expect(docAfterMove.shapes[moving.id]!.boundingBox.x).toBe(102);
   });
+
+  it("reads system clipboard on paste when external payload was copied after local copy (P1.1)", async () => {
+    let clipboardText = "";
+    const origDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        clipboard: {
+          writeText: async (text: string) => {
+            clipboardText = text;
+          },
+          readText: async () => clipboardText,
+        },
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      const shapeLocal = createRect(parseShapeId("rect-local"), {
+        x: 10,
+        y: 10,
+        width: 50,
+        height: 50,
+      });
+      editor = createEditor(container as unknown as HTMLElement, {
+        document: createDocument([shapeLocal]),
+      });
+      editor.select(shapeLocal.id);
+
+      const mockWin = (
+        globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+      ).window;
+
+      // 1. Copy locally
+      mockWin.dispatch("keydown", {
+        code: "KeyC",
+        key: "c",
+        ctrlKey: true,
+        preventDefault: () => {},
+      });
+      expect(clipboardText).toContain("rect-local");
+
+      // 2. External app modifies system clipboard with different payload
+      const externalPayload = JSON.stringify({
+        type: "open-draw/clipboard",
+        version: 1,
+        copyId: "external-source-id",
+        shapes: [
+          {
+            id: "rect-external",
+            kind: "rect",
+            parentId: "canvas:root",
+            boundingBox: { x: 200, y: 200, width: 80, height: 80 },
+            meta: {},
+          },
+        ],
+        topLevelIds: ["rect-external"],
+      });
+      clipboardText = externalPayload;
+
+      // 3. Paste via Ctrl+V
+      mockWin.dispatch("keydown", {
+        code: "KeyV",
+        key: "v",
+        ctrlKey: true,
+        preventDefault: () => {},
+      });
+
+      // Wait a microtask tick for async navigator.clipboard.readText()
+      await new Promise((r) => setTimeout(r, 10));
+
+      const doc = editor.getDocument();
+      const shapes = Object.values(doc.shapes);
+      const externalPasted = shapes.find((s) => s.boundingBox.x === 220 && s.boundingBox.y === 220);
+      expect(externalPasted).toBeDefined();
+    } finally {
+      if (origDescriptor) {
+        Object.defineProperty(globalThis, "navigator", origDescriptor);
+      } else {
+        delete (globalThis as unknown as { navigator?: unknown }).navigator;
+      }
+    }
+  });
+
+  it("isolates active mouse drag gesture from secondary touch pointer events (P1.2)", () => {
+    const rect = createRect(parseShapeId("rect-drag-isolated"), {
+      x: 50,
+      y: 50,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+    editor.select(rect.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // 1. Primary mouse pointer (pointerId: 1) starts drag
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 60,
+      clientY: 60,
+      preventDefault: () => {},
+    });
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 70,
+      clientY: 70,
+    });
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    // 2. Secondary touch pointer (pointerId: 2) contacts screen
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 500,
+      clientY: 500,
+      preventDefault: () => {},
+    });
+    mockSvg.dispatch("pointermove", {
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 550,
+      clientY: 550,
+    });
+    mockSvg.dispatch("pointerup", {
+      button: 0,
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 550,
+      clientY: 550,
+    });
+
+    // Active drag must still be running for pointerId: 1
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.draggingShape);
+
+    // 3. Primary mouse pointer moves and completes
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 120,
+    });
+    mockSvg.dispatch("pointerup", {
+      button: 0,
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 120,
+    });
+
+    // Machine should return to idle and shape moved by delta (60px)
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+    const moved = editor.getDocument().shapes[rect.id]!;
+    expect(moved.boundingBox.x).toBe(110);
+    expect(moved.boundingBox.y).toBe(110);
+  });
+
+  it("enforces paste limits and 2x scale safety boundaries (P1.3 & 2x Safety)", async () => {
+    let clipboardText = "";
+    const origDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        clipboard: {
+          readText: async () => clipboardText,
+          writeText: async (t: string) => {
+            clipboardText = t;
+          },
+        },
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    try {
+      editor = createEditor(container as unknown as HTMLElement);
+      const mockWin = (
+        globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+      ).window;
+
+      // Test A: Out-of-bounds coordinates (1e300) are rejected
+      clipboardText = JSON.stringify({
+        type: "open-draw/clipboard",
+        version: 1,
+        shapes: [
+          {
+            id: "rect-huge",
+            kind: "rect",
+            parentId: "canvas:root",
+            boundingBox: { x: 1e300, y: 1e300, width: 100, height: 100 },
+          },
+        ],
+        topLevelIds: ["rect-huge"],
+      });
+
+      mockWin.dispatch("keydown", {
+        code: "KeyV",
+        key: "v",
+        ctrlKey: true,
+        preventDefault: () => {},
+      });
+      await new Promise((r) => setTimeout(r, 10));
+      expect(Object.keys(editor.getDocument().shapes).length).toBe(0);
+
+      // Test B: Nominal load (250 shapes) - accepted
+      const shapes250 = Array.from({ length: 250 }, (_, i) => ({
+        id: `rect-p250-${i}`,
+        kind: "rect",
+        parentId: "canvas:root",
+        boundingBox: { x: (i % 20) * 10, y: Math.floor(i / 20) * 10, width: 8, height: 8 },
+      }));
+      clipboardText = JSON.stringify({
+        type: "open-draw/clipboard",
+        version: 1,
+        shapes: shapes250,
+        topLevelIds: shapes250.map((s) => s.id),
+      });
+
+      mockWin.dispatch("keydown", {
+        code: "KeyV",
+        key: "v",
+        ctrlKey: true,
+        preventDefault: () => {},
+      });
+      await new Promise((r) => setTimeout(r, 10));
+      expect(Object.keys(editor.getDocument().shapes).length).toBe(250);
+
+      // Test C: 2x Scale Safety Limit (1,000 shapes vs limit of 500)
+      // 1,000 shapes payload must be rejected / capped at MAX_PASTE_SHAPE_COUNT without freezing
+      const shapes1000 = Array.from({ length: 1000 }, (_, i) => ({
+        id: `rect-p1000-${i}`,
+        kind: "rect",
+        parentId: "canvas:root",
+        boundingBox: {
+          x: 100 + (i % 30) * 10,
+          y: 100 + Math.floor(i / 30) * 10,
+          width: 8,
+          height: 8,
+        },
+      }));
+      clipboardText = JSON.stringify({
+        type: "open-draw/clipboard",
+        version: 1,
+        shapes: shapes1000,
+        topLevelIds: shapes1000.map((s) => s.id),
+      });
+
+      mockWin.dispatch("keydown", {
+        code: "KeyV",
+        key: "v",
+        ctrlKey: true,
+        preventDefault: () => {},
+      });
+      await new Promise((r) => setTimeout(r, 10));
+      // Excessive 1,000 shape paste should not be applied (stays at previous 250 shapes)
+      expect(Object.keys(editor.getDocument().shapes).length).toBe(250);
+    } finally {
+      if (origDescriptor) {
+        Object.defineProperty(globalThis, "navigator", origDescriptor);
+      } else {
+        delete (globalThis as unknown as { navigator?: unknown }).navigator;
+      }
+    }
+  });
 });

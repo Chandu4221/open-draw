@@ -4,6 +4,7 @@
 // only when a real external boundary demands it.
 import type { BoundingBox, CustomShapeKind, Point, ShapeId, ShapeKind } from "@open-draw/contracts";
 import {
+  MAX_COORDINATE_BOUND,
   ROOT_ID,
   SHAPE_KINDS,
   SHAPE_KIND_VALUES,
@@ -51,11 +52,15 @@ function parseBoundingBox(value: unknown): BoundingBox {
     !isFiniteNumber(value.width) ||
     !isFiniteNumber(value.height) ||
     value.width <= 0 ||
-    value.height <= 0
+    value.height <= 0 ||
+    Math.abs(value.x) > MAX_COORDINATE_BOUND ||
+    Math.abs(value.y) > MAX_COORDINATE_BOUND ||
+    value.width > MAX_COORDINATE_BOUND ||
+    value.height > MAX_COORDINATE_BOUND
   ) {
     throw new DocumentError(
       "invalidShape",
-      "boundingBox must be { x, y, width, height } with finite numbers and positive dimensions",
+      `boundingBox must be { x, y, width, height } with finite numbers, positive dimensions, and within ±${MAX_COORDINATE_BOUND}`,
     );
   }
   return { x: value.x, y: value.y, width: value.width, height: value.height };

@@ -63,6 +63,7 @@ export function createShapeIdGenerator(initialDoc?: Document): ShapeIdSequence {
 }
 
 export interface ActiveGesture {
+  readonly pointerId: number;
   readonly kind: string;
   readonly startScreen: Point;
   readonly startWorld: Point;
