@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EMPTY_HISTORY, redo, recordHistory, undo } from "./history";
 import { DocumentError } from "./errors";
 import { createPage, createRect, createSection } from "./shape";
-import { COMMANDS } from "./commands";
+import { COMMANDS, type Command } from "./commands";
 import { applyTransaction, createTransaction } from "./transactions";
 import { createDocument } from "./document";
 import type { Document } from "./document";
@@ -199,5 +199,32 @@ describe("applyTransaction", () => {
       );
     }
     expect(history.undoStack.length).toBe(3);
+  });
+
+  it("applies large command batch in linear time without quadratic re-validation", () => {
+    const emptyDoc = createDocument([]);
+    const pageId = parseShapeId("perf-page");
+    const commands: Command[] = [
+      {
+        type: COMMANDS.createShape,
+        shape: createPage(pageId, { x: 0, y: 0, width: 2000, height: 2000 }),
+      },
+    ];
+    for (let i = 0; i < 1000; i++) {
+      commands.push({
+        type: COMMANDS.createShape,
+        shape: createRect(
+          parseShapeId(`r-${i}`),
+          { x: 10, y: 10, width: 20, height: 20 },
+          { parent: pageId },
+        ),
+      });
+    }
+    const tx = createTransaction(commands);
+    const start = Date.now();
+    const result = applyTransaction(emptyDoc, tx);
+    const duration = Date.now() - start;
+    expect(Object.keys(result.document.shapes)).toHaveLength(1001);
+    expect(duration).toBeLessThan(100);
   });
 });

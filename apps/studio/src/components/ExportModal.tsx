@@ -65,6 +65,18 @@ const LEGEND_LABEL_STYLE: React.CSSProperties = {
   color: "var(--od-text-secondary)",
 };
 
+const ERROR_PREVIEW_STYLE: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "var(--od-8)",
+  padding: "var(--od-16)",
+  backgroundColor: "var(--od-bg)",
+  border: "var(--od-border-width) solid var(--od-border)",
+  borderRadius: "var(--od-radius-sm)",
+  color: "var(--od-danger, #ef4444)",
+  fontSize: "var(--od-text-sm)",
+};
+
 function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   const {
     onClose,
@@ -92,7 +104,10 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -107,18 +122,33 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
     [effectiveIncludeLegend, includeAnnotations],
   );
 
-  const preview = useMemo(() => {
-    if (format === "markdown") return generateExportMarkdown(doc, mdOptions);
-    if (format === "json") return generateExportJson(doc, creativityLevel);
-    return generateExportSvg(doc, svgOptions);
+  const previewResult = useMemo<
+    { readonly ok: true; readonly text: string } | { readonly ok: false; readonly error: string }
+  >(() => {
+    try {
+      if (format === "markdown") return { ok: true, text: generateExportMarkdown(doc, mdOptions) };
+      if (format === "json") return { ok: true, text: generateExportJson(doc, creativityLevel) };
+      return { ok: true, text: generateExportSvg(doc, svgOptions) };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
   }, [doc, format, creativityLevel, mdOptions, svgOptions]);
 
+  const preview = previewResult.ok ? previewResult.text : "";
+
   const svgDataUrl = useMemo(
-    () => (format === "png" ? `data:image/svg+xml;utf8,${encodeURIComponent(preview)}` : ""),
-    [format, preview],
+    () =>
+      format === "png" && previewResult.ok
+        ? `data:image/svg+xml;utf8,${encodeURIComponent(preview)}`
+        : "",
+    [format, preview, previewResult.ok],
   );
 
   const handleCopy = async () => {
+    if (!previewResult.ok) return;
     try {
       if (format === "png") {
         await copyDocumentPng(doc, svgOptions);
@@ -140,10 +170,15 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   };
 
   const handleDownload = () => {
-    if (format === "markdown") exportDocumentMarkdown(doc, mdOptions);
-    else if (format === "json") exportDocumentJson(doc, creativityLevel);
-    else if (format === "svg") exportDocumentSvg(doc, svgOptions);
-    else exportDocumentPng(doc, svgOptions);
+    if (!previewResult.ok) return;
+    try {
+      if (format === "markdown") exportDocumentMarkdown(doc, mdOptions);
+      else if (format === "json") exportDocumentJson(doc, creativityLevel);
+      else if (format === "svg") exportDocumentSvg(doc, svgOptions);
+      else exportDocumentPng(doc, svgOptions);
+    } catch {
+      // Export failure handled gracefully
+    }
   };
 
   return (
@@ -224,12 +259,19 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
                 {format === "png" ? "Visual Preview" : "Live Output Preview"}
               </span>
               <span className="od-meta">
-                {format === "png"
-                  ? "Raster PNG diagram preview"
-                  : `${preview.length} chars • ${preview.split("\n").length} lines`}
+                {!previewResult.ok
+                  ? "Export preview unavailable"
+                  : format === "png"
+                    ? "Raster PNG diagram preview"
+                    : `${preview.length} chars • ${preview.split("\n").length} lines`}
               </span>
             </div>
-            {format === "png" ? (
+            {!previewResult.ok ? (
+              <div style={ERROR_PREVIEW_STYLE}>
+                <span>Export preview unavailable:</span>
+                <code>{previewResult.error}</code>
+              </div>
+            ) : format === "png" ? (
               <div style={PNG_STYLE}>
                 <img
                   src={svgDataUrl}
@@ -260,11 +302,11 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
             {copied ? "Copied output to clipboard" : ""}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <OdButton variant="ghost" onClick={handleCopy}>
+            <OdButton variant="ghost" onClick={handleCopy} disabled={!previewResult.ok}>
               <OdIcon name={copied ? "check" : "copy"} size={16} />
               <span>{copied ? "Copied!" : format === "png" ? "Copy Image" : "Copy"}</span>
             </OdButton>
-            <OdButton variant="primary" onClick={handleDownload}>
+            <OdButton variant="primary" onClick={handleDownload} disabled={!previewResult.ok}>
               <OdIcon name="export" size={16} />
               <span>Download .{format}</span>
             </OdButton>

@@ -67,6 +67,14 @@ function validateStructure(shapes: Readonly<Record<ShapeId, Shape>>): void {
   }
 }
 
+export function createDocumentFromMap(shapesMap: Record<ShapeId, Shape>): Document {
+  validateStructure(shapesMap);
+  return Object.freeze({
+    schema: Object.freeze({ version: SCHEMA_VERSION }),
+    shapes: Object.freeze(shapesMap),
+  });
+}
+
 export function createDocument(shapes: readonly Shape[] = []): Document {
   const shapesMap: Record<ShapeId, Shape> = {};
   for (const shape of shapes) {
@@ -75,9 +83,5 @@ export function createDocument(shapes: readonly Shape[] = []): Document {
     }
     shapesMap[shape.id] = shape;
   }
-  validateStructure(shapesMap);
-  return Object.freeze({
-    schema: Object.freeze({ version: SCHEMA_VERSION }),
-    shapes: Object.freeze(shapesMap),
-  });
+  return createDocumentFromMap(shapesMap);
 }

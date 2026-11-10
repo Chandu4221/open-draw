@@ -42,7 +42,7 @@ export interface InspectionData {
   readonly treeNodes: readonly SemanticTreeNode[];
 }
 
-export function useInspectionData(
+export function computeInspectionData(
   doc: Document,
   selectedShapeId: ShapeId | null,
   activeDeviceType: DeviceType | undefined,
@@ -84,3 +84,5 @@ export function useInspectionData(
     treeNodes,
   };
 }
+
+export const useInspectionData = computeInspectionData;

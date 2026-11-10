@@ -5,10 +5,19 @@ import type { BoundingBox, CapabilityId, DeviceType, Point, ShapeId } from "@ope
 import type { Document } from "@open-draw/document";
 import type { ActionId, KeyboardEventDescriptor } from "@open-draw/input";
 import { resolveKeyBinding } from "@open-draw/input";
-import { type Camera, DEFAULT_CAMERA, panBy, screenToWorld, worldToScreen, zoomAt } from "./camera";
+import {
+  type Camera,
+  clampCamera,
+  DEFAULT_CAMERA,
+  panBy,
+  screenToWorld,
+  worldToScreen,
+  zoomAt,
+} from "./camera";
 import { CONTROLLER_EVENTS, type CanvasEvent, type ControllerEvent } from "./events";
 import type { HandleId } from "./handles";
-import { pickHandle, pickShape, resolveSelectionDrillDown } from "./hit-test";
+import { pickHandle, pickShape, pickShapesInBox, resolveSelectionDrillDown } from "./hit-test";
+import { buildSpatialIndexFromDocument, type SpatialIndex } from "./spatial/spatial-index";
 import { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
 import { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 import {
@@ -64,12 +73,15 @@ export interface CanvasController {
   hasCapability(kind: string, capability: CapabilityId): boolean;
 
   pickShape(doc: Document, worldPoint: Point): ShapeId | null;
+  pickShapesInBox(doc: Document, marqueeBox: BoundingBox): readonly ShapeId[];
+  getSpatialIndex(doc: Document): SpatialIndex;
   pickHandle(worldBox: BoundingBox, screenPoint: Point): HandleId | null;
   resolveAction(event: KeyboardEventDescriptor): ActionId | undefined;
   resolveSelectionDrillDown(doc: Document, hitId: ShapeId, isDoubleClick?: boolean): ShapeId;
 
   subscribe(event: ControllerEvent, listener: () => void): () => void;
   emit(event: ControllerEvent): void;
+  clearListeners(): void;
 
   getActiveDeviceType(rootId?: ShapeId): DeviceType | undefined;
   setActiveDeviceType(deviceType?: DeviceType, rootId?: ShapeId): void;
@@ -82,7 +94,7 @@ export interface CanvasController {
 }
 
 export function createCanvas(options: CanvasOptions = {}): CanvasController {
-  let camera = options.camera ?? DEFAULT_CAMERA;
+  let camera = clampCamera(options.camera ?? DEFAULT_CAMERA);
   let selection = options.selection ?? EMPTY_SELECTION;
   let activeDeviceType = options.activeDeviceType;
   const scopedDeviceTypes = new Map<ShapeId, DeviceType | undefined>(
@@ -103,6 +115,9 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.documentChanged]: new Set(),
     [CONTROLLER_EVENTS.selectionChanged]: new Set(),
     [CONTROLLER_EVENTS.historyChanged]: new Set(),
+    [CONTROLLER_EVENTS.cameraChanged]: new Set(),
+    [CONTROLLER_EVENTS.toolChanged]: new Set(),
+    [CONTROLLER_EVENTS.machineChanged]: new Set(),
   };
 
   const emit = (event: ControllerEvent): void => {
@@ -114,16 +129,31 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     }
   };
 
+  let cachedSpatialDoc: Document | null = null;
+  let cachedSpatialIndex: SpatialIndex | null = null;
+
+  function ensureSpatialIndex(doc: Document): SpatialIndex {
+    if (cachedSpatialIndex !== null && cachedSpatialDoc === doc) {
+      return cachedSpatialIndex;
+    }
+    cachedSpatialDoc = doc;
+    cachedSpatialIndex = buildSpatialIndexFromDocument(doc);
+    return cachedSpatialIndex;
+  }
+
   return {
     getCamera: () => camera,
     setCamera: (next) => {
-      camera = next;
+      camera = clampCamera(next);
+      emit(CONTROLLER_EVENTS.cameraChanged);
     },
     panBy: (delta) => {
       camera = panBy(camera, delta);
+      emit(CONTROLLER_EVENTS.cameraChanged);
     },
     zoomAt: (point, factor) => {
       camera = zoomAt(camera, point, factor);
+      emit(CONTROLLER_EVENTS.cameraChanged);
     },
     screenToWorld: (point) => screenToWorld(camera, point),
     worldToScreen: (point) => worldToScreen(camera, point),
@@ -151,11 +181,18 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
 
     getMachineState: () => machine,
     dispatch: (event) => {
-      machine = transition(machine, event);
+      const next = transition(machine, event);
+      if (next !== machine) {
+        machine = next;
+        emit(CONTROLLER_EVENTS.machineChanged);
+      }
       return machine;
     },
     resetMachine: () => {
-      machine = INITIAL_MACHINE_STATE;
+      if (machine !== INITIAL_MACHINE_STATE) {
+        machine = INITIAL_MACHINE_STATE;
+        emit(CONTROLLER_EVENTS.machineChanged);
+      }
     },
 
     getShapeKindRegistry: () => shapeKindRegistry,
@@ -164,7 +201,9 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     },
     hasCapability: (kind, capability) => shapeKindRegistry.hasCapability(kind, capability),
 
-    pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry),
+    getSpatialIndex: (doc) => ensureSpatialIndex(doc),
+    pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry, ensureSpatialIndex(doc)),
+    pickShapesInBox: (doc, box) => pickShapesInBox(doc, box, ensureSpatialIndex(doc)),
     pickHandle: (box, point) => pickHandle(camera, box, point),
     resolveAction: (event) => resolveKeyBinding(event),
     resolveSelectionDrillDown: (doc, hitId, isDoubleClick = false) =>
@@ -182,6 +221,11 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     },
     emit: (event) => {
       emit(event);
+    },
+    clearListeners: () => {
+      for (const set of Object.values(listeners)) {
+        set.clear();
+      }
     },
 
     getActiveDeviceType: (rootId) => {

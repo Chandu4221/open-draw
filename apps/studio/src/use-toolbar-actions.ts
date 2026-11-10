@@ -1,31 +1,25 @@
 import {
   COMMANDS,
   DocumentError,
-  EMPTY_HISTORY,
   pruneSelectedDescendants,
-  redo,
   subtreeOf,
-  undo,
   type Command,
   type Document,
-  type HistoryState,
 } from "@open-draw/document";
-import type { CanvasController } from "@open-draw/canvas";
+import { createShapeIdGenerator, type Editor } from "@open-draw/canvas";
 import type { ShapeId } from "@open-draw/contracts";
 import type { useToast } from "@open-draw/ui";
-import { nextShapeId } from "./canvas-gestures";
 import {
-  exportDocumentJson,
   exportDocumentMarkdown,
   exportDocumentPng,
   exportDocumentSvg,
   promptLoadDocumentJson,
+  saveDocumentJson,
 } from "./document-io";
 
 export interface UseToolbarActionsProps {
   readonly documentRef: React.MutableRefObject<Document>;
-  readonly historyRef: React.MutableRefObject<HistoryState>;
-  readonly canvasRef: React.MutableRefObject<CanvasController>;
+  readonly editorRef: React.MutableRefObject<Editor | null>;
   readonly includeLegend: boolean;
   readonly toast: ReturnType<typeof useToast>;
   readonly setDoc: (doc: Document) => void;
@@ -37,8 +31,7 @@ export interface UseToolbarActionsProps {
 export function useToolbarActions(props: UseToolbarActionsProps) {
   const {
     documentRef,
-    historyRef,
-    canvasRef,
+    editorRef,
     includeLegend,
     toast,
     setDoc,
@@ -49,7 +42,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
 
   function handleSave(): void {
     try {
-      exportDocumentJson(documentRef.current);
+      saveDocumentJson(documentRef.current);
       toast.push({ type: "success", text: "Document saved successfully" });
     } catch (err) {
       toast.push({
@@ -103,13 +96,15 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
   function handleLoad(): void {
     promptLoadDocumentJson(
       (loaded) => {
-        documentRef.current = loaded;
-        historyRef.current = EMPTY_HISTORY;
-        canvasRef.current.clearSelection();
-        setSelectedShapeId(null);
-        setDoc(loaded);
+        if (editorRef.current) {
+          editorRef.current.setDocument(loaded);
+        } else {
+          documentRef.current = loaded;
+          setSelectedShapeId(null);
+          setDoc(loaded);
+          render();
+        }
         toast.push({ type: "success", text: "Document loaded successfully" });
-        render();
       },
       (err) => {
         const msg =
@@ -122,34 +117,25 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
   }
 
   function handleUndo(): void {
-    const undone = undo(documentRef.current, historyRef.current);
-    if (undone !== null) {
-      documentRef.current = undone.document;
-      historyRef.current = undone.history;
-      setSelectedShapeId(canvasRef.current.getSelectedId());
-      setDoc(undone.document);
+    const editor = editorRef.current;
+    if (editor && editor.undo()) {
       toast.push({ type: "info", text: "Undo performed" });
-      render();
     }
   }
 
   function handleRedo(): void {
-    const redone = redo(documentRef.current, historyRef.current);
-    if (redone !== null) {
-      documentRef.current = redone.document;
-      historyRef.current = redone.history;
-      setSelectedShapeId(canvasRef.current.getSelectedId());
-      setDoc(redone.document);
+    const editor = editorRef.current;
+    if (editor && editor.redo()) {
       toast.push({ type: "info", text: "Redo performed" });
-      render();
     }
   }
 
   function handleDelete(): void {
-    const ids = canvasRef.current.getSelectedIds();
+    const editor = editorRef.current;
+    const ids = editor ? editor.getSelection() : [];
     if (ids.length > 0) {
       commit(ids.map((id) => ({ type: COMMANDS.deleteShape, id })));
-      canvasRef.current.clearSelection();
+      editor?.clearSelection();
       setSelectedShapeId(null);
       toast.push({
         type: "info",
@@ -160,20 +146,22 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
   }
 
   function handleDuplicate(): void {
-    const ids = canvasRef.current.getSelectedIds();
+    const editor = editorRef.current;
+    const ids = editor ? editor.getSelection() : [];
     if (ids.length === 0) return;
     const currentDoc = documentRef.current;
     const topLevelIds = pruneSelectedDescendants(currentDoc, ids);
     if (topLevelIds.length === 0) return;
+    const seq = createShapeIdGenerator(currentDoc);
     const newShapeIds: Record<ShapeId, ShapeId> = {};
     for (const topId of topLevelIds) {
       for (const s of subtreeOf(currentDoc, topId)) {
-        newShapeIds[s.id] = nextShapeId();
+        newShapeIds[s.id] = seq.nextShapeId();
       }
     }
     commit([{ type: COMMANDS.duplicateShapes, ids: topLevelIds, dx: 20, dy: 20, newShapeIds }]);
     const newTopIds = topLevelIds.map((id) => newShapeIds[id]!);
-    canvasRef.current.selectMany(newTopIds);
+    editor?.selectMany(newTopIds);
     setSelectedShapeId(newTopIds.length === 1 ? newTopIds[0]! : null);
     toast.push({
       type: "info",

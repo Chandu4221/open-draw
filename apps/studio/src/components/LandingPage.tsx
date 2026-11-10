@@ -1,4 +1,5 @@
 import React from "react";
+import { CANVAS_VERSION } from "@open-draw/canvas";
 import { OdButton } from "@open-draw/ui";
 
 export interface LandingPageProps {
@@ -57,7 +58,7 @@ export function LandingPage({ onLaunch }: LandingPageProps): React.JSX.Element {
               color: "var(--od-text-secondary)",
             }}
           >
-            v0.7.0
+            v{CANVAS_VERSION}
           </span>
         </div>
 

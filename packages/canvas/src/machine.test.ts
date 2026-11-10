@@ -88,4 +88,15 @@ describe("interaction machine", () => {
     });
     expect(transition(drawing, { type: CANVAS_EVENTS.keyEscape })).toEqual(INITIAL_MACHINE_STATE);
   });
+
+  it("returns to idle on pointer cancel", () => {
+    const dragging = transition(transition(INITIAL_MACHINE_STATE, downOnShape), {
+      type: CANVAS_EVENTS.pointerMove,
+      screenPoint: { x: 5, y: 5 },
+      worldPoint: { x: 15, y: 15 },
+    });
+    expect(dragging.stateId).toBe(STATES.draggingShape);
+    const cancelled = transition(dragging, { type: CANVAS_EVENTS.pointerCancel });
+    expect(cancelled).toEqual(INITIAL_MACHINE_STATE);
+  });
 });

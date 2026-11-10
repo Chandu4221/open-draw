@@ -4,17 +4,21 @@
 import {
   isRootId,
   PLATFORMS,
+  ROOT_ID,
   ROOT_ROLES,
   SHAPE_KINDS,
   STYLE_PROFILES,
   type ShapeId,
 } from "@open-draw/contracts";
 import {
+  buildChildIndex,
+  DocumentError,
   isCustomShape,
   shapeListInOrder,
   type Document,
   type LineShape,
   type PenPathShape,
+  type Shape,
 } from "@open-draw/document";
 import { SEMANTICS_REGISTRY_VERSION } from "@open-draw/semantics";
 import { compileAiDirectives } from "./ai-directives";
@@ -35,6 +39,20 @@ export interface ExportedJsonDocument {
   readonly shapes: Readonly<Record<string, unknown>>;
 }
 
+const RESERVED_CUSTOM_DATA_KEYS = new Set([
+  "id",
+  "chipId",
+  "kind",
+  "parentId",
+  "boundingBox",
+  "meta",
+  "label",
+  "content",
+  "fill",
+  "stroke",
+  "strokeWidth",
+]);
+
 /**
  * Pins a coordinate or dimension to 2 decimal places and asserts it is finite (D2).
  */
@@ -45,12 +63,55 @@ export function roundCoordinate(n: number, context = "coordinate"): number {
   return Math.round(n * 100) / 100;
 }
 
+function getExportedShapes(doc: Document, options?: JsonExportOptions): readonly Shape[] {
+  const rootId = options?.rootId;
+  const deviceType = options?.deviceType;
+
+  if (rootId !== undefined && !isRootId(rootId)) {
+    const root = doc.shapes[rootId];
+    if (root === undefined) {
+      throw new DocumentError("shapeNotFound", `no shape with id: ${rootId}`);
+    }
+    const childIndex = buildChildIndex(doc);
+    const result: Shape[] = [root];
+    const walk = (parentId: ShapeId): void => {
+      const children = [...(childIndex.get(parentId) ?? [])];
+      if (deviceType !== undefined) {
+        children.sort((a, b) => (a.meta.order[deviceType] ?? 0) - (b.meta.order[deviceType] ?? 0));
+      }
+      for (const child of children) {
+        result.push(child);
+        walk(child.id);
+      }
+    };
+    walk(rootId);
+    return result;
+  }
+
+  if (deviceType === undefined) {
+    return shapeListInOrder(doc);
+  }
+
+  const childIndex = buildChildIndex(doc);
+  const result: Shape[] = [];
+  const walk = (parentId: ShapeId): void => {
+    const children = [...(childIndex.get(parentId) ?? [])];
+    children.sort((a, b) => (a.meta.order[deviceType] ?? 0) - (b.meta.order[deviceType] ?? 0));
+    for (const child of children) {
+      result.push(child);
+      walk(child.id);
+    }
+  };
+  walk(ROOT_ID);
+  return result;
+}
+
 /**
  * Pure function projecting an OpenDraw document into machine-readable, AI-ready JSON.
  * Deterministic and byte-stable (R-016, R-025, R-041).
  */
 export function exportJson(doc: Document, options?: JsonExportOptions): string {
-  const orderedShapes = shapeListInOrder(doc);
+  const orderedShapes = getExportedShapes(doc, options);
   const shapeOrder: ShapeId[] = [];
   const shapesOutput: Record<string, unknown> = {};
 
@@ -95,6 +156,12 @@ export function exportJson(doc: Document, options?: JsonExportOptions): string {
     if (isCustomShape(shape)) {
       if (shape.customData !== undefined) {
         for (const [k, v] of Object.entries(shape.customData)) {
+          if (RESERVED_CUSTOM_DATA_KEYS.has(k)) {
+            throw new DocumentError(
+              "invalidDocument",
+              `customData on shape ${shape.id} contains reserved property: ${k}`,
+            );
+          }
           shapeRecord[k] = v;
         }
       }

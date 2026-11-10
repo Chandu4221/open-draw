@@ -3,7 +3,7 @@
 // cycle prevention, and multi-selection pruning.
 import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
 import { isRootId, ROOT_ID, SHAPE_KINDS } from "@open-draw/contracts";
-import { CONTAINER_KINDS, type Document } from "./document";
+import type { Document } from "./document";
 import { DocumentError } from "./errors";
 import type { Shape } from "./shape";
 import { absoluteBoundingBox, ancestorsOf, childrenOf, shapeListInOrder, subtreeOf } from "./tree";
@@ -23,37 +23,60 @@ export function pointInBox(box: BoundingBox, point: Point): boolean {
 const LEAF_SEMANTICS: ReadonlySet<string> = new Set([
   "button",
   "input",
-  "heading",
   "checkbox",
   "radio",
   "switch",
   "slider",
-  "avatar",
-  "badge",
-  "icon",
-  "image",
-  "text",
-  "link",
 ]);
+
+function isInsidePlatformRoot(shape: Shape, doc?: Document): boolean {
+  if (shape.kind === SHAPE_KINDS.page || shape.meta.platform !== undefined) return true;
+  if (doc === undefined) return false;
+  let current = shape;
+  while (!isRootId(current.parentId)) {
+    const parent = doc.shapes[current.parentId];
+    if (parent === undefined) break;
+    if (parent.kind === SHAPE_KINDS.page || parent.meta.platform !== undefined) return true;
+    current = parent;
+  }
+  return false;
+}
 
 /**
  * Checks whether a shape qualifies as a drop-target container.
- * Freeform open paths (lines, pen paths) and leaf semantic controls
- * (buttons, inputs) cannot be containers unless they already hold children.
+ * Open strokes (lines, pen paths), leaf text shapes, and atomic interactive
+ * controls (buttons, inputs) cannot be containers unless they already hold children.
+ * On a platform-agnostic canvas (R-024, R-026), plain rectangles are geometric shapes,
+ * not containers. Inside a platform root or with platform semantics, rectangles act
+ * as UI containers (R-004, R-026).
  */
 export function isContainerShape(shape: Shape, doc?: Document): boolean {
-  if (shape.kind === SHAPE_KINDS.line || shape.kind === SHAPE_KINDS.penPath) {
+  if (
+    shape.kind === SHAPE_KINDS.line ||
+    shape.kind === SHAPE_KINDS.penPath ||
+    shape.kind === SHAPE_KINDS.text
+  ) {
     return false;
   }
-  if (shape.meta.semantic !== undefined && LEAF_SEMANTICS.has(shape.meta.semantic.id)) {
-    if (doc !== undefined && childrenOf(doc, shape.id).length > 0) {
-      return true;
+  if (shape.meta.semantic !== undefined) {
+    if (LEAF_SEMANTICS.has(shape.meta.semantic.id)) {
+      return doc !== undefined && childrenOf(doc, shape.id).length > 0;
     }
-    return false;
+    return true;
   }
-  return (
-    CONTAINER_KINDS.has(shape.kind) || shape.meta.platform !== undefined || isRootId(shape.parentId)
-  );
+  if (shape.kind === SHAPE_KINDS.page || shape.kind === SHAPE_KINDS.section) {
+    return true;
+  }
+  if (shape.meta.platform !== undefined) {
+    return true;
+  }
+  if (doc !== undefined && childrenOf(doc, shape.id).length > 0) {
+    return true;
+  }
+  if (shape.kind === SHAPE_KINDS.rect) {
+    return isInsidePlatformRoot(shape, doc);
+  }
+  return false;
 }
 
 /**

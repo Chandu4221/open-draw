@@ -36,8 +36,10 @@ export function applySetShapeHiddenOn(
     meta: nextMeta,
   };
 
-  const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
-  const next = createDocument([...others, nextShape]);
+  const shapes = Object.values(document.shapes).map((entry) =>
+    entry.id === command.id ? nextShape : entry,
+  );
+  const next = createDocument(shapes);
   const inverse: readonly Command[] = [
     { type: COMMANDS.setShapeHiddenOn, id: command.id, hiddenOn: previousHiddenOn },
   ];

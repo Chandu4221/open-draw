@@ -3,7 +3,8 @@
 import type { ShapeId } from "@open-draw/contracts";
 import type { Command, CommandResult } from "..";
 import type { Document } from "../../document";
-import { createDocument } from "../../document";
+import type { Shape } from "../../shape";
+import { createDocumentFromMap, SCHEMA_VERSION } from "../../document";
 import { subtreeOf } from "../../tree";
 import type { CreateShape } from "../create-shape";
 import { COMMANDS } from "../registry";
@@ -13,15 +14,24 @@ export interface DeleteShape {
   readonly id: ShapeId;
 }
 
-export function applyDeleteShape(document: Document, command: DeleteShape): CommandResult {
-  const subtree = subtreeOf(document, command.id);
-  const removed = new Set(subtree.map((shape) => shape.id));
-  const next = createDocument(
-    Object.values(document.shapes).filter((shape) => !removed.has(shape.id)),
-  );
+export function mutateDeleteShape(
+  shapes: Record<ShapeId, Shape>,
+  command: DeleteShape,
+): readonly Command[] {
+  const dummyDoc = { schema: { version: SCHEMA_VERSION }, shapes } as unknown as Document;
+  const subtree = subtreeOf(dummyDoc, command.id);
+  for (const shape of subtree) {
+    delete shapes[shape.id];
+  }
   const inverse: readonly Command[] = [...subtree].reverse().map((shape): CreateShape => ({
     type: COMMANDS.createShape,
     shape,
   }));
-  return { document: next, inverse };
+  return inverse;
+}
+
+export function applyDeleteShape(document: Document, command: DeleteShape): CommandResult {
+  const shapes = { ...document.shapes };
+  const inverse = mutateDeleteShape(shapes, command);
+  return { document: createDocumentFromMap(shapes), inverse };
 }

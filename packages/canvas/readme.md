@@ -4,9 +4,10 @@ A framework-free, batteries-included visual canvas and drawing SDK with **zero r
 
 ## Features
 
-- **Batteries-included**: Core document tree, transactions, history (undo/redo), camera controller (pan/zoom), selection, and hit-testing in a single package.
-- **Built-in Shapes**: Out-of-the-box support for `rect`, `ellipse`, `line`, `pen-path`, and `text` with hit testing and bounding-box transforms.
-- **Pure SVG Rendering**: Deterministic SVG markup rendering directly from document state.
+- **Batteries-Included Editor**: Interactive SVG canvas mountable into any DOM container with built-in pointer gestures, keyboard shortcuts, undo/redo history, camera pan/zoom, and overlay previews.
+- **Pure Interaction Controller**: Headless `createCanvas()` controller with pure finite state machine, spatial hit-testing, selection management, and camera transforms.
+- **Built-in Shapes**: First-class support for `rect`, `ellipse`, `line`, `pen-path`, and `text` with hit testing, handles, and bounding-box transforms.
+- **Deterministic SVG Rendering**: Clean, predictable SVG markup generation directly from document state.
 - **Zero Runtime Dependencies**: Completely standalone. No runtime external dependencies.
 - **Framework-Agnostic**: Pure TypeScript core works with React, Vue, Svelte, or vanilla DOM.
 
@@ -18,7 +19,51 @@ npm install @open-draw/canvas
 pnpm add @open-draw/canvas
 ```
 
-## Quick Start
+## Quick Start (Interactive Editor)
+
+Mount a complete drawing editor into any HTML element:
+
+```ts
+import { createEditor, TOOLS } from "@open-draw/canvas";
+
+const container = document.getElementById("canvas-root")!;
+const editor = createEditor(container);
+
+// Select drawing tools
+editor.setTool(TOOLS.drawRect);
+
+// Listen to document and selection changes
+editor.subscribe("documentChanged", () => {
+  console.log("Document updated:", editor.getDocument());
+});
+
+// Control camera navigation
+editor.zoomIn();
+editor.zoomOut();
+editor.resetZoom();
+
+// Export standalone SVG markup
+const svgMarkup = editor.toSvg();
+
+// Programmatic text editing
+editor.setTextContent(rectId, "Updated text");
+
+// Clean up when unmounting
+// editor.destroy();
+```
+
+### Text Editing
+
+- **Programmatic API**: Use `editor.setTextContent(shapeId, text)` to update visible content directly via recorded transactions.
+
+### Clipboard
+
+- **In-Editor Clipboard**: Copy (`Mod+C` / `Ctrl+C`) and Paste (`Mod+V` / `Ctrl+V`) clone selected shape subtrees with automated fresh IDs and position cascading.
+- **System Clipboard**: When browser permissions permit, JSON payloads are copied to `navigator.clipboard` for cross-editor transfers. When no selection exists, native browser copy events pass through unhindered.
+
+## Advanced: Headless Controller
+
+For custom canvas engines or headless server-side usage, use `createCanvas`:
 
 ```ts
 import {
@@ -26,18 +71,13 @@ import {
   createDocument,
   createPage,
   createRect,
-  createText,
   documentToSvg,
   parseShapeId,
 } from "@open-draw/canvas";
 
-// 1. Create a canvas controller
 const canvas = createCanvas();
-
-// 2. Build a document scene
 const pageId = parseShapeId("page-1");
 const rectId = parseShapeId("rect-1");
-const textId = parseShapeId("text-1");
 
 const doc = createDocument([
   createPage(pageId, { x: 0, y: 0, width: 800, height: 600 }),
@@ -46,20 +86,29 @@ const doc = createDocument([
     { x: 50, y: 50, width: 200, height: 100 },
     { parentId: pageId, fill: "#3b82f6", stroke: "#1e40af" },
   ),
-  createText(
-    textId,
-    { x: 60, y: 70, width: 180, height: 40 },
-    { parentId: rectId, content: "Hello Canvas" },
-  ),
 ]);
 
-// 3. Render the document to SVG
 const svgString = documentToSvg(doc);
-
-// 4. Hit-test and interact
 const hitShapeId = canvas.pickShape(doc, { x: 100, y: 80 });
-console.log("Clicked shape:", hitShapeId);
 ```
+
+## Architecture Contract
+
+- **Document is Truth (R-016)**: The document tree is immutable and canonical; mutations occur exclusively through typed transactions.
+- **Camera is a Transform (R-017)**: Pan and zoom transforms never alter shape geometry coordinates.
+- **Machine & Viewport Separation (R-008, R-009)**: The state machine consumes pure pointer events. Wheel events are ignored by the state table and handled directly as camera viewport transforms by the imperative editor shell.
+- **Spatial Acceleration & Viewport Culling (ADR-0011)**: In-tree zero-dependency Sort-Tile-Recursive (STR) R-Tree accelerates hit-testing, box-picking, and viewport culling.
+- **Magnetic Alignment Snapping**: Edge and center alignment snapping with counter-scaled SVG guide lines during translation and handle resizing.
+- **Multi-Touch Gestures**: TouchTracker for two-finger pinch-to-zoom and pan with pointer capture lifecycle management.
+
+## Scope & Non-Goals for v1
+
+The v1 release focuses on diagramming, wireframing, and vector sketching primitives:
+
+- **Shape Rotation & Skew**: Non-goal for v1 (axis-aligned bounding boxes only).
+- **Image / Raster Asset Shapes**: Non-goal for v1 (vector primitives and text only).
+- **Rich Text & Inline Spans**: Non-goal for v1 (uniform text content only).
+- **Native OS File Drag-and-Drop**: Non-goal for v1 (document JSON serialization and file loading APIs only).
 
 ## License
 

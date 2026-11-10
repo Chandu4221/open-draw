@@ -1,28 +1,12 @@
 // Transactions (R-018, ADR-0002 D8): one gesture = one batch = one event.
 // Applying a transaction returns the inverse batch; history is an inverse
 // stack (see history.ts). No snapshots: undo is O(batch).
-import { COMMANDS } from "./commands";
+import type { ShapeId } from "@open-draw/contracts";
+import { applyCommandToMap } from "./apply-command";
 import type { Command, CommandResult } from "./commands";
-import { applyCreateShape } from "./commands/create-shape";
-import { applyDeleteShape } from "./commands/delete-shape";
-import { applyMoveShapes } from "./commands/move-shapes";
-import { applyReparentShape } from "./commands/reparent-shape";
-import { applySetRootPlatform } from "./commands/set-root-platform";
-import { applySetRootStyle } from "./commands/set-root-style";
-import { applySetRootDesignStyle } from "./commands/set-root-design-style";
-import { applySetRootRole } from "./commands/set-root-role";
-import { applySetShapeBoundingBox } from "./commands/set-shape-bounding-box";
-import { applySetShapeHiddenOn } from "./commands/set-shape-hidden-on";
-import { applySetShapeLabel } from "./commands/set-shape-label";
-import { applySetShapeOrder } from "./commands/set-shape-order";
-import { applySetShapeSemantic } from "./commands/set-shape-semantic";
-import { applySetShapeStyle } from "./commands/set-shape-style";
-import { applySetShapeContent } from "./commands/set-shape-content";
-import { applyDuplicateShapes } from "./commands/duplicate-shapes";
-import { applySetRootTheme } from "./commands/set-root-theme";
-import { applySetRootDarkMode } from "./commands/set-root-dark-mode";
-import type { Document } from "./document";
+import { createDocumentFromMap, type Document } from "./document";
 import { DocumentError } from "./errors";
+import type { Shape } from "./shape";
 
 export interface Transaction {
   readonly commands: readonly Command[];
@@ -40,55 +24,20 @@ export interface TransactionResult {
   readonly inverse: readonly Command[];
 }
 
-function applyCommand(document: Document, command: Command): CommandResult {
-  switch (command.type) {
-    case COMMANDS.createShape:
-      return applyCreateShape(document, command);
-    case COMMANDS.deleteShape:
-      return applyDeleteShape(document, command);
-    case COMMANDS.setShapeLabel:
-      return applySetShapeLabel(document, command);
-    case COMMANDS.reparentShape:
-      return applyReparentShape(document, command);
-    case COMMANDS.moveShapes:
-      return applyMoveShapes(document, command);
-    case COMMANDS.setShapeBoundingBox:
-      return applySetShapeBoundingBox(document, command);
-    case COMMANDS.setShapeSemantic:
-      return applySetShapeSemantic(document, command);
-    case COMMANDS.setRootPlatform:
-      return applySetRootPlatform(document, command);
-    case COMMANDS.setRootStyle:
-      return applySetRootStyle(document, command);
-    case COMMANDS.setRootDesignStyle:
-      return applySetRootDesignStyle(document, command);
-    case COMMANDS.setRootRole:
-      return applySetRootRole(document, command);
-    case COMMANDS.setRootTheme:
-      return applySetRootTheme(document, command);
-    case COMMANDS.setRootDarkMode:
-      return applySetRootDarkMode(document, command);
-    case COMMANDS.setShapeHiddenOn:
-      return applySetShapeHiddenOn(document, command);
-    case COMMANDS.setShapeOrder:
-      return applySetShapeOrder(document, command);
-    case COMMANDS.setShapeStyle:
-      return applySetShapeStyle(document, command);
-    case COMMANDS.setShapeContent:
-      return applySetShapeContent(document, command);
-    case COMMANDS.duplicateShapes:
-      return applyDuplicateShapes(document, command);
-  }
+export function applyCommand(document: Document, command: Command): CommandResult {
+  const shapes: Record<ShapeId, Shape> = { ...document.shapes };
+  const inverse = applyCommandToMap(shapes, command);
+  return { document: createDocumentFromMap(shapes), inverse };
 }
 
 export function applyTransaction(document: Document, transaction: Transaction): TransactionResult {
-  let current = document;
+  const shapes: Record<ShapeId, Shape> = { ...document.shapes };
   const inverse: Command[] = [];
   for (const command of transaction.commands) {
-    const result = applyCommand(current, command);
-    current = result.document;
-    inverse.push(...result.inverse);
+    const inv = applyCommandToMap(shapes, command);
+    inverse.push(...inv);
   }
+  const nextDoc = createDocumentFromMap(shapes);
   // Undo runs the inverses back-to-front.
-  return { document: current, inverse: inverse.reverse() };
+  return { document: nextDoc, inverse: inverse.reverse() };
 }

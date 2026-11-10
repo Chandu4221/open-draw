@@ -26,6 +26,7 @@ import { validateDocumentDepth } from "./depth-validation";
 
 export { validateDocumentDepth } from "./depth-validation";
 export { parseMeta, parseSemantic, parseDeviceType } from "./meta-validation";
+export { parseShape };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -48,11 +49,13 @@ function parseBoundingBox(value: unknown): BoundingBox {
     !isFiniteNumber(value.x) ||
     !isFiniteNumber(value.y) ||
     !isFiniteNumber(value.width) ||
-    !isFiniteNumber(value.height)
+    !isFiniteNumber(value.height) ||
+    value.width <= 0 ||
+    value.height <= 0
   ) {
     throw new DocumentError(
       "invalidShape",
-      "boundingBox must be { x, y, width, height } with finite numbers",
+      "boundingBox must be { x, y, width, height } with finite numbers and positive dimensions",
     );
   }
   return { x: value.x, y: value.y, width: value.width, height: value.height };
@@ -98,27 +101,8 @@ function parseParentId(value: unknown): ShapeId | typeof ROOT_ID {
   }
 }
 
-const COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
-
-function parseColor(value: unknown, fieldName: string): string {
-  if (
-    typeof value !== "string" ||
-    (value !== "none" && value !== "transparent" && !COLOR_REGEX.test(value))
-  ) {
-    throw new DocumentError(
-      "invalidShape",
-      `${fieldName} must be a valid hex color string or "none"/"transparent"`,
-    );
-  }
-  return value;
-}
-
-function parseStrokeWidth(value: unknown): number {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
-    throw new DocumentError("invalidShape", "strokeWidth must be a non-negative finite number");
-  }
-  return value;
-}
+export { parseColor, parseStrokeWidth } from "./style-validation";
+import { parseColor, parseStrokeWidth } from "./style-validation";
 
 function parseShape(value: unknown): Shape {
   if (!isRecord(value)) {

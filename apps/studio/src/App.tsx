@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { OdToastProvider } from "@open-draw/ui";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LandingPage } from "./components/LandingPage";
 import { StudioShell } from "./components/StudioShell";
 
@@ -47,7 +48,9 @@ export default function App(): React.JSX.Element {
       {view === "landing" ? (
         <LandingPage onLaunch={handleLaunch} />
       ) : (
-        <StudioShell onBackToLanding={handleBackToLanding} />
+        <ErrorBoundary onReset={handleBackToLanding}>
+          <StudioShell onBackToLanding={handleBackToLanding} />
+        </ErrorBoundary>
       )}
     </OdToastProvider>
   );

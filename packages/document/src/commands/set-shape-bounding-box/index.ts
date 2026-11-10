@@ -28,6 +28,19 @@ export function applySetShapeBoundingBox(
   if (shape === undefined) {
     throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
   }
+  if (
+    !Number.isFinite(command.boundingBox.x) ||
+    !Number.isFinite(command.boundingBox.y) ||
+    !Number.isFinite(command.boundingBox.width) ||
+    !Number.isFinite(command.boundingBox.height) ||
+    command.boundingBox.width <= 0 ||
+    command.boundingBox.height <= 0
+  ) {
+    throw new DocumentError(
+      "invalidShape",
+      "boundingBox must have finite position and positive dimensions",
+    );
+  }
   const previousBox = shape.boundingBox;
 
   let nextShape: Shape;

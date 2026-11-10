@@ -1,6 +1,11 @@
 // Serialization and boundary parser behavior (R-006, R-015, R-041, R-044, ADR-0003).
 import { describe, expect, it } from "vitest";
-import { parseCustomShapeKind, parsePluginId, parseShapeId } from "@open-draw/contracts";
+import {
+  DESIGN_STYLES,
+  parseCustomShapeKind,
+  parsePluginId,
+  parseShapeId,
+} from "@open-draw/contracts";
 import { COMMANDS } from "./commands";
 import { applySetShapeBoundingBox } from "./commands/set-shape-bounding-box";
 import { createDocument } from "./document";
@@ -226,6 +231,29 @@ describe("serializeDocument & parseDocument", () => {
     expect((parsed.shapes[starId] as CustomShape).customData?.pointsCount).toBe(5);
   });
 
+  it("round-trips root theme, dark mode, and design style metadata", () => {
+    const pageId = parseShapeId("page-1");
+    const doc = createDocument([
+      createPage(
+        pageId,
+        { x: 0, y: 0, width: 500, height: 500 },
+        {
+          meta: {
+            order: {},
+            theme: { primary: "#ff0000", surface: "#111111" },
+            darkMode: true,
+            designStyle: DESIGN_STYLES.neoBrutalism,
+          },
+        },
+      ),
+    ]);
+    const serialized = serializeDocument(doc);
+    const parsed = parseDocument(serialized);
+    expect(parsed.shapes[pageId]?.meta.theme).toEqual({ primary: "#ff0000", surface: "#111111" });
+    expect(parsed.shapes[pageId]?.meta.darkMode).toBe(true);
+    expect(parsed.shapes[pageId]?.meta.designStyle).toBe(DESIGN_STYLES.neoBrutalism);
+  });
+
   it("throws DocumentError on unknown shape kind (not built-in and not custom format)", () => {
     const badKind = JSON.stringify({
       schema: { version: 1 },
@@ -392,5 +420,23 @@ describe("applySetShapeBoundingBox point scaling", () => {
       { x: 30, y: 40 },
       { x: 150, y: 120 },
     ]);
+  });
+
+  it("rejects customData attempting to override reserved shape properties (C7)", () => {
+    const pageId = parseShapeId("page-1");
+    const customId = parseShapeId("custom-1");
+    const kind = parseCustomShapeKind("vendor:widget");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 1000, height: 1000 }),
+      createCustomShape(
+        customId,
+        kind,
+        { x: 10, y: 10, width: 100, height: 100 },
+        { id: "overridden-id", validKey: "validValue" },
+        { parent: pageId },
+      ),
+    ]);
+
+    expect(() => serializeDocument(doc)).toThrow(DocumentError);
   });
 });

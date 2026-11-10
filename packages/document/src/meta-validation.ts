@@ -13,6 +13,7 @@ import {
   PLATFORM_BY_VALUE,
   STYLE_PROFILE_BY_VALUE,
   ROOT_ROLE_BY_VALUE,
+  THEME_PALETTE_SLOTS,
   isValidPluginId,
 } from "@open-draw/contracts";
 import { DocumentError } from "./errors";
@@ -75,6 +76,29 @@ export function parseSemantic(value: unknown): SemanticTag {
     platform,
     ...(properties === undefined ? {} : { properties }),
   };
+}
+
+const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+const VALID_THEME_SLOTS = new Set<string>(THEME_PALETTE_SLOTS);
+
+export function parseThemePalette(value: unknown): ThemePalette {
+  if (!isRecord(value)) {
+    throw new DocumentError("invalidMeta", "meta.theme must be an object");
+  }
+  const themeObj: Record<string, string> = {};
+  for (const [slotKey, slotVal] of Object.entries(value)) {
+    if (!VALID_THEME_SLOTS.has(slotKey)) {
+      throw new DocumentError("invalidMeta", `unknown theme palette slot: ${slotKey}`);
+    }
+    if (typeof slotVal !== "string" || !HEX_COLOR_REGEX.test(slotVal)) {
+      throw new DocumentError(
+        "invalidMeta",
+        `meta.theme.${slotKey} must be a valid hex color: ${JSON.stringify(slotVal)}`,
+      );
+    }
+    themeObj[slotKey] = slotVal;
+  }
+  return themeObj as ThemePalette;
 }
 
 export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
@@ -182,7 +206,10 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
     }
     hiddenOn = value.hiddenOn.map(parseDeviceType);
   }
-  const semantic = value.semantic === undefined ? undefined : parseSemantic(value.semantic);
+  const semantic =
+    value.semantic === undefined || value.semantic === null
+      ? undefined
+      : parseSemantic(value.semantic);
 
   // R-044: Validate pluginData envelope (PluginId syntax), but treat contents as opaque
   let pluginData: Record<PluginId, unknown> | undefined;
@@ -201,17 +228,7 @@ export function parseMeta(value: unknown, isRootShape = false): ShapeMeta {
 
   let theme: ThemePalette | undefined;
   if (value.theme !== undefined) {
-    if (!isRecord(value.theme)) {
-      throw new DocumentError("invalidMeta", "meta.theme must be an object");
-    }
-    const themeObj: Record<string, string> = {};
-    for (const [slotKey, slotVal] of Object.entries(value.theme)) {
-      if (typeof slotVal !== "string") {
-        throw new DocumentError("invalidMeta", `meta.theme.${slotKey} must be a string color`);
-      }
-      themeObj[slotKey] = slotVal;
-    }
-    theme = themeObj as ThemePalette;
+    theme = parseThemePalette(value.theme);
   }
 
   let darkMode: boolean | undefined;

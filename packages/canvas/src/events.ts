@@ -8,6 +8,7 @@ export const CANVAS_EVENTS = {
   pointerDown: "pointerDown",
   pointerMove: "pointerMove",
   pointerUp: "pointerUp",
+  pointerCancel: "pointerCancel",
   doubleClick: "doubleClick",
   wheel: "wheel",
   keyEscape: "keyEscape",
@@ -18,6 +19,9 @@ export const CONTROLLER_EVENTS = {
   documentChanged: "documentChanged",
   selectionChanged: "selectionChanged",
   historyChanged: "historyChanged",
+  cameraChanged: "cameraChanged",
+  toolChanged: "toolChanged",
+  machineChanged: "machineChanged",
 } as const;
 
 export type ControllerEvent = (typeof CONTROLLER_EVENTS)[keyof typeof CONTROLLER_EVENTS];
@@ -45,10 +49,15 @@ export interface PointerUpEvent {
   readonly worldPoint: Point;
 }
 
-export interface WheelEvent {
+export interface CanvasWheelEvent {
   readonly type: (typeof CANVAS_EVENTS)["wheel"];
   readonly screenPoint: Point;
   readonly factor: number;
+}
+export type WheelEvent = CanvasWheelEvent;
+
+export interface PointerCancelEvent {
+  readonly type: (typeof CANVAS_EVENTS)["pointerCancel"];
 }
 
 export interface KeyEscapeEvent {
@@ -66,6 +75,7 @@ export type CanvasEvent =
   | PointerDownEvent
   | PointerMoveEvent
   | PointerUpEvent
+  | PointerCancelEvent
   | DoubleClickEvent
-  | WheelEvent
+  | CanvasWheelEvent
   | KeyEscapeEvent;

@@ -11,5 +11,6 @@ export interface MarkdownExportOptions extends ExportOptions {
 
 export interface JsonExportOptions extends ExportOptions {
   readonly rootId?: ShapeId | undefined;
+  readonly deviceType?: DeviceType | undefined;
   readonly includeAiDirectives?: boolean | undefined;
 }

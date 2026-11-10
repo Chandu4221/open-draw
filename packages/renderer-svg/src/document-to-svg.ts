@@ -55,10 +55,16 @@ export interface RenderOptions {
   readonly activeDeviceType?: DeviceType | undefined;
   readonly activeDeviceTypes?: Readonly<Record<ShapeId, DeviceType | undefined>> | undefined;
   readonly styleProfile?: StyleId | undefined;
-  readonly onFallback?: (event: RendererFallbackEvent) => void;
-  readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
-  readonly includeAnnotations?: boolean;
-  readonly resolveDisplayName?: (shape: Shape) => string;
+  readonly onFallback?: ((event: RendererFallbackEvent) => void) | undefined;
+  readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>> | undefined;
+  readonly includeAnnotations?: boolean | undefined;
+  readonly resolveDisplayName?: ((shape: Shape) => string) | undefined;
+  readonly instanceId?: string | undefined;
+  readonly visibleShapeIds?: ReadonlySet<ShapeId> | undefined;
+}
+
+function num(val: unknown, fallback = 0): number {
+  return typeof val === "number" && Number.isFinite(val) ? val : fallback;
 }
 
 export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
@@ -73,35 +79,35 @@ export function fallbackShapeToSvg(shape: Shape, box: BoundingBox): string {
 }
 
 export const DEFAULT_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>> = Object.freeze({
-  [SHAPE_KINDS.page]: (_shape, box) =>
-    `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.pageFill}" stroke="${RENDER_STYLES.pageStroke}" stroke-dasharray="${RENDER_STYLES.pageDasharray}" />`,
-  [SHAPE_KINDS.section]: (_shape, box) =>
-    `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${RENDER_STYLES.sectionFill}" stroke="${RENDER_STYLES.sectionStroke}" />`,
+  [SHAPE_KINDS.page]: (shape, box) =>
+    `<rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" fill="${RENDER_STYLES.pageFill}" stroke="${RENDER_STYLES.pageStroke}" stroke-dasharray="${RENDER_STYLES.pageDasharray}" />`,
+  [SHAPE_KINDS.section]: (shape, box) =>
+    `<rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" fill="${RENDER_STYLES.sectionFill}" stroke="${RENDER_STYLES.sectionStroke}" />`,
   [SHAPE_KINDS.rect]: (shape, box) => {
     const fill = escapeXml(shape.fill ?? RENDER_STYLES.contentFill);
     const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
     const strokeWidthAttr =
-      shape.strokeWidth !== undefined ? ` stroke-width="${shape.strokeWidth}"` : "";
-    return `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${fill}" stroke="${stroke}"${strokeWidthAttr} />`;
+      shape.strokeWidth !== undefined ? ` stroke-width="${num(shape.strokeWidth, 1)}"` : "";
+    return `<rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" fill="${fill}" stroke="${stroke}"${strokeWidthAttr} />`;
   },
   [SHAPE_KINDS.ellipse]: (shape, box) => {
     const fill = escapeXml(shape.fill ?? RENDER_STYLES.contentFill);
     const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
     const strokeWidthAttr =
-      shape.strokeWidth !== undefined ? ` stroke-width="${shape.strokeWidth}"` : "";
-    return `<ellipse cx="${box.x + box.width / 2}" cy="${box.y + box.height / 2}" rx="${box.width / 2}" ry="${box.height / 2}" fill="${fill}" stroke="${stroke}"${strokeWidthAttr} />`;
+      shape.strokeWidth !== undefined ? ` stroke-width="${num(shape.strokeWidth, 1)}"` : "";
+    return `<ellipse cx="${num(box.x + box.width / 2)}" cy="${num(box.y + box.height / 2)}" rx="${num(box.width / 2, 1)}" ry="${num(box.height / 2, 1)}" fill="${fill}" stroke="${stroke}"${strokeWidthAttr} />`;
   },
   [SHAPE_KINDS.line]: (shape, box) => {
     const line = shape as LineShape;
     const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
-    const strokeWidth = shape.strokeWidth ?? 2;
-    return `<line x1="${box.x + line.start.x}" y1="${box.y + line.start.y}" x2="${box.x + line.end.x}" y2="${box.y + line.end.y}" stroke="${stroke}" stroke-width="${strokeWidth}" />`;
+    const strokeWidth = num(shape.strokeWidth, 2);
+    return `<line x1="${num(box.x + line.start.x)}" y1="${num(box.y + line.start.y)}" x2="${num(box.x + line.end.x)}" y2="${num(box.y + line.end.y)}" stroke="${stroke}" stroke-width="${strokeWidth}" />`;
   },
   [SHAPE_KINDS.penPath]: (shape, box) => {
     const pen = shape as PenPathShape;
-    const pointsStr = pen.points.map((p) => `${box.x + p.x},${box.y + p.y}`).join(" ");
+    const pointsStr = pen.points.map((p) => `${num(box.x + p.x)},${num(box.y + p.y)}`).join(" ");
     const stroke = escapeXml(shape.stroke ?? RENDER_STYLES.contentStroke);
-    const strokeWidth = shape.strokeWidth ?? 2;
+    const strokeWidth = num(shape.strokeWidth, 2);
     const fill = escapeXml(shape.fill ?? "none");
     return `<polyline points="${pointsStr}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" />`;
   },
@@ -109,7 +115,7 @@ export const DEFAULT_SHAPE_RENDERERS: Readonly<Record<string, ShapeSvgRenderer>>
     if (shape.fill !== undefined && shape.fill !== "none" && shape.fill !== "transparent") {
       const fill = escapeXml(shape.fill);
       const stroke = shape.stroke ? ` stroke="${escapeXml(shape.stroke)}"` : "";
-      return `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="${fill}"${stroke} />`;
+      return `<rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" fill="${fill}"${stroke} />`;
     }
     return "";
   },
@@ -148,10 +154,11 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
 
   // Visible text on shapes (F2, ADR-0006 Option A / shape.content)
   if (shape.content !== undefined && shape.content !== null && shape.content.trim().length > 0) {
-    const clipId = `clip-${escapeXml(shape.id)}`;
-    const clip = `<clipPath id="${clipId}"><rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" /></clipPath>`;
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
+    const prefix = options?.instanceId ? `${escapeXml(options.instanceId)}-` : "";
+    const clipId = `clip-${prefix}${escapeXml(shape.id)}`;
+    const clip = `<clipPath id="${clipId}"><rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" /></clipPath>`;
+    const centerX = num(box.x + box.width / 2);
+    const centerY = num(box.y + box.height / 2);
     const textColor = escapeXml(
       shape.stroke && shape.stroke !== "none" ? shape.stroke : RENDER_STYLES.contentStroke,
     );
@@ -182,7 +189,13 @@ function resolveShapeRootId(document: Document, shape: Shape): ShapeId | undefin
 // Style selection is root-resolved (R-026).
 // Fallback emission surfaces via the pure options callback without singletons (R-008, ADR-0003 D3).
 export function documentToSvg(document: Document, options?: RenderOptions): string {
-  return shapeListInOrder(document)
+  const ordered = shapeListInOrder(document);
+  const shapes =
+    options?.visibleShapeIds !== undefined
+      ? ordered.filter((shape) => options.visibleShapeIds!.has(shape.id))
+      : ordered;
+
+  return shapes
     .map((shape) => {
       const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
       const rootId = resolveShapeRootId(document, shape);

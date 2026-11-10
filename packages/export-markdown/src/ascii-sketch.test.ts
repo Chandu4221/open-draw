@@ -6,8 +6,8 @@ import {
   createLine,
   createPenPath,
 } from "@open-draw/document";
-import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
-import { exportMarkdown } from "./export-markdown";
+import { DEVICE_TYPES, parseShapeId, ROOT_ID } from "@open-draw/contracts";
+import { exportMarkdown, renderAsciiSketch } from "./export-markdown";
 import { ASCII_SKETCH_SHAPE_THRESHOLD } from "./ascii-constants";
 
 const PROFIE_CARD_FIXTURE = JSON.stringify({
@@ -313,5 +313,73 @@ describe("ASCII layout sketch renderer (B4)", () => {
     const run2 = exportMarkdown(doc, { includeAsciiSketch: true });
 
     expect(run1).toBe(run2);
+  });
+
+  it("scopes sketch to rootId subtree and excludes shapes from other roots", () => {
+    const doc = createDocument([
+      createRect(
+        parseShapeId("page-1"),
+        { x: 0, y: 0, width: 400, height: 400 },
+        { parent: ROOT_ID, label: "Page One" },
+      ),
+      createRect(
+        parseShapeId("card-1"),
+        { x: 20, y: 20, width: 200, height: 100 },
+        { parent: parseShapeId("page-1"), label: "Card One" },
+      ),
+      createRect(
+        parseShapeId("page-2"),
+        { x: 500, y: 0, width: 400, height: 400 },
+        { parent: ROOT_ID, label: "Page Two" },
+      ),
+      createRect(
+        parseShapeId("card-2"),
+        { x: 20, y: 20, width: 200, height: 100 },
+        { parent: parseShapeId("page-2"), label: "Card Two" },
+      ),
+    ]);
+
+    const md = exportMarkdown(doc, {
+      includeAsciiSketch: true,
+      rootId: parseShapeId("page-1"),
+    });
+
+    expect(md).toContain("Card One");
+    expect(md).not.toContain("Page Two");
+    expect(md).not.toContain("Card Two");
+  });
+
+  it("omits shapes that are marked hiddenOn for the active deviceType", () => {
+    const doc = createDocument([
+      createRect(
+        parseShapeId("page-1"),
+        { x: 0, y: 0, width: 400, height: 400 },
+        { parent: ROOT_ID, label: "Page One" },
+      ),
+      createRect(
+        parseShapeId("visible-card"),
+        { x: 20, y: 20, width: 200, height: 100 },
+        { parent: parseShapeId("page-1"), label: "Visible Card" },
+      ),
+      createRect(
+        parseShapeId("hidden-button"),
+        { x: 20, y: 140, width: 200, height: 50 },
+        {
+          parent: parseShapeId("page-1"),
+          label: "Hidden Button",
+          meta: { order: {}, hiddenOn: [DEVICE_TYPES.mobile] },
+        },
+      ),
+    ]);
+
+    const sketch = renderAsciiSketch(doc, {
+      includeAsciiSketch: true,
+      rootId: parseShapeId("page-1"),
+      deviceType: DEVICE_TYPES.mobile,
+    });
+
+    expect(sketch).toBeDefined();
+    expect(sketch).toContain("#visible-card");
+    expect(sketch).not.toContain("hidden-button");
   });
 });

@@ -8,12 +8,31 @@ export const MIN_SHAPE_SIZE = 1;
 
 // A draw gesture anchored at `start`, wherever the pointer is now.
 export function normalizeBox(start: Point, end: Point): BoundingBox {
+  const sx = Number.isFinite(start.x) ? start.x : Number.isFinite(end.x) ? end.x : 0;
+  const ex = Number.isFinite(end.x) ? end.x : Number.isFinite(start.x) ? start.x : 0;
+  const sy = Number.isFinite(start.y) ? start.y : Number.isFinite(end.y) ? end.y : 0;
+  const ey = Number.isFinite(end.y) ? end.y : Number.isFinite(start.y) ? start.y : 0;
   return {
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    width: Math.max(MIN_SHAPE_SIZE, Math.abs(end.x - start.x)),
-    height: Math.max(MIN_SHAPE_SIZE, Math.abs(end.y - start.y)),
+    x: Math.min(sx, ex),
+    y: Math.min(sy, ey),
+    width: Math.max(MIN_SHAPE_SIZE, Math.abs(ex - sx)),
+    height: Math.max(MIN_SHAPE_SIZE, Math.abs(ey - sy)),
   };
+}
+
+export function unionBoxes(boxes: readonly BoundingBox[]): BoundingBox | null {
+  if (boxes.length === 0) return null;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const box of boxes) {
+    minX = Math.min(minX, box.x);
+    minY = Math.min(minY, box.y);
+    maxX = Math.max(maxX, box.x + box.width);
+    maxY = Math.max(maxY, box.y + box.height);
+  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 function normalizeSpan(anchor: number, dragged: number): { min: number; size: number } {
@@ -36,41 +55,51 @@ function normalizeSpan(anchor: number, dragged: number): { min: number; size: nu
 export function resizeBox(original: BoundingBox, handle: HandleId, worldPoint: Point): BoundingBox {
   const right = original.x + original.width;
   const bottom = original.y + original.height;
+  const safeX = Number.isFinite(worldPoint.x)
+    ? worldPoint.x
+    : handle === HANDLES.w || handle === HANDLES.nw || handle === HANDLES.sw
+      ? original.x
+      : right;
+  const safeY = Number.isFinite(worldPoint.y)
+    ? worldPoint.y
+    : handle === HANDLES.n || handle === HANDLES.ne || handle === HANDLES.nw
+      ? original.y
+      : bottom;
   switch (handle) {
     case HANDLES.se: {
-      const spanX = normalizeSpan(original.x, worldPoint.x);
-      const spanY = normalizeSpan(original.y, worldPoint.y);
+      const spanX = normalizeSpan(original.x, safeX);
+      const spanY = normalizeSpan(original.y, safeY);
       return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.ne: {
-      const spanX = normalizeSpan(original.x, worldPoint.x);
-      const spanY = normalizeSpan(bottom, worldPoint.y);
+      const spanX = normalizeSpan(original.x, safeX);
+      const spanY = normalizeSpan(bottom, safeY);
       return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.sw: {
-      const spanX = normalizeSpan(right, worldPoint.x);
-      const spanY = normalizeSpan(original.y, worldPoint.y);
+      const spanX = normalizeSpan(right, safeX);
+      const spanY = normalizeSpan(original.y, safeY);
       return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.nw: {
-      const spanX = normalizeSpan(right, worldPoint.x);
-      const spanY = normalizeSpan(bottom, worldPoint.y);
+      const spanX = normalizeSpan(right, safeX);
+      const spanY = normalizeSpan(bottom, safeY);
       return { x: spanX.min, y: spanY.min, width: spanX.size, height: spanY.size };
     }
     case HANDLES.n: {
-      const spanY = normalizeSpan(bottom, worldPoint.y);
+      const spanY = normalizeSpan(bottom, safeY);
       return { x: original.x, y: spanY.min, width: original.width, height: spanY.size };
     }
     case HANDLES.s: {
-      const spanY = normalizeSpan(original.y, worldPoint.y);
+      const spanY = normalizeSpan(original.y, safeY);
       return { x: original.x, y: spanY.min, width: original.width, height: spanY.size };
     }
     case HANDLES.w: {
-      const spanX = normalizeSpan(right, worldPoint.x);
+      const spanX = normalizeSpan(right, safeX);
       return { x: spanX.min, y: original.y, width: spanX.size, height: original.height };
     }
     case HANDLES.e: {
-      const spanX = normalizeSpan(original.x, worldPoint.x);
+      const spanX = normalizeSpan(original.x, safeX);
       return { x: spanX.min, y: original.y, width: spanX.size, height: original.height };
     }
   }

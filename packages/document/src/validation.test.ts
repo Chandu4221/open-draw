@@ -323,6 +323,18 @@ describe("parseDocument", () => {
     expect(() => parseDocument(invalidInput)).toThrow(/semantic property.*must be a string/);
   });
 
+  it("permits meta.semantic: null for untagged shapes from JSON export", () => {
+    const input = serialize([page, section, rect]) as {
+      shapes: Record<string, Record<string, unknown>>;
+    };
+    input.shapes["rect-1"]!.meta = {
+      order: {},
+      semantic: null,
+    };
+    const document = parseDocument(input);
+    expect(document.shapes[parseShapeId("rect-1")]?.meta.semantic).toBeUndefined();
+  });
+
   describe("document depth limits (Ruling V1, Task S2)", () => {
     function createNestedChain(depth: number): Shape[] {
       const shapes: Shape[] = [];
@@ -476,6 +488,78 @@ describe("parseDocument", () => {
       const parsed = doc.shapes[parseShapeId("text-custom")];
       expect(parsed?.content).toBe("Custom Title");
       expect(parsed?.stroke).toBe("#2563eb");
+    });
+  });
+
+  describe("boundingBox dimension validation", () => {
+    it("rejects non-positive or NaN boundingBox dimensions", () => {
+      const invalidZeroWidth = serialize([page]) as {
+        shapes: Record<
+          string,
+          { boundingBox: { width: number; height: number; x: number; y: number } }
+        >;
+      };
+      invalidZeroWidth.shapes["page-1"]!.boundingBox.width = 0;
+      expect(() => parseDocument(invalidZeroWidth)).toThrow(DocumentError);
+
+      const invalidNegativeWidth = serialize([page]) as {
+        shapes: Record<
+          string,
+          { boundingBox: { width: number; height: number; x: number; y: number } }
+        >;
+      };
+      invalidNegativeWidth.shapes["page-1"]!.boundingBox.width = -50;
+      expect(() => parseDocument(invalidNegativeWidth)).toThrow(DocumentError);
+
+      const invalidNanHeight = serialize([page]) as {
+        shapes: Record<
+          string,
+          { boundingBox: { width: number; height: number; x: number; y: number } }
+        >;
+      };
+      invalidNanHeight.shapes["page-1"]!.boundingBox.height = NaN;
+      expect(() => parseDocument(invalidNanHeight)).toThrow(DocumentError);
+    });
+  });
+
+  describe("theme validation (B14, B15)", () => {
+    it("rejects non-hex color values in theme", () => {
+      const input = serialize([page]) as {
+        shapes: Record<string, { meta?: Record<string, unknown> }>;
+      };
+      input.shapes["page-1"]!.meta = { theme: { primary: "blue" } };
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+
+      input.shapes["page-1"]!.meta = { theme: { primary: "#12345" } };
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+
+      input.shapes["page-1"]!.meta = { theme: { primary: "<script>" } };
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+    });
+
+    it("rejects unknown theme slots outside THEME_PALETTE_SLOTS", () => {
+      const input = serialize([page]) as {
+        shapes: Record<string, { meta?: Record<string, unknown> }>;
+      };
+      input.shapes["page-1"]!.meta = { theme: { unknownSlot: "#1d4ed8" } };
+      expect(() => parseDocument(input)).toThrow(DocumentError);
+    });
+
+    it("accepts valid 3, 6, and 8 hex character colors in known slots", () => {
+      const input = serialize([page]) as {
+        shapes: Record<string, { meta?: Record<string, unknown> }>;
+      };
+      input.shapes["page-1"]!.meta = {
+        theme: {
+          primary: "#1d4ed8",
+          secondary: "#fff",
+          surface: "#ffffffcc",
+        },
+      };
+      const doc = parseDocument(input);
+      expect(doc.shapes[parseShapeId("page-1")]?.meta.theme?.primary).toBe("#1d4ed8");
+      expect(doc.shapes[parseShapeId("page-1")]?.meta.theme?.secondary).toBe("#fff");
+      expect(doc.shapes[parseShapeId("page-1")]?.meta.theme?.surface).toBe("#ffffffcc");
     });
   });
 });

@@ -5,6 +5,7 @@ import type { Command, CommandResult } from "..";
 import type { Document } from "../../document";
 import { createDocument } from "../../document";
 import { DocumentError } from "../../errors";
+import { parseThemePalette } from "../../meta-validation";
 import type { Shape } from "../../shape";
 import { COMMANDS } from "../registry";
 
@@ -28,7 +29,7 @@ export function applySetRootTheme(document: Document, command: SetRootTheme): Co
   if (command.theme === null) {
     delete nextMeta.theme;
   } else {
-    nextMeta.theme = command.theme;
+    nextMeta.theme = parseThemePalette(command.theme);
   }
 
   const nextShape: Shape = {
@@ -36,8 +37,10 @@ export function applySetRootTheme(document: Document, command: SetRootTheme): Co
     meta: nextMeta,
   };
 
-  const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
-  const next = createDocument([...others, nextShape]);
+  const shapes = Object.values(document.shapes).map((entry) =>
+    entry.id === command.id ? nextShape : entry,
+  );
+  const next = createDocument(shapes);
   const inverse: readonly Command[] = [
     { type: COMMANDS.setRootTheme, id: command.id, theme: previousTheme },
   ];

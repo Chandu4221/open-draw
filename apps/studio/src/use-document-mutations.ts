@@ -6,7 +6,6 @@ import type {
   StyleId,
 } from "@open-draw/contracts";
 import { isRootId, PLATFORMS } from "@open-draw/contracts";
-import type { CanvasController } from "@open-draw/canvas";
 import { COMMANDS, type Command, type Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 
@@ -15,7 +14,6 @@ export interface DocumentMutationsProps {
   readonly rootShape: Shape | undefined;
   readonly activeProfile: import("@open-draw/contracts").PlatformProfile | undefined;
   readonly activeDeviceType: DeviceType | undefined;
-  readonly canvasRef: React.MutableRefObject<CanvasController>;
   readonly setActiveDeviceType: (dt: DeviceType | undefined) => void;
   readonly commit: (
     commands: readonly Command[],
@@ -29,8 +27,14 @@ export interface DocumentMutations {
   readonly handleSetStyle: (style: StyleId) => void;
   readonly handleSetDesignStyle: (designStyle: DesignStyleId | "") => void;
   readonly handleSetRole: (role: RootRole | "") => void;
-  readonly handleSetLabel: (labelStr: string) => void;
-  readonly handleSetContent: (contentStr: string) => void;
+  readonly handleSetLabel: (
+    labelStr: string,
+    options?: { record?: boolean; startVal?: string | null },
+  ) => void;
+  readonly handleSetContent: (
+    contentStr: string,
+    options?: { record?: boolean; startVal?: string | null },
+  ) => void;
   readonly handleSetSemantic: (semanticIdStr: string) => void;
   readonly handlePropertyChange: (propId: string, val: string | number | boolean) => void;
   readonly handleToggleHiddenOn: (dt: DeviceType) => void;
@@ -63,7 +67,6 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     rootShape,
     activeProfile,
     activeDeviceType,
-    canvasRef,
     setActiveDeviceType,
     commit,
     render,
@@ -89,7 +92,6 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
         !nextProfile.deviceTypes.includes(activeDeviceType))
     ) {
       setActiveDeviceType(undefined);
-      canvasRef.current.setActiveDeviceType(undefined);
     }
     render();
   }
@@ -122,17 +124,37 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     render();
   }
 
-  function handleSetLabel(labelStr: string): void {
+  function handleSetLabel(
+    labelStr: string,
+    options?: { record?: boolean; startVal?: string | null },
+  ): void {
     if (!selectedShape) return;
     const label = labelStr.trim().length === 0 ? null : labelStr;
-    commit([{ type: COMMANDS.setShapeLabel, id: selectedShape.id, label }]);
+    const commitOpts: { record?: boolean; customInverse?: readonly Command[] } = {};
+    if (options?.record !== undefined) commitOpts.record = options.record;
+    if (options?.startVal !== undefined) {
+      commitOpts.customInverse = [
+        { type: COMMANDS.setShapeLabel, id: selectedShape.id, label: options.startVal },
+      ];
+    }
+    commit([{ type: COMMANDS.setShapeLabel, id: selectedShape.id, label }], commitOpts);
     render();
   }
 
-  function handleSetContent(contentStr: string): void {
+  function handleSetContent(
+    contentStr: string,
+    options?: { record?: boolean; startVal?: string | null },
+  ): void {
     if (!selectedShape) return;
     const content = contentStr.trim().length === 0 ? null : contentStr;
-    commit([{ type: COMMANDS.setShapeContent, id: selectedShape.id, content }]);
+    const commitOpts: { record?: boolean; customInverse?: readonly Command[] } = {};
+    if (options?.record !== undefined) commitOpts.record = options.record;
+    if (options?.startVal !== undefined) {
+      commitOpts.customInverse = [
+        { type: COMMANDS.setShapeContent, id: selectedShape.id, content: options.startVal },
+      ];
+    }
+    commit([{ type: COMMANDS.setShapeContent, id: selectedShape.id, content }], commitOpts);
     render();
   }
 
@@ -190,15 +212,15 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
 
   function handleOrderChange(dt: DeviceType, valStr: string): void {
     if (!selectedShape) return;
-    const order = valStr.trim().length === 0 ? null : Number(valStr);
-    commit([
-      {
-        type: COMMANDS.setShapeOrder,
-        id: selectedShape.id,
-        deviceType: dt,
-        order,
-      },
-    ]);
+    const trimmed = valStr.trim();
+    if (trimmed.length === 0) {
+      commit([{ type: COMMANDS.setShapeOrder, id: selectedShape.id, deviceType: dt, order: null }]);
+      render();
+      return;
+    }
+    const order = Number(trimmed);
+    if (!Number.isFinite(order)) return;
+    commit([{ type: COMMANDS.setShapeOrder, id: selectedShape.id, deviceType: dt, order }]);
     render();
   }
 
@@ -208,15 +230,7 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     strokeWidth?: number | null,
   ): void {
     if (!selectedShape) return;
-    commit([
-      {
-        type: COMMANDS.setShapeStyle,
-        id: selectedShape.id,
-        fill,
-        stroke,
-        strokeWidth,
-      },
-    ]);
+    commit([{ type: COMMANDS.setShapeStyle, id: selectedShape.id, fill, stroke, strokeWidth }]);
     render();
   }
 
@@ -226,18 +240,9 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     strokeWidth?: number | null,
   ): void {
     if (!selectedShape) return;
-    commit(
-      [
-        {
-          type: COMMANDS.setShapeStyle,
-          id: selectedShape.id,
-          fill,
-          stroke,
-          strokeWidth,
-        },
-      ],
-      { record: false },
-    );
+    commit([{ type: COMMANDS.setShapeStyle, id: selectedShape.id, fill, stroke, strokeWidth }], {
+      record: false,
+    });
     render();
   }
 
@@ -261,18 +266,10 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
         strokeWidth: strokeWidth !== undefined ? (startStyle?.strokeWidth ?? null) : undefined,
       },
     ];
-    commit(
-      [
-        {
-          type: COMMANDS.setShapeStyle,
-          id: selectedShape.id,
-          fill,
-          stroke,
-          strokeWidth,
-        },
-      ],
-      { record: true, customInverse },
-    );
+    commit([{ type: COMMANDS.setShapeStyle, id: selectedShape.id, fill, stroke, strokeWidth }], {
+      record: true,
+      customInverse,
+    });
     render();
   }
 

@@ -1,11 +1,14 @@
 /// @open-draw/canvas — public SDK contract surface (R-004, R-010, R-036, ADR-0008).
 /// Pure interaction core and batteries-included visual canvas controller.
 
+export const CANVAS_VERSION = "0.9.0" as const;
+
 export {
   type Camera,
   DEFAULT_CAMERA,
   MAX_ZOOM,
   MIN_ZOOM,
+  cameraToViewportBox,
   panBy,
   screenToWorld,
   worldToScreen,
@@ -19,11 +22,46 @@ export {
   type ControllerEvent,
   type DoubleClickEvent,
   type KeyEscapeEvent,
+  type PointerCancelEvent,
   type PointerDownEvent,
   type PointerMoveEvent,
   type PointerUpEvent,
-  type WheelEvent,
+  type CanvasWheelEvent,
+  type WheelEvent, // deprecated alias
 } from "./events";
+
+export {
+  type PinchDelta,
+  type TouchTracker,
+  addTouchPointer,
+  createTouchTracker,
+  removeTouchPointer,
+  updateTouchPointer,
+} from "./touch-gesture";
+
+export {
+  type SnapAxis,
+  SNAP_AXES,
+  type SnapEdge,
+  SNAP_EDGES,
+  DEFAULT_SNAP_THRESHOLD_PX,
+  type SnapTarget,
+  type SnapGuide,
+  type SnapResult,
+  type SnapOptions,
+  type SnapEdgeConstraints,
+  ALL_SNAP_EDGES,
+  HANDLE_SNAP_EDGES,
+  computeSnap,
+  computeHandleSnap,
+  resolvePointerSnap,
+  type PointerSnapContext,
+  snapGuidesToSvg,
+} from "./snap-solver";
+
+export type { SnapConfig } from "./editor-types";
+
+export { CanvasError, CANVAS_ERRORS, type CanvasErrorCode } from "./errors";
 
 export {
   MIN_SHAPE_SIZE,
@@ -31,6 +69,7 @@ export {
   normalizeBox,
   resizeBox,
   resizeBoxWithHandle,
+  unionBoxes,
 } from "./geometry";
 
 export { type GestureKind, GESTURE_KINDS } from "./gestures";
@@ -46,6 +85,20 @@ export {
   pointInBox,
   resolveSelectionDrillDown,
 } from "./hit-test";
+
+export {
+  type SpatialIndex,
+  type SpatialIndexItem,
+  type SpatialNode,
+  type SpatialLeafNode,
+  type SpatialInternalNode,
+  type SpatialBoundingBox,
+  SPATIAL_NODE_CAPACITY,
+  createSpatialIndex,
+  querySpatialIndexPoint,
+  querySpatialIndexBox,
+  buildSpatialIndexFromDocument,
+} from "./spatial/spatial-index";
 
 export { INITIAL_MACHINE_STATE, type MachineState, transition } from "./machine";
 
@@ -75,6 +128,24 @@ export { type CanvasStateId, STATES } from "./states";
 export { TOOLS, type ToolId } from "./tools";
 
 export { type CanvasController, type CanvasOptions, createCanvas } from "./create-canvas";
+
+export {
+  createEditor,
+  type Editor,
+  type EditorOptions,
+  type EditorOverlayContext,
+  type SetDocumentOptions,
+} from "./editor";
+
+export { exportDocumentToSvg, type SvgExportOptions } from "./editor-export";
+
+export {
+  createShapeIdGenerator,
+  type ShapeIdGenerator,
+  type ShapeIdSequence,
+  type NestingMode,
+  DEFAULT_TEXT_SHAPE_DIMENSIONS,
+} from "./editor-gestures";
 
 export { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 

@@ -1,9 +1,9 @@
 // Deterministic 80-column ASCII layout sketch renderer (Milestone 11A B4).
 // Pure Document → string projection, zero side effects (R-008, R-016).
 // Byte-stable: fixed 80-column width, pinned rounding, zero Math.random (R-021, R-041).
-import { SHAPE_KINDS } from "@open-draw/contracts";
+import { isRootId, ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
-import { absoluteBoundingBox, shapeListInOrder } from "@open-draw/document";
+import { absoluteBoundingBox, buildChildIndex } from "@open-draw/document";
 import {
   ASCII_BOX_CHARS,
   ASCII_CAPTIONS,
@@ -46,6 +46,43 @@ function formatBoxHeader(shape: Shape, width: number): string | undefined {
   return undefined;
 }
 
+function getSketchShapes(doc: Document, options?: MarkdownExportOptions): readonly Shape[] {
+  const rootId = options?.rootId;
+  const deviceType = options?.deviceType;
+  const childIndex = buildChildIndex(doc);
+  const result: Shape[] = [];
+
+  const walk = (parentId: ShapeId): void => {
+    let children = childIndex.get(parentId) ?? [];
+    if (deviceType !== undefined) {
+      children = children.filter((s) => !s.meta.hiddenOn?.includes(deviceType));
+      children = [...children].sort(
+        (a, b) => (a.meta.order?.[deviceType] ?? 0) - (b.meta.order?.[deviceType] ?? 0),
+      );
+    }
+    for (const child of children) {
+      result.push(child);
+      walk(child.id);
+    }
+  };
+
+  if (rootId !== undefined && !isRootId(rootId)) {
+    const root = doc.shapes[rootId];
+    if (root === undefined) {
+      return [];
+    }
+    if (deviceType !== undefined && root.meta.hiddenOn?.includes(deviceType)) {
+      return [];
+    }
+    result.push(root);
+    walk(rootId);
+    return result;
+  }
+
+  walk(ROOT_ID);
+  return result;
+}
+
 /**
  * Pure function rendering a deterministic 80-column ASCII layout sketch of the document.
  * Returns undefined when shape count is <= threshold (unless explicitly enabled) or when canvas is empty.
@@ -54,7 +91,7 @@ export function renderAsciiSketch(
   doc: Document,
   options?: MarkdownExportOptions,
 ): string | undefined {
-  const shapes = Object.values(doc.shapes);
+  const shapes = getSketchShapes(doc, options);
   const shapeCount = shapes.length;
 
   if (options?.includeAsciiSketch === false) {
@@ -105,8 +142,7 @@ export function renderAsciiSketch(
     }
   }
 
-  const orderedShapes = shapeListInOrder(doc);
-  for (const shape of orderedShapes) {
+  for (const shape of shapes) {
     if (shape.kind === SHAPE_KINDS.line || shape.kind === SHAPE_KINDS.penPath) {
       continue;
     }

@@ -7,6 +7,7 @@ import { createDocument } from "../../document";
 import { DocumentError } from "../../errors";
 import type { Shape } from "../../shape";
 import { COMMANDS } from "../registry";
+import { parseColor, parseStrokeWidth } from "../../style-validation";
 
 export interface SetShapeStyle {
   readonly type: (typeof COMMANDS)["setShapeStyle"];
@@ -32,7 +33,7 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.fill === null) {
       delete nextShapeData.fill;
     } else {
-      nextShapeData.fill = command.fill;
+      nextShapeData.fill = parseColor(command.fill, "fill");
     }
   }
 
@@ -40,7 +41,7 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.stroke === null) {
       delete nextShapeData.stroke;
     } else {
-      nextShapeData.stroke = command.stroke;
+      nextShapeData.stroke = parseColor(command.stroke, "stroke");
     }
   }
 
@@ -48,13 +49,15 @@ export function applySetShapeStyle(document: Document, command: SetShapeStyle): 
     if (command.strokeWidth === null) {
       delete nextShapeData.strokeWidth;
     } else {
-      nextShapeData.strokeWidth = command.strokeWidth;
+      nextShapeData.strokeWidth = parseStrokeWidth(command.strokeWidth);
     }
   }
 
   const nextShape = nextShapeData as unknown as Shape;
-  const others = Object.values(document.shapes).filter((entry) => entry.id !== command.id);
-  const next = createDocument([...others, nextShape]);
+  const shapes = Object.values(document.shapes).map((entry) =>
+    entry.id === command.id ? nextShape : entry,
+  );
+  const next = createDocument(shapes);
 
   const inverse: readonly Command[] = [
     {

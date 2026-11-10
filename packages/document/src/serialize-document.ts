@@ -62,6 +62,20 @@ function isJsonSerializable(value: unknown, seen = new Set<unknown>()): boolean 
   return true;
 }
 
+const RESERVED_CUSTOM_DATA_KEYS = new Set([
+  "id",
+  "chipId",
+  "kind",
+  "parentId",
+  "boundingBox",
+  "meta",
+  "label",
+  "content",
+  "fill",
+  "stroke",
+  "strokeWidth",
+]);
+
 export function serializeDocument(doc: Document): string {
   const shapesOutput: Record<string, unknown> = {};
 
@@ -105,6 +119,12 @@ export function serializeDocument(doc: Document): string {
     if (isCustomShape(shape)) {
       if (shape.customData !== undefined) {
         for (const [k, v] of Object.entries(shape.customData)) {
+          if (RESERVED_CUSTOM_DATA_KEYS.has(k)) {
+            throw new DocumentError(
+              "invalidDocument",
+              `customData on shape ${shape.id} contains reserved property: ${k}`,
+            );
+          }
           shapeRecord[k] = v;
         }
       }
@@ -155,8 +175,17 @@ export function serializeDocument(doc: Document): string {
     if (shape.meta.style !== undefined) {
       meta.style = STYLE_PROFILES[shape.meta.style] ?? shape.meta.style;
     }
+    if (shape.meta.designStyle !== undefined) {
+      meta.designStyle = shape.meta.designStyle;
+    }
     if (shape.meta.role !== undefined) {
       meta.role = ROOT_ROLES[shape.meta.role] ?? shape.meta.role;
+    }
+    if (shape.meta.theme !== undefined) {
+      meta.theme = shape.meta.theme;
+    }
+    if (shape.meta.darkMode !== undefined) {
+      meta.darkMode = shape.meta.darkMode;
     }
     if (shape.meta.pluginData !== undefined) {
       if (!isJsonSerializable(shape.meta.pluginData)) {
