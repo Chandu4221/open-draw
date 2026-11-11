@@ -14,7 +14,7 @@ import {
   ROOT_ID,
   serializeDocument,
   type Shape,
-} from "../dist/index.js";
+} from "./index";
 
 class MockDomNode {
   tagName: string;
@@ -105,10 +105,10 @@ describe("Downstream Package Packaging & Surface (ADR-0008, R-002, R-004)", () =
   });
 
   it("exports package entry points pointing to built dist artifacts (ADR-0008 D5)", () => {
-    expect(packageJson.main).toBe("./dist/index.cjs");
-    expect(packageJson.module).toBe("./dist/index.js");
-    expect(packageJson.types).toBe("./dist/index.d.ts");
-    expect(packageJson.exports).toEqual({
+    expect(packageJson.publishConfig.main).toBe("./dist/index.cjs");
+    expect(packageJson.publishConfig.module).toBe("./dist/index.js");
+    expect(packageJson.publishConfig.types).toBe("./dist/index.d.ts");
+    expect(packageJson.publishConfig.exports).toEqual({
       ".": {
         types: "./dist/index.d.ts",
         import: "./dist/index.js",
