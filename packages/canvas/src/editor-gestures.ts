@@ -111,7 +111,9 @@ export function commitDragGesture(
       y: droppedWorldBox.y + droppedWorldBox.height / 2,
     };
     const targetParentId =
-      nestingMode === "containers-only" ? pickDropTarget(doc, center, [id]) : shape.parentId;
+      nestingMode === "containers-only"
+        ? pickDropTarget(doc, center, topLevelShapeIds)
+        : shape.parentId;
 
     if (targetParentId !== shape.parentId) {
       const newBoundingBox = computeReparentBoundingBox(
@@ -154,6 +156,15 @@ export function commitResizeGesture(
 ): void {
   if (gesture.handleId === null || gesture.originalBox === null) return;
   const resized = resizeBox(gesture.originalBox, gesture.handleId, world);
+  const orig = gesture.originalBox;
+  if (
+    orig.x === resized.x &&
+    orig.y === resized.y &&
+    orig.width === resized.width &&
+    orig.height === resized.height
+  ) {
+    return;
+  }
   const ids =
     gesture.shapeIds.length > 0
       ? gesture.shapeIds
@@ -162,7 +173,6 @@ export function commitResizeGesture(
         : canvas.getSelectedIds();
   if (ids.length === 0) return;
 
-  const orig = gesture.originalBox;
   const scaleX = orig.width > 0 ? resized.width / orig.width : 1;
   const scaleY = orig.height > 0 ? resized.height / orig.height : 1;
   const topLevelIds = pruneSelectedDescendants(doc, ids);

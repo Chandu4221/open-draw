@@ -18,31 +18,21 @@ import {
 } from "./document-io";
 
 export interface UseToolbarActionsProps {
-  readonly documentRef: React.MutableRefObject<Document>;
+  readonly getDoc: () => Document;
   readonly editorRef: React.MutableRefObject<Editor | null>;
   readonly includeLegend: boolean;
   readonly toast: ReturnType<typeof useToast>;
-  readonly setDoc: (doc: Document) => void;
   readonly setSelectedShapeId: (id: ShapeId | null) => void;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }
 
 export function useToolbarActions(props: UseToolbarActionsProps) {
-  const {
-    documentRef,
-    editorRef,
-    includeLegend,
-    toast,
-    setDoc,
-    setSelectedShapeId,
-    commit,
-    render,
-  } = props;
+  const { getDoc, editorRef, includeLegend, toast, setSelectedShapeId, commit, render } = props;
 
   function handleSave(): void {
     try {
-      saveDocumentJson(documentRef.current);
+      saveDocumentJson(getDoc());
       toast.push({ type: "success", text: "Document saved successfully" });
     } catch (err) {
       toast.push({
@@ -54,7 +44,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
 
   function handleExportMarkdown(): void {
     try {
-      exportDocumentMarkdown(documentRef.current);
+      exportDocumentMarkdown(getDoc());
       toast.push({ type: "success", text: "Exported Markdown successfully" });
     } catch (err) {
       toast.push({
@@ -66,7 +56,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
 
   function handleExportSvg(): void {
     try {
-      exportDocumentSvg(documentRef.current, includeLegend);
+      exportDocumentSvg(getDoc(), includeLegend);
       toast.push({ type: "success", text: "Exported SVG successfully" });
     } catch (err) {
       toast.push({
@@ -78,7 +68,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
 
   function handleExportPng(): void {
     try {
-      exportDocumentPng(documentRef.current, includeLegend, (err) => {
+      exportDocumentPng(getDoc(), includeLegend, (err) => {
         toast.push({
           type: "error",
           text: `Export error: ${err instanceof Error ? err.message : String(err)}`,
@@ -98,11 +88,6 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
       (loaded) => {
         if (editorRef.current) {
           editorRef.current.setDocument(loaded);
-        } else {
-          documentRef.current = loaded;
-          setSelectedShapeId(null);
-          setDoc(loaded);
-          render();
         }
         toast.push({ type: "success", text: "Document loaded successfully" });
       },
@@ -149,7 +134,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
     const editor = editorRef.current;
     const ids = editor ? editor.getSelection() : [];
     if (ids.length === 0) return;
-    const currentDoc = documentRef.current;
+    const currentDoc = getDoc();
     const topLevelIds = pruneSelectedDescendants(currentDoc, ids);
     if (topLevelIds.length === 0) return;
     const seq = createShapeIdGenerator(currentDoc);

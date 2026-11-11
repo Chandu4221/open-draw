@@ -1,11 +1,12 @@
 // Batteries-included standalone canvas editor (R-004, R-008, R-010, R-016, R-018, ADR-0008).
 // Mounts an interactive SVG drawing canvas into any DOM container with zero framework dependencies.
-import type {
-  BoundingBox,
-  CustomShapeKind,
-  DeviceType,
-  Point,
-  ShapeId,
+import {
+  isRootId,
+  type BoundingBox,
+  type CustomShapeKind,
+  type DeviceType,
+  type Point,
+  type ShapeId,
 } from "@open-draw/contracts";
 import {
   applyTransaction,
@@ -13,6 +14,7 @@ import {
   createDocument,
   createTransaction,
   EMPTY_HISTORY,
+  isCustomShape,
   parseDocument,
   recordHistory,
   redo,
@@ -66,6 +68,29 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     ...(options.customRenderers ?? {}),
   };
 
+  function validateAndHydrateDocument(targetDoc: Document): Document {
+    let modified = false;
+    const shapes: Shape[] = [];
+    for (const shape of Object.values(targetDoc.shapes)) {
+      if (isRootId(shape.id)) continue;
+      const ext = customShapeRegistry[shape.kind];
+      if (ext) {
+        let current = shape;
+        if (ext.deserialize && isCustomShape(shape) && shape.customData !== undefined) {
+          current = ext.deserialize(shape.customData, shape);
+          modified = true;
+        }
+        if (ext.validate) {
+          ext.validate(current);
+        }
+        shapes.push(current);
+      } else {
+        shapes.push(shape);
+      }
+    }
+    return modified ? createDocument(shapes) : targetDoc;
+  }
+
   function registerCustomShape(extension: CustomShapeExtension): void {
     validateCustomShapeExtension(extension);
     canvas.registerShapeKind({
@@ -75,6 +100,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     });
     activeCustomRenderers[extension.kind] = extension.render;
     customShapeRegistry[extension.kind] = extension;
+    doc = validateAndHydrateDocument(doc);
     renderDocument(true);
   }
 
@@ -339,8 +365,9 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   updateCursor();
 
   function resetDoc(nextDoc: Document, preserveHistory?: boolean): void {
-    doc = nextDoc;
-    idSequence.seed(nextDoc);
+    const validated = validateAndHydrateDocument(nextDoc);
+    doc = validated;
+    idSequence.seed(validated);
     if (!preserveHistory) {
       history = EMPTY_HISTORY;
       canvas.emit(CONTROLLER_EVENTS.historyChanged);
@@ -371,7 +398,26 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     setDocument: (nextDoc, opts?: SetDocumentOptions) => resetDoc(nextDoc, opts?.preserveHistory),
     loadJson: (json, opts?: SetDocumentOptions) =>
       resetDoc(parseDocument(json), opts?.preserveHistory),
-    toJson: () => serializeDocument(doc),
+    toJson: () => {
+      const shapes: Shape[] = [];
+      let modified = false;
+      for (const shape of Object.values(doc.shapes)) {
+        if (isRootId(shape.id)) continue;
+        const ext = customShapeRegistry[shape.kind];
+        if (ext?.serialize && isCustomShape(shape)) {
+          const serializedData = ext.serialize(shape);
+          shapes.push({
+            ...shape,
+            customData: serializedData,
+          });
+          modified = true;
+        } else {
+          shapes.push(shape);
+        }
+      }
+      const docToSerialize = modified ? createDocument(shapes) : doc;
+      return serializeDocument(docToSerialize);
+    },
     toSvg: () =>
       exportDocumentToSvg(doc, {
         activeDeviceType: canvas.getActiveDeviceType(),

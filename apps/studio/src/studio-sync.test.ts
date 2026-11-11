@@ -1,89 +1,18 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CONTROLLER_EVENTS, createEditor, TOOLS, type Editor } from "@open-draw/canvas";
 import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
 import { COMMANDS, createDocument, createRect } from "@open-draw/document";
-
-class MockDomNode {
-  readonly tagName: string;
-  readonly style: Record<string, string> = {};
-  readonly attributes: Record<string, string> = {};
-  readonly children: MockDomNode[] = [];
-  innerHTML = "";
-  listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
-
-  constructor(tagName: string) {
-    this.tagName = tagName;
-  }
-
-  setAttribute(name: string, val: string): void {
-    this.attributes[name] = val;
-  }
-
-  appendChild(child: MockDomNode): void {
-    this.children.push(child);
-  }
-
-  removeChild(child: MockDomNode): void {
-    const idx = this.children.indexOf(child);
-    if (idx !== -1) this.children.splice(idx, 1);
-  }
-
-  contains(child: MockDomNode): boolean {
-    return this.children.includes(child);
-  }
-
-  querySelector<T extends MockDomNode>(selector: string): T | null {
-    const className = selector.replace(/^\./, "");
-    for (const child of this.children) {
-      if (child.attributes["class"] === className) return child as unknown as T;
-      const found = child.querySelector<T>(selector);
-      if (found !== null) return found;
-    }
-    return null;
-  }
-
-  getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
-    return { left: 0, top: 0, width: 800, height: 600 };
-  }
-
-  addEventListener(event: string, fn: (...args: unknown[]) => void): void {
-    this.listeners[event] = this.listeners[event] ?? [];
-    this.listeners[event]!.push(fn);
-  }
-
-  removeEventListener(event: string, fn: (...args: unknown[]) => void): void {
-    if (this.listeners[event]) {
-      this.listeners[event] = this.listeners[event]!.filter((f) => f !== fn);
-    }
-  }
-
-  setPointerCapture(): void {}
-}
+import { setupMockDomEnvironment, type MockDomNode } from "./test-dom-mock";
 
 describe("StudioShell editor event synchronization", () => {
   let container: MockDomNode;
+  let restoreDom: () => void;
   let editor: Editor | null = null;
-  let originalDocument: unknown;
-  let originalWindow: unknown;
 
   beforeEach(() => {
-    originalDocument = (globalThis as unknown as { document?: unknown }).document;
-    originalWindow = (globalThis as unknown as { window?: unknown }).window;
-
-    const mockDoc = {
-      createElementNS: (_ns: string, tag: string) => new MockDomNode(tag),
-      createElement: (tag: string) => new MockDomNode(tag),
-      body: new MockDomNode("body"),
-    };
-    const mockWin = {
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    };
-
-    (globalThis as unknown as { document: unknown }).document = mockDoc;
-    (globalThis as unknown as { window: unknown }).window = mockWin;
-
-    container = new MockDomNode("div");
+    const env = setupMockDomEnvironment();
+    container = env.container;
+    restoreDom = env.restore;
   });
 
   afterEach(() => {
@@ -91,8 +20,7 @@ describe("StudioShell editor event synchronization", () => {
       editor.destroy();
       editor = null;
     }
-    (globalThis as unknown as { document: unknown }).document = originalDocument;
-    (globalThis as unknown as { window: unknown }).window = originalWindow;
+    restoreDom();
   });
 
   it("synchronizes document state on documentChanged event", () => {
@@ -208,5 +136,96 @@ describe("StudioShell editor event synchronization", () => {
 
     editor.setTool(TOOLS.drawEllipse);
     expect(callCount).toBe(1);
+  });
+
+  it("preserves single source of truth across rapid draw -> undo -> redo -> select -> delete sequence", () => {
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([]),
+    });
+
+    let currentDoc = editor.getDocument();
+    let changeEventsCount = 0;
+    const unsub = editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+      currentDoc = editor!.getDocument();
+      changeEventsCount += 1;
+    });
+
+    const s1 = createRect(
+      parseShapeId("s-step1"),
+      { x: 10, y: 10, width: 100, height: 100 },
+      { parentId: ROOT_ID },
+    );
+    const s2 = createRect(
+      parseShapeId("s-step2"),
+      { x: 120, y: 10, width: 80, height: 80 },
+      { parentId: ROOT_ID },
+    );
+
+    // 1. Draw s1
+    editor.execute([{ type: COMMANDS.createShape, shape: s1 }]);
+    expect(currentDoc.shapes[s1.id]).toBeDefined();
+    expect(changeEventsCount).toBe(1);
+
+    // 2. Draw s2
+    editor.execute([{ type: COMMANDS.createShape, shape: s2 }]);
+    expect(currentDoc.shapes[s2.id]).toBeDefined();
+    expect(changeEventsCount).toBe(2);
+
+    // 3. Undo s2
+    expect(editor.canUndo()).toBe(true);
+    editor.undo();
+    expect(currentDoc.shapes[s2.id]).toBeUndefined();
+    expect(currentDoc.shapes[s1.id]).toBeDefined();
+    expect(changeEventsCount).toBe(3);
+
+    // 4. Redo s2
+    expect(editor.canRedo()).toBe(true);
+    editor.redo();
+    expect(currentDoc.shapes[s2.id]).toBeDefined();
+    expect(currentDoc.shapes[s1.id]).toBeDefined();
+    expect(changeEventsCount).toBe(4);
+
+    // 5. Select s1
+    editor.select(s1.id);
+    expect(editor.getSelection()).toEqual([s1.id]);
+
+    // 6. Delete s1
+    editor.execute([{ type: COMMANDS.deleteShape, id: s1.id }]);
+    expect(currentDoc.shapes[s1.id]).toBeUndefined();
+    expect(currentDoc.shapes[s2.id]).toBeDefined();
+    expect(changeEventsCount).toBe(5);
+
+    // 7. Verify document in subscriber is referentially identical to editor.getDocument()
+    expect(currentDoc).toBe(editor.getDocument());
+
+    unsub();
+  });
+
+  it("synchronizes document replacement via setDocument without secondary state setter", () => {
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([]),
+    });
+
+    let currentDoc = editor.getDocument();
+    let changeEventsCount = 0;
+    const unsub = editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+      currentDoc = editor!.getDocument();
+      changeEventsCount += 1;
+    });
+
+    const shape = createRect(
+      parseShapeId("s-replace-1"),
+      { x: 0, y: 0, width: 50, height: 50 },
+      { parentId: ROOT_ID },
+    );
+    const replacement = createDocument([shape]);
+
+    editor.setDocument(replacement);
+
+    expect(changeEventsCount).toBe(1);
+    expect(currentDoc).toBe(replacement);
+    expect(currentDoc.shapes[shape.id]).toBeDefined();
+
+    unsub();
   });
 });

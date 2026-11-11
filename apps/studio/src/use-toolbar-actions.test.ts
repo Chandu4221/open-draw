@@ -16,7 +16,7 @@ function createMockToast(): OdToastContextValue {
 describe("useToolbarActions", () => {
   it("delegates handleUndo to editorRef.current.undo() without local fallback", () => {
     const doc = createDocument([]);
-    const documentRef = { current: doc };
+    const getDoc = vi.fn().mockReturnValue(doc);
     const undoMock = vi.fn().mockReturnValue(true);
     const editorMock = {
       undo: undoMock,
@@ -30,11 +30,10 @@ describe("useToolbarActions", () => {
     const toast = createMockToast();
 
     const actions = useToolbarActions({
-      documentRef,
+      getDoc,
       editorRef,
       includeLegend: false,
       toast,
-      setDoc: vi.fn(),
       setSelectedShapeId: vi.fn(),
       commit: vi.fn(),
       render: vi.fn(),
@@ -47,7 +46,7 @@ describe("useToolbarActions", () => {
 
   it("delegates handleRedo to editorRef.current.redo() without local fallback", () => {
     const doc = createDocument([]);
-    const documentRef = { current: doc };
+    const getDoc = vi.fn().mockReturnValue(doc);
     const redoMock = vi.fn().mockReturnValue(true);
     const editorMock = {
       undo: vi.fn(),
@@ -61,11 +60,10 @@ describe("useToolbarActions", () => {
     const toast = createMockToast();
 
     const actions = useToolbarActions({
-      documentRef,
+      getDoc,
       editorRef,
       includeLegend: false,
       toast,
-      setDoc: vi.fn(),
       setSelectedShapeId: vi.fn(),
       commit: vi.fn(),
       render: vi.fn(),
@@ -85,7 +83,7 @@ describe("useToolbarActions", () => {
       meta: { order: {} },
     };
     const doc = createDocument([shape]);
-    const documentRef = { current: doc };
+    const getDoc = vi.fn().mockReturnValue(doc);
     const clearSelectionMock = vi.fn();
     const editorMock = {
       undo: vi.fn(),
@@ -101,11 +99,10 @@ describe("useToolbarActions", () => {
     const toast = createMockToast();
 
     const actions = useToolbarActions({
-      documentRef,
+      getDoc,
       editorRef,
       includeLegend: false,
       toast,
-      setDoc: vi.fn(),
       setSelectedShapeId: vi.fn(),
       commit: commitMock,
       render: renderMock,
@@ -117,5 +114,46 @@ describe("useToolbarActions", () => {
     ]);
     expect(clearSelectionMock).toHaveBeenCalledTimes(1);
     expect(renderMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads live document from getDoc during duplication", () => {
+    const shape: Shape = {
+      id: "shape-dup" as ShapeId,
+      parentId: ROOT_ID,
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 10, y: 10, width: 50, height: 50 },
+      meta: { order: {} },
+    };
+    const doc = createDocument([shape]);
+    const getDoc = vi.fn().mockReturnValue(doc);
+    const editorMock = {
+      undo: vi.fn(),
+      redo: vi.fn(),
+      setDocument: vi.fn(),
+      getSelection: vi.fn().mockReturnValue([shape.id]),
+      clearSelection: vi.fn(),
+      selectMany: vi.fn(),
+    } as unknown as Editor;
+    const editorRef = { current: editorMock };
+    const commitMock = vi.fn();
+    const renderMock = vi.fn();
+    const toast = createMockToast();
+
+    const actions = useToolbarActions({
+      getDoc,
+      editorRef,
+      includeLegend: false,
+      toast,
+      setSelectedShapeId: vi.fn(),
+      commit: commitMock,
+      render: renderMock,
+    });
+
+    actions.handleDuplicate();
+    expect(getDoc).toHaveBeenCalled();
+    expect(commitMock).toHaveBeenCalledTimes(1);
+    expect(commitMock).toHaveBeenCalledWith([
+      expect.objectContaining({ type: COMMANDS.duplicateShapes, ids: [shape.id] }),
+    ]);
   });
 });

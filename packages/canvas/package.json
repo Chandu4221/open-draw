@@ -24,11 +24,16 @@
     "whiteboard",
     "typescript"
   ],
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
   },
   "files": [
     "dist",
@@ -52,7 +57,7 @@
   "scripts": {
     "build": "tsup",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run --fileParallelism=false",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {},

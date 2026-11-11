@@ -6,7 +6,14 @@ import {
   type BoundingBox,
   type Point,
 } from "@open-draw/contracts";
-import { createDocument } from "@open-draw/document";
+import {
+  COMMANDS,
+  createDocument,
+  isCustomShape,
+  parseDocument,
+  type CustomShape,
+} from "@open-draw/document";
+import { CanvasError } from "./errors";
 import { createEditor, type Editor } from "./editor";
 import {
   createDefaultCustomShape,
@@ -339,5 +346,178 @@ describe("CustomShapeExtension (ADR-0003, R-006, R-008)", () => {
     const svg = editor.toSvg();
     expect(svg.length).toBeGreaterThan(10000);
     expect(svg).toContain("custom-star");
+  });
+
+  it("survives full round-trip: in-session create -> document JSON -> parse -> fresh editor reload -> edit -> re-serialize", () => {
+    const customStarKind = parseCustomShapeKind("vendor:star-roundtrip");
+    const roundtripExtension: CustomShapeExtension = {
+      kind: customStarKind,
+      label: "Roundtrip Star",
+      capabilities: [CAPABILITIES.movable, CAPABILITIES.resizable],
+      defaultDimensions: { width: 80, height: 80 },
+      render: (shape, box) => {
+        const star = shape as CustomShape;
+        const pts = (star.customData?.points as number) ?? 5;
+        return `<polygon class="roundtrip-star" data-points="${pts}" points="${box.x},${box.y} ${box.x + box.width},${box.y + box.height}" fill="#ffd700" />`;
+      },
+      serialize: (shape) => {
+        const star = shape as CustomShape;
+        return { ...(star.customData ?? {}) };
+      },
+      deserialize: (data, base) => {
+        return {
+          ...base,
+          customData: {
+            points: data.points ?? 5,
+            variant: data.variant ?? "default",
+          },
+        } as CustomShape;
+      },
+    };
+
+    const container1 = new MockDomNode("div");
+    const editor1 = createEditor(container1 as unknown as HTMLElement, {
+      customShapes: [roundtripExtension],
+    });
+
+    const star1 = editor1.insertCustomShape(
+      customStarKind,
+      { x: 50, y: 60, width: 100, height: 100 },
+      { fill: "#ffb703", points: 8, variant: "gold" },
+    );
+
+    expect(star1).toBeDefined();
+    expect(isCustomShape(star1)).toBe(true);
+    expect((star1 as CustomShape).customData?.points).toBe(8);
+
+    // 2. Export to document JSON
+    const json = editor1.toJson();
+    expect(json).toContain("vendor:star-roundtrip");
+    expect(json).toContain('"points": 8');
+    expect(json).toContain('"variant": "gold"');
+
+    // 3. Mount a completely fresh editor 2 and load the JSON
+    const container2 = new MockDomNode("div");
+    const editor2 = createEditor(container2 as unknown as HTMLElement, {
+      customShapes: [roundtripExtension],
+    });
+    editor2.loadJson(json);
+
+    const reloadedDoc = editor2.getDocument();
+    const reloadedStar = reloadedDoc.shapes[star1.id] as CustomShape;
+    expect(reloadedStar).toBeDefined();
+    expect(reloadedStar.kind).toBe("vendor:star-roundtrip");
+    expect(reloadedStar.customData?.points).toBe(8);
+    expect(reloadedStar.customData?.variant).toBe("gold");
+
+    // Renders correctly in new editor
+    const scene2 = (editor2.svg as unknown as MockDomNode).querySelector(".od-document-scene");
+    expect(scene2?.innerHTML).toContain('class="roundtrip-star"');
+    expect(scene2?.innerHTML).toContain('data-points="8"');
+
+    // 4. Edit shape in fresh editor (resize)
+    editor2.execute([
+      {
+        type: COMMANDS.setShapeBoundingBox,
+        id: star1.id,
+        boundingBox: { x: 70, y: 80, width: 120, height: 120 },
+      },
+    ]);
+
+    const editedDoc = editor2.getDocument();
+    expect(editedDoc.shapes[star1.id]?.boundingBox).toEqual({
+      x: 70,
+      y: 80,
+      width: 120,
+      height: 120,
+    });
+    expect((editedDoc.shapes[star1.id] as CustomShape).customData?.points).toBe(8);
+
+    // Undo restores position while preserving customData
+    editor2.undo();
+    expect(editor2.getDocument().shapes[star1.id]?.boundingBox).toEqual({
+      x: 50,
+      y: 60,
+      width: 100,
+      height: 100,
+    });
+
+    // 5. Re-serialize from editor 2
+    const reSerializedJson = editor2.toJson();
+    expect(reSerializedJson).toContain('"points": 8');
+    expect(reSerializedJson).toContain('"variant": "gold"');
+
+    editor1.destroy();
+    editor2.destroy();
+  });
+
+  it("fails loudly when custom shape data is invalid or missing required fields (R-006)", () => {
+    const strictKind = parseCustomShapeKind("vendor:strict-widget");
+    const strictExtension: CustomShapeExtension = {
+      kind: strictKind,
+      label: "Strict Widget",
+      capabilities: [CAPABILITIES.movable],
+      render: () => "<rect />",
+      validate: (shape) => {
+        const custom = isCustomShape(shape) ? shape.customData : undefined;
+        if (!custom || typeof custom.token !== "string" || custom.token.trim() === "") {
+          throw new CanvasError(
+            "invalidRegistration",
+            `strict-widget missing required token property: ${shape.id}`,
+          );
+        }
+      },
+    };
+
+    const container1 = new MockDomNode("div");
+    const editorInstance = createEditor(container1 as unknown as HTMLElement, {
+      customShapes: [strictExtension],
+    });
+
+    // 1. insertCustomShape fails loudly if required customData is missing
+    expect(() => {
+      editorInstance.insertCustomShape(
+        strictKind,
+        { x: 10, y: 10, width: 50, height: 50 },
+        { label: "Bad Widget" },
+      );
+    }).toThrow(/strict-widget missing required token property/);
+
+    // 2. loadJson fails loudly when serialized JSON lacks required fields
+    const invalidJson = JSON.stringify({
+      schema: { version: 1 },
+      shapes: {
+        "strict-1": {
+          id: "strict-1",
+          kind: "vendor:strict-widget",
+          parentId: "canvas:root",
+          boundingBox: { x: 10, y: 10, width: 50, height: 50 },
+          meta: { order: {} },
+        },
+      },
+    });
+
+    expect(() => {
+      editorInstance.loadJson(invalidJson);
+    }).toThrow(/strict-widget missing required token property/);
+
+    // 3. createEditor fails loudly on initialization if document contains invalid custom shape
+    expect(() => {
+      createEditor(new MockDomNode("div") as unknown as HTMLElement, {
+        document: parseDocument(invalidJson),
+        customShapes: [strictExtension],
+      });
+    }).toThrow(/strict-widget missing required token property/);
+
+    // 4. registerCustomShape fails loudly if active document already contains invalid custom shape
+    const cleanEditor = createEditor(new MockDomNode("div") as unknown as HTMLElement, {
+      document: parseDocument(invalidJson),
+    });
+    expect(() => {
+      cleanEditor.registerCustomShape(strictExtension);
+    }).toThrow(/strict-widget missing required token property/);
+
+    editorInstance.destroy();
+    cleanEditor.destroy();
   });
 });

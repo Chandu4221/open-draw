@@ -179,8 +179,11 @@ function parseShape(value: unknown): Shape {
   if (typeof kind === "string" && !SHAPE_KIND_VALUES.has(kind)) {
     // Custom shape: preserve any extra non-base properties
     const extra: Record<string, unknown> = {};
+    if (typeof value.customData === "object" && value.customData !== null) {
+      Object.assign(extra, value.customData);
+    }
     for (const [k, v] of Object.entries(value)) {
-      if (!BASE_SHAPE_KEY_SET.has(k)) {
+      if (!BASE_SHAPE_KEY_SET.has(k) && k !== "customData") {
         extra[k] = v;
       }
     }

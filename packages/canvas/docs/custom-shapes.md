@@ -16,6 +16,7 @@ export const starShapeExtension: CustomShapeExtension = {
   label: "Vendor Star",
   capabilities: [CAPABILITIES.movable, CAPABILITIES.resizable],
   defaultDimensions: { width: 80, height: 80 },
+  version: 1,
 
   // Optional custom hit-test (falls back to bounding box if omitted)
   hitTest: (box, shape, point) => {
@@ -44,7 +45,18 @@ export const starShapeExtension: CustomShapeExtension = {
     },
   }),
 
-  // Optional validation hook (enforced on insertion)
+  // Optional serialization hook (extracts custom data for document JSON)
+  serialize: (shape) => ({
+    ...("customData" in shape && shape.customData ? shape.customData : {}),
+  }),
+
+  // Optional deserialization hook (hydrates and validates custom data from JSON)
+  deserialize: (customData, shape) => ({
+    ...shape,
+    customData: { ...customData },
+  }),
+
+  // Validation hook (enforced loudly on insert, document mount, loadJson, and registration)
   validate: (shape) => {
     if (!shape.boundingBox || shape.boundingBox.width <= 0) {
       throw new Error("Invalid star dimensions");
@@ -119,7 +131,10 @@ When a document containing custom shapes is loaded into an editor or rendered wi
 
 ---
 
-## 6. Serialization & Invariants
+## 6. Serialization, Round-Trip & Loud Validation
 
-- Custom shapes serialize into canonical OpenDraw document JSON with zero timestamps (R-041) and version-only schema (`schema: { version: 1 }`).
-- Box-relative geometry and standard bounding boxes guarantee moving and scaling operations work out of the box without requiring specialized document transaction handlers.
+- **Canonical Document Serialization:** Custom shapes serialize into canonical OpenDraw document JSON with zero timestamps (R-041) and version-only schema (`schema: { version: 1 }`).
+- **Round-Trip Fidelity:** Documents containing custom shapes survive complete round-trip workflows:
+  `Editor 1 (create + edit)` $\rightarrow$ `editor.toJson()` $\rightarrow$ `parseDocument()` $\rightarrow$ `Editor 2 (loadJson)` $\rightarrow$ `edit / undo / redo` $\rightarrow$ `editor.toJson()`.
+- **Loud Validation (R-006):** When an editor loads a document (`createEditor({ document })`, `editor.loadJson()`, `editor.setDocument()`) or registers an extension (`editor.registerCustomShape()`), all custom shapes of that kind are validated against the extension's `validate` and `deserialize` hooks. Missing or invalid custom shape data fails loudly with a typed error rather than silently dropping properties or corrupting canvas state.
+- **Box-relative geometry:** Standard bounding boxes guarantee moving, scaling, and dragging operations work out of the box without requiring specialized document transaction handlers.

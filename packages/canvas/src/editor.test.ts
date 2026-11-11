@@ -1913,4 +1913,415 @@ describe("createEditor", () => {
       }
     }
   });
+
+  it("commits zero transactions when pointer drag is below the 3px threshold", () => {
+    const rect = createRect(parseShapeId("rect-subthresh"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 150,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    // Move only 1px (below 3px threshold)
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 151,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 151,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(0);
+    expect(editor.canUndo()).toBe(false);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.x).toBe(100);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.y).toBe(100);
+  });
+
+  it("commits zero transactions and preserves original position when Escape cancels mid-drag", () => {
+    const rect = createRect(parseShapeId("rect-esc-drag"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 150,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    // Drag 50px (exceeds threshold)
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    // Escape pressed mid-drag
+    const mockWin = (
+      globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+    ).window;
+    mockWin.dispatch("keydown", {
+      code: "Escape",
+      key: "Escape",
+      preventDefault: () => {},
+    });
+
+    // Pointer up after escape
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(0);
+    expect(editor.canUndo()).toBe(false);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.x).toBe(100);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.y).toBe(100);
+  });
+
+  it("commits zero transactions and resets tool when Escape cancels mid-draw", () => {
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([]),
+    });
+    editor.setTool(TOOLS.drawRect);
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 50,
+      clientY: 50,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 150,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    const mockWin = (
+      globalThis as unknown as { window: { dispatch: (evt: string, arg: unknown) => void } }
+    ).window;
+    mockWin.dispatch("keydown", {
+      code: "Escape",
+      key: "Escape",
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 150,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(0);
+    expect(editor.canUndo()).toBe(false);
+    expect(Object.keys(editor.getDocument().shapes)).toHaveLength(0);
+    expect(editor.getTool()).toBe(TOOLS.select);
+  });
+
+  it("commits zero transactions and preserves document on pointercancel mid-drag", () => {
+    const rect = createRect(parseShapeId("rect-cancel-drag"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 150,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointercancel", {
+      pointerId: 1,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(0);
+    expect(editor.canUndo()).toBe(false);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.x).toBe(100);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.y).toBe(100);
+  });
+
+  it("commits zero transactions and preserves document on lostpointercapture mid-drag", () => {
+    const rect = createRect(parseShapeId("rect-lostcap-drag"), {
+      x: 50,
+      y: 50,
+      width: 80,
+      height: 80,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 80,
+      clientY: 80,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 160,
+      clientY: 160,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("lostpointercapture", {
+      pointerId: 1,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 160,
+      clientY: 160,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(0);
+    expect(editor.canUndo()).toBe(false);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.x).toBe(50);
+  });
+
+  it("moves multi-selected shapes together with exactly 1 transaction and prevents mutual reparenting", () => {
+    const parentContainer = createRect(parseShapeId("container-a"), {
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 400,
+    });
+    const siblingShape = createRect(parseShapeId("shape-b"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([parentContainer, siblingShape]),
+      nestingMode: "containers-only",
+    });
+
+    editor.selectMany([parentContainer.id, siblingShape.id]);
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 150,
+      clientY: 150,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(1);
+    expect(editor.canUndo()).toBe(true);
+
+    const doc = editor.getDocument();
+    expect(doc.shapes[parentContainer.id]?.boundingBox.x).toBe(50);
+    expect(doc.shapes[parentContainer.id]?.boundingBox.y).toBe(50);
+    expect(doc.shapes[parentContainer.id]?.parentId).toBe(ROOT_ID);
+
+    // siblingShape must NOT be reparented into parentContainer because both were dragged together
+    expect(doc.shapes[siblingShape.id]?.boundingBox.x).toBe(150);
+    expect(doc.shapes[siblingShape.id]?.boundingBox.y).toBe(150);
+    expect(doc.shapes[siblingShape.id]?.parentId).toBe(ROOT_ID);
+
+    editor.undo();
+    const undoneDoc = editor.getDocument();
+    expect(undoneDoc.shapes[parentContainer.id]?.boundingBox.x).toBe(0);
+    expect(undoneDoc.shapes[siblingShape.id]?.boundingBox.x).toBe(100);
+  });
+
+  it("commits zero transactions when resize completes with unchanged dimensions", () => {
+    const rect = createRect(parseShapeId("rect-resize-noop"), {
+      x: 100,
+      y: 100,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([rect]),
+    });
+    editor.select(rect.id);
+
+    let historyChangeCount = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyChangeCount++;
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    // Click SE handle at (200, 200)
+    mockSvg.dispatch("pointerdown", {
+      button: 0,
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    // Move away then back to exact origin (200, 200)
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 220,
+      clientY: 220,
+      preventDefault: () => {},
+    });
+    mockSvg.dispatch("pointermove", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    mockSvg.dispatch("pointerup", {
+      pointerId: 1,
+      clientX: 200,
+      clientY: 200,
+      preventDefault: () => {},
+    });
+
+    expect(historyChangeCount).toBe(0);
+    expect(editor.canUndo()).toBe(false);
+    expect(editor.getDocument().shapes[rect.id]?.boundingBox.width).toBe(100);
+  });
+
+  it("maintains strict history and inverse command integrity across 25 mixed operations with 25 undos and 25 redos", () => {
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([]),
+    });
+
+    let historyEvents = 0;
+    editor.subscribe(CONTROLLER_EVENTS.historyChanged, () => {
+      historyEvents++;
+    });
+
+    for (let i = 0; i < 25; i++) {
+      const shape = createRect(parseShapeId(`seq-shape-${i}`), {
+        x: i * 10,
+        y: i * 10,
+        width: 50,
+        height: 50,
+      });
+      editor.execute([{ type: COMMANDS.createShape, shape }]);
+    }
+
+    expect(historyEvents).toBe(25);
+    expect(Object.keys(editor.getDocument().shapes)).toHaveLength(25);
+
+    for (let i = 0; i < 25; i++) {
+      expect(editor.canUndo()).toBe(true);
+      const ok = editor.undo();
+      expect(ok).toBe(true);
+    }
+    expect(editor.canUndo()).toBe(false);
+    expect(Object.keys(editor.getDocument().shapes)).toHaveLength(0);
+
+    for (let i = 0; i < 25; i++) {
+      expect(editor.canRedo()).toBe(true);
+      const ok = editor.redo();
+      expect(ok).toBe(true);
+    }
+    expect(editor.canRedo()).toBe(false);
+    expect(Object.keys(editor.getDocument().shapes)).toHaveLength(25);
+  });
 });

@@ -24,10 +24,13 @@ export interface CustomShapeCreateOptions {
 }
 
 export interface CustomShapeExtension extends CustomShapeContract {
+  readonly version?: number | undefined;
   readonly hitTest?: ShapeHitTester | undefined;
   readonly render: ShapeSvgRenderer;
   readonly create?: (id: ShapeId, box: BoundingBox, options?: CustomShapeCreateOptions) => Shape;
   readonly validate?: (shape: Shape) => void;
+  readonly serialize?: (shape: Shape) => Record<string, unknown>;
+  readonly deserialize?: (customData: Record<string, unknown>, shape: Shape) => Shape;
 }
 
 export function validateCustomShapeExtension(extension: CustomShapeExtension): void {
@@ -59,7 +62,38 @@ export function validateCustomShapeExtension(extension: CustomShapeExtension): v
       `custom shape render must be an SVG rendering function for kind: ${extension.kind}`,
     );
   }
+  if (
+    extension.version !== undefined &&
+    (!Number.isInteger(extension.version) || extension.version < 1)
+  ) {
+    throw new CanvasError("invalidRegistration", "custom shape version must be a positive integer");
+  }
+  if (extension.validate !== undefined && typeof extension.validate !== "function") {
+    throw new CanvasError("invalidRegistration", "custom shape validate must be a function");
+  }
+  if (extension.serialize !== undefined && typeof extension.serialize !== "function") {
+    throw new CanvasError("invalidRegistration", "custom shape serialize must be a function");
+  }
+  if (extension.deserialize !== undefined && typeof extension.deserialize !== "function") {
+    throw new CanvasError("invalidRegistration", "custom shape deserialize must be a function");
+  }
+  if (extension.create !== undefined && typeof extension.create !== "function") {
+    throw new CanvasError("invalidRegistration", "custom shape create must be a function");
+  }
+  if (extension.hitTest !== undefined && typeof extension.hitTest !== "function") {
+    throw new CanvasError("invalidRegistration", "custom shape hitTest must be a function");
+  }
 }
+
+const RESERVED_OPTION_KEYS: ReadonlySet<string> = new Set([
+  "label",
+  "content",
+  "fill",
+  "stroke",
+  "strokeWidth",
+  "parentId",
+  "meta",
+]);
 
 export function createDefaultCustomShape(
   extension: CustomShapeExtension,
@@ -69,7 +103,19 @@ export function createDefaultCustomShape(
 ): Shape {
   validateCustomShapeExtension(extension);
   if (extension.create) {
-    return extension.create(id, box, options);
+    const created = extension.create(id, box, options);
+    if (extension.validate) {
+      extension.validate(created);
+    }
+    return created;
+  }
+  const customData: Record<string, unknown> = {};
+  if (options) {
+    for (const [k, v] of Object.entries(options)) {
+      if (!RESERVED_OPTION_KEYS.has(k)) {
+        customData[k] = v;
+      }
+    }
   }
   const init: ShapeInit = {
     parentId: options?.parentId ?? ROOT_ID,
@@ -83,5 +129,18 @@ export function createDefaultCustomShape(
     ...(options?.stroke !== undefined ? { stroke: options.stroke } : {}),
     ...(options?.strokeWidth !== undefined ? { strokeWidth: options.strokeWidth } : {}),
   };
-  return createCustomShape(id, extension.kind, box, {}, init);
+  let shape: Shape = createCustomShape(
+    id,
+    extension.kind,
+    box,
+    Object.keys(customData).length > 0 ? customData : {},
+    init,
+  );
+  if (extension.deserialize && Object.keys(customData).length > 0) {
+    shape = extension.deserialize(customData, shape);
+  }
+  if (extension.validate) {
+    extension.validate(shape);
+  }
+  return shape;
 }
