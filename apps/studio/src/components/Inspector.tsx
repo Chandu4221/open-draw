@@ -74,7 +74,6 @@ export interface InspectorProps {
     | undefined;
   readonly handleBatchDelete?: (() => void) | undefined;
   readonly handleClearSelection?: (() => void) | undefined;
-  readonly handleBatchGroupProjectSpace?: (() => void) | undefined;
 }
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
@@ -115,7 +114,6 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
     handleBatchStyleChange,
     handleBatchDelete,
     handleClearSelection,
-    handleBatchGroupProjectSpace,
   } = props;
 
   const isMultiSelect = (selectedShapes?.length ?? 0) > 1;
@@ -140,7 +138,6 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
           onBatchStyleChange={handleBatchStyleChange}
           onBatchDelete={handleBatchDelete}
           onClearSelection={handleClearSelection}
-          onGroupProjectSpace={handleBatchGroupProjectSpace}
         />
       ) : !selectedShape ? (
         <div className="od-empty">

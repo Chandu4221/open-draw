@@ -1,9 +1,7 @@
 // Closed registry: root shape roles (R-005, R-012, R-014, R-026).
 // A root shape on canvas is by default a full application screen/page,
-// an isolated reusable component (Card, Dialog, Navbar, Widget, etc.),
-// or a Project Space grouping multiple screens/pages.
+// or an isolated reusable component (Card, Dialog, Navbar, Widget, etc.).
 export const ROOT_ROLES = {
-  project: "project",
   screen: "screen",
   component: "component",
 } as const;

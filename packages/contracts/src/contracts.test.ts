@@ -159,15 +159,13 @@ describe("design-styles", () => {
 
 describe("root-roles", () => {
   it("exposes root roles registry and validator", () => {
-    expect(ROOT_ROLES.project).toBe("project");
     expect(ROOT_ROLES.screen).toBe("screen");
     expect(ROOT_ROLES.component).toBe("component");
-    expect(ROOT_ROLE_BY_VALUE.project).toBe(ROOT_ROLES.project);
     expect(ROOT_ROLE_BY_VALUE.screen).toBe(ROOT_ROLES.screen);
     expect(ROOT_ROLE_BY_VALUE.component).toBe(ROOT_ROLES.component);
-    expect(isRootRole("project")).toBe(true);
     expect(isRootRole("screen")).toBe(true);
     expect(isRootRole("component")).toBe(true);
+    expect(isRootRole("project")).toBe(false);
     expect(isRootRole("modal")).toBe(false);
     expect(isRootRole(123)).toBe(false);
     expect(isRootRole(null)).toBe(false);

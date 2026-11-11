@@ -1,4 +1,4 @@
-import { isRootId, ROOT_ROLES, type Point, type ShapeId } from "@open-draw/contracts";
+import { isRootId, type Point, type ShapeId } from "@open-draw/contracts";
 import { absoluteBoundingBox, ancestorsOf, type Document, type Shape } from "@open-draw/document";
 import { chipOverlayToSvg, pickChip } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
@@ -13,12 +13,8 @@ export interface SemanticChipOverlayOptions {
 
 function getRootChipLabel(shape: Shape): string {
   const platform = shape.meta.platform;
-  const isProject = shape.meta.role === ROOT_ROLES.project;
   const platformLabel =
     platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : undefined;
-  if (isProject) {
-    return platformLabel ? `Project: ${platformLabel}` : "Project Space";
-  }
   return platformLabel ?? "Container";
 }
 

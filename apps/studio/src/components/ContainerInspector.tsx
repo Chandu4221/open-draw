@@ -104,12 +104,10 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
   const roleItems =
     rootPlatform === PLATFORMS.web
       ? [
-          { id: ROOT_ROLES.project, label: "Project Space" },
           { id: ROOT_ROLES.screen, label: "Page" },
           { id: ROOT_ROLES.component, label: "Component" },
         ]
       : [
-          { id: ROOT_ROLES.project, label: "Project Space" },
           { id: ROOT_ROLES.screen, label: "Screen" },
           { id: ROOT_ROLES.component, label: "Component" },
         ];

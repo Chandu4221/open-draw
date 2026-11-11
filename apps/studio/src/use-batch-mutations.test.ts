@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ROOT_ID, ROOT_ROLES, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import { COMMANDS, createDocument, type Shape } from "@open-draw/document";
+import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
+import { COMMANDS, type Shape } from "@open-draw/document";
 import { useBatchMutations } from "./use-batch-mutations";
 
 function createMockShape(
@@ -126,76 +126,6 @@ describe("useBatchMutations", () => {
     handleClearSelection();
 
     expect(clearSelection).toHaveBeenCalledTimes(1);
-    expect(render).toHaveBeenCalledTimes(1);
-  });
-
-  it("groups selected shapes into a unified Project Space container", () => {
-    const s1 = createMockShape("s1", 100, 100, 300, 600, {
-      order: {},
-      platform: "androidNative",
-      role: ROOT_ROLES.screen,
-    });
-    const s2 = createMockShape("s2", 500, 100, 300, 600);
-
-    const doc = createDocument([s1, s2]);
-
-    const commit = vi.fn();
-    const render = vi.fn();
-    const clearSelection = vi.fn();
-    const selectShape = vi.fn();
-
-    const { handleBatchGroupProjectSpace } = useBatchMutations({
-      doc,
-      selectedShapes: [s1, s2],
-      clearSelection,
-      selectShape,
-      commit,
-      render,
-    });
-
-    handleBatchGroupProjectSpace();
-
-    expect(commit).toHaveBeenCalledTimes(1);
-    const commands = commit.mock.calls[0]![0];
-    // 1. Create shape for Project Space
-    expect(commands[0].type).toBe(COMMANDS.createShape);
-    expect(commands[0].shape.meta.role).toBe(ROOT_ROLES.project);
-    expect(commands[0].shape.meta.platform).toBe("androidNative");
-    expect(commands[0].shape.boundingBox).toEqual({
-      x: 60,
-      y: 60,
-      width: 780,
-      height: 680,
-    });
-
-    // 2. Clear root platform and role from s1 (so it inherits from Project Space)
-    expect(commands[1]).toEqual({
-      type: COMMANDS.setRootPlatform,
-      id: "s1",
-      platform: null,
-    });
-    expect(commands[2]).toEqual({
-      type: COMMANDS.setRootRole,
-      id: "s1",
-      role: null,
-    });
-
-    // 3. Reparent both into the Project Space
-    const projectId = commands[0].shape.id;
-    expect(commands[3]).toEqual({
-      type: COMMANDS.reparentShape,
-      id: "s1",
-      parentId: projectId,
-      boundingBox: { x: 40, y: 40, width: 300, height: 600 },
-    });
-    expect(commands[4]).toEqual({
-      type: COMMANDS.reparentShape,
-      id: "s2",
-      parentId: projectId,
-      boundingBox: { x: 440, y: 40, width: 300, height: 600 },
-    });
-
-    expect(selectShape).toHaveBeenCalledWith(projectId);
     expect(render).toHaveBeenCalledTimes(1);
   });
 });

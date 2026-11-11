@@ -1,6 +1,5 @@
 import React from "react";
-import { ROOT_ROLES } from "@open-draw/contracts";
-import { childrenOf, type Document, type Shape } from "@open-draw/document";
+import type { Document, Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdButton, OdIcon, OdSegmentedControl } from "@open-draw/ui";
@@ -71,23 +70,11 @@ export function ExportScopeSelector(props: ExportScopeSelectorProps): React.JSX.
           const plat = resolveRootPlatform(doc, r.id);
           const prof = plat !== undefined ? PLATFORM_PROFILES[plat] : undefined;
           const title = resolveShapeDisplayName(r, prof);
-          const isProject = r.meta.role === ROOT_ROLES.project;
-          const childScreens = isProject ? childrenOf(doc, r.id) : [];
 
           return (
-            <React.Fragment key={r.id}>
-              <option value={r.id}>
-                {`${isProject ? `[Project Space] ${title}` : title} (${plat ?? "Generic"})`}
-              </option>
-              {childScreens.map((cs) => {
-                const childTitle = resolveShapeDisplayName(cs, prof);
-                return (
-                  <option key={cs.id} value={cs.id}>
-                    {`↳ ${childTitle} (Screen inside ${title})`}
-                  </option>
-                );
-              })}
-            </React.Fragment>
+            <option key={r.id} value={r.id}>
+              {`${title} (${plat ?? "Generic"})`}
+            </option>
           );
         })}
       </select>

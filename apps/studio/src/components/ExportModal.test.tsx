@@ -72,30 +72,29 @@ describe("ExportModal", () => {
     expect(html).toContain("web");
   });
 
-  it("renders Project Space and nested screens inside export scope selector", () => {
+  it("renders root screens and component containers inside export scope selector", () => {
     const doc = createDocument([
       {
-        id: parseShapeId("proj-1"),
+        id: parseShapeId("screen-1"),
         parentId: ROOT_ID,
-        kind: SHAPE_KINDS.section,
-        direction: "row",
-        boundingBox: { x: 0, y: 0, width: 1200, height: 900 },
-        label: "Mobile App",
-        meta: { platform: "androidNative", role: ROOT_ROLES.project, order: {} },
+        kind: SHAPE_KINDS.rect,
+        boundingBox: { x: 0, y: 0, width: 360, height: 720 },
+        label: "Mobile Screen",
+        meta: { platform: "androidNative", role: ROOT_ROLES.screen, order: {} },
       },
       {
-        id: parseShapeId("screen-1"),
-        parentId: parseShapeId("proj-1"),
+        id: parseShapeId("comp-1"),
+        parentId: ROOT_ID,
         kind: SHAPE_KINDS.rect,
-        boundingBox: { x: 40, y: 40, width: 360, height: 720 },
-        label: "Login Screen",
-        meta: { order: {} },
+        boundingBox: { x: 400, y: 0, width: 300, height: 200 },
+        label: "Card Component",
+        meta: { platform: "androidNative", role: ROOT_ROLES.component, order: {} },
       },
       {
         id: parseShapeId("standalone-screen"),
         parentId: ROOT_ID,
         kind: SHAPE_KINDS.rect,
-        boundingBox: { x: 1400, y: 0, width: 800, height: 600 },
+        boundingBox: { x: 800, y: 0, width: 800, height: 600 },
         label: "Landing Page",
         meta: { platform: PLATFORMS.web, order: {} },
       },
@@ -105,8 +104,8 @@ describe("ExportModal", () => {
       <ExportModal isOpen={true} onClose={vi.fn()} doc={doc} initialFormat="markdown" />,
     );
 
-    expect(html).toContain("[Project Space] Mobile App");
-    expect(html).toContain("↳ Login Screen (Screen inside Mobile App)");
-    expect(html).toContain("Landing Page");
+    expect(html).toContain("Mobile Screen (androidNative)");
+    expect(html).toContain("Card Component (androidNative)");
+    expect(html).toContain("Landing Page (web)");
   });
 });
