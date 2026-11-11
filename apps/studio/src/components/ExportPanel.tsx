@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { isRootId, type ShapeId } from "@open-draw/contracts";
+import { isRootId, PLATFORMS, ROOT_ROLES, type ShapeId } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import {
@@ -81,8 +81,19 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
       ? 1
       : canvasRootContainers.length;
 
+  const allComponents =
+    isMultiContainerSelected &&
+    selectedRootContainers.every((r) => r.meta.role === ROOT_ROLES.component);
+  const allWeb =
+    isMultiContainerSelected &&
+    selectedRootContainers.every((r) => r.meta.platform === PLATFORMS.web);
+
   const targetTitle = isMultiContainerSelected
-    ? "Selected Screens"
+    ? allComponents
+      ? "Selected Components"
+      : allWeb
+        ? "Selected Pages"
+        : "Selected Screens"
     : targetRootShape
       ? resolveShapeDisplayName(targetRootShape, targetProfile)
       : "Entire Canvas";
