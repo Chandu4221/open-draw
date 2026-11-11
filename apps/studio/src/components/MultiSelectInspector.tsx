@@ -34,6 +34,11 @@ const ALIGN_ACTIONS = [
   { alignment: "bottom", name: "align-bottom", label: "Align Bottom" },
 ] as const;
 
+const DISTRIBUTE_ACTIONS = [
+  { axis: "horizontal", name: "distribute-horizontal", label: "Distribute Horizontally" },
+  { axis: "vertical", name: "distribute-vertical", label: "Distribute Vertically" },
+] as const;
+
 const COLOR_SWATCH_STYLE: React.CSSProperties = {
   width: "26px",
   height: "var(--od-control-height)",
@@ -48,6 +53,14 @@ const HEX_INPUT_STYLE: React.CSSProperties = {
   width: 0,
   padding: "0 var(--od-4)",
   fontSize: "var(--od-text-xs)",
+};
+
+const DIVIDER_STYLE: React.CSSProperties = {
+  width: "1px",
+  height: "16px",
+  backgroundColor: "var(--od-border)",
+  margin: "0 2px",
+  flexShrink: 0,
 };
 
 function getSelectionSummary(shapes: readonly Shape[]): string {
@@ -110,9 +123,17 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
 
       {/* 2. ALIGN & DISTRIBUTE */}
       <OdCard title="Align & Distribute" collapsible defaultExpanded>
-        <OdField label="Alignment">
+        <OdField
+          label="Alignment & Distribution"
+          {...(!canDistribute ? { meta: "Distribute: 3+ shapes" } : {})}
+        >
           <div
-            style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "var(--od-4)" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--od-4)",
+              width: "100%",
+            }}
           >
             {ALIGN_ACTIONS.map((item) => (
               <OdIconButton
@@ -121,50 +142,21 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
                 aria-label={item.label}
                 title={item.label}
                 onClick={() => onAlign(item.alignment)}
-                style={{ width: "100%", height: "28px" }}
+                style={{ flex: 1, height: "28px", minWidth: 0, padding: 0 }}
               />
             ))}
-          </div>
-        </OdField>
-
-        <OdField label="Distribution" {...(!canDistribute ? { meta: "Requires 3+ shapes" } : {})}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--od-8)" }}>
-            <OdButton
-              variant="default"
-              onClick={() => onDistribute("horizontal")}
-              disabled={!canDistribute}
-              style={{
-                height: "28px",
-                fontSize: "var(--od-text-xs)",
-                gap: "var(--od-6)",
-                justifyContent: "center",
-              }}
-              title={
-                canDistribute
-                  ? "Distribute horizontally"
-                  : "Requires 3 or more shapes to distribute"
-              }
-            >
-              <OdIcon name="distribute-horizontal" size={14} />
-              <span>Horizontal</span>
-            </OdButton>
-            <OdButton
-              variant="default"
-              onClick={() => onDistribute("vertical")}
-              disabled={!canDistribute}
-              style={{
-                height: "28px",
-                fontSize: "var(--od-text-xs)",
-                gap: "var(--od-6)",
-                justifyContent: "center",
-              }}
-              title={
-                canDistribute ? "Distribute vertically" : "Requires 3 or more shapes to distribute"
-              }
-            >
-              <OdIcon name="distribute-vertical" size={14} />
-              <span>Vertical</span>
-            </OdButton>
+            <div style={DIVIDER_STYLE} />
+            {DISTRIBUTE_ACTIONS.map((item) => (
+              <OdIconButton
+                key={item.axis}
+                name={item.name}
+                aria-label={canDistribute ? item.label : `${item.label} (requires 3+ shapes)`}
+                title={canDistribute ? item.label : `${item.label} (requires 3+ shapes)`}
+                disabled={!canDistribute}
+                onClick={() => onDistribute(item.axis)}
+                style={{ flex: 1, height: "28px", minWidth: 0, padding: 0 }}
+              />
+            ))}
           </div>
         </OdField>
       </OdCard>

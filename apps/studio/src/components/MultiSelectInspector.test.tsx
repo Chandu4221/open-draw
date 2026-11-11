@@ -46,12 +46,12 @@ describe("MultiSelectInspector", () => {
     expect(html).toContain("1 rect, 1 ellipse");
     expect(html).toContain("Clear");
 
-    // Section 2: Unified Align & Distribute
+    // Section 2: Unified Align & Distribute in a single row
     expect(html).toContain("Align &amp; Distribute");
-    expect(html).toContain("Alignment");
-    expect(html).toContain("Distribution");
-    expect(html).toContain("Horizontal");
-    expect(html).toContain("Vertical");
+    expect(html).toContain("Alignment &amp; Distribution");
+    expect(html).toContain("Align Left");
+    expect(html).toContain("Distribute Horizontally");
+    expect(html).toContain("Distribute Vertically");
 
     // Section 3: Shared Style
     expect(html).toContain("Shared Style");
@@ -80,7 +80,7 @@ describe("MultiSelectInspector", () => {
       />,
     );
 
-    expect(html).toContain("Requires 3+ shapes");
+    expect(html).toContain("Distribute: 3+ shapes");
     expect(html).toContain("disabled");
   });
 
@@ -100,7 +100,7 @@ describe("MultiSelectInspector", () => {
       />,
     );
 
-    expect(html).not.toContain("Requires 3+ shapes");
+    expect(html).not.toContain("Distribute: 3+ shapes");
     expect(html).toContain("3 rects");
   });
 });
