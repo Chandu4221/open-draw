@@ -149,12 +149,22 @@ export {
 
 export { DEFAULT_SHAPE_REGISTRATIONS } from "./default-shapes";
 
+export {
+  type CustomShapeCreateOptions,
+  type CustomShapeExtension,
+  createDefaultCustomShape,
+  validateCustomShapeExtension,
+} from "./extension";
+
 // Re-exported core contracts (ADR-0008 D1)
 export {
   type BoundingBox,
   type CapabilityId,
   CAPABILITIES,
+  type CustomShapeContract,
   type CustomShapeKind,
+  isValidCustomShapeKind,
+  parseCustomShapeKind,
   type DeviceType,
   DEVICE_TYPES,
   type Point,

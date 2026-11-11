@@ -2,14 +2,25 @@
 
 A framework-free, batteries-included visual canvas and drawing SDK with **zero runtime dependencies**.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/@open-draw/canvas.svg)](https://www.npmjs.com/package/@open-draw/canvas)
+
+---
+
 ## Features
 
 - **Batteries-Included Editor**: Interactive SVG canvas mountable into any DOM container with built-in pointer gestures, keyboard shortcuts, undo/redo history, camera pan/zoom, and overlay previews.
 - **Pure Interaction Controller**: Headless `createCanvas()` controller with pure finite state machine, spatial hit-testing, selection management, and camera transforms.
+- **Custom Shape Extension API**: Register domain-specific custom shapes with custom SVG rendering, geometric hit-testing, capability contracts, and graceful fallback support (ADR-0003).
+- **Responsive Container Resizing**: Built-in `ResizeObserver` lifecycle recalculates visible viewport bounds automatically when the container resizes or transitions from hidden to visible.
+- **Multi-Editor Isolation**: Safely run multiple independent canvas editors on the same page with isolated state machines, pointer captures, ID generators, and history stacks.
+- **Full Document JSON Import/Paste**: Native support for pasting full OpenDraw document JSON payloads as well as shape subtrees.
 - **Built-in Shapes**: First-class support for `rect`, `ellipse`, `line`, `pen-path`, and `text` with hit testing, handles, and bounding-box transforms.
 - **Deterministic SVG Rendering**: Clean, predictable SVG markup generation directly from document state.
-- **Zero Runtime Dependencies**: Completely standalone. No runtime external dependencies.
-- **Framework-Agnostic**: Pure TypeScript core works with React, Vue, Svelte, or vanilla DOM.
+- **Zero Runtime Dependencies**: Completely standalone (`dependencies: {}`). No external runtime packages (R-002).
+- **Dual ESM / CommonJS**: Bundled dual ESM (`dist/index.js`) and CJS (`dist/index.cjs`) with rolled-up TypeScript declarations (`dist/index.d.ts`).
+
+---
 
 ## Installation
 
@@ -19,9 +30,11 @@ npm install @open-draw/canvas
 pnpm add @open-draw/canvas
 ```
 
+---
+
 ## Quick Start (Interactive Editor)
 
-Mount a complete drawing editor into any HTML element:
+Mount a complete drawing editor into any HTML container element:
 
 ```ts
 import { createEditor, TOOLS } from "@open-draw/canvas";
@@ -45,25 +58,93 @@ editor.resetZoom();
 // Export standalone SVG markup
 const svgMarkup = editor.toSvg();
 
-// Programmatic text editing
-editor.setTextContent(rectId, "Updated text");
-
 // Clean up when unmounting
 // editor.destroy();
 ```
 
-### Text Editing
+---
 
-- **Programmatic API**: Use `editor.setTextContent(shapeId, text)` to update visible content directly via recorded transactions.
+## Custom Shape Extensions (ADR-0003)
 
-### Clipboard
+Extend the canvas with custom shape kinds without modifying core commands:
 
-- **In-Editor Clipboard**: Copy (`Mod+C` / `Ctrl+C`) and Paste (`Mod+V` / `Ctrl+V`) clone selected shape subtrees with automated fresh IDs and position cascading.
-- **System Clipboard**: When browser permissions permit, JSON payloads are copied to `navigator.clipboard` for cross-editor transfers. When no selection exists, native browser copy events pass through unhindered.
+```ts
+import {
+  CAPABILITIES,
+  createEditor,
+  parseCustomShapeKind,
+  type CustomShapeExtension,
+} from "@open-draw/canvas";
 
-## Advanced: Headless Controller
+const starExtension: CustomShapeExtension = {
+  kind: parseCustomShapeKind("vendor:star"),
+  label: "Vendor Star",
+  capabilities: [CAPABILITIES.movable, CAPABILITIES.resizable],
+  defaultDimensions: { width: 80, height: 80 },
 
-For custom canvas engines or headless server-side usage, use `createCanvas`:
+  // Custom hit-test (e.g., diamond center check)
+  hitTest: (box, shape, point) => {
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    const dx = Math.abs(point.x - cx) / (box.width / 2);
+    const dy = Math.abs(point.y - cy) / (box.height / 2);
+    return dx + dy <= 1.0;
+  },
+
+  // Pure SVG rendering function
+  render: (shape, box) =>
+    `<polygon points="${box.x + box.width / 2},${box.y} ${box.x + box.width},${box.y + box.height} ${box.x},${box.y + box.height}" fill="${shape.fill ?? "#ffd700"}" />`,
+};
+
+const editor = createEditor(container, {
+  customShapes: [starExtension],
+});
+
+// Or register dynamically:
+// editor.registerCustomShape(starExtension);
+
+// Insert custom shape into document
+editor.insertCustomShape(starExtension.kind, {
+  x: 100,
+  y: 100,
+  width: 80,
+  height: 80,
+});
+```
+
+See [custom-shapes.md](docs/custom-shapes.md) for full documentation on custom shape contracts, lifecycle, and fallback rendering.
+
+---
+
+## Editor Options & API
+
+### `EditorOptions`
+
+| Option            | Type                               | Description                                                     |
+| ----------------- | ---------------------------------- | --------------------------------------------------------------- |
+| `document`        | `Document`                         | Initial document model (defaults to empty document)             |
+| `tool`            | `ToolId`                           | Active tool (defaults to `TOOLS.select`)                        |
+| `customShapes`    | `readonly CustomShapeExtension[]`  | Custom shapes registered on mount                               |
+| `customRenderers` | `Record<string, ShapeSvgRenderer>` | Per-kind SVG render override functions                          |
+| `snapping`        | `boolean \| SnapConfig`            | Magnetic alignment snapping options                             |
+| `nestingMode`     | `"containers-only" \| "all"`       | Nesting behavior when drawing over shapes                       |
+| `onDoubleClick`   | `(shapeId: ShapeId) => void`       | Double-click callback hook                                      |
+| `onFallback`      | `(msg: string) => void`            | Notification when an unregistered shape uses fallback rendering |
+
+### `Editor` Instance Methods
+
+- **Document & History**: `getDocument()`, `setDocument(doc, opts?)`, `loadJson(json, opts?)`, `toJson()`, `toSvg()`, `execute(cmds)`, `undo()`, `redo()`, `canUndo()`, `canRedo()`
+- **Tools & Selection**: `getTool()`, `setTool(tool)`, `getSelection()`, `select(id)`, `selectMany(ids)`, `clearSelection()`
+- **Camera Navigation**: `getCamera()`, `setCamera(cam)`, `zoomIn()`, `zoomOut()`, `resetZoom()`
+- **Shape Modification**: `setTextContent(id, text)`, `setShapeStyle(id, style)`, `setShapeOrder(id, deviceType, order)`
+- **Extensions**: `registerCustomShape(ext)`, `getCustomShape(kind)`, `getCustomShapes()`, `insertCustomShape(kind, box, opts?)`
+- **Lifecycle**: `render()`, `destroy()`, `subscribe(event, listener)`
+
+---
+
+## Headless Controller (`createCanvas`)
+
+For custom engines or server-side usage without DOM:
 
 ```ts
 import {
@@ -92,23 +173,18 @@ const svgString = documentToSvg(doc);
 const hitShapeId = canvas.pickShape(doc, { x: 100, y: 80 });
 ```
 
-## Architecture Contract
+---
+
+## Architecture Principles
 
 - **Document is Truth (R-016)**: The document tree is immutable and canonical; mutations occur exclusively through typed transactions.
 - **Camera is a Transform (R-017)**: Pan and zoom transforms never alter shape geometry coordinates.
-- **Machine & Viewport Separation (R-008, R-009)**: The state machine consumes pure pointer events. Wheel events are ignored by the state table and handled directly as camera viewport transforms by the imperative editor shell.
-- **Spatial Acceleration & Viewport Culling (ADR-0011)**: In-tree zero-dependency Sort-Tile-Recursive (STR) R-Tree accelerates hit-testing, box-picking, and viewport culling.
+- **No String Literals (R-005)**: Closed registries (`SHAPE_KINDS`, `COMMANDS`, `TOOLS`, `CAPABILITIES`) provide typed keys.
+- **Spatial Acceleration & Viewport Culling (ADR-0011)**: In-tree zero-dependency Sort-Tile-Recursive (STR) R-Tree accelerates hit-testing, box-picking, and viewport culling across 20,000+ shapes.
 - **Magnetic Alignment Snapping**: Edge and center alignment snapping with counter-scaled SVG guide lines during translation and handle resizing.
 - **Multi-Touch Gestures**: TouchTracker for two-finger pinch-to-zoom and pan with pointer capture lifecycle management.
 
-## Scope & Non-Goals for v1
-
-The v1 release focuses on diagramming, wireframing, and vector sketching primitives:
-
-- **Shape Rotation & Skew**: Non-goal for v1 (axis-aligned bounding boxes only).
-- **Image / Raster Asset Shapes**: Non-goal for v1 (vector primitives and text only).
-- **Rich Text & Inline Spans**: Non-goal for v1 (uniform text content only).
-- **Native OS File Drag-and-Drop**: Non-goal for v1 (document JSON serialization and file loading APIs only).
+---
 
 ## License
 

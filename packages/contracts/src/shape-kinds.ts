@@ -1,3 +1,5 @@
+import type { CapabilityId } from "./capabilities";
+
 // Closed registry of built-in shape kinds and open custom shape contract
 // (ADR-0002 D3, ADR-0003 D2, R-005, R-006).
 // One canonical list for built-ins; `SHAPE_KIND_LABELS` lives in the same module
@@ -47,4 +49,11 @@ export function parseCustomShapeKind(value: unknown): CustomShapeKind {
     throw new Error(`parseCustomShapeKind: invalid custom shape kind: ${JSON.stringify(value)}`);
   }
   return value as CustomShapeKind;
+}
+
+export interface CustomShapeContract {
+  readonly kind: CustomShapeKind;
+  readonly label: string;
+  readonly capabilities: readonly CapabilityId[];
+  readonly defaultDimensions?: { readonly width: number; readonly height: number } | undefined;
 }

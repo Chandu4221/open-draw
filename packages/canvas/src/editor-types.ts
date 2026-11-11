@@ -1,12 +1,18 @@
-// Editor types and options contracts (R-005, R-010, R-014).
-import type { DeviceType, Point, ShapeId } from "@open-draw/contracts";
-import type { Command, Document } from "@open-draw/document";
+import type {
+  BoundingBox,
+  CustomShapeKind,
+  DeviceType,
+  Point,
+  ShapeId,
+} from "@open-draw/contracts";
+import type { Command, Document, Shape } from "@open-draw/document";
 import type { ShapeSvgRenderer } from "@open-draw/renderer-svg";
 import type { Camera } from "./camera";
 import type { CanvasController, CanvasOptions } from "./create-canvas";
 import type { ControllerEvent } from "./events";
 import type { NestingMode } from "./editor-gestures";
 import type { ToolId } from "./tools";
+import type { CustomShapeCreateOptions, CustomShapeExtension } from "./extension";
 
 export interface EditorOverlayContext {
   readonly doc: Document;
@@ -28,6 +34,7 @@ export interface EditorOptions {
   readonly tool?: ToolId;
   readonly nestingMode?: NestingMode;
   readonly customRenderers?: Readonly<Record<string, ShapeSvgRenderer>>;
+  readonly customShapes?: readonly CustomShapeExtension[];
   readonly renderCustomOverlays?: (context: EditorOverlayContext) => readonly string[];
   readonly snapping?: boolean | SnapConfig | undefined;
   readonly interceptPointerDown?:
@@ -85,6 +92,14 @@ export interface Editor {
   zoomOut(): void;
   resetZoom(): void;
   subscribe(event: ControllerEvent, listener: () => void): () => void;
+  registerCustomShape(extension: CustomShapeExtension): void;
+  getCustomShape(kind: CustomShapeKind | string): CustomShapeExtension | undefined;
+  getCustomShapes(): readonly CustomShapeExtension[];
+  insertCustomShape(
+    kind: CustomShapeKind,
+    box: BoundingBox,
+    options?: CustomShapeCreateOptions,
+  ): Shape;
   render(): void;
   destroy(): void;
 }

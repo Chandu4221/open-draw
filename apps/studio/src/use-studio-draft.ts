@@ -64,15 +64,15 @@ export function clearDraftDocument(): void {
   }
 }
 
-export function useStudioDraft(documentRef: React.MutableRefObject<Document>): void {
+export function useStudioDraft(getDoc: () => Document): void {
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
-      if (Object.keys(documentRef.current.shapes).length > 0) {
+      if (Object.keys(getDoc().shapes).length > 0) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [documentRef]);
+  }, [getDoc]);
 }

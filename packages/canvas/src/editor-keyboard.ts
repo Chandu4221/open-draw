@@ -1,5 +1,10 @@
 // Keyboard shortcut interaction handlers for standalone editor (R-008, R-010, R-018).
-import type { ShapeId } from "@open-draw/contracts";
+import {
+  MAX_COORDINATE_BOUND,
+  MAX_PASTE_SHAPE_COUNT,
+  ROOT_ID,
+  type ShapeId,
+} from "@open-draw/contracts";
 import {
   COMMANDS,
   pruneSelectedDescendants,
@@ -10,6 +15,7 @@ import {
   type Document,
   type HistoryState,
   type Shape,
+  type ShapeMeta,
 } from "@open-draw/document";
 import {
   ACTIONS,
@@ -63,7 +69,9 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     ctx.svg.addEventListener("pointerdown", onInteract, { capture: true, passive: true });
   }
 
+  let copySequence = 0;
   let clipboard: {
+    readonly copyId: string;
     readonly shapes: readonly Shape[];
     readonly topLevelIds: readonly ShapeId[];
     count: number;
@@ -167,12 +175,15 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
           for (const topId of topLevelIds) {
             shapes.push(...subtreeOf(doc, topId));
           }
-          clipboard = { shapes, topLevelIds, count: 0 };
+          copySequence += 1;
+          const copyId = `cp-${copySequence}`;
+          clipboard = { copyId, shapes, topLevelIds, count: 0 };
           if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
             try {
               const serialized = JSON.stringify({
                 type: "open-draw/clipboard",
                 version: 1,
+                copyId,
                 shapes,
                 topLevelIds,
               });
@@ -185,56 +196,170 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
         break;
       }
       case ACTIONS.paste: {
-        if (clipboard !== null && clipboard.shapes.length > 0) {
-          event.preventDefault();
-          clipboard.count += 1;
-          pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
-        } else if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
-          event.preventDefault();
+        event.preventDefault();
+        const fallbackToLocal = (): void => {
+          if (clipboard !== null && clipboard.shapes.length > 0) {
+            clipboard.count += 1;
+            pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
+          }
+        };
+
+        if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
           void navigator.clipboard
             .readText()
             .then((text) => {
               try {
                 const data = JSON.parse(text);
+                let candidateShapes: unknown[] | null = null;
+                let topLevelIds: ShapeId[] | null = null;
+                let payloadCopyId: string | undefined = undefined;
+
                 if (
                   data?.type === "open-draw/clipboard" &&
                   Array.isArray(data.shapes) &&
                   Array.isArray(data.topLevelIds)
                 ) {
+                  candidateShapes = data.shapes;
+                  topLevelIds = data.topLevelIds as ShapeId[];
+                  payloadCopyId = typeof data.copyId === "string" ? data.copyId : undefined;
+                } else if (
+                  typeof data === "object" &&
+                  data !== null &&
+                  typeof data.shapes === "object" &&
+                  data.shapes !== null &&
+                  !Array.isArray(data.shapes)
+                ) {
+                  const shapesObj = data.shapes as Record<string, unknown>;
+                  const shapeKeys = Array.isArray(data.shapeOrder)
+                    ? data.shapeOrder.filter(
+                        (k: unknown) => typeof k === "string" && shapesObj[k] !== undefined,
+                      )
+                    : Object.keys(shapesObj);
+                  const shapesList = shapeKeys.map((k: string) => shapesObj[k]);
+                  candidateShapes = shapesList;
+                  topLevelIds = shapesList
+                    .filter(
+                      (s: unknown): s is { id: ShapeId; parentId: ShapeId } =>
+                        typeof s === "object" &&
+                        s !== null &&
+                        typeof (s as { id?: unknown }).id === "string" &&
+                        typeof (s as { parentId?: unknown }).parentId === "string" &&
+                        ((s as { parentId: string }).parentId === ROOT_ID ||
+                          !shapesObj[(s as { parentId: string }).parentId]),
+                    )
+                    .map((s: { id: ShapeId }) => s.id);
+                }
+
+                if (candidateShapes !== null && topLevelIds !== null) {
+                  if (
+                    clipboard !== null &&
+                    payloadCopyId !== undefined &&
+                    payloadCopyId === clipboard.copyId
+                  ) {
+                    clipboard.count += 1;
+                    pasteShapes(clipboard.shapes, clipboard.topLevelIds, clipboard.count);
+                    return;
+                  }
+
+                  if (candidateShapes.length > MAX_PASTE_SHAPE_COUNT) {
+                    return;
+                  }
+
                   const sanitizedShapes: Shape[] = [];
-                  for (const raw of data.shapes) {
+                  for (const raw of candidateShapes) {
                     if (
                       typeof raw === "object" &&
                       raw !== null &&
                       !Object.prototype.hasOwnProperty.call(raw, "__proto__") &&
-                      typeof raw.id === "string" &&
-                      typeof raw.kind === "string" &&
-                      typeof raw.parentId === "string" &&
-                      typeof raw.boundingBox === "object" &&
-                      raw.boundingBox !== null &&
-                      typeof raw.boundingBox.x === "number" &&
-                      Number.isFinite(raw.boundingBox.x) &&
-                      typeof raw.boundingBox.y === "number" &&
-                      Number.isFinite(raw.boundingBox.y) &&
-                      typeof raw.boundingBox.width === "number" &&
-                      Number.isFinite(raw.boundingBox.width) &&
-                      raw.boundingBox.width > 0 &&
-                      typeof raw.boundingBox.height === "number" &&
-                      Number.isFinite(raw.boundingBox.height) &&
-                      raw.boundingBox.height > 0
+                      typeof (raw as Record<string, unknown>).id === "string" &&
+                      typeof (raw as Record<string, unknown>).kind === "string" &&
+                      typeof (raw as Record<string, unknown>).parentId === "string" &&
+                      typeof (raw as Record<string, unknown>).boundingBox === "object" &&
+                      (raw as Record<string, unknown>).boundingBox !== null &&
+                      typeof (raw as { boundingBox: Record<string, unknown> }).boundingBox.x ===
+                        "number" &&
+                      Number.isFinite((raw as { boundingBox: { x: number } }).boundingBox.x) &&
+                      Math.abs((raw as { boundingBox: { x: number } }).boundingBox.x) <=
+                        MAX_COORDINATE_BOUND &&
+                      typeof (raw as { boundingBox: Record<string, unknown> }).boundingBox.y ===
+                        "number" &&
+                      Number.isFinite((raw as { boundingBox: { y: number } }).boundingBox.y) &&
+                      Math.abs((raw as { boundingBox: { y: number } }).boundingBox.y) <=
+                        MAX_COORDINATE_BOUND &&
+                      typeof (raw as { boundingBox: Record<string, unknown> }).boundingBox.width ===
+                        "number" &&
+                      Number.isFinite(
+                        (raw as { boundingBox: { width: number } }).boundingBox.width,
+                      ) &&
+                      (raw as { boundingBox: { width: number } }).boundingBox.width > 0 &&
+                      (raw as { boundingBox: { width: number } }).boundingBox.width <=
+                        MAX_COORDINATE_BOUND &&
+                      typeof (raw as { boundingBox: Record<string, unknown> }).boundingBox
+                        .height === "number" &&
+                      Number.isFinite(
+                        (raw as { boundingBox: { height: number } }).boundingBox.height,
+                      ) &&
+                      (raw as { boundingBox: { height: number } }).boundingBox.height > 0 &&
+                      (raw as { boundingBox: { height: number } }).boundingBox.height <=
+                        MAX_COORDINATE_BOUND
                     ) {
-                      sanitizedShapes.push(raw as Shape);
+                      const rawMeta =
+                        typeof (raw as Record<string, unknown>).meta === "object" &&
+                        (raw as Record<string, unknown>).meta !== null &&
+                        !Array.isArray((raw as Record<string, unknown>).meta)
+                          ? {
+                              ...((raw as Record<string, unknown>).meta as Record<string, unknown>),
+                            }
+                          : {};
+                      if (rawMeta.semantic === null) {
+                        delete rawMeta.semantic;
+                      }
+                      if (
+                        typeof rawMeta.order !== "object" ||
+                        rawMeta.order === null ||
+                        Array.isArray(rawMeta.order)
+                      ) {
+                        rawMeta.order = {};
+                      }
+                      sanitizedShapes.push({
+                        ...(raw as Shape),
+                        meta: rawMeta as unknown as ShapeMeta,
+                      });
                     }
                   }
-                  if (sanitizedShapes.length > 0) {
-                    pasteShapes(sanitizedShapes, data.topLevelIds, 1);
+
+                  if (
+                    sanitizedShapes.length === candidateShapes.length &&
+                    sanitizedShapes.length > 0
+                  ) {
+                    const validTopLevelIds = topLevelIds.filter((id) =>
+                      sanitizedShapes.some((s) => s.id === id),
+                    );
+                    const effectiveTopLevelIds =
+                      validTopLevelIds.length > 0
+                        ? validTopLevelIds
+                        : sanitizedShapes.filter((s) => s.parentId === ROOT_ID).map((s) => s.id);
+
+                    clipboard = {
+                      copyId: payloadCopyId ?? "external",
+                      shapes: sanitizedShapes,
+                      topLevelIds: effectiveTopLevelIds,
+                      count: 1,
+                    };
+                    pasteShapes(sanitizedShapes, effectiveTopLevelIds, 1);
+                    return;
                   }
                 }
               } catch {
                 // Ignore non-open-draw clipboard text
               }
+              fallbackToLocal();
             })
-            .catch(() => {});
+            .catch(() => {
+              fallbackToLocal();
+            });
+        } else {
+          fallbackToLocal();
         }
         break;
       }

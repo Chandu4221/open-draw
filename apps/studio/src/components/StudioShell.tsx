@@ -1,6 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { DeviceType, ShapeId } from "@open-draw/contracts";
-import type { Command, Document, Shape } from "@open-draw/document";
+import type { Command, Shape } from "@open-draw/document";
 import {
   CONTROLLER_EVENTS,
   createEditor,
@@ -35,14 +42,32 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const toast = useToast();
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
-  const [doc, setDoc] = useState<Document>(() => loadInitialDocument());
-  const documentRef = useRef<Document>(doc);
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const initialDoc = useMemo(() => loadInitialDocument(), []);
+
+  const subscribeDoc = useCallback(
+    (onStoreChange: () => void) => {
+      if (editor === null) return () => {};
+      return editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+        saveDraftDocument(editor.getDocument());
+        onStoreChange();
+      });
+    },
+    [editor],
+  );
+
+  const getDocSnapshot = useCallback(() => {
+    return editor !== null ? editor.getDocument() : initialDoc;
+  }, [editor, initialDoc]);
+
+  const doc = useSyncExternalStore(subscribeDoc, getDocSnapshot, () => initialDoc);
+
+  const getDoc = useCallback(() => editorRef.current?.getDocument() ?? initialDoc, [initialDoc]);
   const toastRef = useRef(toast);
-  useStudioDraft(documentRef);
+  useStudioDraft(getDoc);
   useEffect(() => {
-    documentRef.current = doc;
     toastRef.current = toast;
-  }, [doc, toast]);
+  }, [toast]);
 
   const [tool, setTool] = useState<ToolId>(TOOLS.select);
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
@@ -60,8 +85,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     const container = canvasContainerRef.current;
     if (container === null) return;
 
-    const editor = createEditor(container, {
-      document: documentRef.current,
+    const newEditor = createEditor(container, {
+      document: initialDoc,
       tool: TOOLS.select,
       nestingMode: "containers-only",
       onFallback: (msg) => toastRef.current.push({ type: "info", text: msg }),
@@ -79,41 +104,36 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
         if (hitChip !== null) {
           canvas.toggleRootChipsVisible(hitChip);
           setVisibleChipRoots(new Set(canvas.getVisibleChipRootIds()));
-          editor.render();
+          newEditor.render();
           return true;
         }
         return false;
       },
     });
 
-    editorRef.current = editor;
+    editorRef.current = newEditor;
+    setEditor(newEditor);
 
-    const unsubDoc = editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
-      const nextDoc = editor.getDocument();
-      documentRef.current = nextDoc;
-      setDoc(nextDoc);
-      saveDraftDocument(nextDoc);
+    const unsubSel = newEditor.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
+      setSelectedShapeIds(newEditor.getSelection());
+      setSelectedShapeId(newEditor.canvas.getSelectedId());
     });
-    const unsubSel = editor.subscribe(CONTROLLER_EVENTS.selectionChanged, () => {
-      setSelectedShapeIds(editor.getSelection());
-      setSelectedShapeId(editor.canvas.getSelectedId());
+    const unsubTool = newEditor.subscribe(CONTROLLER_EVENTS.toolChanged, () => {
+      setTool(newEditor.getTool());
     });
-    const unsubTool = editor.subscribe(CONTROLLER_EVENTS.toolChanged, () => {
-      setTool(editor.getTool());
-    });
-    const unsubCam = editor.subscribe(CONTROLLER_EVENTS.cameraChanged, () => {
-      setZoomPercent(Math.round(editor.getCamera().zoom * 100));
+    const unsubCam = newEditor.subscribe(CONTROLLER_EVENTS.cameraChanged, () => {
+      setZoomPercent(Math.round(newEditor.getCamera().zoom * 100));
     });
 
     return () => {
-      unsubDoc();
       unsubSel();
       unsubTool();
       unsubCam();
-      editor.destroy();
+      newEditor.destroy();
       editorRef.current = null;
+      setEditor(null);
     };
-  }, []);
+  }, [initialDoc]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -195,11 +215,10 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   }
 
   const toolbarActions = useToolbarActions({
-    documentRef,
+    getDoc,
     editorRef,
     includeLegend,
     toast,
-    setDoc,
     setSelectedShapeId,
     commit,
     render,

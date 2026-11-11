@@ -114,6 +114,11 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       }
     }
 
+    const currentGesture = getGesture();
+    if (currentGesture !== null && currentGesture.pointerId !== event.pointerId) {
+      return;
+    }
+
     if (ctx.interceptPointerDown?.(event, { world, screen, canvas, doc })) {
       return;
     }
@@ -228,6 +233,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     }
 
     setGesture({
+      pointerId: event.pointerId,
       kind,
       startScreen: screen,
       startWorld: world,
@@ -262,7 +268,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     }
 
     const gesture = getGesture();
-    if (gesture === null) return;
+    if (gesture === null || gesture.pointerId !== event.pointerId) return;
     const world = canvas.screenToWorld(screen);
 
     if (!hasPassedDragThreshold) {
@@ -380,7 +386,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
     }
 
     const gesture = getGesture();
-    if (gesture === null) return;
+    if (gesture === null || gesture.pointerId !== event.pointerId) return;
     const doc = getDoc();
     const tool = getTool();
     const screen = screenPoint(event);
@@ -450,6 +456,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   }
 
   function onPointerCancel(event?: PointerEvent): void {
+    const gesture = getGesture();
     if (event !== undefined && event.pointerId !== undefined) {
       touchTracker = removeTouchPointer(touchTracker, event.pointerId);
       try {
@@ -458,6 +465,9 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
         }
       } catch {
         // Environments without pointer capture support
+      }
+      if (gesture !== null && gesture.pointerId !== event.pointerId) {
+        return;
       }
     } else {
       touchTracker = createTouchTracker();
