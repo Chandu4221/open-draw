@@ -8,6 +8,56 @@
   font-family: var(--od-font);
 }
 
+.od-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--od-6) var(--od-16);
+  min-height: 36px;
+  box-sizing: border-box;
+  background-color: var(--od-surface);
+  border-bottom: var(--od-border-width) solid var(--od-border);
+  color: var(--od-text);
+  user-select: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.od-panel-header:hover {
+  background-color: var(--od-bg);
+}
+
+.od-panel-header:focus-visible {
+  outline: var(--od-focus-ring) solid var(--od-accent);
+  outline-offset: -1px;
+}
+
+/* Sidebar resizable sash */
+.od-sidebar-sash {
+  height: 5px;
+  width: 100%;
+  flex-shrink: 0;
+  cursor: row-resize;
+  background-color: var(--od-surface);
+  border-top: var(--od-border-width) solid var(--od-border);
+  box-sizing: border-box;
+  touch-action: none;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.od-sidebar-sash:hover,
+.od-sidebar-sash:active,
+.od-sidebar-sash.od-sidebar-sash--active {
+  background-color: var(--od-border-strong);
+}
+
+.od-sidebar-sash:focus-visible {
+  outline: var(--od-focus-ring) solid var(--od-accent);
+  outline-offset: -1px;
+}
+
 /* Interactive buttons */
 .od-btn,
 .od-icon-btn {
@@ -158,23 +208,23 @@
 
 /* Typography & metadata */
 .od-panel-title {
-  font-size: var(--od-text-md);
+  font-size: var(--od-text-lg);
   font-weight: 600;
   color: var(--od-text);
   margin: 0;
   font-family: var(--od-font);
 }
 .od-section-header {
-  font-size: var(--od-text-xs);
+  font-size: var(--od-text-base);
   color: var(--od-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   font-weight: 600;
   font-family: var(--od-font);
   margin: 0;
 }
 .od-label {
-  font-size: var(--od-text-xs);
+  font-size: var(--od-text-sm);
   color: var(--od-text-secondary);
   font-weight: 500;
   font-family: var(--od-font);
@@ -499,10 +549,10 @@
 }
 
 .od-card__title {
-  font-size: var(--od-text-xs);
-  font-weight: 700;
+  font-size: var(--od-text-base);
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--od-text-secondary);
   margin: 0;
   font-family: var(--od-font);
@@ -515,7 +565,7 @@
 }
 
 .od-card__body {
-  padding: 0 var(--od-16) var(--od-16);
+  padding: var(--od-8) var(--od-16) var(--od-16);
   display: flex;
   flex-direction: column;
   gap: var(--od-12);
@@ -544,7 +594,7 @@
 .od-input-badge {
   position: absolute;
   right: 6px;
-  font-size: 10px;
+  font-size: var(--od-text-xs);
   font-family: var(--od-font-mono);
   color: var(--od-text-tertiary);
   pointer-events: none;
@@ -588,7 +638,7 @@
 
 .od-badge--unit {
   font-family: var(--od-font-mono);
-  font-size: 10px;
+  font-size: var(--od-text-xs);
   height: auto;
   padding: 0;
   background-color: transparent;
@@ -946,7 +996,7 @@
 }
 
 .od-meter-segment__title {
-  font-size: 11px;
+  font-size: var(--od-text-xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -954,7 +1004,7 @@
 }
 
 .od-meter-segment__level {
-  font-size: 9px;
+  font-size: var(--od-text-xs);
   color: var(--od-text-tertiary);
   line-height: 1;
 }

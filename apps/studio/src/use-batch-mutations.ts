@@ -1,8 +1,24 @@
-import { COMMANDS, type Command, type Shape } from "@open-draw/document";
+import { createShapeIdGenerator } from "@open-draw/canvas";
+import {
+  isRootId,
+  ROOT_ID,
+  ROOT_ROLES,
+  type BoundingBox,
+  type ShapeId,
+} from "@open-draw/contracts";
+import {
+  COMMANDS,
+  createSection,
+  type Command,
+  type Document,
+  type Shape,
+} from "@open-draw/document";
 
 export interface BatchMutationsProps {
+  readonly doc?: Document | undefined;
   readonly selectedShapes: readonly Shape[];
   readonly clearSelection: () => void;
+  readonly selectShape?: ((id: ShapeId) => void) | undefined;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }
@@ -19,10 +35,11 @@ export interface BatchMutations {
   ) => void;
   readonly handleBatchDelete: () => void;
   readonly handleClearSelection: () => void;
+  readonly handleBatchGroupProjectSpace: () => void;
 }
 
 export function useBatchMutations(props: BatchMutationsProps): BatchMutations {
-  const { selectedShapes, clearSelection, commit, render } = props;
+  const { doc, selectedShapes, clearSelection, selectShape, commit, render } = props;
 
   function handleBatchAlign(
     alignment: "left" | "center" | "right" | "top" | "middle" | "bottom",
@@ -156,11 +173,90 @@ export function useBatchMutations(props: BatchMutationsProps): BatchMutations {
     render();
   }
 
+  function handleBatchGroupProjectSpace(): void {
+    if (selectedShapes.length === 0 || !doc) return;
+    const boxes = selectedShapes.map((s) => s.boundingBox);
+    const minX = Math.min(...boxes.map((b) => b.x));
+    const maxX = Math.max(...boxes.map((b) => b.x + b.width));
+    const minY = Math.min(...boxes.map((b) => b.y));
+    const maxY = Math.max(...boxes.map((b) => b.y + b.height));
+    const padding = 40;
+    const projectBox: BoundingBox = {
+      x: Math.max(0, minX - padding),
+      y: Math.max(0, minY - padding),
+      width: maxX - minX + padding * 2,
+      height: maxY - minY + padding * 2,
+    };
+
+    const commonPlatform = selectedShapes.find((s) => s.meta.platform !== undefined)?.meta.platform;
+    const commonDesignStyle = selectedShapes.find((s) => s.meta.designStyle !== undefined)?.meta
+      .designStyle;
+    const commonTheme = selectedShapes.find((s) => s.meta.theme !== undefined)?.meta.theme;
+    const commonStyle = selectedShapes.find((s) => s.meta.style !== undefined)?.meta.style;
+
+    const seq = createShapeIdGenerator(doc);
+    const projectId = seq.nextShapeId();
+
+    const createCmd: Command = {
+      type: COMMANDS.createShape,
+      shape: createSection(projectId, projectBox, "row", {
+        parent: ROOT_ID,
+        label: "Project Space",
+        meta: {
+          order: {},
+          role: ROOT_ROLES.project,
+          ...(commonPlatform !== undefined ? { platform: commonPlatform } : {}),
+          ...(commonDesignStyle !== undefined ? { designStyle: commonDesignStyle } : {}),
+          ...(commonTheme !== undefined ? { theme: commonTheme } : {}),
+          ...(commonStyle !== undefined ? { style: commonStyle } : {}),
+        },
+      }),
+    };
+
+    const clearCmds: Command[] = [];
+    for (const shape of selectedShapes) {
+      if (isRootId(shape.parentId)) {
+        if (shape.meta.platform !== undefined) {
+          clearCmds.push({ type: COMMANDS.setRootPlatform, id: shape.id, platform: null });
+        }
+        if (shape.meta.role !== undefined) {
+          clearCmds.push({ type: COMMANDS.setRootRole, id: shape.id, role: null });
+        }
+        if (shape.meta.theme !== undefined) {
+          clearCmds.push({ type: COMMANDS.setRootTheme, id: shape.id, theme: null });
+        }
+        if (shape.meta.designStyle !== undefined) {
+          clearCmds.push({ type: COMMANDS.setRootDesignStyle, id: shape.id, designStyle: null });
+        }
+        if (shape.meta.darkMode !== undefined) {
+          clearCmds.push({ type: COMMANDS.setRootDarkMode, id: shape.id, darkMode: null });
+        }
+      }
+    }
+
+    const reparentCmds: Command[] = selectedShapes.map((shape) => ({
+      type: COMMANDS.reparentShape,
+      id: shape.id,
+      parentId: projectId,
+      boundingBox: {
+        x: shape.boundingBox.x - projectBox.x,
+        y: shape.boundingBox.y - projectBox.y,
+        width: shape.boundingBox.width,
+        height: shape.boundingBox.height,
+      },
+    }));
+
+    commit([createCmd, ...clearCmds, ...reparentCmds]);
+    selectShape?.(projectId);
+    render();
+  }
+
   return {
     handleBatchAlign,
     handleBatchDistribute,
     handleBatchStyleChange,
     handleBatchDelete,
     handleClearSelection,
+    handleBatchGroupProjectSpace,
   };
 }

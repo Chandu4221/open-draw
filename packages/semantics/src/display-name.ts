@@ -28,6 +28,9 @@ export function resolveShapeDisplayName(shape: Shape, profile?: PlatformProfile)
     return shape.label;
   }
   if (isRootId(shape.parentId)) {
+    if (shape.meta.role === ROOT_ROLES.project) {
+      return "Project Space";
+    }
     if (shape.meta.role === ROOT_ROLES.component) {
       if (shape.meta.semantic !== undefined && profile !== undefined) {
         const definition = profile.semantics[shape.meta.semantic.id];
@@ -73,6 +76,10 @@ export function resolveShapeSemanticType(
   profile?: PlatformProfile,
 ): string | undefined {
   if (isRootId(shape.parentId)) {
+    if (shape.meta.role === ROOT_ROLES.project) {
+      return "Project Space";
+    }
+
     // Platform-Agnostic mode (R-024, Ruling 10)
     if (shape.meta.platform === undefined) {
       return SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind] ?? shape.kind;

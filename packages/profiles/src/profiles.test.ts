@@ -37,6 +37,45 @@ describe("web profile", () => {
     expect(WEB_PROFILE.semantics.avatar?.displayName).toBe("Avatar");
     expect(WEB_PROFILE.semantics.link?.displayName).toBe("Link");
   });
+
+  it("organizes expanded semantic components across all 10 categories", () => {
+    const semantics = Object.values(WEB_PROFILE.semantics);
+    expect(semantics.length).toBeGreaterThanOrEqual(130);
+
+    // Verify presence and categorization of key components across categories
+    expect(WEB_PROFILE.semantics["app-shell"]?.category).toBe("layout");
+    expect(WEB_PROFILE.semantics["app-shell"]?.scope).toBe("section");
+
+    expect(WEB_PROFILE.semantics["nav-menu"]?.category).toBe("navigation");
+    expect(WEB_PROFILE.semantics["nav-menu"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics.hero?.category).toBe("marketing");
+    expect(WEB_PROFILE.semantics.hero?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics["pricing-table"]?.category).toBe("marketing");
+
+    expect(WEB_PROFILE.semantics["product-card"]?.category).toBe("ecommerce");
+    expect(WEB_PROFILE.semantics["product-card"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics["login-form"]?.category).toBe("auth");
+    expect(WEB_PROFILE.semantics["login-form"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics["primary-button"]?.category).toBe("interactive");
+    expect(WEB_PROFILE.semantics["primary-button"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics["search-bar"]?.category).toBe("forms");
+    expect(WEB_PROFILE.semantics["search-bar"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics.dashboard?.category).toBe("data");
+    expect(WEB_PROFILE.semantics.dashboard?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics["metric-card"]?.category).toBe("data");
+
+    expect(WEB_PROFILE.semantics.accordion?.category).toBe("content");
+    expect(WEB_PROFILE.semantics["card-grid"]?.scope).toBe("section");
+
+    expect(WEB_PROFILE.semantics.toast?.category).toBe("feedback");
+    expect(WEB_PROFILE.semantics.toast?.scope).toBe("component");
+    expect(WEB_PROFILE.semantics["not-found"]?.scope).toBe("section");
+  });
 });
 
 describe("android native profile", () => {

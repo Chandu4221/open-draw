@@ -121,12 +121,44 @@ describe("useInspectionData", () => {
       },
     };
 
-    const result = useInspectionData(doc, null, undefined);
+    const result = useInspectionData(doc, "child-1" as ShapeId, undefined);
 
+    expect(result.isScopedToRoot).toBe(true);
     expect(result.treeNodes).toHaveLength(2);
     expect(result.treeNodes.map((n) => n.shape.id)).toEqual(["root-1", "child-1"]);
     expect(result.treeNodes[0]?.depth).toBe(0);
     expect(result.treeNodes[1]?.depth).toBe(1);
+  });
+
+  it("scopes treeNodes strictly to the selected shape's root container in multi-screen canvas", () => {
+    const screenA = createMockShape("screen-a", ROOT_ID, { order: {}, platform: PLATFORMS.web });
+    const buttonA = createMockShape("btn-a", "screen-a" as ShapeId, { order: {} });
+
+    const screenB = createMockShape("screen-b", ROOT_ID, { order: {}, platform: PLATFORMS.ios });
+    const buttonB = createMockShape("btn-b", "screen-b" as ShapeId, { order: {} });
+
+    const doc: Document = {
+      ...createDocument(),
+      shapes: {
+        [screenA.id]: screenA,
+        [buttonA.id]: buttonA,
+        [screenB.id]: screenB,
+        [buttonB.id]: buttonB,
+      },
+    };
+
+    // Selecting button inside Screen A only displays Screen A and its descendants
+    const resultA = useInspectionData(doc, "btn-a" as ShapeId, undefined);
+    expect(resultA.isScopedToRoot).toBe(true);
+    expect(resultA.rootShape?.id).toBe("screen-a");
+    expect(resultA.treeNodes.map((n) => n.shape.id)).toEqual(["screen-a", "btn-a"]);
+
+    // When nothing is selected, displays only top-level root containers (depth 0)
+    const resultUnselected = useInspectionData(doc, null, undefined);
+    expect(resultUnselected.isScopedToRoot).toBe(false);
+    expect(resultUnselected.rootShape).toBeUndefined();
+    expect(resultUnselected.treeNodes.map((n) => n.shape.id)).toEqual(["screen-a", "screen-b"]);
+    expect(resultUnselected.treeNodes.every((n) => n.depth === 0)).toBe(true);
   });
 
   it("resolves root shape and properties for N-level deep nested child shapes", () => {

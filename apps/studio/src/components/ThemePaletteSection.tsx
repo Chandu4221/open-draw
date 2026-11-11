@@ -144,7 +144,7 @@ export function ThemePaletteSection({
                   id={`theme-slot-${slot}`}
                   type="text"
                   className="od-input"
-                  style={{ width: "100%", fontSize: "12px", padding: "4px 6px" }}
+                  style={{ width: "100%", fontSize: "11px", padding: "4px 6px" }}
                   placeholder="#hex"
                   value={val}
                   onChange={(e) => handleSlotChange(slot, e.target.value)}
@@ -159,7 +159,7 @@ export function ThemePaletteSection({
         <button
           type="button"
           className="od-btn od-btn--ghost"
-          style={{ width: "100%", fontSize: "12px", marginTop: "var(--od-4)" }}
+          style={{ width: "100%", fontSize: "11px", marginTop: "var(--od-4)" }}
           onClick={() => onThemeChange(undefined)}
         >
           Clear Theme Palette

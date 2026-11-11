@@ -89,7 +89,7 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
     <div style={{ display: "flex", flexDirection: "column" }}>
       {/* 1. IDENTITY */}
       <OdCard title="Identity" collapsible defaultExpanded>
-        <OdField label="Name" htmlFor="shape-name">
+        <OdField label="Name" htmlFor="shape-name" meta={`ID: ${selectedShape.id}`}>
           <input
             id="shape-name"
             type="text"
@@ -141,15 +141,12 @@ export function ShapeInspector(props: ShapeInspectorProps): React.JSX.Element {
           />
         </OdField>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-2)" }}>
-          <span className="od-meta">ID: {selectedShape.id}</span>
-          <span className="od-meta">
-            Container:{" "}
-            {rootShape
-              ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
-              : "Canvas"}
-          </span>
-        </div>
+        <span className="od-meta">
+          Container:{" "}
+          {rootShape
+            ? `${resolveShapeDisplayName(rootShape, activeProfile)} (${rootShape.id})`
+            : "Canvas"}
+        </span>
       </OdCard>
 
       {/* 2. GEOMETRY */}

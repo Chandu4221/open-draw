@@ -1,5 +1,5 @@
-import { isRootId, type Point, type ShapeId } from "@open-draw/contracts";
-import { absoluteBoundingBox, ancestorsOf, type Document } from "@open-draw/document";
+import { isRootId, ROOT_ROLES, type Point, type ShapeId } from "@open-draw/contracts";
+import { absoluteBoundingBox, ancestorsOf, type Document, type Shape } from "@open-draw/document";
 import { chipOverlayToSvg, pickChip } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
@@ -9,6 +9,17 @@ export interface SemanticChipOverlayOptions {
   readonly selectedIds: readonly ShapeId[];
   readonly zoom: number;
   readonly visibleChipRootIds?: ReadonlySet<ShapeId> | undefined;
+}
+
+function getRootChipLabel(shape: Shape): string {
+  const platform = shape.meta.platform;
+  const isProject = shape.meta.role === ROOT_ROLES.project;
+  const platformLabel =
+    platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : undefined;
+  if (isProject) {
+    return platformLabel ? `Project: ${platformLabel}` : "Project Space";
+  }
+  return platformLabel ?? "Container";
 }
 
 export function computeSemanticChipOverlays(options: SemanticChipOverlayOptions): string[] {
@@ -21,9 +32,7 @@ export function computeSemanticChipOverlays(options: SemanticChipOverlayOptions)
     let isActive = false;
 
     if (isRootId(shape.parentId)) {
-      const platform = shape.meta.platform;
-      chipLabel =
-        platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : "Container";
+      chipLabel = getRootChipLabel(shape);
       isInteractive = true;
       isActive = visibleChipRootIds?.has(shape.id) ?? false;
     } else if (shape.meta.semantic !== undefined) {
@@ -55,9 +64,7 @@ export function computeSemanticChipOverlays(options: SemanticChipOverlayOptions)
 export function pickAnyRootChip(doc: Document, world: Point, zoom: number): ShapeId | null {
   for (const shape of Object.values(doc.shapes)) {
     if (isRootId(shape.parentId)) {
-      const platform = shape.meta.platform;
-      const chipLabel =
-        platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : "Container";
+      const chipLabel = getRootChipLabel(shape);
       const box = absoluteBoundingBox(doc, shape);
       if (pickChip(chipLabel, box, world, zoom)) {
         return shape.id;

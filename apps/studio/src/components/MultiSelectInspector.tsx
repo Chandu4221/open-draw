@@ -13,6 +13,7 @@ export interface MultiSelectInspectorProps {
   ) => void;
   readonly onBatchDelete: () => void;
   readonly onClearSelection: () => void;
+  readonly onGroupProjectSpace?: (() => void) | undefined;
 }
 
 export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JSX.Element {
@@ -23,6 +24,7 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
     onBatchStyleChange,
     onBatchDelete,
     onClearSelection,
+    onGroupProjectSpace,
   } = props;
 
   const [fill, setFill] = useState<string>("#ffffff");
@@ -71,6 +73,18 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
           Clear
         </OdButton>
       </div>
+
+      {onGroupProjectSpace && (
+        <div style={{ marginBottom: "var(--od-12)" }}>
+          <OdButton
+            variant="primary"
+            style={{ width: "100%", height: "32px", fontSize: "var(--od-text-xs)" }}
+            onClick={onGroupProjectSpace}
+          >
+            Group into Project Space
+          </OdButton>
+        </div>
+      )}
 
       {/* Alignment Tools Card */}
       <OdCard title="Alignment" collapsible defaultExpanded>

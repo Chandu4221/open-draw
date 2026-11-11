@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { createDocument } from "@open-draw/document";
+import { parseShapeId, PLATFORMS, ROOT_ID, ROOT_ROLES, SHAPE_KINDS } from "@open-draw/contracts";
 import { ExportModal } from "./ExportModal";
 import * as DocumentIo from "../document-io";
 
@@ -14,7 +15,13 @@ describe("ExportModal", () => {
 
     try {
       const html = renderToString(
-        <ExportModal isOpen={true} onClose={vi.fn()} doc={doc} initialFormat="markdown" />,
+        <ExportModal
+          isOpen={true}
+          onClose={vi.fn()}
+          doc={doc}
+          initialFormat="markdown"
+          initialShowPreview={true}
+        />,
       );
 
       expect(html).toContain("Export preview unavailable");
@@ -22,5 +29,84 @@ describe("ExportModal", () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it("does not eagerly generate markdown on mount (JIT generation on demand)", () => {
+    const doc = createDocument([]);
+    const spy = vi.spyOn(DocumentIo, "generateExportMarkdown");
+    try {
+      renderToString(
+        <ExportModal isOpen={true} onClose={vi.fn()} doc={doc} initialFormat="markdown" />,
+      );
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("renders export scope selector when multiple roots exist on canvas", () => {
+    const doc = createDocument([
+      {
+        id: parseShapeId("root-1"),
+        parentId: ROOT_ID,
+        kind: SHAPE_KINDS.rect,
+        boundingBox: { x: 0, y: 0, width: 400, height: 800 },
+        meta: { platform: "androidNative", order: {} },
+      },
+      {
+        id: parseShapeId("root-2"),
+        parentId: ROOT_ID,
+        kind: SHAPE_KINDS.rect,
+        boundingBox: { x: 500, y: 0, width: 800, height: 600 },
+        meta: { platform: PLATFORMS.web, order: {} },
+      },
+    ]);
+
+    const html = renderToString(
+      <ExportModal isOpen={true} onClose={vi.fn()} doc={doc} initialFormat="markdown" />,
+    );
+
+    expect(html).toContain("Export Scope");
+    expect(html).toContain("Entire Canvas (All Screens &amp; Platforms)");
+    expect(html).toContain("androidNative");
+    expect(html).toContain("web");
+  });
+
+  it("renders Project Space and nested screens inside export scope selector", () => {
+    const doc = createDocument([
+      {
+        id: parseShapeId("proj-1"),
+        parentId: ROOT_ID,
+        kind: SHAPE_KINDS.section,
+        direction: "row",
+        boundingBox: { x: 0, y: 0, width: 1200, height: 900 },
+        label: "Mobile App",
+        meta: { platform: "androidNative", role: ROOT_ROLES.project, order: {} },
+      },
+      {
+        id: parseShapeId("screen-1"),
+        parentId: parseShapeId("proj-1"),
+        kind: SHAPE_KINDS.rect,
+        boundingBox: { x: 40, y: 40, width: 360, height: 720 },
+        label: "Login Screen",
+        meta: { order: {} },
+      },
+      {
+        id: parseShapeId("standalone-screen"),
+        parentId: ROOT_ID,
+        kind: SHAPE_KINDS.rect,
+        boundingBox: { x: 1400, y: 0, width: 800, height: 600 },
+        label: "Landing Page",
+        meta: { platform: PLATFORMS.web, order: {} },
+      },
+    ]);
+
+    const html = renderToString(
+      <ExportModal isOpen={true} onClose={vi.fn()} doc={doc} initialFormat="markdown" />,
+    );
+
+    expect(html).toContain("[Project Space] Mobile App");
+    expect(html).toContain("↳ Login Screen (Screen inside Mobile App)");
+    expect(html).toContain("Landing Page");
   });
 });

@@ -22,6 +22,32 @@ export function parseSemanticId(value: string): SemanticId {
 }
 
 /**
+ * Closed registry of high-level semantic categories.
+ */
+export const SEMANTIC_CATEGORIES = {
+  layout: "layout",
+  navigation: "navigation",
+  marketing: "marketing",
+  ecommerce: "ecommerce",
+  auth: "auth",
+  interactive: "interactive",
+  forms: "forms",
+  data: "data",
+  content: "content",
+  feedback: "feedback",
+} as const;
+
+export type SemanticCategory = (typeof SEMANTIC_CATEGORIES)[keyof typeof SEMANTIC_CATEGORIES];
+
+export const SEMANTIC_CATEGORY_VALUES: ReadonlySet<string> = new Set(
+  Object.values(SEMANTIC_CATEGORIES),
+);
+
+export function isValidSemanticCategory(value: unknown): value is SemanticCategory {
+  return typeof value === "string" && SEMANTIC_CATEGORY_VALUES.has(value);
+}
+
+/**
  * Closed registry of inspector property control types.
  */
 export const CONTROL_TYPES = {
