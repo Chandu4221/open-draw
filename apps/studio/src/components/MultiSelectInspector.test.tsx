@@ -103,4 +103,42 @@ describe("MultiSelectInspector", () => {
     expect(html).not.toContain("Distribute: 3+ shapes");
     expect(html).toContain("3 rects");
   });
+
+  it("displays shared fill, stroke, and strokeWidth when all selected shapes have identical styles", () => {
+    const s1 = { ...createMockRect("s1"), fill: "#ff0000", stroke: "#00ff00", strokeWidth: 4 };
+    const s2 = { ...createMockRect("s2"), fill: "#ff0000", stroke: "#00ff00", strokeWidth: 4 };
+
+    const html = renderToString(
+      <MultiSelectInspector
+        selectedShapes={[s1, s2]}
+        onAlign={vi.fn()}
+        onDistribute={vi.fn()}
+        onBatchStyleChange={vi.fn()}
+        onBatchDelete={vi.fn()}
+        onClearSelection={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('value="#ff0000"');
+    expect(html).toContain('value="#00ff00"');
+    expect(html).toContain('value="4"');
+  });
+
+  it("displays Mixed placeholder when selected shapes have different fills, strokes, or strokeWidths", () => {
+    const s1 = { ...createMockRect("s1"), fill: "#ff0000", stroke: "#00ff00", strokeWidth: 2 };
+    const s2 = { ...createMockRect("s2"), fill: "#0000ff", stroke: "#111111", strokeWidth: 6 };
+
+    const html = renderToString(
+      <MultiSelectInspector
+        selectedShapes={[s1, s2]}
+        onAlign={vi.fn()}
+        onDistribute={vi.fn()}
+        onBatchStyleChange={vi.fn()}
+        onBatchDelete={vi.fn()}
+        onClearSelection={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('placeholder="Mixed"');
+  });
 });

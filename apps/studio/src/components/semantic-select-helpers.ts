@@ -77,11 +77,15 @@ function getLocalStorage(): Storage | undefined {
   return undefined;
 }
 
-export function loadRecentSemanticTags(): readonly string[] {
+function getStorageKey(profileId?: string): string {
+  return profileId ? `${RECENT_STORAGE_KEY}:${profileId}` : RECENT_STORAGE_KEY;
+}
+
+export function loadRecentSemanticTags(profileId?: string): readonly string[] {
   try {
     const storage = getLocalStorage();
     if (!storage) return [];
-    const raw = storage.getItem(RECENT_STORAGE_KEY);
+    const raw = storage.getItem(getStorageKey(profileId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
@@ -90,14 +94,14 @@ export function loadRecentSemanticTags(): readonly string[] {
   }
 }
 
-export function saveRecentSemanticTag(tag: string): void {
+export function saveRecentSemanticTag(tag: string, profileId?: string): void {
   if (!tag) return;
   try {
     const storage = getLocalStorage();
     if (!storage) return;
-    const existing = loadRecentSemanticTags().filter((t) => t !== tag);
+    const existing = loadRecentSemanticTags(profileId).filter((t) => t !== tag);
     const updated = [tag, ...existing].slice(0, MAX_RECENT);
-    storage.setItem(RECENT_STORAGE_KEY, JSON.stringify(updated));
+    storage.setItem(getStorageKey(profileId), JSON.stringify(updated));
   } catch {
     // Ignore storage errors in restricted environments
   }

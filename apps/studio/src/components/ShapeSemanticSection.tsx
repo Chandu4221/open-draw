@@ -34,13 +34,13 @@ export function ShapeSemanticSection(props: ShapeSemanticSectionProps): React.JS
   const groupedSemantics = useMemo(() => groupProfileSemantics(activeProfile), [activeProfile]);
 
   const recentDefs = useMemo(() => {
-    const tags = loadRecentSemanticTags();
+    const tags = loadRecentSemanticTags(activeProfile?.id);
     return resolveRecentDefinitions(activeProfile, tags);
   }, [activeProfile]);
 
   const onSelectSemantic = (semanticId: string) => {
     if (semanticId) {
-      saveRecentSemanticTag(semanticId);
+      saveRecentSemanticTag(semanticId, activeProfile?.id);
     }
     handleSetSemantic(semanticId);
   };

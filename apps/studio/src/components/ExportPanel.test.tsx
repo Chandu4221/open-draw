@@ -80,4 +80,16 @@ describe("ExportPanel", () => {
 
     expect(html).toContain("Export ZIP · Entire Canvas");
   });
+
+  it("always scopes multi-container exports to a ZIP bundle even when only 1 format is selected", () => {
+    const html = renderToString(
+      <ExportPanel
+        doc={multiScreenDoc}
+        selectedShapes={[rootShape, rootShape2]}
+        onOpenAdvancedModal={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Export ZIP (2) · Selected Screens");
+  });
 });

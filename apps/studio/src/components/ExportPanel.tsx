@@ -1,24 +1,21 @@
 import React, { useMemo, useState } from "react";
-import { isRootId, PLATFORMS, ROOT_ROLES, type ShapeId } from "@open-draw/contracts";
+import { isRootId, type ShapeId } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
-import { PLATFORM_PROFILES } from "@open-draw/profiles";
-import {
-  resolveRootPlatform,
-  resolveRootShape,
-  resolveShapeDisplayName,
-} from "@open-draw/semantics";
+import { resolveRootShape } from "@open-draw/semantics";
 import { OdButton, OdIcon } from "@open-draw/ui";
 import {
   exportDocumentJson,
   exportDocumentMarkdown,
   exportDocumentPng,
   exportDocumentSvg,
-  generateExportJson,
-  generateExportMarkdown,
-  generateExportSvg,
 } from "../document-io";
 import { getPngBytes } from "../png-export";
-import { downloadZip, type ZipFileInput } from "../zip-export";
+import { downloadZip } from "../zip-export";
+import {
+  buildExportZipFiles,
+  CHECKBOX_LABEL_STYLE,
+  resolveExportTargetTitle,
+} from "./export-panel-helpers";
 
 export interface ExportPanelProps {
   readonly doc: Document;
@@ -26,16 +23,6 @@ export interface ExportPanelProps {
   readonly selectedShapes?: readonly Shape[] | undefined;
   readonly onOpenAdvancedModal?: (() => void) | undefined;
 }
-
-const CHECKBOX_LABEL_STYLE: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "var(--od-6)",
-  cursor: "pointer",
-  fontSize: "var(--od-text-xs)",
-  color: "var(--od-text)",
-  userSelect: "none",
-};
 
 export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
   const { doc, targetRootShape, selectedShapes, onOpenAdvancedModal } = props;
@@ -47,6 +34,7 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
     svg: false,
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // 1. Multi-selected root containers
   const selectedRootContainers = useMemo(() => {
@@ -72,31 +60,18 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
   const isMultiContainerSelected = selectedRootContainers.length >= 2;
   const isEntireCanvas = !targetRootShape && !isMultiContainerSelected;
 
-  const targetPlatform = targetRootShape ? resolveRootPlatform(doc, targetRootShape.id) : undefined;
-  const targetProfile = targetPlatform ? PLATFORM_PROFILES[targetPlatform] : undefined;
-
   const containerCount = isMultiContainerSelected
     ? selectedRootContainers.length
     : targetRootShape
       ? 1
       : canvasRootContainers.length;
 
-  const allComponents =
-    isMultiContainerSelected &&
-    selectedRootContainers.every((r) => r.meta.role === ROOT_ROLES.component);
-  const allWeb =
-    isMultiContainerSelected &&
-    selectedRootContainers.every((r) => r.meta.platform === PLATFORMS.web);
-
-  const targetTitle = isMultiContainerSelected
-    ? allComponents
-      ? "Selected Components"
-      : allWeb
-        ? "Selected Pages"
-        : "Selected Screens"
-    : targetRootShape
-      ? resolveShapeDisplayName(targetRootShape, targetProfile)
-      : "Entire Canvas";
+  const targetTitle = resolveExportTargetTitle(
+    doc,
+    isMultiContainerSelected,
+    selectedRootContainers,
+    targetRootShape,
+  );
 
   const selectedFormatsCount =
     (selectedFormats.markdown ? 1 : 0) +
@@ -109,7 +84,7 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
   const countSuffix = showContainerCount ? ` (${containerCount})` : "";
 
   const getFormatPrefix = (): string => {
-    if (selectedFormatsCount > 1) return "Export ZIP";
+    if (selectedFormatsCount > 1 || isMultiContainerSelected) return "Export ZIP";
     if (selectedFormats.markdown) return "Export Markdown";
     if (selectedFormats.json) return "Export JSON";
     if (selectedFormats.png) return "Export PNG";
@@ -133,7 +108,7 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "") || "export";
 
-      if (selectedFormatsCount === 1) {
+      if (!isMultiContainerSelected && selectedFormatsCount === 1) {
         if (selectedFormats.markdown) exportDocumentMarkdown(doc, { rootId });
         else if (selectedFormats.json) exportDocumentJson(doc, undefined, rootId);
         else if (selectedFormats.svg) exportDocumentSvg(doc, { rootId, includeAnnotations: true });
@@ -141,33 +116,45 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
         return;
       }
 
-      const files: ZipFileInput[] = [];
-      if (selectedFormats.markdown) {
-        files.push({
-          name: `${baseSlug}.md`,
-          data: generateExportMarkdown(doc, { rootId }),
-        });
-      }
-      if (selectedFormats.json) {
-        files.push({
-          name: `${baseSlug}.json`,
-          data: generateExportJson(doc, undefined, rootId),
-        });
-      }
-      if (selectedFormats.svg) {
-        files.push({
-          name: `${baseSlug}.svg`,
-          data: generateExportSvg(doc, { rootId, includeAnnotations: true }),
-        });
-      }
+      let pngBytesMap: Map<ShapeId | undefined, Uint8Array> | undefined;
+      let pngFailedCount = 0;
       if (selectedFormats.png) {
-        const pngData = await getPngBytes(doc, rootId);
-        if (pngData) {
-          files.push({
-            name: `${baseSlug}.png`,
-            data: pngData,
-          });
+        pngBytesMap = new Map();
+        if (isMultiContainerSelected) {
+          for (const root of selectedRootContainers) {
+            const pngData = await getPngBytes(doc, root.id);
+            if (pngData) {
+              pngBytesMap.set(root.id, pngData);
+            } else {
+              pngFailedCount++;
+            }
+          }
+        } else {
+          const pngData = await getPngBytes(doc, rootId);
+          if (pngData) {
+            pngBytesMap.set(rootId, pngData);
+          } else {
+            pngFailedCount++;
+          }
         }
+      }
+
+      const files = buildExportZipFiles({
+        doc,
+        isMultiContainerSelected,
+        selectedRootContainers,
+        targetRootShape,
+        selectedFormats,
+        baseSlug,
+        pngBytesMap,
+      });
+
+      if (pngFailedCount > 0) {
+        setExportError(
+          `PNG rendering failed (${pngFailedCount} file${pngFailedCount > 1 ? "s" : ""} omitted)`,
+        );
+      } else {
+        setExportError(null);
       }
 
       if (files.length > 0) {
@@ -198,9 +185,10 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
           <input
             type="checkbox"
             checked={selectedFormats.markdown}
-            onChange={(e) =>
-              setSelectedFormats((prev) => ({ ...prev, markdown: e.target.checked }))
-            }
+            onChange={(e) => {
+              setExportError(null);
+              setSelectedFormats((prev) => ({ ...prev, markdown: e.target.checked }));
+            }}
           />
           <span>Markdown</span>
         </label>
@@ -208,7 +196,10 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
           <input
             type="checkbox"
             checked={selectedFormats.json}
-            onChange={(e) => setSelectedFormats((prev) => ({ ...prev, json: e.target.checked }))}
+            onChange={(e) => {
+              setExportError(null);
+              setSelectedFormats((prev) => ({ ...prev, json: e.target.checked }));
+            }}
           />
           <span>JSON</span>
         </label>
@@ -216,7 +207,10 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
           <input
             type="checkbox"
             checked={selectedFormats.png}
-            onChange={(e) => setSelectedFormats((prev) => ({ ...prev, png: e.target.checked }))}
+            onChange={(e) => {
+              setExportError(null);
+              setSelectedFormats((prev) => ({ ...prev, png: e.target.checked }));
+            }}
           />
           <span>PNG</span>
         </label>
@@ -224,7 +218,10 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
           <input
             type="checkbox"
             checked={selectedFormats.svg}
-            onChange={(e) => setSelectedFormats((prev) => ({ ...prev, svg: e.target.checked }))}
+            onChange={(e) => {
+              setExportError(null);
+              setSelectedFormats((prev) => ({ ...prev, svg: e.target.checked }));
+            }}
           />
           <span>SVG</span>
         </label>
@@ -246,6 +243,19 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
         <OdIcon name="export" size={14} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{getButtonLabel()}</span>
       </OdButton>
+
+      {exportError && (
+        <span
+          role="alert"
+          style={{
+            fontSize: "var(--od-text-xs)",
+            color: "var(--od-danger)",
+            textAlign: "center",
+          }}
+        >
+          {exportError}
+        </span>
+      )}
 
       {onOpenAdvancedModal && (
         <OdButton

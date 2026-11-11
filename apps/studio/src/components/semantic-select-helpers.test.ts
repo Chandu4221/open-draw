@@ -61,4 +61,13 @@ describe("semantic select helpers", () => {
     expect(resolved.some((d) => d.id === "hero")).toBe(true);
     expect(resolved.some((d) => d.id === "pricing-table")).toBe(true);
   });
+
+  it("scopes recent tags by profile to prevent cross-profile tag leakage", () => {
+    saveRecentSemanticTag("navbar", "web");
+    saveRecentSemanticTag("top-app-bar", "androidNative");
+
+    expect(loadRecentSemanticTags("web")).toEqual(["navbar"]);
+    expect(loadRecentSemanticTags("androidNative")).toEqual(["top-app-bar"]);
+    expect(loadRecentSemanticTags("flutter")).toEqual([]);
+  });
 });

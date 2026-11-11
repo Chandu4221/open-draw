@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { Shape } from "@open-draw/document";
 import {
   OdBadge,
@@ -9,6 +9,16 @@ import {
   OdIconButton,
   OdInputGroup,
 } from "@open-draw/ui";
+import {
+  ALIGN_ACTIONS,
+  COLOR_SWATCH_STYLE,
+  computeSharedStyles,
+  DISTRIBUTE_ACTIONS,
+  DIVIDER_STYLE,
+  getSelectionSummary,
+  HEX_INPUT_STYLE,
+  toColorInputValue,
+} from "./multi-select-helpers";
 
 export type AlignmentType = "left" | "center" | "right" | "top" | "middle" | "bottom";
 
@@ -25,57 +35,6 @@ export interface MultiSelectInspectorProps {
   readonly onClearSelection: () => void;
 }
 
-const ALIGN_ACTIONS = [
-  { alignment: "left", name: "align-left", label: "Align Left" },
-  { alignment: "center", name: "align-center-horizontal", label: "Align Horizontal Center" },
-  { alignment: "right", name: "align-right", label: "Align Right" },
-  { alignment: "top", name: "align-top", label: "Align Top" },
-  { alignment: "middle", name: "align-center-vertical", label: "Align Vertical Center" },
-  { alignment: "bottom", name: "align-bottom", label: "Align Bottom" },
-] as const;
-
-const DISTRIBUTE_ACTIONS = [
-  { axis: "horizontal", name: "distribute-horizontal", label: "Distribute Horizontally" },
-  { axis: "vertical", name: "distribute-vertical", label: "Distribute Vertically" },
-] as const;
-
-const COLOR_SWATCH_STYLE: React.CSSProperties = {
-  width: "26px",
-  height: "var(--od-control-height)",
-  padding: 0,
-  cursor: "pointer",
-  flexShrink: 0,
-};
-
-const HEX_INPUT_STYLE: React.CSSProperties = {
-  flex: 1,
-  minWidth: 0,
-  width: 0,
-  padding: "0 var(--od-4)",
-  fontSize: "var(--od-text-xs)",
-};
-
-const DIVIDER_STYLE: React.CSSProperties = {
-  width: "1px",
-  height: "16px",
-  backgroundColor: "var(--od-border)",
-  margin: "0 2px",
-  flexShrink: 0,
-};
-
-function getSelectionSummary(shapes: readonly Shape[]): string {
-  if (shapes.length === 0) return "No items";
-  const counts = new Map<string, number>();
-  for (const s of shapes) {
-    counts.set(s.kind, (counts.get(s.kind) ?? 0) + 1);
-  }
-  const parts: string[] = [];
-  for (const [kind, count] of counts.entries()) {
-    parts.push(`${count} ${kind}${count > 1 ? "s" : ""}`);
-  }
-  return parts.join(", ");
-}
-
 export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JSX.Element {
   const {
     selectedShapes,
@@ -86,9 +45,48 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
     onClearSelection,
   } = props;
 
-  const [fill, setFill] = useState<string>("#ffffff");
-  const [stroke, setStroke] = useState<string>("#09090b");
-  const [strokeWidth, setStrokeWidth] = useState<number>(2);
+  const sharedStyles = useMemo(() => computeSharedStyles(selectedShapes), [selectedShapes]);
+
+  const shapesKey = useMemo(
+    () => selectedShapes.map((s) => `${s.id}:${s.fill}:${s.stroke}:${s.strokeWidth}`).join("|"),
+    [selectedShapes],
+  );
+
+  const [prevShapesKey, setPrevShapesKey] = useState(shapesKey);
+  const [fillInput, setFillInput] = useState<string | null>(null);
+  const [strokeInput, setStrokeInput] = useState<string | null>(null);
+  const [strokeWidthInput, setStrokeWidthInput] = useState<string | null>(null);
+
+  if (shapesKey !== prevShapesKey) {
+    setPrevShapesKey(shapesKey);
+    setFillInput(null);
+    setStrokeInput(null);
+    setStrokeWidthInput(null);
+  }
+
+  const effectiveFill =
+    fillInput !== null ? fillInput : sharedStyles.isFillMixed ? "" : (sharedStyles.fill ?? "");
+  const fillPlaceholder = sharedStyles.isFillMixed ? "Mixed" : "#ffffff";
+  const fillColorPickerValue = toColorInputValue(fillInput ?? sharedStyles.fill, "#ffffff");
+
+  const effectiveStroke =
+    strokeInput !== null
+      ? strokeInput
+      : sharedStyles.isStrokeMixed
+        ? ""
+        : (sharedStyles.stroke ?? "");
+  const strokePlaceholder = sharedStyles.isStrokeMixed ? "Mixed" : "#09090b";
+  const strokeColorPickerValue = toColorInputValue(strokeInput ?? sharedStyles.stroke, "#09090b");
+
+  const effectiveStrokeWidth =
+    strokeWidthInput !== null
+      ? strokeWidthInput
+      : sharedStyles.isStrokeWidthMixed
+        ? ""
+        : sharedStyles.strokeWidth !== undefined
+          ? String(sharedStyles.strokeWidth)
+          : "2";
+  const strokeWidthPlaceholder = sharedStyles.isStrokeWidthMixed ? "Mixed" : "2";
 
   const canDistribute = selectedShapes.length >= 3;
   const summaryText = getSelectionSummary(selectedShapes);
@@ -170,9 +168,9 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
               type="color"
               className="od-input"
               aria-label="Shared fill color picker"
-              value={fill.startsWith("#") && fill.length === 7 ? fill : "#ffffff"}
+              value={fillColorPickerValue}
               onChange={(e) => {
-                setFill(e.target.value);
+                setFillInput(e.target.value);
                 onBatchStyleChange(e.target.value, undefined, undefined);
               }}
               style={COLOR_SWATCH_STYLE}
@@ -181,12 +179,12 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
               id="multi-select-fill-hex"
               type="text"
               className="od-input"
-              placeholder="#ffffff"
+              placeholder={fillPlaceholder}
               aria-label="Shared fill hex code"
-              value={fill}
+              value={effectiveFill}
               onChange={(e) => {
                 const val = e.target.value;
-                setFill(val);
+                setFillInput(val);
                 if (val === "" || /^#[0-9a-fA-F]{6}$/.test(val)) {
                   onBatchStyleChange(val || null, undefined, undefined);
                 }
@@ -203,9 +201,9 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
               type="color"
               className="od-input"
               aria-label="Shared stroke color picker"
-              value={stroke.startsWith("#") && stroke.length === 7 ? stroke : "#09090b"}
+              value={strokeColorPickerValue}
               onChange={(e) => {
-                setStroke(e.target.value);
+                setStrokeInput(e.target.value);
                 onBatchStyleChange(undefined, e.target.value, undefined);
               }}
               style={COLOR_SWATCH_STYLE}
@@ -214,12 +212,12 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
               id="multi-select-stroke-hex"
               type="text"
               className="od-input"
-              placeholder="#09090b"
+              placeholder={strokePlaceholder}
               aria-label="Shared stroke hex code"
-              value={stroke}
+              value={effectiveStroke}
               onChange={(e) => {
                 const val = e.target.value;
-                setStroke(val);
+                setStrokeInput(val);
                 if (val === "" || /^#[0-9a-fA-F]{6}$/.test(val)) {
                   onBatchStyleChange(undefined, val || null, undefined);
                 }
@@ -237,12 +235,14 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
             max={24}
             unit="PX"
             aria-label="Shared stroke width in pixels"
-            value={strokeWidth}
+            value={effectiveStrokeWidth}
+            placeholder={strokeWidthPlaceholder}
             onChange={(e) => {
-              const val = Number(e.target.value);
-              if (!Number.isNaN(val) && val > 0) {
-                setStrokeWidth(val);
-                onBatchStyleChange(undefined, undefined, val);
+              const val = e.target.value;
+              setStrokeWidthInput(val);
+              const num = Number(val);
+              if (!Number.isNaN(num) && num > 0) {
+                onBatchStyleChange(undefined, undefined, num);
               }
             }}
           />
