@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { WEB_PROFILE } from "@open-draw/profiles";
+import { ANDROID_NATIVE_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   groupProfileSemantics,
   loadRecentSemanticTags,
@@ -69,5 +69,24 @@ describe("semantic select helpers", () => {
     expect(loadRecentSemanticTags("web")).toEqual(["navbar"]);
     expect(loadRecentSemanticTags("androidNative")).toEqual(["top-app-bar"]);
     expect(loadRecentSemanticTags("flutter")).toEqual([]);
+  });
+
+  it("groups android native profile semantics into 5 Material 3 categories with none in other", () => {
+    const groups = groupProfileSemantics(ANDROID_NATIVE_PROFILE);
+    expect(groups.length).toBe(5);
+
+    const categories = groups.map((g) => g.category);
+    expect(categories).toEqual(["layout", "navigation", "interactive", "forms", "feedback"]);
+
+    const otherGroup = groups.find((g) => g.category === "other");
+    expect(otherGroup).toBeUndefined();
+
+    const navGroup = groups.find((g) => g.category === "navigation");
+    expect(navGroup?.items.some((i) => i.id === "top-app-bar")).toBe(true);
+    expect(navGroup?.items.some((i) => i.id === "navigation-rail")).toBe(true);
+
+    const layoutGroup = groups.find((g) => g.category === "layout");
+    expect(layoutGroup?.items.some((i) => i.id === "scaffold")).toBe(true);
+    expect(layoutGroup?.items.some((i) => i.id === "card")).toBe(true);
   });
 });

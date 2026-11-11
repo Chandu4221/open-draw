@@ -104,6 +104,53 @@ describe("android native profile", () => {
     expect(ANDROID_NATIVE_PROFILE.semantics["tab-row"]?.displayName).toBe("Primary Tab Row");
     expect(ANDROID_NATIVE_PROFILE.semantics.badge?.displayName).toBe("Badge Indicator");
   });
+
+  it("organizes Material 3 semantics with category and scope across all 5 active categories", () => {
+    const semantics = Object.values(ANDROID_NATIVE_PROFILE.semantics);
+    expect(semantics.length).toBeGreaterThanOrEqual(30);
+
+    for (const def of semantics) {
+      expect(def.category).toBeDefined();
+      expect(def.scope).toBeDefined();
+    }
+
+    // Verify key components in each category
+    // Layout
+    expect(ANDROID_NATIVE_PROFILE.semantics.scaffold?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics.scaffold?.scope).toBe("section");
+    expect(ANDROID_NATIVE_PROFILE.semantics["list-item"]?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics["list-item"]?.scope).toBe("component");
+    expect(ANDROID_NATIVE_PROFILE.semantics.divider?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics["side-sheet"]?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics.carousel?.category).toBe("layout");
+
+    // Navigation
+    expect(ANDROID_NATIVE_PROFILE.semantics["bottom-app-bar"]?.category).toBe("navigation");
+    expect(ANDROID_NATIVE_PROFILE.semantics["bottom-app-bar"]?.scope).toBe("section");
+    expect(ANDROID_NATIVE_PROFILE.semantics["navigation-rail"]?.category).toBe("navigation");
+    expect(ANDROID_NATIVE_PROFILE.semantics["navigation-rail"]?.scope).toBe("section");
+    expect(ANDROID_NATIVE_PROFILE.semantics["navigation-drawer"]?.category).toBe("navigation");
+    expect(ANDROID_NATIVE_PROFILE.semantics["search-bar"]?.category).toBe("navigation");
+
+    // Interactive
+    expect(ANDROID_NATIVE_PROFILE.semantics["icon-button"]?.category).toBe("interactive");
+    expect(ANDROID_NATIVE_PROFILE.semantics["icon-button"]?.scope).toBe("component");
+    expect(ANDROID_NATIVE_PROFILE.semantics["segmented-button"]?.category).toBe("interactive");
+    expect(ANDROID_NATIVE_PROFILE.semantics["extended-fab"]?.category).toBe("interactive");
+
+    // Forms
+    expect(ANDROID_NATIVE_PROFILE.semantics["radio-button"]?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics.slider?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics.menu?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics["date-picker"]?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics["time-picker"]?.category).toBe("forms");
+
+    // Feedback
+    expect(ANDROID_NATIVE_PROFILE.semantics.snackbar?.category).toBe("feedback");
+    expect(ANDROID_NATIVE_PROFILE.semantics.snackbar?.scope).toBe("component");
+    expect(ANDROID_NATIVE_PROFILE.semantics["progress-indicator"]?.category).toBe("feedback");
+    expect(ANDROID_NATIVE_PROFILE.semantics.tooltip?.category).toBe("feedback");
+  });
 });
 
 describe("flutter profile", () => {
