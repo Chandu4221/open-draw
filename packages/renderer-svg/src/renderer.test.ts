@@ -23,6 +23,7 @@ import {
   fallbackShapeToSvg,
   previewLineToSvg,
   previewPenPathToSvg,
+  renderSingleShapeSvg,
   selectionOverlayToSvg,
   computeChipBounds,
   pickChip,
@@ -62,6 +63,29 @@ describe("documentToSvg", () => {
     expect(svg).toContain('x2="110"');
     expect(svg).toContain("<polyline");
     expect(svg).toContain('points="50,50 90,130 130,50"');
+  });
+
+  it("wraps shape with data-shape-id when wrapShapeId option is true", () => {
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const rectShape = createRect(
+      rectId,
+      { x: 10, y: 20, width: 100, height: 50 },
+      { parent: pageId },
+    );
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 800, height: 600 }),
+      rectShape,
+    ]);
+
+    const svg = documentToSvg(doc, { wrapShapeId: true });
+    expect(svg).toContain(`<g data-shape-id="${rectId}">`);
+    expect(svg).toContain("<rect");
+
+    const singleSvg = renderSingleShapeSvg(doc, rectShape, { wrapShapeId: true });
+    expect(singleSvg).toBe(
+      `<g data-shape-id="${rectId}"><rect x="10" y="20" width="100" height="50" fill="#ffffff" stroke="#1f2933" /></g>`,
+    );
   });
 
   it("renders defined fallback dashed box and fires onFallback for unregistered shape kind (ADR-0003 D3)", () => {

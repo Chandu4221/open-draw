@@ -2,7 +2,7 @@
 // Encapsulates machine transition, camera transform, selection state,
 // shape-kind capabilities, and action dispatch.
 import type { BoundingBox, CapabilityId, DeviceType, Point, ShapeId } from "@open-draw/contracts";
-import type { Document } from "@open-draw/document";
+import { type Document, shapeListInOrder } from "@open-draw/document";
 import type { ActionId, KeyboardEventDescriptor } from "@open-draw/input";
 import { resolveKeyBinding } from "@open-draw/input";
 import {
@@ -75,12 +75,14 @@ export interface CanvasController {
   pickShape(doc: Document, worldPoint: Point): ShapeId | null;
   pickShapesInBox(doc: Document, marqueeBox: BoundingBox): readonly ShapeId[];
   getSpatialIndex(doc: Document): SpatialIndex;
+  invalidateSpatialIndex(): void;
   pickHandle(worldBox: BoundingBox, screenPoint: Point): HandleId | null;
   resolveAction(event: KeyboardEventDescriptor): ActionId | undefined;
   resolveSelectionDrillDown(doc: Document, hitId: ShapeId, isDoubleClick?: boolean): ShapeId;
 
   subscribe(event: ControllerEvent, listener: () => void): () => void;
   emit(event: ControllerEvent): void;
+  batch(fn: () => void): void;
   clearListeners(): void;
 
   getActiveDeviceType(rootId?: ShapeId): DeviceType | undefined;
@@ -120,7 +122,14 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.machineChanged]: new Set(),
   };
 
+  let batchDepth = 0;
+  const queuedEvents = new Set<ControllerEvent>();
+
   const emit = (event: ControllerEvent): void => {
+    if (batchDepth > 0) {
+      queuedEvents.add(event);
+      return;
+    }
     const set = listeners[event];
     if (set !== undefined) {
       for (const listener of set) {
@@ -129,11 +138,97 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     }
   };
 
+  /**
+   * Batches multiple synchronous controller operations, deferring and deduplicating
+   * emitted controller events until the outermost batch scope completes (R-018, ADR-0002 D8).
+   * Nested calls increment the batch depth and do not flush prematurely.
+   */
+  const batch = (fn: () => void): void => {
+    batchDepth += 1;
+    try {
+      fn();
+    } finally {
+      batchDepth -= 1;
+      if (batchDepth === 0) {
+        const events = Array.from(queuedEvents);
+        queuedEvents.clear();
+        for (const event of events) {
+          emit(event);
+        }
+      }
+    }
+  };
+
   let cachedSpatialDoc: Document | null = null;
   let cachedSpatialIndex: SpatialIndex | null = null;
 
+  function isSpatialEquivalent(a: Document, b: Document): boolean {
+    if (a === b) return true;
+    const aShapes = a.shapes;
+    const bShapes = b.shapes;
+    const aKeys = Object.keys(aShapes);
+    const bKeys = Object.keys(bShapes);
+    if (aKeys.length !== bKeys.length) return false;
+    let keysMatch = true;
+    for (let i = 0; i < aKeys.length; i += 1) {
+      if (aKeys[i] !== bKeys[i]) {
+        keysMatch = false;
+        break;
+      }
+    }
+    if (keysMatch) {
+      for (let i = 0; i < aKeys.length; i += 1) {
+        const id = aKeys[i] as ShapeId;
+        const sA = aShapes[id];
+        const sB = bShapes[id];
+        if (sA === undefined || sB === undefined) return false;
+        if (sA === sB) continue;
+        if (sA.parentId !== sB.parentId) return false;
+        const boxA = sA.boundingBox;
+        const boxB = sB.boundingBox;
+        if (boxA === boxB) continue;
+        if (
+          boxA.x !== boxB.x ||
+          boxA.y !== boxB.y ||
+          boxA.width !== boxB.width ||
+          boxA.height !== boxB.height
+        ) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Canonical fallback when key order differed (ADR-0011)
+    const aList = shapeListInOrder(a);
+    const bList = shapeListInOrder(b);
+    if (aList.length !== bList.length) return false;
+    for (let i = 0; i < aList.length; i += 1) {
+      const sA = aList[i]!;
+      const sB = bList[i]!;
+      if (sA.id !== sB.id || sA.parentId !== sB.parentId) return false;
+      const boxA = sA.boundingBox;
+      const boxB = sB.boundingBox;
+      if (boxA === boxB) continue;
+      if (
+        boxA.x !== boxB.x ||
+        boxA.y !== boxB.y ||
+        boxA.width !== boxB.width ||
+        boxA.height !== boxB.height
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function ensureSpatialIndex(doc: Document): SpatialIndex {
-    if (cachedSpatialIndex !== null && cachedSpatialDoc === doc) {
+    if (
+      cachedSpatialIndex !== null &&
+      cachedSpatialDoc !== null &&
+      isSpatialEquivalent(cachedSpatialDoc, doc)
+    ) {
+      cachedSpatialDoc = doc;
       return cachedSpatialIndex;
     }
     cachedSpatialDoc = doc;
@@ -202,6 +297,10 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     hasCapability: (kind, capability) => shapeKindRegistry.hasCapability(kind, capability),
 
     getSpatialIndex: (doc) => ensureSpatialIndex(doc),
+    invalidateSpatialIndex: () => {
+      cachedSpatialDoc = null;
+      cachedSpatialIndex = null;
+    },
     pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry, ensureSpatialIndex(doc)),
     pickShapesInBox: (doc, box) => pickShapesInBox(doc, box, ensureSpatialIndex(doc)),
     pickHandle: (box, point) => pickHandle(camera, box, point),
@@ -222,6 +321,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     emit: (event) => {
       emit(event);
     },
+    batch,
     clearListeners: () => {
       for (const set of Object.values(listeners)) {
         set.clear();

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Spatial Index Lifecycle & Canonical Equivalence (ADR-0011, R-016)**: Added `invalidateSpatialIndex()` on `CanvasController` and canonical fallback for spatial equivalence checking when map key order varies without geometric drift.
+- **Transaction-Driven Incremental SVG Patching (R-016, R-018)**: Incremental DOM `outerHTML` patching for in-place property mutations across multi-selections of any size, eliminating full SVG scene re-serialization.
+- **Re-entrant Batch Scopes (R-018, ADR-0002 D8)**: Stack-tracked `batchDepth` in `CanvasController.batch()` to isolate nested batch execution and prevent premature event flushing.
 - **Container Resize Handling (R-008, R-016)**: Integrated `ResizeObserver` on editor container with zero-dimension hidden state skipping and automatic viewport recalibration.
 - **Custom Shape Extensions (ADR-0003, R-005, R-006)**: `CustomShapeContract` extension API with runtime registration, validation, default shape factory, and hit-testing hooks.
 - **Document JSON Paste Support (R-006, R-016, R-018)**: Native clipboard ingestion of full document JSON trees (`schema.version: 1`) with shape limit enforcement and ID remapping.
@@ -17,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Spatial Index Cache Thrashing (ADR-0011)**: Spatial index cache keyed on spatial equivalence rather than document object identity, preventing index rebuilds on every non-spatial property edit.
+- **Multi-Touch Scene Reset Leaks (R-008, R-018)**: Pruned stale touchTracker points and forced scene transform reset on multi-touch pinch cancellation.
+- **Ghost Shape Selection (R-016)**: Pruned non-existent shape IDs in `editor.select` and `editor.selectMany`, exposing `reconcileSelection()`.
+- **Custom Shape Mount Rendering Overhead (ADR-0003)**: Skipped document re-hydration and forced render in `registerCustomShape` when zero instances of the shape kind exist.
 - **Select Tool Marquee Overlay (R-008, R-016)**: Marquee selection rectangle rendered with `fill="none"` borders only to eliminate solid background color occlusion.
 - **Pointer & Clipboard Isolation (R-006, R-008, ADR-0002)**: Resolved clipboard envelope shadowing, pointer capture release leaks, and paste shape boundaries across concurrent editors.
 

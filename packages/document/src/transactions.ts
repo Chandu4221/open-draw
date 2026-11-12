@@ -27,6 +27,9 @@ export interface TransactionResult {
 export function applyCommand(document: Document, command: Command): CommandResult {
   const shapes: Record<ShapeId, Shape> = { ...document.shapes };
   const inverse = applyCommandToMap(shapes, command);
+  if (inverse.length === 0) {
+    return { document, inverse: [] };
+  }
   return { document: createDocumentFromMap(shapes), inverse };
 }
 
@@ -36,6 +39,9 @@ export function applyTransaction(document: Document, transaction: Transaction): 
   for (const command of transaction.commands) {
     const inv = applyCommandToMap(shapes, command);
     inverse.push(...inv);
+  }
+  if (inverse.length === 0) {
+    return { document, inverse: [] };
   }
   const nextDoc = createDocumentFromMap(shapes);
   // Undo runs the inverses back-to-front.

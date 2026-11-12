@@ -203,24 +203,40 @@ export function querySpatialIndexPoint(
   tolerance = 0,
 ): readonly SpatialIndexItem[] {
   if (index.root === null) return [];
+  const px = point.x;
+  const py = point.y;
   const results: SpatialIndexItem[] = [];
   const stack: SpatialNode[] = [index.root];
 
   while (stack.length > 0) {
     const node = stack.pop()!;
-    if (!pointInSpatialBox(node.box, point, tolerance)) {
+    const nb = node.box;
+    if (
+      px < nb.minX - tolerance ||
+      px >= nb.maxX + tolerance ||
+      py < nb.minY - tolerance ||
+      py >= nb.maxY + tolerance
+    ) {
       continue;
     }
     if (node.isLeaf) {
-      for (const item of node.items) {
-        const itemBox = toSpatialBox(item.box);
-        if (pointInSpatialBox(itemBox, point, tolerance)) {
+      const items = node.items;
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i]!;
+        const ib = item.box;
+        if (
+          px >= ib.x - tolerance &&
+          px < ib.x + ib.width + tolerance &&
+          py >= ib.y - tolerance &&
+          py < ib.y + ib.height + tolerance
+        ) {
           results.push(item);
         }
       }
     } else {
-      for (let i = 0; i < node.children.length; i += 1) {
-        stack.push(node.children[i]!);
+      const children = node.children;
+      for (let i = 0; i < children.length; i += 1) {
+        stack.push(children[i]!);
       }
     }
   }
@@ -237,24 +253,39 @@ export function querySpatialIndexBox(
   box: BoundingBox,
 ): readonly SpatialIndexItem[] {
   if (index.root === null) return [];
-  const targetSpatialBox = toSpatialBox(box);
+  const targetMinX = box.x;
+  const targetMinY = box.y;
+  const targetMaxX = box.x + box.width;
+  const targetMaxY = box.y + box.height;
   const results: SpatialIndexItem[] = [];
   const stack: SpatialNode[] = [index.root];
 
   while (stack.length > 0) {
     const node = stack.pop()!;
-    if (!spatialBoxesIntersect(node.box, targetSpatialBox)) {
+    const nb = node.box;
+    if (
+      nb.minX >= targetMaxX ||
+      nb.maxX <= targetMinX ||
+      nb.minY >= targetMaxY ||
+      nb.maxY <= targetMinY
+    ) {
       continue;
     }
     if (node.isLeaf) {
-      for (const item of node.items) {
-        if (spatialBoxesIntersect(toSpatialBox(item.box), targetSpatialBox)) {
+      const items = node.items;
+      for (let i = 0; i < items.length; i += 1) {
+        const item = items[i]!;
+        const ib = item.box;
+        const right = ib.x + ib.width;
+        const bottom = ib.y + ib.height;
+        if (ib.x < targetMaxX && right > targetMinX && ib.y < targetMaxY && bottom > targetMinY) {
           results.push(item);
         }
       }
     } else {
-      for (let i = 0; i < node.children.length; i += 1) {
-        stack.push(node.children[i]!);
+      const children = node.children;
+      for (let i = 0; i < children.length; i += 1) {
+        stack.push(children[i]!);
       }
     }
   }
