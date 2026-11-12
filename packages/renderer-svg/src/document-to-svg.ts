@@ -158,7 +158,7 @@ export function shapeToSvg(shape: Shape, box: BoundingBox, options?: RenderOptio
   if (shape.content !== undefined && shape.content !== null && shape.content.trim().length > 0) {
     const prefix = options?.instanceId ? `${escapeXml(options.instanceId)}-` : "";
     const clipId = `clip-${prefix}${escapeXml(shape.id)}`;
-    const clip = `<clipPath id="${clipId}"><rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" /></clipPath>`;
+    const clip = `<defs><clipPath id="${clipId}"><rect x="${num(box.x)}" y="${num(box.y)}" width="${num(box.width, 1)}" height="${num(box.height, 1)}" fill="none" /></clipPath></defs>`;
     const centerX = num(box.x + box.width / 2);
     const centerY = num(box.y + box.height / 2);
     const textColor = escapeXml(

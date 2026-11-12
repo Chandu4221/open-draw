@@ -36,67 +36,8 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
   const [propertiesExpanded, setPropertiesExpanded] = useState(true);
   const [layersExpanded, setLayersExpanded] = useState(true);
   const [exportExpanded, setExportExpanded] = useState(true);
-  const [propertiesHeight, setPropertiesHeight] = useState<number | undefined>(undefined);
-  const [isDragging, setIsDragging] = useState(false);
 
   const sidebarRef = useRef<HTMLElement | null>(null);
-  const propertiesRef = useRef<HTMLDivElement | null>(null);
-  const isDraggingRef = useRef(false);
-  const startYRef = useRef(0);
-  const startHeightRef = useRef(0);
-
-  const handleSashPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    startYRef.current = e.clientY;
-    startHeightRef.current = propertiesRef.current?.getBoundingClientRect().height ?? 300;
-  };
-
-  const handleSashPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDraggingRef.current) return;
-    const deltaY = e.clientY - startYRef.current;
-    const containerHeight = sidebarRef.current?.getBoundingClientRect().height ?? 600;
-    // Allow dragging up to 36px (header) and down to containerHeight - 36px
-    const clamped = Math.max(36, Math.min(containerHeight - 36, startHeightRef.current + deltaY));
-    setPropertiesHeight(clamped);
-  };
-
-  const handleSashPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore if pointer capture already lost
-    }
-  };
-
-  const handleSashKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setPropertiesHeight((prev) => {
-        const cur = prev ?? propertiesRef.current?.getBoundingClientRect().height ?? 300;
-        return Math.max(36, cur - 16);
-      });
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setPropertiesHeight((prev) => {
-        const cur = prev ?? propertiesRef.current?.getBoundingClientRect().height ?? 300;
-        const containerHeight = sidebarRef.current?.getBoundingClientRect().height ?? 600;
-        return Math.min(containerHeight - 36, cur + 16);
-      });
-    }
-  };
-
-  const propertiesMaxHeight = !propertiesExpanded
-    ? "36px"
-    : layersExpanded
-      ? propertiesHeight !== undefined
-        ? `${propertiesHeight}px`
-        : "50%"
-      : undefined;
 
   return (
     <aside
@@ -111,22 +52,19 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         borderBottom: "none",
         borderRight: "none",
         borderRadius: 0,
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
         display: "flex",
         flexDirection: "column",
         flexShrink: 0,
       }}
     >
-      {/* 1. PROPERTIES Panel (auto-hugs content via flex: 0 1 auto; max-height: ...) */}
+      {/* 1. PROPERTIES Panel */}
       <div
-        ref={propertiesRef}
         style={{
-          flex: propertiesExpanded ? "0 1 auto" : "0 0 36px",
-          maxHeight: propertiesMaxHeight,
-          minHeight: "36px",
+          flex: "0 0 auto",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
         }}
       >
         <SidebarPanelHeader
@@ -154,10 +92,6 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         {/* Inspector container: always mounted to preserve state */}
         <div
           style={{
-            flex: "1 1 auto",
-            minHeight: 0,
-            overflowY: "auto",
-            overflowX: "hidden",
             display: propertiesExpanded ? "block" : "none",
           }}
         >
@@ -165,33 +99,13 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         </div>
       </div>
 
-      {/* 2. Draggable Horizontal Sash Separator */}
-      {propertiesExpanded && layersExpanded && (
-        <div
-          role="separator"
-          tabIndex={0}
-          aria-orientation="horizontal"
-          aria-label="Resize panels"
-          className={isDragging ? "od-sidebar-sash od-sidebar-sash--active" : "od-sidebar-sash"}
-          onPointerDown={handleSashPointerDown}
-          onPointerMove={handleSashPointerMove}
-          onPointerUp={handleSashPointerUp}
-          onKeyDown={handleSashKeyDown}
-        />
-      )}
-
-      {/* 3. LAYERS Panel (auto-hugs content via flex: 0 1 auto; scrolls when constrained) */}
+      {/* 2. LAYERS Panel */}
       <div
         style={{
-          flex: layersExpanded ? "0 1 auto" : "0 0 36px",
-          minHeight: "36px",
+          flex: "0 0 auto",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
-          borderTop:
-            propertiesExpanded && layersExpanded
-              ? "none"
-              : "var(--od-border-width) solid var(--od-border)",
+          borderTop: "var(--od-border-width) solid var(--od-border)",
         }}
       >
         <SidebarPanelHeader
@@ -206,10 +120,7 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         {/* TreeOutline container: always mounted to preserve state */}
         <div
           style={{
-            flex: "1 1 auto",
-            minHeight: 0,
-            overflow: "hidden",
-            display: layersExpanded ? "flex" : "none",
+            display: layersExpanded ? "block" : "none",
           }}
         >
           <TreeOutline
@@ -224,7 +135,7 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
         </div>
       </div>
 
-      {/* 4. EXPORT Panel */}
+      {/* 3. EXPORT Panel */}
       {doc && (
         <div
           style={{

@@ -481,4 +481,25 @@ describe("exportMarkdown", () => {
     expect(md).toContain("- **Stack Guidance (Android)**: Implement using Android Jetpack Compose");
     expect(md).toContain("- **Stack Guidance (Flutter)**: Implement using Flutter and Dart");
   });
+
+  it("exports semantic context and slot inference directive (Smart Semantics)", () => {
+    const page = createPage(
+      parseShapeId("page-1"),
+      { x: 0, y: 0, width: 800, height: 600 },
+      {
+        label: "Dashboard",
+        meta: {
+          platform: PLATFORMS.web,
+          order: {},
+        },
+      },
+    );
+    const doc = createDocument([page]);
+    const md = exportMarkdown(doc, { includeAiDirectives: true });
+
+    expect(md).toContain("- **Semantic Context & Slot Inference (Smart Semantics)**:");
+    expect(md).toContain(
+      "Child elements inherit semantic roles from their tagged parent container",
+    );
+  });
 });

@@ -559,12 +559,26 @@ describe("cross-platform concept harmonization (Idea 2, Issues D1, D2, D3)", () 
     );
 
     // Button equivalents
-    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.flutter, "button")).toBe(
-      "elevated-button",
-    );
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.flutter, "button")).toBe("button");
     expect(
       suggestPlatformEquivalent(PLATFORMS.flutter, PLATFORMS.androidNative, "elevated-button"),
     ).toBe("button");
+
+    // Switch equivalents (Web toggle-switch <-> Android switch)
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.androidNative, "toggle-switch")).toBe(
+      "switch",
+    );
+    expect(suggestPlatformEquivalent(PLATFORMS.androidNative, PLATFORMS.web, "switch")).toBe(
+      "toggle-switch",
+    );
+
+    // Search equivalents
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.ios, "search-bar")).toBe(
+      "search-bar",
+    );
+    expect(suggestPlatformEquivalent(PLATFORMS.flutter, PLATFORMS.web, "search-bar")).toBe(
+      "search-bar",
+    );
 
     // Identity when platforms match
     expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.web, "navbar")).toBe("navbar");
@@ -579,6 +593,12 @@ describe("cross-platform concept harmonization (Idea 2, Issues D1, D2, D3)", () 
     expect(equivalents.androidNative).toBe("text-field");
     expect(equivalents.flutter).toBe("text-field");
     expect(equivalents.ios).toBe("text-field");
+
+    const switchEquivalents = getPlatformEquivalents("switch", PLATFORMS.androidNative);
+    expect(switchEquivalents.web).toBe("toggle-switch");
+    expect(switchEquivalents.androidNative).toBe("switch");
+    expect(switchEquivalents.flutter).toBe("switch");
+    expect(switchEquivalents.ios).toBe("switch");
   });
 });
 

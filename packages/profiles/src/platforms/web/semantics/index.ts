@@ -1,3 +1,4 @@
+// Pruned to core vocabulary – variants live in properties
 import type { SemanticDefinition } from "@open-draw/contracts";
 import { AUTH_SEMANTICS } from "./auth.js";
 import { CONTENT_SEMANTICS } from "./content.js";

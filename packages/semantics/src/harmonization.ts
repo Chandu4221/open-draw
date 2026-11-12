@@ -26,7 +26,7 @@ export const HARMONIZED_CONCEPTS: Readonly<
   button: Object.freeze({
     web: "button",
     androidNative: "button",
-    flutter: "elevated-button",
+    flutter: "button",
     ios: "button",
   }),
   card: Object.freeze({
@@ -42,13 +42,13 @@ export const HARMONIZED_CONCEPTS: Readonly<
     ios: "text-field",
   }),
   dialog: Object.freeze({
-    web: "dialog",
+    web: "modal",
     androidNative: "dialog",
     flutter: "dialog",
     ios: "alert",
   }),
   switch: Object.freeze({
-    web: "checkbox",
+    web: "toggle-switch",
     androidNative: "switch",
     flutter: "switch",
     ios: "switch",
@@ -56,12 +56,31 @@ export const HARMONIZED_CONCEPTS: Readonly<
   tabs: Object.freeze({
     web: "tabs",
     androidNative: "tab-row",
+    flutter: "tab-bar",
     ios: "segmented-control",
+  }),
+  search: Object.freeze({
+    web: "search-bar",
+    androidNative: "search-bar",
+    flutter: "search-bar",
+    ios: "search-bar",
   }),
 });
 
 function normalizePlatform(platform: PlatformId | string): PlatformId {
   return (PLATFORM_BY_VALUE[platform] ?? platform) as PlatformId;
+}
+
+function normalizeSemanticId(platform: PlatformId, semanticId: string): string {
+  if (
+    platform === "flutter" &&
+    (semanticId === "elevated-button" ||
+      semanticId === "outlined-button" ||
+      semanticId === "text-button")
+  ) {
+    return "button";
+  }
+  return semanticId;
 }
 
 /**
@@ -80,8 +99,10 @@ export function suggestPlatformEquivalent(
     return parseSemanticId(semanticId);
   }
 
+  const effectiveId = normalizeSemanticId(normSource, semanticId);
+
   for (const mapping of Object.values(HARMONIZED_CONCEPTS)) {
-    if (mapping[normSource] === semanticId && mapping[normTarget] !== undefined) {
+    if (mapping[normSource] === effectiveId && mapping[normTarget] !== undefined) {
       return parseSemanticId(mapping[normTarget]!);
     }
   }
@@ -97,10 +118,11 @@ export function getPlatformEquivalents(
   currentPlatform: PlatformId | string,
 ): Readonly<Partial<Record<PlatformId, SemanticId>>> {
   const normCurrent = normalizePlatform(currentPlatform);
+  const effectiveId = normalizeSemanticId(normCurrent, semanticId);
   const result: Partial<Record<PlatformId, SemanticId>> = {};
 
   for (const mapping of Object.values(HARMONIZED_CONCEPTS)) {
-    if (mapping[normCurrent] === semanticId) {
+    if (mapping[normCurrent] === effectiveId) {
       for (const [platform, tag] of Object.entries(mapping)) {
         if (tag !== undefined) {
           result[platform as PlatformId] = parseSemanticId(tag);

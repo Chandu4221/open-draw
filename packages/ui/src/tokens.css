@@ -14,6 +14,9 @@
   /* Neutral scale (monochromatic light) */
   --od-bg: #f4f4f5; /* general app bg */
   --od-canvas-bg: #e5e5e8; /* darker neutral workbench for strong canvas contrast */
+  --od-canvas-grid: #c4c4c8; /* dot grid color on workbench */
+  --od-canvas-text: #09090b; /* brand label on canvas workbench */
+  --od-canvas-text-muted: #52525b; /* hint text on canvas workbench */
   --od-surface: #ffffff; /* panels, toolbar, sidebar */
   --od-surface-raised: #ffffff;
   --od-border: #e4e4e7;
@@ -69,7 +72,10 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --od-bg: #09090b;
-    --od-canvas-bg: #09090b;
+    --od-canvas-bg: #e5e5e8;
+    --od-canvas-grid: #c4c4c8;
+    --od-canvas-text: #09090b;
+    --od-canvas-text-muted: #52525b;
     --od-surface: #141416;
     --od-surface-raised: #1c1c1f;
     --od-border: #27272a;
@@ -92,7 +98,10 @@
 
 :root[data-theme="dark"] {
   --od-bg: #09090b;
-  --od-canvas-bg: #09090b;
+  --od-canvas-bg: #e5e5e8;
+  --od-canvas-grid: #c4c4c8;
+  --od-canvas-text: #09090b;
+  --od-canvas-text-muted: #52525b;
   --od-surface: #141416;
   --od-surface-raised: #1c1c1f;
   --od-border: #27272a;

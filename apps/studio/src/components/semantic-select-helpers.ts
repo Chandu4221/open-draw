@@ -116,3 +116,92 @@ export function resolveRecentDefinitions(
     .map((tag) => activeProfile.semantics[tag])
     .filter((def): def is SemanticDefinition => Boolean(def));
 }
+
+export interface FlatSemanticOption {
+  readonly id: string;
+  readonly displayName: string;
+  readonly category?: string | undefined;
+}
+
+export function filterSemanticDefinitions(
+  allDefs: readonly SemanticDefinition[],
+  query: string,
+): readonly SemanticDefinition[] {
+  const clean = query.trim().toLowerCase();
+  if (!clean) return [];
+  return allDefs
+    .filter(
+      (d) =>
+        d.displayName.toLowerCase().includes(clean) ||
+        d.id.toLowerCase().includes(clean) ||
+        Boolean(d.category && d.category.toLowerCase().includes(clean)),
+    )
+    .sort((a, b) => {
+      const aStarts =
+        a.displayName.toLowerCase().startsWith(clean) || a.id.toLowerCase().startsWith(clean);
+      const bStarts =
+        b.displayName.toLowerCase().startsWith(clean) || b.id.toLowerCase().startsWith(clean);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return a.displayName.localeCompare(b.displayName);
+    });
+}
+
+export interface BuildFlatSemanticOptionsArgs {
+  readonly placeholder: string;
+  readonly query: string;
+  readonly recentDefs: readonly SemanticDefinition[];
+  readonly groupedSemantics: readonly SemanticGroup[];
+  readonly filteredMatches: readonly SemanticDefinition[];
+  readonly selectedTag: string;
+  readonly activeProfile: PlatformProfile | undefined;
+}
+
+export function buildFlatSemanticOptions(
+  args: BuildFlatSemanticOptionsArgs,
+): readonly FlatSemanticOption[] {
+  const {
+    placeholder,
+    query,
+    recentDefs,
+    groupedSemantics,
+    filteredMatches,
+    selectedTag,
+    activeProfile,
+  } = args;
+  const list: FlatSemanticOption[] = [{ id: "", displayName: placeholder }];
+  const clean = query.trim().toLowerCase();
+
+  if (!clean) {
+    for (const def of recentDefs) {
+      list.push({ id: def.id, displayName: def.displayName });
+    }
+    if (selectedTag && !activeProfile?.semantics[selectedTag]) {
+      list.push({ id: selectedTag, displayName: `[Foreign] ${selectedTag}` });
+    }
+    for (const group of groupedSemantics) {
+      for (const item of group.items) {
+        list.push({
+          id: item.id,
+          displayName: item.displayName,
+          category: group.title,
+        });
+      }
+    }
+  } else {
+    for (const item of filteredMatches) {
+      list.push({
+        id: item.id,
+        displayName: item.displayName,
+        ...(item.category ? { category: item.category } : {}),
+      });
+    }
+  }
+
+  return list;
+}
+
+export function getNextHighlightedIndex(current: number, total: number, delta: 1 | -1): number {
+  if (total <= 0) return 0;
+  return (current + delta + total) % total;
+}

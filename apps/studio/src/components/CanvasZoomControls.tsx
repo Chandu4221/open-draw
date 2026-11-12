@@ -5,13 +5,27 @@ export interface CanvasZoomControlsProps {
   readonly zoomPercent: number;
   readonly handleZoom: (factor: number) => void;
   readonly handleResetZoom: () => void;
+  readonly theme?: "light" | "dark" | undefined;
+  readonly onToggleTheme?: (() => void) | undefined;
 }
 
 export function CanvasZoomControls(props: CanvasZoomControlsProps): React.JSX.Element {
-  const { zoomPercent, handleZoom, handleResetZoom } = props;
+  const { zoomPercent, handleZoom, handleResetZoom, theme, onToggleTheme } = props;
 
   return (
     <div className="od-canvas-overlay-bottom-right">
+      {onToggleTheme !== undefined && (
+        <div className="od-theme-toggle" role="region" aria-label="Theme mode toggle">
+          <OdTooltip text={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+            <OdIconButton
+              name={theme === "dark" ? "sun" : "moon"}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              ghost
+              onClick={onToggleTheme}
+            />
+          </OdTooltip>
+        </div>
+      )}
       <div className="od-zoom-controls" role="toolbar" aria-label="Canvas zoom controls">
         <OdTooltip text="Zoom out (-)">
           <OdIconButton

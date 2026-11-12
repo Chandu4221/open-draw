@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { OdButton, OdIconButton } from "@open-draw/ui";
 
 export interface KeyboardShortcutsModalProps {
@@ -6,15 +6,17 @@ export interface KeyboardShortcutsModalProps {
   readonly onClose: () => void;
 }
 
-interface ShortcutGroup {
-  readonly category: string;
-  readonly items: readonly {
-    readonly label: string;
-    readonly keys: readonly string[];
-  }[];
+interface ShortcutItem {
+  readonly label: string;
+  readonly keys: readonly string[];
 }
 
-const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
+interface ShortcutGroup {
+  readonly category: string;
+  readonly items: readonly ShortcutItem[];
+}
+
+const LEFT_GROUPS: readonly ShortcutGroup[] = [
   {
     category: "Drawing Tools",
     items: [
@@ -27,7 +29,20 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
     ],
   },
   {
-    category: "Edit & History",
+    category: "Selection",
+    items: [
+      { label: "Direct Select Child", keys: ["Ctrl+Click"] },
+      { label: "Multi-Select", keys: ["Shift+Click"] },
+      { label: "Box Select", keys: ["Drag"] },
+      { label: "Drill Down", keys: ["Double Click"] },
+      { label: "Deselect / Cancel", keys: ["Esc"] },
+    ],
+  },
+];
+
+const RIGHT_GROUPS: readonly ShortcutGroup[] = [
+  {
+    category: "Edit & Clipboard",
     items: [
       { label: "Undo", keys: ["Ctrl+Z"] },
       { label: "Redo", keys: ["Ctrl+Shift+Z", "Ctrl+Y"] },
@@ -35,7 +50,6 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { label: "Copy", keys: ["Ctrl+C"] },
       { label: "Paste", keys: ["Ctrl+V"] },
       { label: "Delete Selected", keys: ["Delete", "Backspace"] },
-      { label: "Deselect / Cancel", keys: ["Esc"] },
     ],
   },
   {
@@ -44,15 +58,64 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { label: "Pan Canvas", keys: ["Space+Drag", "Middle Click"] },
       { label: "Wheel Pan", keys: ["Wheel"] },
       { label: "Zoom In / Out", keys: ["Ctrl+Wheel"] },
+      { label: "Disable Snapping", keys: ["Alt+Drag"] },
       { label: "Toggle Shortcuts", keys: ["?"] },
     ],
   },
 ];
 
+function resolvePlatformModifier(): string {
+  if (typeof navigator !== "undefined") {
+    const isMac = /Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent || "");
+    if (isMac) return "Cmd";
+  }
+  return "Ctrl";
+}
+
+function ShortcutGroupCard({
+  group,
+  modifier,
+}: {
+  readonly group: ShortcutGroup;
+  readonly modifier: string;
+}): React.JSX.Element {
+  return (
+    <div className="od-shortcuts-group">
+      <span className="od-section-header">{group.category}</span>
+      <div className="od-shortcuts-card">
+        {group.items.map((item) => (
+          <div key={item.label} className="od-shortcuts-row">
+            <span className="od-shortcuts-label">{item.label}</span>
+            <div className="od-shortcuts-keys">
+              {item.keys.map((k, idx) => {
+                const formattedKey = k.replace("Ctrl", modifier);
+                return (
+                  <React.Fragment key={k}>
+                    {idx > 0 && <span className="od-shortcuts-or">or</span>}
+                    <div className="od-shortcuts-combo">
+                      {formattedKey.split("+").map((keyPart) => (
+                        <kbd key={keyPart} className="od-kbd">
+                          {keyPart}
+                        </kbd>
+                      ))}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function KeyboardShortcutsModal({
   isOpen,
   onClose,
 }: KeyboardShortcutsModalProps): React.JSX.Element | null {
+  const modifier = useMemo(() => resolvePlatformModifier(), []);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,7 +140,7 @@ export function KeyboardShortcutsModal({
       aria-modal="true"
       aria-labelledby="od-shortcuts-modal-title"
     >
-      <div className="od-modal" style={{ maxWidth: "620px" }}>
+      <div className="od-modal" style={{ maxWidth: "680px" }}>
         <div className="od-modal__header">
           <h2 id="od-shortcuts-modal-title" className="od-panel-title">
             Keyboard Shortcuts
@@ -90,65 +153,19 @@ export function KeyboardShortcutsModal({
           />
         </div>
 
-        <div className="od-modal__body" style={{ gap: "var(--od-20)" }}>
-          {SHORTCUT_GROUPS.map((group) => (
-            <div
-              key={group.category}
-              style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}
-            >
-              <span className="od-section-header">{group.category}</span>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr",
-                  gap: "var(--od-4)",
-                  backgroundColor: "var(--od-bg)",
-                  border: "var(--od-border-width) solid var(--od-border)",
-                  borderRadius: "var(--od-radius-sm)",
-                  padding: "var(--od-8)",
-                }}
-              >
-                {group.items.map((item) => (
-                  <div
-                    key={item.label}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "var(--od-4) var(--od-8)",
-                    }}
-                  >
-                    <span style={{ fontSize: "var(--od-text-sm)", color: "var(--od-text)" }}>
-                      {item.label}
-                    </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "var(--od-6)" }}>
-                      {item.keys.map((k, idx) => (
-                        <React.Fragment key={k}>
-                          {idx > 0 && (
-                            <span
-                              style={{
-                                fontSize: "var(--od-text-xs)",
-                                color: "var(--od-text-tertiary)",
-                              }}
-                            >
-                              or
-                            </span>
-                          )}
-                          <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-                            {k.split("+").map((keyPart) => (
-                              <kbd key={keyPart} className="od-kbd">
-                                {keyPart}
-                              </kbd>
-                            ))}
-                          </div>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="od-modal__body">
+          <div className="od-shortcuts-grid">
+            <div className="od-shortcuts-col">
+              {LEFT_GROUPS.map((group) => (
+                <ShortcutGroupCard key={group.category} group={group} modifier={modifier} />
+              ))}
             </div>
-          ))}
+            <div className="od-shortcuts-col">
+              {RIGHT_GROUPS.map((group) => (
+                <ShortcutGroupCard key={group.category} group={group} modifier={modifier} />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="od-modal__footer">

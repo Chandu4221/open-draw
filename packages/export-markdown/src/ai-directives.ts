@@ -105,6 +105,15 @@ export function compileAiDirectives(doc: Document, options?: MarkdownExportOptio
     "  - Provide semantic ARIA landmarks (header, nav, main, aside, footer) and descriptive labels on all interactive controls.",
   );
 
+  // 3. Smart Semantics Context & Slot Inference
+  lines.push("- **Semantic Context & Slot Inference (Smart Semantics)**:");
+  lines.push(
+    "  - Child elements inherit semantic roles from their tagged parent container. For example, text and icons nested within a navigation bar, tab row, or app bar represent navigation items; children inside a card, list item, or dialog represent header, media, body, and actions in document order.",
+  );
+  lines.push(
+    "  - Do not render untagged child shapes as raw unstyled containers — map them directly into the parent component's idiomatic slots and sub-elements.",
+  );
+
   // 3. Dark Mode & Switcher Directive (Idea 4)
   const rootShapes: Shape[] = Object.values(doc.shapes).filter((s) => isRootId(s.parentId));
   const scopedRoot =

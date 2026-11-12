@@ -29,7 +29,6 @@ describe("web profile", () => {
     expect(WEB_PROFILE.semantics.form?.displayName).toBe("Form Container");
     expect(WEB_PROFILE.semantics.modal?.displayName).toBe("Modal Window");
     expect(WEB_PROFILE.semantics.image?.displayName).toBe("Image");
-    expect(WEB_PROFILE.semantics.dialog?.displayName).toBe("Modal Dialog");
     expect(WEB_PROFILE.semantics.dropdown?.displayName).toBe("Dropdown Menu");
     expect(WEB_PROFILE.semantics.checkbox?.displayName).toBe("Checkbox");
     expect(WEB_PROFILE.semantics.badge?.displayName).toBe("Badge");
@@ -40,18 +39,18 @@ describe("web profile", () => {
 
   it("organizes expanded semantic components across all 10 categories", () => {
     const semantics = Object.values(WEB_PROFILE.semantics);
-    expect(semantics.length).toBeGreaterThanOrEqual(130);
+    expect(semantics).toHaveLength(76);
 
     // Verify presence and categorization of key components across categories
     expect(WEB_PROFILE.semantics["app-shell"]?.category).toBe("layout");
     expect(WEB_PROFILE.semantics["app-shell"]?.scope).toBe("section");
 
-    expect(WEB_PROFILE.semantics["nav-menu"]?.category).toBe("navigation");
-    expect(WEB_PROFILE.semantics["nav-menu"]?.scope).toBe("component");
+    expect(WEB_PROFILE.semantics.navbar?.category).toBe("navigation");
+    expect(WEB_PROFILE.semantics.navbar?.scope).toBe("section");
 
     expect(WEB_PROFILE.semantics.hero?.category).toBe("marketing");
     expect(WEB_PROFILE.semantics.hero?.scope).toBe("section");
-    expect(WEB_PROFILE.semantics["pricing-table"]?.category).toBe("marketing");
+    expect(WEB_PROFILE.semantics.pricing?.category).toBe("marketing");
 
     expect(WEB_PROFILE.semantics["product-card"]?.category).toBe("ecommerce");
     expect(WEB_PROFILE.semantics["product-card"]?.scope).toBe("component");
@@ -59,22 +58,21 @@ describe("web profile", () => {
     expect(WEB_PROFILE.semantics["login-form"]?.category).toBe("auth");
     expect(WEB_PROFILE.semantics["login-form"]?.scope).toBe("component");
 
-    expect(WEB_PROFILE.semantics["primary-button"]?.category).toBe("interactive");
-    expect(WEB_PROFILE.semantics["primary-button"]?.scope).toBe("component");
+    expect(WEB_PROFILE.semantics.button?.category).toBe("interactive");
+    expect(WEB_PROFILE.semantics.button?.scope).toBe("component");
 
     expect(WEB_PROFILE.semantics["search-bar"]?.category).toBe("forms");
     expect(WEB_PROFILE.semantics["search-bar"]?.scope).toBe("component");
 
-    expect(WEB_PROFILE.semantics.dashboard?.category).toBe("data");
-    expect(WEB_PROFILE.semantics.dashboard?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics.table?.category).toBe("data");
     expect(WEB_PROFILE.semantics["metric-card"]?.category).toBe("data");
 
     expect(WEB_PROFILE.semantics.accordion?.category).toBe("content");
-    expect(WEB_PROFILE.semantics["card-grid"]?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics.article?.scope).toBe("section");
 
     expect(WEB_PROFILE.semantics.toast?.category).toBe("feedback");
     expect(WEB_PROFILE.semantics.toast?.scope).toBe("component");
-    expect(WEB_PROFILE.semantics["not-found"]?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics.drawer?.scope).toBe("component");
   });
 });
 
@@ -136,7 +134,12 @@ describe("android native profile", () => {
     expect(ANDROID_NATIVE_PROFILE.semantics["icon-button"]?.category).toBe("interactive");
     expect(ANDROID_NATIVE_PROFILE.semantics["icon-button"]?.scope).toBe("component");
     expect(ANDROID_NATIVE_PROFILE.semantics["segmented-button"]?.category).toBe("interactive");
-    expect(ANDROID_NATIVE_PROFILE.semantics["extended-fab"]?.category).toBe("interactive");
+    expect(
+      ANDROID_NATIVE_PROFILE.semantics["floating-action-button"]?.properties?.some(
+        (p) => p.id === "label",
+      ),
+    ).toBe(true);
+    expect(ANDROID_NATIVE_PROFILE.semantics["extended-fab"]).toBeUndefined();
 
     // Forms
     expect(ANDROID_NATIVE_PROFILE.semantics["radio-button"]?.category).toBe("forms");
@@ -164,7 +167,10 @@ describe("flutter profile", () => {
     ).toBe(true);
   });
 
-  it("exposes standard Flutter widget semantics", () => {
+  it("exposes standard Flutter widget semantics with category and scope", () => {
+    expect(FLUTTER_PROFILE.semantics.button?.displayName).toBe("Button");
+    expect(FLUTTER_PROFILE.semantics.button?.category).toBe("interactive");
+    expect(FLUTTER_PROFILE.semantics.button?.scope).toBe("component");
     expect(FLUTTER_PROFILE.semantics["elevated-button"]?.displayName).toBe("ElevatedButton");
     expect(FLUTTER_PROFILE.semantics["outlined-button"]?.displayName).toBe("OutlinedButton");
     expect(FLUTTER_PROFILE.semantics["text-button"]?.displayName).toBe("TextButton");
@@ -180,11 +186,16 @@ describe("flutter profile", () => {
     expect(FLUTTER_PROFILE.semantics.checkbox?.displayName).toBe("Checkbox");
     expect(FLUTTER_PROFILE.semantics.switch?.displayName).toBe("Switch");
     expect(FLUTTER_PROFILE.semantics["list-tile"]?.displayName).toBe("ListTile");
+
+    for (const def of Object.values(FLUTTER_PROFILE.semantics)) {
+      expect(def.category).toBeDefined();
+      expect(def.scope).toBeDefined();
+    }
   });
 });
 
 describe("ios profile", () => {
-  it("declares screen root semantic and Apple HIG semantics", () => {
+  it("declares screen root semantic and Apple HIG semantics with category and scope", () => {
     expect(IOS_PROFILE.id).toBe("ios");
     expect(IOS_PROFILE.rootSemantic).toBe("screen");
     expect(IOS_PROFILE.semantics.screen).toBeUndefined();
@@ -205,6 +216,11 @@ describe("ios profile", () => {
     expect(IOS_PROFILE.semantics.slider?.displayName).toBe("Slider");
     expect(IOS_PROFILE.semantics.card?.displayName).toBe("Grouped Inset Card");
     expect(IOS_PROFILE.semantics.alert?.displayName).toBe("Alert Dialog");
+
+    for (const def of Object.values(IOS_PROFILE.semantics)) {
+      expect(def.category).toBeDefined();
+      expect(def.scope).toBeDefined();
+    }
   });
 });
 

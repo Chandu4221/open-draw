@@ -51,6 +51,9 @@ describe("icons registry", () => {
       "help",
       "panel",
       "keyboard",
+      "sun",
+      "moon",
+      "search",
     ] as const;
 
     for (const iconId of requiredIcons) {
