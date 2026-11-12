@@ -3,13 +3,20 @@ import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
 import { COMMANDS, type Shape } from "@open-draw/document";
 import { useBatchMutations } from "./use-batch-mutations";
 
-function createMockShape(id: string, x: number, y: number, width = 100, height = 50): Shape {
+function createMockShape(
+  id: string,
+  x: number,
+  y: number,
+  width = 100,
+  height = 50,
+  meta: Shape["meta"] = { order: {} },
+): Shape {
   return {
     id: id as ShapeId,
     parentId: ROOT_ID,
     kind: SHAPE_KINDS.rect,
     boundingBox: { x, y, width, height },
-    meta: { order: {} },
+    meta,
   };
 }
 

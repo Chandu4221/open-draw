@@ -1,10 +1,30 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { Shape } from "@open-draw/document";
-import { OdButton, OdCard, OdIconButton } from "@open-draw/ui";
+import {
+  OdBadge,
+  OdButton,
+  OdCard,
+  OdField,
+  OdIcon,
+  OdIconButton,
+  OdInputGroup,
+} from "@open-draw/ui";
+import {
+  ALIGN_ACTIONS,
+  COLOR_SWATCH_STYLE,
+  computeSharedStyles,
+  DISTRIBUTE_ACTIONS,
+  DIVIDER_STYLE,
+  getSelectionSummary,
+  HEX_INPUT_STYLE,
+  toColorInputValue,
+} from "./multi-select-helpers";
+
+export type AlignmentType = "left" | "center" | "right" | "top" | "middle" | "bottom";
 
 export interface MultiSelectInspectorProps {
   readonly selectedShapes: readonly Shape[];
-  readonly onAlign: (alignment: "left" | "center" | "right" | "top" | "middle" | "bottom") => void;
+  readonly onAlign: (alignment: AlignmentType) => void;
   readonly onDistribute: (axis: "horizontal" | "vertical") => void;
   readonly onBatchStyleChange: (
     fill?: string | null,
@@ -25,219 +45,229 @@ export function MultiSelectInspector(props: MultiSelectInspectorProps): React.JS
     onClearSelection,
   } = props;
 
-  const [fill, setFill] = useState<string>("#ffffff");
-  const [stroke, setStroke] = useState<string>("#09090b");
-  const [strokeWidth, setStrokeWidth] = useState<number>(2);
+  const sharedStyles = useMemo(() => computeSharedStyles(selectedShapes), [selectedShapes]);
+
+  const shapesKey = useMemo(
+    () => selectedShapes.map((s) => `${s.id}:${s.fill}:${s.stroke}:${s.strokeWidth}`).join("|"),
+    [selectedShapes],
+  );
+
+  const [prevShapesKey, setPrevShapesKey] = useState(shapesKey);
+  const [fillInput, setFillInput] = useState<string | null>(null);
+  const [strokeInput, setStrokeInput] = useState<string | null>(null);
+  const [strokeWidthInput, setStrokeWidthInput] = useState<string | null>(null);
+
+  if (shapesKey !== prevShapesKey) {
+    setPrevShapesKey(shapesKey);
+    setFillInput(null);
+    setStrokeInput(null);
+    setStrokeWidthInput(null);
+  }
+
+  const effectiveFill =
+    fillInput !== null ? fillInput : sharedStyles.isFillMixed ? "" : (sharedStyles.fill ?? "");
+  const fillPlaceholder = sharedStyles.isFillMixed ? "Mixed" : "#ffffff";
+  const fillColorPickerValue = toColorInputValue(fillInput ?? sharedStyles.fill, "#ffffff");
+
+  const effectiveStroke =
+    strokeInput !== null
+      ? strokeInput
+      : sharedStyles.isStrokeMixed
+        ? ""
+        : (sharedStyles.stroke ?? "");
+  const strokePlaceholder = sharedStyles.isStrokeMixed ? "Mixed" : "#09090b";
+  const strokeColorPickerValue = toColorInputValue(strokeInput ?? sharedStyles.stroke, "#09090b");
+
+  const effectiveStrokeWidth =
+    strokeWidthInput !== null
+      ? strokeWidthInput
+      : sharedStyles.isStrokeWidthMixed
+        ? ""
+        : sharedStyles.strokeWidth !== undefined
+          ? String(sharedStyles.strokeWidth)
+          : "2";
+  const strokeWidthPlaceholder = sharedStyles.isStrokeWidthMixed ? "Mixed" : "2";
 
   const canDistribute = selectedShapes.length >= 3;
+  const summaryText = getSelectionSummary(selectedShapes);
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {/* Header Info */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "var(--od-8) var(--od-12)",
-          marginBottom: "var(--od-12)",
-          backgroundColor: "var(--od-surface-raised)",
-          border: "var(--od-border-width) solid var(--od-border)",
-          borderRadius: "var(--od-radius)",
-        }}
+      {/* 1. SELECTION */}
+      <OdCard
+        title="Selection"
+        collapsible
+        defaultExpanded
+        action={
+          <OdButton
+            variant="ghost"
+            onClick={onClearSelection}
+            style={{ height: "24px", fontSize: "var(--od-text-xs)", padding: "0 var(--od-8)" }}
+            aria-label="Clear selection"
+          >
+            Clear
+          </OdButton>
+        }
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--od-6)" }}>
-          <span
+        <OdField label="Selected Items">
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
+            <OdBadge variant="accent">{selectedShapes.length}</OdBadge>
+            <span className="od-meta" style={{ textTransform: "capitalize" }}>
+              {summaryText}
+            </span>
+          </div>
+        </OdField>
+      </OdCard>
+
+      {/* 2. ALIGN & DISTRIBUTE */}
+      <OdCard title="Align & Distribute" collapsible defaultExpanded>
+        <OdField
+          label="Alignment & Distribution"
+          {...(!canDistribute ? { meta: "Distribute: 3+ shapes" } : {})}
+        >
+          <div
             style={{
-              padding: "2px 6px",
-              borderRadius: "var(--od-radius-sm)",
-              backgroundColor: "var(--od-accent)",
-              color: "var(--od-text-on-accent)",
-              fontSize: "var(--od-text-xs)",
-              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--od-4)",
+              width: "100%",
             }}
           >
-            {selectedShapes.length}
-          </span>
-          <span className="od-label" style={{ margin: 0 }}>
-            Shapes Selected
-          </span>
-        </div>
-        <OdButton
-          variant="ghost"
-          onClick={onClearSelection}
-          style={{ height: "24px", fontSize: "11px" }}
-        >
-          Clear
-        </OdButton>
-      </div>
-
-      {/* Alignment Tools Card */}
-      <OdCard title="Alignment" collapsible defaultExpanded>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "var(--od-4)" }}>
-          <OdIconButton
-            name="align-left"
-            aria-label="Align Left"
-            title="Align Left"
-            onClick={() => onAlign("left")}
-            style={{ width: "100%", height: "28px" }}
-          />
-          <OdIconButton
-            name="align-center-horizontal"
-            aria-label="Align Horizontal Center"
-            title="Align Horizontal Center"
-            onClick={() => onAlign("center")}
-            style={{ width: "100%", height: "28px" }}
-          />
-          <OdIconButton
-            name="align-right"
-            aria-label="Align Right"
-            title="Align Right"
-            onClick={() => onAlign("right")}
-            style={{ width: "100%", height: "28px" }}
-          />
-          <OdIconButton
-            name="align-top"
-            aria-label="Align Top"
-            title="Align Top"
-            onClick={() => onAlign("top")}
-            style={{ width: "100%", height: "28px" }}
-          />
-          <OdIconButton
-            name="align-center-vertical"
-            aria-label="Align Vertical Center"
-            title="Align Vertical Center"
-            onClick={() => onAlign("middle")}
-            style={{ width: "100%", height: "28px" }}
-          />
-          <OdIconButton
-            name="align-bottom"
-            aria-label="Align Bottom"
-            title="Align Bottom"
-            onClick={() => onAlign("bottom")}
-            style={{ width: "100%", height: "28px" }}
-          />
-        </div>
+            {ALIGN_ACTIONS.map((item) => (
+              <OdIconButton
+                key={item.alignment}
+                name={item.name}
+                aria-label={item.label}
+                title={item.label}
+                onClick={() => onAlign(item.alignment)}
+                style={{ flex: 1, height: "28px", minWidth: 0, padding: 0 }}
+              />
+            ))}
+            <div style={DIVIDER_STYLE} />
+            {DISTRIBUTE_ACTIONS.map((item) => (
+              <OdIconButton
+                key={item.axis}
+                name={item.name}
+                aria-label={canDistribute ? item.label : `${item.label} (requires 3+ shapes)`}
+                title={canDistribute ? item.label : `${item.label} (requires 3+ shapes)`}
+                disabled={!canDistribute}
+                onClick={() => onDistribute(item.axis)}
+                style={{ flex: 1, height: "28px", minWidth: 0, padding: 0 }}
+              />
+            ))}
+          </div>
+        </OdField>
       </OdCard>
 
-      {/* Distribution Tools Card */}
-      <OdCard title="Distribution" collapsible defaultExpanded>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--od-8)" }}>
-          <OdIconButton
-            name="distribute-horizontal"
-            aria-label={canDistribute ? "Distribute Horizontally" : "Need 3+ shapes to distribute"}
-            title={canDistribute ? "Distribute Horizontally" : "Need 3+ shapes to distribute"}
-            onClick={() => onDistribute("horizontal")}
-            disabled={!canDistribute}
-            style={{ width: "100%", height: "28px" }}
-          />
-          <OdIconButton
-            name="distribute-vertical"
-            aria-label={canDistribute ? "Distribute Vertically" : "Need 3+ shapes to distribute"}
-            title={canDistribute ? "Distribute Vertically" : "Need 3+ shapes to distribute"}
-            onClick={() => onDistribute("vertical")}
-            disabled={!canDistribute}
-            style={{ width: "100%", height: "28px" }}
-          />
-        </div>
-      </OdCard>
-
-      {/* Shared Style Card */}
+      {/* 3. SHARED STYLE */}
       <OdCard title="Shared Style" collapsible defaultExpanded>
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label htmlFor="multi-select-fill" className="od-meta" style={{ width: "70px" }}>
-              Fill
-            </label>
+        <OdField label="Fill" htmlFor="multi-select-fill-hex">
+          <div style={{ display: "flex", gap: "var(--od-4)", alignItems: "center", width: "100%" }}>
             <input
-              id="multi-select-fill"
+              id="multi-select-fill-color"
               type="color"
-              aria-label="Shared fill color"
-              value={fill}
+              className="od-input"
+              aria-label="Shared fill color picker"
+              value={fillColorPickerValue}
               onChange={(e) => {
-                setFill(e.target.value);
+                setFillInput(e.target.value);
                 onBatchStyleChange(e.target.value, undefined, undefined);
               }}
-              style={{
-                width: "28px",
-                height: "28px",
-                padding: 0,
-                border: "var(--od-border-width) solid var(--od-border)",
-                borderRadius: "var(--od-radius-sm)",
-                cursor: "pointer",
-              }}
+              style={COLOR_SWATCH_STYLE}
             />
-            <span className="od-meta">{fill}</span>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label htmlFor="multi-select-stroke" className="od-meta" style={{ width: "70px" }}>
-              Stroke
-            </label>
             <input
-              id="multi-select-stroke"
-              type="color"
-              aria-label="Shared stroke color"
-              value={stroke}
+              id="multi-select-fill-hex"
+              type="text"
+              className="od-input"
+              placeholder={fillPlaceholder}
+              aria-label="Shared fill hex code"
+              value={effectiveFill}
               onChange={(e) => {
-                setStroke(e.target.value);
-                onBatchStyleChange(undefined, e.target.value, undefined);
-              }}
-              style={{
-                width: "28px",
-                height: "28px",
-                padding: 0,
-                border: "var(--od-border-width) solid var(--od-border)",
-                borderRadius: "var(--od-radius-sm)",
-                cursor: "pointer",
-              }}
-            />
-            <span className="od-meta">{stroke}</span>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <label
-              htmlFor="multi-select-stroke-width"
-              className="od-meta"
-              style={{ width: "70px" }}
-            >
-              Width
-            </label>
-            <input
-              id="multi-select-stroke-width"
-              type="number"
-              min={1}
-              max={24}
-              aria-label="Shared stroke width in pixels"
-              value={strokeWidth}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                if (!Number.isNaN(val) && val > 0) {
-                  setStrokeWidth(val);
-                  onBatchStyleChange(undefined, undefined, val);
+                const val = e.target.value;
+                setFillInput(val);
+                if (val === "" || /^#[0-9a-fA-F]{6}$/.test(val)) {
+                  onBatchStyleChange(val || null, undefined, undefined);
                 }
               }}
-              className="od-input"
-              style={{ width: "60px", height: "28px" }}
+              style={HEX_INPUT_STYLE}
             />
           </div>
-        </div>
+        </OdField>
+
+        <OdField label="Stroke" htmlFor="multi-select-stroke-hex">
+          <div style={{ display: "flex", gap: "var(--od-4)", alignItems: "center", width: "100%" }}>
+            <input
+              id="multi-select-stroke-color"
+              type="color"
+              className="od-input"
+              aria-label="Shared stroke color picker"
+              value={strokeColorPickerValue}
+              onChange={(e) => {
+                setStrokeInput(e.target.value);
+                onBatchStyleChange(undefined, e.target.value, undefined);
+              }}
+              style={COLOR_SWATCH_STYLE}
+            />
+            <input
+              id="multi-select-stroke-hex"
+              type="text"
+              className="od-input"
+              placeholder={strokePlaceholder}
+              aria-label="Shared stroke hex code"
+              value={effectiveStroke}
+              onChange={(e) => {
+                const val = e.target.value;
+                setStrokeInput(val);
+                if (val === "" || /^#[0-9a-fA-F]{6}$/.test(val)) {
+                  onBatchStyleChange(undefined, val || null, undefined);
+                }
+              }}
+              style={HEX_INPUT_STYLE}
+            />
+          </div>
+        </OdField>
+
+        <OdField label="Stroke Width" htmlFor="multi-select-stroke-width">
+          <OdInputGroup
+            id="multi-select-stroke-width"
+            type="number"
+            min={1}
+            max={24}
+            unit="PX"
+            aria-label="Shared stroke width in pixels"
+            value={effectiveStrokeWidth}
+            placeholder={strokeWidthPlaceholder}
+            onChange={(e) => {
+              const val = e.target.value;
+              setStrokeWidthInput(val);
+              const num = Number(val);
+              if (!Number.isNaN(num) && num > 0) {
+                onBatchStyleChange(undefined, undefined, num);
+              }
+            }}
+          />
+        </OdField>
       </OdCard>
 
-      {/* Batch Delete */}
-      <div style={{ marginTop: "var(--od-8)" }}>
+      {/* 4. ACTIONS */}
+      <OdCard title="Actions" collapsible defaultExpanded>
         <OdButton
+          variant="ghost"
           onClick={onBatchDelete}
           style={{
             width: "100%",
             justifyContent: "center",
             color: "var(--od-danger)",
-            borderColor: "var(--od-danger)",
+            borderColor: "var(--od-border)",
+            height: "32px",
+            fontSize: "var(--od-text-xs)",
+            gap: "var(--od-6)",
           }}
         >
-          Delete {selectedShapes.length} Shapes
+          <OdIcon name="delete" size={14} />
+          <span>Delete {selectedShapes.length} Shapes</span>
         </OdButton>
-      </div>
+      </OdCard>
     </div>
   );
 }

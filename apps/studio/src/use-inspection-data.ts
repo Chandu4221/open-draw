@@ -10,7 +10,7 @@ import type {
   RootRole,
   ThemePalette,
 } from "@open-draw/contracts";
-import { isRootId, ROOT_ID, ROOT_ROLES, STYLE_PROFILES } from "@open-draw/contracts";
+import { ROOT_ID, ROOT_ROLES, STYLE_PROFILES } from "@open-draw/contracts";
 import type { Document, Shape } from "@open-draw/document";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import {
@@ -22,6 +22,7 @@ import {
   resolveRootShape,
   resolveRootStyle,
   resolveRootTheme,
+  resolveShapeDisplayName,
   walkSemanticTree,
   type SemanticTreeNode,
 } from "@open-draw/semantics";
@@ -40,6 +41,8 @@ export interface InspectionData {
   readonly semanticDef: SemanticDefinition | undefined;
   readonly semanticProps: Record<string, string | number | boolean>;
   readonly treeNodes: readonly SemanticTreeNode[];
+  readonly isScopedToRoot: boolean;
+  readonly activeRootTitle: string | undefined;
 }
 
 export function computeInspectionData(
@@ -48,9 +51,7 @@ export function computeInspectionData(
   activeDeviceType: DeviceType | undefined,
 ): InspectionData {
   const selectedShape = selectedShapeId !== null ? doc.shapes[selectedShapeId] : undefined;
-  const rootShape = selectedShape
-    ? resolveRootShape(doc, selectedShape.id)
-    : Object.values(doc.shapes).find((s) => isRootId(s.parentId) && s.meta.platform !== undefined);
+  const rootShape = selectedShape ? resolveRootShape(doc, selectedShape.id) : undefined;
   const rootPlatform = rootShape ? resolveRootPlatform(doc, rootShape.id) : undefined;
   const rootStyle = rootShape ? resolveRootStyle(doc, rootShape.id) : STYLE_PROFILES.minimal;
   const rootDesignStyle = rootShape ? resolveRootDesignStyle(doc, rootShape.id) : undefined;
@@ -66,7 +67,15 @@ export function computeInspectionData(
       ? activeProfile.semantics[selectedShape.meta.semantic.id]
       : undefined;
   const semanticProps = selectedShape?.meta.semantic?.properties ?? {};
-  const treeNodes = walkSemanticTree(doc, ROOT_ID, activeProfile, activeDeviceType);
+
+  const isScopedToRoot = rootShape !== undefined;
+  const activeRootTitle = rootShape ? resolveShapeDisplayName(rootShape, activeProfile) : undefined;
+
+  const treeNodes = isScopedToRoot
+    ? walkSemanticTree(doc, rootShape.id, activeProfile, activeDeviceType)
+    : walkSemanticTree(doc, ROOT_ID, undefined, activeDeviceType).filter(
+        (node) => node.depth === 0,
+      );
 
   return {
     selectedShape,
@@ -82,6 +91,8 @@ export function computeInspectionData(
     semanticDef,
     semanticProps,
     treeNodes,
+    isScopedToRoot,
+    activeRootTitle,
   };
 }
 

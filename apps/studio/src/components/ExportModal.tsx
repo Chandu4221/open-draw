@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { Document } from "@open-draw/document";
-import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/contracts";
-import { OdButton, OdIcon, OdIconButton, OdSegmentedControl } from "@open-draw/ui";
+import {
+  isRootId,
+  type CreativityLevel,
+  type ShapeId,
+  DEFAULT_CREATIVITY_LEVEL,
+} from "@open-draw/contracts";
+import { ancestorsOf, type Document } from "@open-draw/document";
+import { PLATFORM_PROFILES } from "@open-draw/profiles";
+import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
+import { OdButton, OdIcon, OdIconButton } from "@open-draw/ui";
 import {
   copyDocumentPng,
   exportDocumentJson,
@@ -14,7 +21,7 @@ import {
 } from "../document-io";
 import { AiCreativityMeter } from "./AiCreativityMeter";
 
-export type ExportFormat = "markdown" | "json" | "svg" | "png";
+export type { ExportFormat } from "./export-modal-helpers";
 
 export interface ExportModalProps {
   readonly isOpen: boolean;
@@ -23,59 +30,12 @@ export interface ExportModalProps {
   readonly initialFormat?: ExportFormat | undefined;
   readonly includeLegend?: boolean;
   readonly setIncludeLegend?: (include: boolean) => void;
+  readonly selectedShapeId?: ShapeId | null | undefined;
+  readonly initialShowPreview?: boolean | undefined;
 }
 
-const FORMAT_OPTIONS = [
-  { id: "markdown", label: "Markdown (.md)" },
-  { id: "json", label: "JSON (.json)" },
-  { id: "svg", label: "SVG (.svg)" },
-  { id: "png", label: "PNG (.png)" },
-] as const;
-
-const HIDDEN_STYLE: React.CSSProperties = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: 0,
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
-
-const PNG_STYLE: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "var(--od-bg)",
-  border: "var(--od-border-width) solid var(--od-border)",
-  borderRadius: "var(--od-radius-sm)",
-  padding: "var(--od-16)",
-  maxHeight: "260px",
-  overflow: "auto",
-};
-
-const LEGEND_LABEL_STYLE: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "var(--od-4)",
-  cursor: "pointer",
-  fontSize: "var(--od-text-xs)",
-  color: "var(--od-text-secondary)",
-};
-
-const ERROR_PREVIEW_STYLE: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "var(--od-8)",
-  padding: "var(--od-16)",
-  backgroundColor: "var(--od-bg)",
-  border: "var(--od-border-width) solid var(--od-border)",
-  borderRadius: "var(--od-radius-sm)",
-  color: "var(--od-danger, #ef4444)",
-  fontSize: "var(--od-text-sm)",
-};
+import { ExportFormatOptions, ExportPreviewPane, ExportScopeSelector } from "./ExportPreviewPane";
+import { HIDDEN_STYLE, fallbackCopyText, type ExportFormat } from "./export-modal-helpers";
 
 function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   const {
@@ -84,16 +44,15 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
     initialFormat = "markdown",
     includeLegend = false,
     setIncludeLegend,
+    selectedShapeId,
+    initialShowPreview = false,
   } = props;
   const [localIncludeLegend, setLocalIncludeLegend] = useState<boolean>(includeLegend);
   const effectiveIncludeLegend =
     setIncludeLegend !== undefined ? includeLegend : localIncludeLegend;
   const handleToggleLegend = (val: boolean) => {
-    if (setIncludeLegend) {
-      setIncludeLegend(val);
-    } else {
-      setLocalIncludeLegend(val);
-    }
+    if (setIncludeLegend) setIncludeLegend(val);
+    else setLocalIncludeLegend(val);
   };
 
   const [format, setFormat] = useState<ExportFormat>(initialFormat);
@@ -101,6 +60,25 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   const [copied, setCopied] = useState<boolean>(false);
   const [includeAsciiSketch, setIncludeAsciiSketch] = useState<boolean | undefined>(undefined);
   const [includeAnnotations, setIncludeAnnotations] = useState<boolean>(true);
+  const [showPreview, setShowPreview] = useState<boolean>(initialShowPreview);
+
+  const rootShapes = useMemo(
+    () => Object.values(doc.shapes).filter((s) => isRootId(s.parentId)),
+    [doc.shapes],
+  );
+
+  const initialScope = useMemo(() => {
+    if (!selectedShapeId) return "all";
+    const selected = doc.shapes[selectedShapeId];
+    if (!selected) return "all";
+    if (isRootId(selected.parentId)) return selected.id;
+    const anc = ancestorsOf(doc, selected);
+    const root = anc.find((s) => isRootId(s.parentId));
+    return root ? root.id : "all";
+  }, [doc, selectedShapeId]);
+
+  const [selectedScope, setSelectedScope] = useState<string>(initialScope);
+  const targetRootId = selectedScope === "all" ? undefined : (selectedScope as ShapeId);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -114,72 +92,84 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
   }, [onClose]);
 
   const mdOptions = useMemo(
-    () => ({ creativityLevel, includeLegend: effectiveIncludeLegend, includeAsciiSketch }),
-    [creativityLevel, effectiveIncludeLegend, includeAsciiSketch],
+    () => ({
+      creativityLevel,
+      includeLegend: effectiveIncludeLegend,
+      includeAsciiSketch,
+      rootId: targetRootId,
+    }),
+    [creativityLevel, effectiveIncludeLegend, includeAsciiSketch, targetRootId],
   );
   const svgOptions = useMemo(
-    () => ({ includeLegend: effectiveIncludeLegend, includeAnnotations }),
-    [effectiveIncludeLegend, includeAnnotations],
+    () => ({ includeLegend: effectiveIncludeLegend, includeAnnotations, rootId: targetRootId }),
+    [effectiveIncludeLegend, includeAnnotations, targetRootId],
   );
 
+  // JIT preview: Only executed when showPreview is active or format is png
   const previewResult = useMemo<
-    { readonly ok: true; readonly text: string } | { readonly ok: false; readonly error: string }
+    | { readonly ok: true; readonly text: string }
+    | { readonly ok: false; readonly error: string }
+    | null
   >(() => {
+    if (!showPreview && format !== "png") return null;
     try {
       if (format === "markdown") return { ok: true, text: generateExportMarkdown(doc, mdOptions) };
-      if (format === "json") return { ok: true, text: generateExportJson(doc, creativityLevel) };
+      if (format === "json")
+        return { ok: true, text: generateExportJson(doc, creativityLevel, targetRootId) };
       return { ok: true, text: generateExportSvg(doc, svgOptions) };
     } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      };
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
-  }, [doc, format, creativityLevel, mdOptions, svgOptions]);
+  }, [doc, format, creativityLevel, mdOptions, svgOptions, showPreview, targetRootId]);
 
-  const preview = previewResult.ok ? previewResult.text : "";
-
+  const preview = previewResult?.ok ? previewResult.text : "";
   const svgDataUrl = useMemo(
     () =>
-      format === "png" && previewResult.ok
+      format === "png" && previewResult?.ok
         ? `data:image/svg+xml;utf8,${encodeURIComponent(preview)}`
         : "",
-    [format, preview, previewResult.ok],
+    [format, preview, previewResult],
   );
 
+  const getOutputText = (): string => {
+    if (previewResult?.ok) return previewResult.text;
+    if (format === "markdown") return generateExportMarkdown(doc, mdOptions);
+    if (format === "json") return generateExportJson(doc, creativityLevel, targetRootId);
+    return generateExportSvg(doc, svgOptions);
+  };
+
   const handleCopy = async () => {
-    if (!previewResult.ok) return;
     try {
       if (format === "png") {
         await copyDocumentPng(doc, svgOptions);
       } else {
-        await navigator.clipboard.writeText(preview);
+        const text = getOutputText();
+        await navigator.clipboard.writeText(text);
       }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       if (format !== "png") {
-        const ta = document.createElement("textarea");
-        ta.value = preview;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
+        fallbackCopyText(getOutputText());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       }
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
-    if (!previewResult.ok) return;
     try {
       if (format === "markdown") exportDocumentMarkdown(doc, mdOptions);
-      else if (format === "json") exportDocumentJson(doc, creativityLevel);
+      else if (format === "json") exportDocumentJson(doc, creativityLevel, targetRootId);
       else if (format === "svg") exportDocumentSvg(doc, svgOptions);
       else exportDocumentPng(doc, svgOptions);
     } catch {
       // Export failure handled gracefully
     }
   };
+
+  const targetRoot = targetRootId ? doc.shapes[targetRootId] : undefined;
+  const targetPlatform = targetRootId ? resolveRootPlatform(doc, targetRootId) : undefined;
 
   return (
     <div
@@ -200,49 +190,26 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
         </div>
 
         <div className="od-modal__body">
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="od-section-header">Export Format</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--od-12)" }}>
-                {format !== "json" && (
-                  <label style={LEGEND_LABEL_STYLE}>
-                    <input
-                      type="checkbox"
-                      checked={effectiveIncludeLegend}
-                      onChange={(e) => handleToggleLegend(e.target.checked)}
-                    />
-                    <span>Include Legend</span>
-                  </label>
-                )}
-                {format === "markdown" && (
-                  <label style={LEGEND_LABEL_STYLE}>
-                    <input
-                      type="checkbox"
-                      checked={includeAsciiSketch ?? Object.keys(doc.shapes).length > 5}
-                      onChange={(e) => setIncludeAsciiSketch(e.target.checked)}
-                    />
-                    <span>Include ASCII Sketch</span>
-                  </label>
-                )}
-                {(format === "svg" || format === "png") && (
-                  <label style={LEGEND_LABEL_STYLE}>
-                    <input
-                      type="checkbox"
-                      checked={includeAnnotations}
-                      onChange={(e) => setIncludeAnnotations(e.target.checked)}
-                    />
-                    <span>Include Annotations</span>
-                  </label>
-                )}
-              </div>
-            </div>
-            <OdSegmentedControl
-              items={FORMAT_OPTIONS}
-              value={format}
-              aria-label="Export format"
-              onSelect={(val) => setFormat(val as ExportFormat)}
-            />
-          </div>
+          {/* Scope Selector (prevents mixing platforms) */}
+          <ExportScopeSelector
+            rootShapes={rootShapes}
+            doc={doc}
+            selectedScope={selectedScope}
+            onSelectScope={setSelectedScope}
+          />
+
+          {/* Format Selector */}
+          <ExportFormatOptions
+            format={format}
+            onSelectFormat={setFormat}
+            effectiveIncludeLegend={effectiveIncludeLegend}
+            onToggleLegend={handleToggleLegend}
+            includeAsciiSketch={includeAsciiSketch}
+            onToggleAsciiSketch={setIncludeAsciiSketch}
+            shapeCount={Object.keys(doc.shapes).length}
+            includeAnnotations={includeAnnotations}
+            onToggleAnnotations={setIncludeAnnotations}
+          />
 
           {(format === "markdown" || format === "json") && (
             <AiCreativityMeter
@@ -251,62 +218,39 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
             />
           )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-            <div
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}
-            >
-              <span className="od-section-header">
-                {format === "png" ? "Visual Preview" : "Live Output Preview"}
-              </span>
-              <span className="od-meta">
-                {!previewResult.ok
-                  ? "Export preview unavailable"
-                  : format === "png"
-                    ? "Raster PNG diagram preview"
-                    : `${preview.length} chars • ${preview.split("\n").length} lines`}
-              </span>
-            </div>
-            {!previewResult.ok ? (
-              <div style={ERROR_PREVIEW_STYLE}>
-                <span>Export preview unavailable:</span>
-                <code>{previewResult.error}</code>
-              </div>
-            ) : format === "png" ? (
-              <div style={PNG_STYLE}>
-                <img
-                  src={svgDataUrl}
-                  alt="Wireframe visual preview"
-                  style={{ maxWidth: "100%", maxHeight: "220px", objectFit: "contain" }}
-                />
-              </div>
-            ) : (
-              <pre
-                className="od-code-preview"
-                tabIndex={0}
-                role="region"
-                aria-label="Live export output preview"
-              >
-                <code>{preview}</code>
-              </pre>
-            )}
-          </div>
+          {/* JIT Output & Preview Pane */}
+          <ExportPreviewPane
+            format={format}
+            showPreview={showPreview}
+            onTogglePreview={() => setShowPreview((prev) => !prev)}
+            previewResult={previewResult}
+            preview={preview}
+            svgDataUrl={svgDataUrl}
+            targetRootName={
+              targetRoot
+                ? resolveShapeDisplayName(
+                    targetRoot,
+                    targetPlatform !== undefined ? PLATFORM_PROFILES[targetPlatform] : undefined,
+                  )
+                : "Entire Canvas"
+            }
+            targetPlatformName={targetPlatform ?? "All Platforms"}
+          />
         </div>
 
         <div className="od-modal__footer">
           <span className="od-meta">
-            {format === "markdown" || format === "json"
-              ? `Ready for AI handoff (${format === "markdown" ? "Markdown" : "JSON"})`
-              : `Ready for visual export (${format.toUpperCase()})`}
+            {targetPlatform ? `Scoped to ${targetPlatform}` : "Entire Workspace"}
           </span>
           <div aria-live="polite" style={HIDDEN_STYLE}>
             {copied ? "Copied output to clipboard" : ""}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--od-8)" }}>
-            <OdButton variant="ghost" onClick={handleCopy} disabled={!previewResult.ok}>
+            <OdButton variant="ghost" onClick={handleCopy}>
               <OdIcon name={copied ? "check" : "copy"} size={16} />
               <span>{copied ? "Copied!" : format === "png" ? "Copy Image" : "Copy"}</span>
             </OdButton>
-            <OdButton variant="primary" onClick={handleDownload} disabled={!previewResult.ok}>
+            <OdButton variant="primary" onClick={handleDownload}>
               <OdIcon name="export" size={16} />
               <span>Download .{format}</span>
             </OdButton>

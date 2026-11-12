@@ -1,7 +1,7 @@
 import { type PlatformProfile, parseSemanticId } from "@open-draw/contracts";
-import { WEB_SEMANTICS } from "./semantics";
+import { WEB_SEMANTICS } from "./semantics/index.js";
 
-export { WEB_SEMANTICS } from "./semantics";
+export * from "./semantics/index.js";
 
 export const WEB_PROFILE: PlatformProfile = Object.freeze({
   id: "web",

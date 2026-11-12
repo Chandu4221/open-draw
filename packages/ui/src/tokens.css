@@ -34,7 +34,7 @@
   --od-text-on-accent: #ffffff;
 
   /* Sizing & Controls */
-  --od-control-height: 32px;
+  --od-control-height: 28px;
   --od-border-width: 1px;
   --od-focus-ring: 2px;
   --od-grid-size: 16px;
@@ -59,10 +59,11 @@
   /* Type */
   --od-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --od-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
-  --od-text-xs: 11px; /* meta, badges, shortcuts, tooltips */
-  --od-text-sm: 12px; /* UI default, inputs, buttons */
-  --od-text-base: 13px; /* card titles, section headers */
-  --od-text-md: 14px; /* panel headers, modal titles */
+  --od-text-xs: 11px; /* floor: meta, badges, shortcuts, tooltips */
+  --od-text-sm: 11px; /* field labels, select options, layer items, inputs */
+  --od-text-base: 11px; /* card titles, section headers */
+  --od-text-md: 12px; /* secondary headers, modal titles */
+  --od-text-lg: 12px; /* top-level panel titles */
 }
 
 @media (prefers-color-scheme: dark) {

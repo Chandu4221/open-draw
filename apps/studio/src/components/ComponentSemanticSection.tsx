@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { PlatformProfile, SemanticConflict, SemanticDefinition } from "@open-draw/contracts";
 import { CONTROL_TYPES } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { OdField } from "@open-draw/ui";
+import {
+  groupProfileSemantics,
+  loadRecentSemanticTags,
+  resolveRecentDefinitions,
+  saveRecentSemanticTag,
+} from "./semantic-select-helpers";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
 export interface ComponentSemanticSectionProps {
@@ -51,11 +57,22 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
     handleStyleCommit,
   } = props;
 
+  const groupedSemantics = useMemo(() => groupProfileSemantics(activeProfile), [activeProfile]);
+
+  const recentDefs = useMemo(() => {
+    const tags = loadRecentSemanticTags(activeProfile?.id);
+    return resolveRecentDefinitions(activeProfile, tags);
+  }, [activeProfile]);
+
+  const onSelectSemantic = (semanticId: string) => {
+    if (semanticId) {
+      saveRecentSemanticTag(semanticId, activeProfile?.id);
+    }
+    handleSetSemantic(semanticId);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
-      <div className="od-divider od-divider--horizontal" />
-      <h3 className="od-section-header">Component Semantics</h3>
-
       <OdField label="Content" htmlFor="component-content">
         <input
           id="component-content"
@@ -101,23 +118,35 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
             className="od-select"
             style={{ width: "100%" }}
             value={selectedShape.meta.semantic?.id ?? ""}
-            onChange={(e) => handleSetSemantic(e.target.value)}
+            onChange={(e) => onSelectSemantic(e.target.value)}
           >
             <option value="">(None / Baseline)</option>
-            {Object.values(activeProfile.semantics)
-              .filter((def) => def.id !== activeProfile.rootSemantic)
-              .sort((a, b) => a.displayName.localeCompare(b.displayName))
-              .map((def) => (
-                <option key={def.id} value={def.id}>
-                  {def.displayName} ({def.id})
-                </option>
-              ))}
+            {recentDefs.length > 0 && (
+              <optgroup label="── Recently Used ──">
+                {recentDefs.map((def) => (
+                  <option key={`recent-${def.id}`} value={def.id}>
+                    {def.displayName} ({def.id})
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {groupedSemantics.map((group) => (
+              <optgroup key={group.category} label={`── ${group.title} (${group.items.length}) ──`}>
+                {group.items.map((def) => (
+                  <option key={def.id} value={def.id}>
+                    {def.displayName} ({def.id})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
             {selectedShape.meta.semantic &&
               !activeProfile.semantics[selectedShape.meta.semantic.id] && (
-                <option value={selectedShape.meta.semantic.id}>
-                  [Foreign] {selectedShape.meta.semantic.id} ({selectedShape.meta.semantic.platform}
-                  )
-                </option>
+                <optgroup label="── Foreign Platform ──">
+                  <option value={selectedShape.meta.semantic.id}>
+                    [Foreign] {selectedShape.meta.semantic.id} (
+                    {selectedShape.meta.semantic.platform})
+                  </option>
+                </optgroup>
               )}
           </select>
         </OdField>
@@ -125,9 +154,7 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
 
       {semanticDef?.properties && semanticDef.properties.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-8)" }}>
-          <span className="od-label" style={{ fontSize: "10px" }}>
-            Properties ({semanticDef.displayName})
-          </span>
+          <span className="od-label">Properties ({semanticDef.displayName})</span>
           {semanticDef.properties.map((schema) => {
             const val = semanticProps[schema.id];
             const propInputId = `component-prop-${selectedShape.id}-${schema.id}`;

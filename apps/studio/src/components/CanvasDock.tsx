@@ -1,16 +1,15 @@
 import React from "react";
 import { TOOLS, type ToolId } from "@open-draw/canvas";
-import { OdButton, OdIcon, OdIconButton, OdTooltip } from "@open-draw/ui";
+import { OdIconButton, OdTooltip } from "@open-draw/ui";
 
 export interface CanvasDockProps {
   readonly tool: ToolId;
   readonly chooseTool: (tool: ToolId) => void;
   readonly handleLoad?: () => void;
-  readonly onOpenExportModal: () => void;
 }
 
 export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
-  const { tool, chooseTool, handleLoad, onOpenExportModal } = props;
+  const { tool, chooseTool, handleLoad } = props;
 
   return (
     <div className="od-dock" role="toolbar" aria-label="Canvas tools and actions dock">
@@ -72,35 +71,16 @@ export function CanvasDock(props: CanvasDockProps): React.JSX.Element {
         </OdTooltip>
       </div>
 
-      <div className="od-divider" />
-
-      {/* Group 2: File & Export */}
-      <div className="od-dock-group">
-        {handleLoad && (
-          <OdTooltip text="Open document">
-            <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />
-          </OdTooltip>
-        )}
-        <OdTooltip text="Export wireframe">
-          <OdButton
-            variant="ghost"
-            onClick={onOpenExportModal}
-            aria-label="Export wireframe"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "var(--od-4)",
-              padding: "0 var(--od-8)",
-              height: "var(--od-control-height)",
-              fontSize: "var(--od-text-xs)",
-              fontWeight: 600,
-            }}
-          >
-            <OdIcon name="export" size={16} />
-            <span>Export</span>
-          </OdButton>
-        </OdTooltip>
-      </div>
+      {handleLoad && (
+        <>
+          <div className="od-divider" />
+          <div className="od-dock-group">
+            <OdTooltip text="Open document">
+              <OdIconButton name="open" aria-label="Open document" ghost onClick={handleLoad} />
+            </OdTooltip>
+          </div>
+        </>
+      )}
     </div>
   );
 }

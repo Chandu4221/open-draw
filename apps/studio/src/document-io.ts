@@ -1,19 +1,32 @@
-import { parseDocument, serializeDocument, type Document, type Shape } from "@open-draw/document";
+import {
+  parseDocument,
+  serializeDocument,
+  subtreeOf,
+  type Document,
+  type Shape,
+} from "@open-draw/document";
 import { exportJson, exportMarkdown } from "@open-draw/export-markdown";
 import { documentToSvgWithLegend, type LegendItem } from "@open-draw/renderer-svg";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
-import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/contracts";
+import {
+  isRootId,
+  type CreativityLevel,
+  type ShapeId,
+  DEFAULT_CREATIVITY_LEVEL,
+} from "@open-draw/contracts";
 
 export interface SvgExportOptions {
   readonly includeLegend?: boolean | undefined;
   readonly includeAnnotations?: boolean | undefined;
+  readonly rootId?: ShapeId | undefined;
 }
 
 export interface MarkdownExportIoOptions {
   readonly creativityLevel?: CreativityLevel | undefined;
   readonly includeLegend?: boolean | undefined;
   readonly includeAsciiSketch?: boolean | undefined;
+  readonly rootId?: ShapeId | undefined;
 }
 
 export function extractDocumentLegendItems(doc: Document): readonly LegendItem[] {
@@ -38,6 +51,7 @@ export function generateExportSvg(doc: Document, options?: SvgExportOptions | bo
   const includeLegend = typeof options === "boolean" ? options : (options?.includeLegend ?? false);
   const includeAnnotations =
     typeof options === "boolean" ? true : (options?.includeAnnotations ?? true);
+  const rootId = typeof options === "object" ? options.rootId : undefined;
 
   const resolveDisplayName = (shape: Shape): string => {
     const rootPlatform = resolveRootPlatform(doc, shape.id);
@@ -45,10 +59,16 @@ export function generateExportSvg(doc: Document, options?: SvgExportOptions | bo
     return resolveShapeDisplayName(shape, profile);
   };
 
+  const visibleShapeIds =
+    rootId !== undefined && !isRootId(rootId)
+      ? new Set(subtreeOf(doc, rootId).map((s) => s.id))
+      : undefined;
+
   return documentToSvgWithLegend(doc, {
     includeLegend,
     includeAnnotations,
     resolveDisplayName,
+    ...(visibleShapeIds !== undefined ? { visibleShapeIds } : {}),
   });
 }
 
@@ -175,8 +195,12 @@ export async function copyDocumentPng(
 export function generateExportJson(
   doc: Document,
   creativityLevel: CreativityLevel = DEFAULT_CREATIVITY_LEVEL,
+  rootId?: ShapeId | undefined,
 ): string {
-  return exportJson(doc, { creativityLevel });
+  return exportJson(doc, {
+    creativityLevel,
+    ...(rootId !== undefined && !isRootId(rootId) ? { rootId } : {}),
+  });
 }
 
 export function generateExportMarkdown(
@@ -187,8 +211,14 @@ export function generateExportMarkdown(
     typeof options === "number" ? options : (options?.creativityLevel ?? DEFAULT_CREATIVITY_LEVEL);
   const includeLegend = typeof options === "object" ? options.includeLegend : false;
   const includeAsciiSketch = typeof options === "object" ? options.includeAsciiSketch : undefined;
+  const rootId = typeof options === "object" ? options.rootId : undefined;
 
-  return exportMarkdown(doc, { creativityLevel, includeLegend, includeAsciiSketch });
+  return exportMarkdown(doc, {
+    creativityLevel,
+    includeLegend,
+    includeAsciiSketch,
+    ...(rootId !== undefined && !isRootId(rootId) ? { rootId } : {}),
+  });
 }
 
 export function generateSaveDocumentJson(doc: Document): string {
@@ -206,8 +236,12 @@ export function saveDocumentJson(doc: Document): void {
   safeRevokeUrl(url);
 }
 
-export function exportDocumentJson(doc: Document, creativityLevel?: CreativityLevel): void {
-  const json = generateExportJson(doc, creativityLevel);
+export function exportDocumentJson(
+  doc: Document,
+  creativityLevel?: CreativityLevel,
+  rootId?: ShapeId | undefined,
+): void {
+  const json = generateExportJson(doc, creativityLevel, rootId);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

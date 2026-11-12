@@ -1,8 +1,11 @@
-import { COMMANDS, type Command, type Shape } from "@open-draw/document";
+import type { ShapeId } from "@open-draw/contracts";
+import { COMMANDS, type Command, type Document, type Shape } from "@open-draw/document";
 
 export interface BatchMutationsProps {
+  readonly doc?: Document | undefined;
   readonly selectedShapes: readonly Shape[];
   readonly clearSelection: () => void;
+  readonly selectShape?: ((id: ShapeId) => void) | undefined;
   readonly commit: (commands: readonly Command[]) => void;
   readonly render: () => void;
 }

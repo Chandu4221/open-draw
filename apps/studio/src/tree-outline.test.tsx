@@ -6,6 +6,7 @@ import {
   parseShapeId,
   PLATFORMS,
   ROOT_ID,
+  ROOT_ROLES,
   SHAPE_KINDS,
   STYLE_PROFILES,
 } from "@open-draw/contracts";
@@ -24,10 +25,7 @@ describe("TreeOutline", () => {
       boundingBox: { x: 10, y: 10, width: 100, height: 32 },
       label: "User Defined Name",
       content: "TEXT",
-      meta: {
-        order: {},
-        semantic: { id: "heading", platform: "web" },
-      },
+      meta: { order: {}, semantic: { id: "heading", platform: "web" } },
     };
 
     const textShapeWithoutLabel: Shape = {
@@ -36,10 +34,7 @@ describe("TreeOutline", () => {
       kind: SHAPE_KINDS.text,
       boundingBox: { x: 10, y: 50, width: 100, height: 32 },
       content: "TEXT 2",
-      meta: {
-        order: {},
-        semantic: { id: "button", platform: "web" },
-      },
+      meta: { order: {}, semantic: { id: "button", platform: "web" } },
     };
 
     const untaggedRect: Shape = {
@@ -186,6 +181,23 @@ describe("TreeOutline", () => {
     expect(html).toContain("Nav Header");
     expect(html).toMatch(/<span[^>]*class="[^"]*od-badge[^"]*"[^>]*>Component<\/span>/);
   });
+
+  it("renders scoped header bar with active root title and reset action when scoped", () => {
+    const html = renderToString(
+      <TreeOutline
+        treeNodes={[]}
+        selectedShapeId={parseShapeId("child-1")}
+        selectShape={vi.fn()}
+        isScopedToRoot={true}
+        activeRootTitle="Mobile Login Screen"
+        onClearScope={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Scope:");
+    expect(html).toContain("Mobile Login Screen");
+    expect(html).toContain("All Screens");
+  });
 });
 
 describe("ContainerInspector role synchronization (R-004, R-016, R-023, R-024)", () => {
@@ -250,5 +262,34 @@ describe("ContainerInspector role synchronization (R-004, R-016, R-023, R-024)",
     );
 
     expect(html).not.toContain("Root Role");
+  });
+
+  it("renders Component Semantics heading only once when rootRole is component", () => {
+    const compRootShape: Shape = {
+      ...rootShape,
+      meta: { order: {}, platform: "web", role: "component" },
+    };
+    const noop = vi.fn();
+    const html = renderToString(
+      <ContainerInspector
+        selectedShape={compRootShape}
+        rootPlatform={PLATFORMS.web}
+        rootStyle={STYLE_PROFILES.minimal}
+        rootRole={ROOT_ROLES.component}
+        activeProfile={WEB_PROFILE}
+        handleSetLabel={noop}
+        handleSetPlatform={noop}
+        handleSetStyle={noop}
+        handleSetRole={noop}
+        handleSetSemantic={noop}
+        handlePropertyChange={noop}
+        handleSetContent={noop}
+        handleStyleChange={noop}
+        handleStylePreview={noop}
+        handleStyleCommit={noop}
+      />,
+    );
+
+    expect(html.match(/Component Semantics/g)).toHaveLength(1);
   });
 });

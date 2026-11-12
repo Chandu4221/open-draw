@@ -116,7 +116,7 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
     <div style={{ display: "flex", flexDirection: "column" }}>
       {/* 1. IDENTITY & PLATFORM */}
       <OdCard title="Identity & Platform" collapsible defaultExpanded>
-        <OdField label="Name" htmlFor="container-name">
+        <OdField label="Name" htmlFor="container-name" meta={`ID: ${selectedShape.id}`}>
           <input
             id="container-name"
             type="text"
@@ -127,8 +127,6 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
             onChange={(e) => handleSetLabel(e.target.value)}
           />
         </OdField>
-
-        <span className="od-meta">ID: {selectedShape.id}</span>
 
         <OdField label="Platform Profile" htmlFor="container-platform-profile">
           <select

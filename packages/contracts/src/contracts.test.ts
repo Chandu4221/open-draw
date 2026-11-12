@@ -32,6 +32,8 @@ import {
   CREATIVITY_LEVEL_DEFINITIONS,
   DEFAULT_CREATIVITY_LEVEL,
   THEME_PALETTE_SLOTS,
+  SEMANTIC_CATEGORIES,
+  isValidSemanticCategory,
 } from "./index";
 
 describe("capabilities", () => {
@@ -163,6 +165,7 @@ describe("root-roles", () => {
     expect(ROOT_ROLE_BY_VALUE.component).toBe(ROOT_ROLES.component);
     expect(isRootRole("screen")).toBe(true);
     expect(isRootRole("component")).toBe(true);
+    expect(isRootRole("project")).toBe(false);
     expect(isRootRole("modal")).toBe(false);
     expect(isRootRole(123)).toBe(false);
     expect(isRootRole(null)).toBe(false);
@@ -204,5 +207,24 @@ describe("theme-palettes", () => {
       "error",
       "success",
     ]);
+  });
+});
+
+describe("semantic-categories", () => {
+  it("exposes all 10 semantic categories and validates membership", () => {
+    expect(SEMANTIC_CATEGORIES.layout).toBe("layout");
+    expect(SEMANTIC_CATEGORIES.navigation).toBe("navigation");
+    expect(SEMANTIC_CATEGORIES.marketing).toBe("marketing");
+    expect(SEMANTIC_CATEGORIES.ecommerce).toBe("ecommerce");
+    expect(SEMANTIC_CATEGORIES.auth).toBe("auth");
+    expect(SEMANTIC_CATEGORIES.interactive).toBe("interactive");
+    expect(SEMANTIC_CATEGORIES.forms).toBe("forms");
+    expect(SEMANTIC_CATEGORIES.data).toBe("data");
+    expect(SEMANTIC_CATEGORIES.content).toBe("content");
+    expect(SEMANTIC_CATEGORIES.feedback).toBe("feedback");
+
+    expect(isValidSemanticCategory("marketing")).toBe(true);
+    expect(isValidSemanticCategory("ecommerce")).toBe(true);
+    expect(isValidSemanticCategory("unknown-category")).toBe(false);
   });
 });

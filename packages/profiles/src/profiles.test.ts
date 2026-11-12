@@ -37,6 +37,45 @@ describe("web profile", () => {
     expect(WEB_PROFILE.semantics.avatar?.displayName).toBe("Avatar");
     expect(WEB_PROFILE.semantics.link?.displayName).toBe("Link");
   });
+
+  it("organizes expanded semantic components across all 10 categories", () => {
+    const semantics = Object.values(WEB_PROFILE.semantics);
+    expect(semantics.length).toBeGreaterThanOrEqual(130);
+
+    // Verify presence and categorization of key components across categories
+    expect(WEB_PROFILE.semantics["app-shell"]?.category).toBe("layout");
+    expect(WEB_PROFILE.semantics["app-shell"]?.scope).toBe("section");
+
+    expect(WEB_PROFILE.semantics["nav-menu"]?.category).toBe("navigation");
+    expect(WEB_PROFILE.semantics["nav-menu"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics.hero?.category).toBe("marketing");
+    expect(WEB_PROFILE.semantics.hero?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics["pricing-table"]?.category).toBe("marketing");
+
+    expect(WEB_PROFILE.semantics["product-card"]?.category).toBe("ecommerce");
+    expect(WEB_PROFILE.semantics["product-card"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics["login-form"]?.category).toBe("auth");
+    expect(WEB_PROFILE.semantics["login-form"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics["primary-button"]?.category).toBe("interactive");
+    expect(WEB_PROFILE.semantics["primary-button"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics["search-bar"]?.category).toBe("forms");
+    expect(WEB_PROFILE.semantics["search-bar"]?.scope).toBe("component");
+
+    expect(WEB_PROFILE.semantics.dashboard?.category).toBe("data");
+    expect(WEB_PROFILE.semantics.dashboard?.scope).toBe("section");
+    expect(WEB_PROFILE.semantics["metric-card"]?.category).toBe("data");
+
+    expect(WEB_PROFILE.semantics.accordion?.category).toBe("content");
+    expect(WEB_PROFILE.semantics["card-grid"]?.scope).toBe("section");
+
+    expect(WEB_PROFILE.semantics.toast?.category).toBe("feedback");
+    expect(WEB_PROFILE.semantics.toast?.scope).toBe("component");
+    expect(WEB_PROFILE.semantics["not-found"]?.scope).toBe("section");
+  });
 });
 
 describe("android native profile", () => {
@@ -64,6 +103,53 @@ describe("android native profile", () => {
     expect(ANDROID_NATIVE_PROFILE.semantics.chip?.displayName).toBe("Assist / Filter Chip");
     expect(ANDROID_NATIVE_PROFILE.semantics["tab-row"]?.displayName).toBe("Primary Tab Row");
     expect(ANDROID_NATIVE_PROFILE.semantics.badge?.displayName).toBe("Badge Indicator");
+  });
+
+  it("organizes Material 3 semantics with category and scope across all 5 active categories", () => {
+    const semantics = Object.values(ANDROID_NATIVE_PROFILE.semantics);
+    expect(semantics.length).toBeGreaterThanOrEqual(30);
+
+    for (const def of semantics) {
+      expect(def.category).toBeDefined();
+      expect(def.scope).toBeDefined();
+    }
+
+    // Verify key components in each category
+    // Layout
+    expect(ANDROID_NATIVE_PROFILE.semantics.scaffold?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics.scaffold?.scope).toBe("section");
+    expect(ANDROID_NATIVE_PROFILE.semantics["list-item"]?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics["list-item"]?.scope).toBe("component");
+    expect(ANDROID_NATIVE_PROFILE.semantics.divider?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics["side-sheet"]?.category).toBe("layout");
+    expect(ANDROID_NATIVE_PROFILE.semantics.carousel?.category).toBe("layout");
+
+    // Navigation
+    expect(ANDROID_NATIVE_PROFILE.semantics["bottom-app-bar"]?.category).toBe("navigation");
+    expect(ANDROID_NATIVE_PROFILE.semantics["bottom-app-bar"]?.scope).toBe("section");
+    expect(ANDROID_NATIVE_PROFILE.semantics["navigation-rail"]?.category).toBe("navigation");
+    expect(ANDROID_NATIVE_PROFILE.semantics["navigation-rail"]?.scope).toBe("section");
+    expect(ANDROID_NATIVE_PROFILE.semantics["navigation-drawer"]?.category).toBe("navigation");
+    expect(ANDROID_NATIVE_PROFILE.semantics["search-bar"]?.category).toBe("navigation");
+
+    // Interactive
+    expect(ANDROID_NATIVE_PROFILE.semantics["icon-button"]?.category).toBe("interactive");
+    expect(ANDROID_NATIVE_PROFILE.semantics["icon-button"]?.scope).toBe("component");
+    expect(ANDROID_NATIVE_PROFILE.semantics["segmented-button"]?.category).toBe("interactive");
+    expect(ANDROID_NATIVE_PROFILE.semantics["extended-fab"]?.category).toBe("interactive");
+
+    // Forms
+    expect(ANDROID_NATIVE_PROFILE.semantics["radio-button"]?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics.slider?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics.menu?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics["date-picker"]?.category).toBe("forms");
+    expect(ANDROID_NATIVE_PROFILE.semantics["time-picker"]?.category).toBe("forms");
+
+    // Feedback
+    expect(ANDROID_NATIVE_PROFILE.semantics.snackbar?.category).toBe("feedback");
+    expect(ANDROID_NATIVE_PROFILE.semantics.snackbar?.scope).toBe("component");
+    expect(ANDROID_NATIVE_PROFILE.semantics["progress-indicator"]?.category).toBe("feedback");
+    expect(ANDROID_NATIVE_PROFILE.semantics.tooltip?.category).toBe("feedback");
   });
 });
 

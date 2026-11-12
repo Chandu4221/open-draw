@@ -13,10 +13,22 @@ export interface TreeOutlineProps {
   readonly treeNodes: TreeNodes;
   readonly selectedShapeId: ShapeId | null;
   readonly selectShape: (id: ShapeId) => void;
+  readonly showHeader?: boolean;
+  readonly isScopedToRoot?: boolean | undefined;
+  readonly activeRootTitle?: string | undefined;
+  readonly onClearScope?: (() => void) | undefined;
 }
 
 export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
-  const { treeNodes, selectedShapeId, selectShape } = props;
+  const {
+    treeNodes,
+    selectedShapeId,
+    selectShape,
+    showHeader = true,
+    isScopedToRoot,
+    activeRootTitle,
+    onClearScope,
+  } = props;
 
   return (
     <div
@@ -25,25 +37,74 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
         flexDirection: "column",
         height: "100%",
         width: "100%",
+        minHeight: 0,
         boxSizing: "border-box",
       }}
     >
+      {showHeader && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "var(--od-8) var(--od-16)",
+            borderBottom: "var(--od-border-width) solid var(--od-border)",
+            flexShrink: 0,
+          }}
+        >
+          <span className="od-section-header">LAYERS</span>
+          <OdBadge>{treeNodes.length}</OdBadge>
+        </div>
+      )}
+      {isScopedToRoot && activeRootTitle && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "var(--od-4) var(--od-8)",
+            backgroundColor: "var(--od-bg)",
+            borderBottom: "var(--od-border-width) solid var(--od-border)",
+            fontSize: "var(--od-text-xs)",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--od-4)", minWidth: 0 }}>
+            <span style={{ color: "var(--od-text-secondary)", flexShrink: 0 }}>Scope:</span>
+            <span
+              style={{
+                fontWeight: 600,
+                color: "var(--od-text)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {activeRootTitle}
+            </span>
+          </div>
+          {onClearScope && (
+            <button
+              type="button"
+              className="od-btn od-btn--ghost"
+              style={{
+                height: "20px",
+                padding: "0 var(--od-4)",
+                fontSize: "10px",
+                flexShrink: 0,
+              }}
+              onClick={onClearScope}
+              title="Show all screens on canvas"
+            >
+              All Screens
+            </button>
+          )}
+        </div>
+      )}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "var(--od-8) var(--od-16)",
-          borderBottom: "var(--od-border-width) solid var(--od-border)",
-          flexShrink: 0,
-        }}
-      >
-        <span className="od-section-header">LAYERS</span>
-        <OdBadge>{treeNodes.length}</OdBadge>
-      </div>
-      <div
-        style={{
-          flex: 1,
+          flex: "1 1 auto",
+          minHeight: 0,
           overflowY: "auto",
           padding: "var(--od-4) var(--od-8)",
         }}
@@ -115,7 +176,7 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                     <OdBadge
                       variant="outline"
                       style={{
-                        fontSize: "10px",
+                        fontSize: "11px",
                         height: "18px",
                         padding: "0 6px",
                         fontWeight: 500,
@@ -129,7 +190,7 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                       style={{
                         backgroundColor: "var(--od-danger-soft)",
                         color: "var(--od-danger)",
-                        fontSize: "10px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         padding: "1px 4px",
                         borderRadius: "var(--od-radius-sm)",

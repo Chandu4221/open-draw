@@ -18,7 +18,6 @@ import {
 import { useToast } from "@open-draw/ui";
 import { computeSemanticChipOverlays, pickAnyRootChip } from "../canvas-overlays";
 import { StudioLayout } from "../templates/StudioLayout";
-
 import { Sidebar } from "./Sidebar";
 import { CanvasBrand } from "./CanvasBrand";
 import { CanvasDock } from "./CanvasDock";
@@ -56,12 +55,12 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     [editor],
   );
 
-  const getDocSnapshot = useCallback(() => {
-    return editor !== null ? editor.getDocument() : initialDoc;
-  }, [editor, initialDoc]);
+  const getDocSnapshot = useCallback(
+    () => (editor !== null ? editor.getDocument() : initialDoc),
+    [editor, initialDoc],
+  );
 
   const doc = useSyncExternalStore(subscribeDoc, getDocSnapshot, () => initialDoc);
-
   const getDoc = useCallback(() => editorRef.current?.getDocument() ?? initialDoc, [initialDoc]);
   const toastRef = useRef(toast);
   useStudioDraft(getDoc);
@@ -90,17 +89,15 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       tool: TOOLS.select,
       nestingMode: "containers-only",
       onFallback: (msg) => toastRef.current.push({ type: "info", text: msg }),
-      renderCustomOverlays: (ctx) => {
-        return computeSemanticChipOverlays({
+      renderCustomOverlays: (ctx) =>
+        computeSemanticChipOverlays({
           doc: ctx.doc,
           selectedIds: ctx.selectedIds,
           zoom: ctx.zoom,
           visibleChipRootIds: ctx.canvas.getVisibleChipRootIds(),
-        });
-      },
+        }),
       interceptPointerDown: (_event, { world, canvas, doc: curDoc }) => {
-        const zoom = canvas.getCamera().zoom;
-        const hitChip = pickAnyRootChip(curDoc, world, zoom);
+        const hitChip = pickAnyRootChip(curDoc, world, canvas.getCamera().zoom);
         if (hitChip !== null) {
           canvas.toggleRootChipsVisible(hitChip);
           setVisibleChipRoots(new Set(canvas.getVisibleChipRootIds()));
@@ -169,31 +166,28 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   };
 
   const handleDeviceChange = (deviceType?: DeviceType): void => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.canvas.setActiveDeviceType(deviceType);
-      editor.render();
+    const ed = editorRef.current;
+    if (ed) {
+      ed.canvas.setActiveDeviceType(deviceType);
+      ed.render();
     }
     setActiveDeviceType(deviceType);
   };
 
   const handleToggleChildChips = (rootId: ShapeId): void => {
-    const editor = editorRef.current;
-    if (editor === null) return;
-    editor.canvas.toggleRootChipsVisible(rootId);
-    setVisibleChipRoots(new Set(editor.canvas.getVisibleChipRootIds()));
-    editor.render();
+    const ed = editorRef.current;
+    if (!ed) return;
+    ed.canvas.toggleRootChipsVisible(rootId);
+    setVisibleChipRoots(new Set(ed.canvas.getVisibleChipRootIds()));
+    ed.render();
   };
 
   const handleZoom = (factor: number): void => {
-    const editor = editorRef.current;
-    if (editor === null) return;
-    if (factor > 1) {
-      editor.zoomIn();
-    } else {
-      editor.zoomOut();
-    }
-    setZoomPercent(Math.round(editor.getCamera().zoom * 100));
+    const ed = editorRef.current;
+    if (!ed) return;
+    if (factor > 1) ed.zoomIn();
+    else ed.zoomOut();
+    setZoomPercent(Math.round(ed.getCamera().zoom * 100));
   };
 
   const handleResetZoom = (): void => {
@@ -206,13 +200,9 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     setSelectedShapeId(id);
   };
 
-  function render(): void {
-    editorRef.current?.render();
-  }
-
-  function commit(commands: readonly Command[], options?: { record?: boolean }): void {
-    editorRef.current?.execute(commands, options);
-  }
+  const render = (): void => editorRef.current?.render();
+  const commit = (cmds: readonly Command[], opts?: { record?: boolean }): void =>
+    editorRef.current?.execute(cmds, opts);
 
   const toolbarActions = useToolbarActions({
     getDoc,
@@ -248,8 +238,10 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     [doc, selectedShapeIds],
   );
   const batchMutations = useBatchMutations({
+    doc,
     selectedShapes,
     clearSelection: () => editorRef.current?.clearSelection(),
+    selectShape,
     commit,
     render,
   });
@@ -275,12 +267,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       }
       shortcutsSlot={<CanvasShortcutsTrigger onOpenShortcuts={() => setIsShortcutsOpen(true)} />}
       dockSlot={
-        <CanvasDock
-          tool={tool}
-          chooseTool={chooseTool}
-          handleLoad={toolbarActions.handleLoad}
-          onOpenExportModal={() => handleOpenExportModal("markdown")}
-        />
+        <CanvasDock tool={tool} chooseTool={chooseTool} handleLoad={toolbarActions.handleLoad} />
       }
       zoomSlot={
         <CanvasZoomControls
@@ -296,6 +283,12 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           {...geometryMutations}
           {...themeMutations}
           {...batchMutations}
+          doc={doc}
+          rootShape={inspection.rootShape}
+          isScopedToRoot={inspection.isScopedToRoot}
+          activeRootTitle={inspection.activeRootTitle}
+          onClearScope={() => editorRef.current?.clearSelection()}
+          onOpenAdvancedModal={() => handleOpenExportModal("markdown")}
           selectedShapes={selectedShapes}
           selectedShapeId={selectedShapeId}
           selectShape={selectShape}
@@ -313,6 +306,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
             initialFormat={exportInitialFormat}
             includeLegend={includeLegend}
             setIncludeLegend={setIncludeLegend}
+            selectedShapeId={selectedShapeId}
           />
           <KeyboardShortcutsModal
             isOpen={isShortcutsOpen}

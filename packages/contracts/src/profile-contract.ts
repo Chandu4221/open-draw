@@ -2,7 +2,7 @@
 // Zero dependencies, pure data types and registries (R-005, R-023, R-026).
 import type { DeviceType } from "./device-types";
 import type { PlatformId } from "./platforms";
-import type { PropertySchema, SemanticId } from "./semantic-contract";
+import type { PropertySchema, SemanticCategory, SemanticId } from "./semantic-contract";
 
 /**
  * Closed registry of style profiles.
@@ -25,6 +25,8 @@ export const STYLE_PROFILE_BY_VALUE: Readonly<Record<string, StyleId>> = Object.
 export interface SemanticDefinition {
   readonly id: SemanticId;
   readonly displayName: string;
+  readonly category?: SemanticCategory;
+  readonly scope?: "section" | "component";
   readonly properties?: readonly PropertySchema[];
 }
 
