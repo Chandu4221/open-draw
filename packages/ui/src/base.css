@@ -423,10 +423,10 @@
 
 /* Canvas background */
 .od-canvas-bg {
-  background-color: var(--od-canvas-bg, var(--od-bg));
+  background-color: var(--od-canvas-bg, #e5e5e8);
   background-image: radial-gradient(
     circle,
-    var(--od-border-strong) var(--od-border-width),
+    var(--od-canvas-grid, #c4c4c8) var(--od-border-width),
     transparent var(--od-border-width)
   );
   background-size: var(--od-grid-size) var(--od-grid-size);
@@ -486,6 +486,84 @@
   padding: var(--od-12) var(--od-16);
   border-top: var(--od-border-width) solid var(--od-border);
   background-color: var(--od-bg);
+}
+
+/* Keyboard Shortcuts Modal */
+.od-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--od-16);
+}
+
+@media (max-width: 640px) {
+  .od-shortcuts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.od-shortcuts-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--od-16);
+}
+
+.od-shortcuts-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--od-8);
+}
+
+.od-shortcuts-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--od-bg);
+  border: var(--od-border-width) solid var(--od-border);
+  border-radius: var(--od-radius-sm);
+  overflow: hidden;
+}
+
+.od-shortcuts-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--od-12);
+  padding: var(--od-6) var(--od-8);
+  border-bottom: var(--od-border-width) solid var(--od-border);
+  transition: background-color 0.15s ease;
+}
+
+.od-shortcuts-row:last-child {
+  border-bottom: none;
+}
+
+.od-shortcuts-row:hover {
+  background-color: var(--od-accent-soft);
+}
+
+.od-shortcuts-label {
+  font-size: var(--od-text-sm);
+  color: var(--od-text);
+  line-height: 1.3;
+}
+
+.od-shortcuts-keys {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--od-6);
+  flex-shrink: 0;
+}
+
+.od-shortcuts-combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.od-shortcuts-or {
+  font-size: var(--od-text-xs);
+  color: var(--od-text-tertiary);
+  margin-inline: 1px;
 }
 
 /* Collapsible Card Widget */
@@ -835,6 +913,18 @@
   align-items: center;
   gap: var(--od-2);
   padding: var(--od-6) var(--od-8);
+  background-color: var(--od-surface-raised);
+  border: var(--od-border-width) solid var(--od-border-strong);
+  border-radius: var(--od-12);
+  box-shadow: var(--od-shadow-floating);
+  backdrop-filter: blur(8px);
+}
+
+.od-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--od-6);
   background-color: var(--od-surface-raised);
   border: var(--od-border-width) solid var(--od-border-strong);
   border-radius: var(--od-12);

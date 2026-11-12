@@ -32,6 +32,7 @@ import { computeInspectionData } from "../use-inspection-data";
 import { useRootThemeMutations } from "../use-root-theme-mutations";
 import { useToolbarActions } from "../use-toolbar-actions";
 import { loadInitialDocument, saveDraftDocument, useStudioDraft } from "../use-studio-draft";
+import { useUiTheme } from "../use-ui-theme";
 
 export interface StudioShellProps {
   readonly onBackToLanding?: () => void;
@@ -39,6 +40,7 @@ export interface StudioShellProps {
 
 export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.Element {
   const toast = useToast();
+  const { theme, toggleTheme } = useUiTheme();
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -274,6 +276,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           zoomPercent={zoomPercent}
           handleZoom={handleZoom}
           handleResetZoom={handleResetZoom}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
       }
       sidebarSlot={

@@ -17,7 +17,7 @@ export function CanvasBrand({ onBackToLanding }: CanvasBrandProps): React.JSX.El
         style={{
           fontSize: "var(--od-text-sm)",
           fontWeight: 700,
-          color: "var(--od-text)",
+          color: "var(--od-canvas-text, #09090b)",
           letterSpacing: "0.02em",
         }}
       >
