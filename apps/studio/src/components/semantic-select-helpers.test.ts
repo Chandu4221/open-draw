@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ANDROID_NATIVE_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
+  buildFlatSemanticOptions,
+  filterSemanticDefinitions,
+  getNextHighlightedIndex,
   groupProfileSemantics,
   loadRecentSemanticTags,
   resolveRecentDefinitions,
@@ -88,5 +91,42 @@ describe("semantic select helpers", () => {
     const layoutGroup = groups.find((g) => g.category === "layout");
     expect(layoutGroup?.items.some((i) => i.id === "scaffold")).toBe(true);
     expect(layoutGroup?.items.some((i) => i.id === "card")).toBe(true);
+  });
+
+  it("filters semantic definitions by query matching display name and id", () => {
+    const allDefs = Object.values(WEB_PROFILE.semantics);
+    const matches = filterSemanticDefinitions(allDefs, "butt");
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches.some((m) => m.id === "button")).toBe(true);
+  });
+
+  it("returns empty array when query is empty or whitespace", () => {
+    const allDefs = Object.values(WEB_PROFILE.semantics);
+    expect(filterSemanticDefinitions(allDefs, "   ")).toEqual([]);
+  });
+
+  it("builds flat semantic options list for keyboard navigation", () => {
+    const groups = groupProfileSemantics(WEB_PROFILE);
+    const options = buildFlatSemanticOptions({
+      placeholder: "(None / Baseline)",
+      query: "",
+      recentDefs: [],
+      groupedSemantics: groups,
+      filteredMatches: [],
+      selectedTag: "",
+      activeProfile: WEB_PROFILE,
+    });
+
+    expect(options[0]).toEqual({ id: "", displayName: "(None / Baseline)" });
+    expect(options.length).toBeGreaterThan(1);
+    expect(options.some((o) => o.id === "button")).toBe(true);
+  });
+
+  it("calculates next highlighted index with wrap-around in both directions", () => {
+    expect(getNextHighlightedIndex(0, 5, 1)).toBe(1);
+    expect(getNextHighlightedIndex(4, 5, 1)).toBe(0);
+    expect(getNextHighlightedIndex(0, 5, -1)).toBe(4);
+    expect(getNextHighlightedIndex(3, 5, -1)).toBe(2);
+    expect(getNextHighlightedIndex(0, 0, 1)).toBe(0);
   });
 });

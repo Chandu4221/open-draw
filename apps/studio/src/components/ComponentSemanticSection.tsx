@@ -1,14 +1,9 @@
-import React, { useMemo } from "react";
+import React from "react";
 import type { PlatformProfile, SemanticConflict, SemanticDefinition } from "@open-draw/contracts";
 import { CONTROL_TYPES } from "@open-draw/contracts";
 import type { Shape } from "@open-draw/document";
 import { OdField } from "@open-draw/ui";
-import {
-  groupProfileSemantics,
-  loadRecentSemanticTags,
-  resolveRecentDefinitions,
-  saveRecentSemanticTag,
-} from "./semantic-select-helpers";
+import { SemanticSelect } from "./SemanticSelect";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
 export interface ComponentSemanticSectionProps {
@@ -57,20 +52,6 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
     handleStyleCommit,
   } = props;
 
-  const groupedSemantics = useMemo(() => groupProfileSemantics(activeProfile), [activeProfile]);
-
-  const recentDefs = useMemo(() => {
-    const tags = loadRecentSemanticTags(activeProfile?.id);
-    return resolveRecentDefinitions(activeProfile, tags);
-  }, [activeProfile]);
-
-  const onSelectSemantic = (semanticId: string) => {
-    if (semanticId) {
-      saveRecentSemanticTag(semanticId, activeProfile?.id);
-    }
-    handleSetSemantic(semanticId);
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--od-12)" }}>
       <OdField label="Content" htmlFor="component-content">
@@ -113,42 +94,12 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
 
       {activeProfile && (
         <OdField label="Semantic Tag" htmlFor="component-semantic-tag">
-          <select
+          <SemanticSelect
             id="component-semantic-tag"
-            className="od-select"
-            style={{ width: "100%" }}
-            value={selectedShape.meta.semantic?.id ?? ""}
-            onChange={(e) => onSelectSemantic(e.target.value)}
-          >
-            <option value="">(None / Baseline)</option>
-            {recentDefs.length > 0 && (
-              <optgroup label="── Recently Used ──">
-                {recentDefs.map((def) => (
-                  <option key={`recent-${def.id}`} value={def.id}>
-                    {def.displayName} ({def.id})
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {groupedSemantics.map((group) => (
-              <optgroup key={group.category} label={`── ${group.title} (${group.items.length}) ──`}>
-                {group.items.map((def) => (
-                  <option key={def.id} value={def.id}>
-                    {def.displayName} ({def.id})
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-            {selectedShape.meta.semantic &&
-              !activeProfile.semantics[selectedShape.meta.semantic.id] && (
-                <optgroup label="── Foreign Platform ──">
-                  <option value={selectedShape.meta.semantic.id}>
-                    [Foreign] {selectedShape.meta.semantic.id} (
-                    {selectedShape.meta.semantic.platform})
-                  </option>
-                </optgroup>
-              )}
-          </select>
+            activeProfile={activeProfile}
+            selectedTag={selectedShape.meta.semantic?.id ?? ""}
+            onSelect={handleSetSemantic}
+          />
         </OdField>
       )}
 
