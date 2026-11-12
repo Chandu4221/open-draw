@@ -104,7 +104,7 @@ describe("Sidebar collapsible panels and typography", () => {
     expect(html).toContain("LAYERS");
   });
 
-  it("renders a draggable horizontal sash separator between PROPERTIES and LAYERS with role='separator'", () => {
+  it("disables resizing on layers panel and allows natural flow without a resizer sash", () => {
     const html = renderToString(
       <Sidebar
         treeNodes={dummyNodes}
@@ -132,12 +132,12 @@ describe("Sidebar collapsible panels and typography", () => {
       />,
     );
 
-    expect(html).toContain('role="separator"');
-    expect(html).toContain('class="od-sidebar-sash"');
-    expect(html).toContain('aria-orientation="horizontal"');
+    expect(html).not.toContain('role="separator"');
+    expect(html).not.toContain("od-sidebar-sash");
+    expect(html).not.toContain('aria-orientation="horizontal"');
   });
 
-  it("configures PROPERTIES and LAYERS panels to hug content via flex: 0 1 auto to prevent forced white space gaps", () => {
+  it("configures PROPERTIES and LAYERS panels to flow naturally in a unified scroll container", () => {
     const html = renderToString(
       <Sidebar
         treeNodes={dummyNodes}
@@ -165,8 +165,9 @@ describe("Sidebar collapsible panels and typography", () => {
       />,
     );
 
-    // PROPERTIES and LAYERS containers must use 0 1 auto so neither force-stretches to create empty white gaps
-    expect(html).toContain('style="flex:0 1 auto');
+    // Sidebar panels use flex:0 0 auto and the sidebar has overflow-y:auto
+    expect(html).toContain('style="flex:0 0 auto');
+    expect(html).toContain("overflow-y:auto");
     expect(html).not.toContain("flex:1 1 0px");
   });
 });
