@@ -497,7 +497,8 @@ describe("visible text on shapes (F2, ADR-0006 Option A / shape.content)", () =>
     const doc = createDocument([createText(textId, { x: 200, y: 100, width: 120, height: 32 })]);
 
     const svg = documentToSvg(doc);
-    expect(svg.startsWith('<clipPath id="clip-text-standalone">')).toBe(true);
+    expect(svg.startsWith('<defs><clipPath id="clip-text-standalone">')).toBe(true);
+    expect(svg).toContain('fill="none"');
     expect(svg).not.toContain('fill="#ffffff"');
     expect(svg).toContain('<clipPath id="clip-text-standalone">');
     expect(svg).toContain('x="260"'); // 200 + 120/2

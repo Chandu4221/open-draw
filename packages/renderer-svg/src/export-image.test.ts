@@ -152,5 +152,19 @@ describe("documentToSvgWithLegend (F4, ADR-0006 Option A)", () => {
       expect(bounds.width).toBe(220);
       expect(bounds.height).toBe(120);
     });
+    it("encloses text clip paths inside defs and specifies fill none on clipping rect to prevent black box rendering", () => {
+      const textDoc = createDocument([
+        createRect(
+          parseShapeId("rect-clip-defs"),
+          { x: 100, y: 200, width: 200, height: 100 },
+          { content: "Submit Form" },
+        ),
+      ]);
+      const svg = documentToSvgWithLegend(textDoc);
+      expect(svg).toContain('<defs><clipPath id="clip-rect-clip-defs">');
+      expect(svg).toContain(
+        '<rect x="100" y="200" width="200" height="100" fill="none" /></clipPath></defs>',
+      );
+    });
   });
 });
