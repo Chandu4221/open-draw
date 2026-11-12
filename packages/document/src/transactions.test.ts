@@ -227,4 +227,26 @@ describe("applyTransaction", () => {
     expect(Object.keys(result.document.shapes)).toHaveLength(1001);
     expect(duration).toBeLessThan(250);
   });
+
+  it("returns an empty inverse and preserves shape instances when applying no-op commands (R-018)", () => {
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      createRect(
+        rectId,
+        { x: 10, y: 10, width: 100, height: 100 },
+        { parent: pageId, label: "Title" },
+      ),
+    ]);
+
+    const tx = createTransaction([
+      { type: COMMANDS.setShapeLabel, id: rectId, label: "Title" },
+      { type: COMMANDS.moveShapes, ids: [rectId], dx: 0, dy: 0 },
+      { type: COMMANDS.setShapeStyle, id: rectId },
+    ]);
+    const result = applyTransaction(doc, tx);
+    expect(result.inverse).toEqual([]);
+    expect(result.document.shapes[rectId]).toBe(doc.shapes[rectId]);
+  });
 });

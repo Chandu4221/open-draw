@@ -9,6 +9,7 @@ import {
 import {
   COMMANDS,
   createDocument,
+  createPage,
   isCustomShape,
   parseDocument,
   type CustomShape,
@@ -519,5 +520,27 @@ describe("CustomShapeExtension (ADR-0003, R-006, R-008)", () => {
 
     editorInstance.destroy();
     cleanEditor.destroy();
+  });
+
+  it("skips document re-hydration and avoids force render when registering an extension with zero instances in document (Issue 3)", () => {
+    const pageId = parseShapeId("page-1");
+    const doc = createDocument([createPage(pageId, { x: 0, y: 0, width: 800, height: 600 })]);
+    const testEditor = createEditor(container as unknown as HTMLElement, { document: doc });
+    const docScene = container.querySelector(".od-document-scene") as unknown as MockDomNode;
+    expect(docScene).not.toBeNull();
+    docScene.innerHTML = "SENTINEL_SCENE";
+
+    testEditor.registerCustomShape(starExtension);
+
+    expect(docScene.innerHTML).toBe("SENTINEL_SCENE");
+    testEditor.destroy();
+  });
+
+  it("uses fast path for toJson when no custom shape serializers exist (Issue 8)", () => {
+    const pageId = parseShapeId("page-1");
+    const doc = createDocument([createPage(pageId, { x: 0, y: 0, width: 800, height: 600 })]);
+    const testEditor = createEditor(container as unknown as HTMLElement, { document: doc });
+    expect(JSON.parse(testEditor.toJson())).toEqual(JSON.parse(JSON.stringify(doc)));
+    testEditor.destroy();
   });
 });

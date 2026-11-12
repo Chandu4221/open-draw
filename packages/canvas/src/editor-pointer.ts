@@ -36,6 +36,7 @@ export interface PointerBindingContext {
   readonly getSpacePressed: () => boolean;
   readonly execute: (commands: readonly Command[]) => void;
   readonly render: () => void;
+  readonly renderDocument?: ((force?: boolean) => void) | undefined;
   readonly getGesture: () => ActiveGesture | null;
   readonly setGesture: (g: ActiveGesture | null) => void;
   readonly setLastWorld: (p: Point) => void;
@@ -456,6 +457,7 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
   }
 
   function onPointerCancel(event?: PointerEvent): void {
+    const wasPinching = touchTracker.pointers.size >= 2;
     const gesture = getGesture();
     if (event !== undefined && event.pointerId !== undefined) {
       touchTracker = removeTouchPointer(touchTracker, event.pointerId);
@@ -466,11 +468,32 @@ export function attachPointerListeners(ctx: PointerBindingContext): () => void {
       } catch {
         // Environments without pointer capture support
       }
+      if (wasPinching) {
+        touchTracker = createTouchTracker();
+        setGesture(null);
+        hasPassedDragThreshold = false;
+        cachedRect = null;
+        svg.style.cursor = resolveToolCursor(getTool(), getSpacePressed());
+        ctx.renderDocument?.(true);
+        render();
+        return;
+      }
       if (gesture !== null && gesture.pointerId !== event.pointerId) {
         return;
       }
     } else {
       touchTracker = createTouchTracker();
+    }
+
+    if (wasPinching) {
+      touchTracker = createTouchTracker();
+      setGesture(null);
+      hasPassedDragThreshold = false;
+      cachedRect = null;
+      svg.style.cursor = resolveToolCursor(getTool(), getSpacePressed());
+      ctx.renderDocument?.(true);
+      render();
+      return;
     }
 
     if (getGesture() !== null || canvas.getMachineState().stateId !== STATES.idle) {

@@ -50,6 +50,10 @@ export function applyCommandToMap(
         throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
       }
       const previousLabel = shape.label === undefined ? null : shape.label;
+      const targetLabel = command.label === null ? undefined : command.label;
+      if (shape.label === targetLabel) {
+        return [];
+      }
       const nextShape = { ...shape };
       if (command.label === null) {
         delete nextShape.label;
@@ -85,6 +89,9 @@ export function applyCommandToMap(
           throw new DocumentError("shapeNotFound", `no shape with id: ${id}`);
         }
       }
+      if (command.dx === 0 && command.dy === 0) {
+        return [];
+      }
       for (const id of command.ids) {
         const shape = shapes[id]!;
         shapes[id] = {
@@ -118,6 +125,15 @@ export function applyCommandToMap(
         );
       }
       const previousBox = shape.boundingBox;
+      if (
+        scaleHook === undefined &&
+        previousBox.x === command.boundingBox.x &&
+        previousBox.y === command.boundingBox.y &&
+        previousBox.width === command.boundingBox.width &&
+        previousBox.height === command.boundingBox.height
+      ) {
+        return [];
+      }
 
       let nextShape: Shape;
       if (scaleHook !== undefined) {
@@ -350,26 +366,54 @@ export function applyCommandToMap(
       const previousFill = shape.fill === undefined ? null : shape.fill;
       const previousStroke = shape.stroke === undefined ? null : shape.stroke;
       const previousStrokeWidth = shape.strokeWidth === undefined ? null : shape.strokeWidth;
+
+      const targetFill =
+        command.fill === undefined
+          ? shape.fill
+          : command.fill === null
+            ? undefined
+            : parseColor(command.fill, "fill");
+      const targetStroke =
+        command.stroke === undefined
+          ? shape.stroke
+          : command.stroke === null
+            ? undefined
+            : parseColor(command.stroke, "stroke");
+      const targetStrokeWidth =
+        command.strokeWidth === undefined
+          ? shape.strokeWidth
+          : command.strokeWidth === null
+            ? undefined
+            : parseStrokeWidth(command.strokeWidth);
+
+      if (
+        shape.fill === targetFill &&
+        shape.stroke === targetStroke &&
+        shape.strokeWidth === targetStrokeWidth
+      ) {
+        return [];
+      }
+
       const nextShapeData: Record<string, unknown> = { ...shape };
       if (command.fill !== undefined) {
-        if (command.fill === null) {
+        if (targetFill === undefined) {
           delete nextShapeData.fill;
         } else {
-          nextShapeData.fill = parseColor(command.fill, "fill");
+          nextShapeData.fill = targetFill;
         }
       }
       if (command.stroke !== undefined) {
-        if (command.stroke === null) {
+        if (targetStroke === undefined) {
           delete nextShapeData.stroke;
         } else {
-          nextShapeData.stroke = parseColor(command.stroke, "stroke");
+          nextShapeData.stroke = targetStroke;
         }
       }
       if (command.strokeWidth !== undefined) {
-        if (command.strokeWidth === null) {
+        if (targetStrokeWidth === undefined) {
           delete nextShapeData.strokeWidth;
         } else {
-          nextShapeData.strokeWidth = parseStrokeWidth(command.strokeWidth);
+          nextShapeData.strokeWidth = targetStrokeWidth;
         }
       }
 
@@ -391,6 +435,10 @@ export function applyCommandToMap(
         throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
       }
       const previousContent = shape.content === undefined ? null : shape.content;
+      const targetContent = command.content === null ? undefined : command.content;
+      if (shape.content === targetContent) {
+        return [];
+      }
       const nextShape = { ...shape };
       if (command.content === null) {
         delete nextShape.content;

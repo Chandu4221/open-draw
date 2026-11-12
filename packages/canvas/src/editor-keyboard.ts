@@ -43,8 +43,6 @@ export interface KeyboardBindingContext {
   readonly nextShapeId: (doc?: Document) => ShapeId;
 }
 
-let activeEditorCanvas: CanvasController | null = null;
-
 export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void {
   const {
     canvas,
@@ -58,16 +56,6 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
     execute,
     render,
   } = ctx;
-
-  const onInteract = (): void => {
-    activeEditorCanvas = canvas;
-  };
-  if (ctx.container && typeof ctx.container.addEventListener === "function") {
-    ctx.container.addEventListener("pointerdown", onInteract, { capture: true, passive: true });
-  }
-  if (ctx.svg && typeof ctx.svg.addEventListener === "function") {
-    ctx.svg.addEventListener("pointerdown", onInteract, { capture: true, passive: true });
-  }
 
   let copySequence = 0;
   let clipboard: {
@@ -124,11 +112,6 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
       Boolean(target?.isContentEditable);
 
     const activeEl = typeof document !== "undefined" ? document.activeElement : null;
-    const isBodyActive =
-      !activeEl || activeEl === (typeof document !== "undefined" ? document.body : null);
-    if (isBodyActive && activeEditorCanvas !== null && activeEditorCanvas !== canvas) {
-      return;
-    }
     if (
       activeEl &&
       activeEl !== (typeof document !== "undefined" ? document.body : null) &&
@@ -469,14 +452,5 @@ export function attachKeyboardListeners(ctx: KeyboardBindingContext): () => void
   return () => {
     window.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("keyup", onKeyUp);
-    if (ctx.container && typeof ctx.container.removeEventListener === "function") {
-      ctx.container.removeEventListener("pointerdown", onInteract);
-    }
-    if (ctx.svg && typeof ctx.svg.removeEventListener === "function") {
-      ctx.svg.removeEventListener("pointerdown", onInteract);
-    }
-    if (activeEditorCanvas === canvas) {
-      activeEditorCanvas = null;
-    }
   };
 }

@@ -81,6 +81,7 @@ export interface CanvasController {
 
   subscribe(event: ControllerEvent, listener: () => void): () => void;
   emit(event: ControllerEvent): void;
+  batch(fn: () => void): void;
   clearListeners(): void;
 
   getActiveDeviceType(rootId?: ShapeId): DeviceType | undefined;
@@ -120,7 +121,14 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.machineChanged]: new Set(),
   };
 
+  let isBatching = false;
+  const queuedEvents = new Set<ControllerEvent>();
+
   const emit = (event: ControllerEvent): void => {
+    if (isBatching) {
+      queuedEvents.add(event);
+      return;
+    }
     const set = listeners[event];
     if (set !== undefined) {
       for (const listener of set) {
@@ -129,11 +137,64 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     }
   };
 
+  const batch = (fn: () => void): void => {
+    if (isBatching) {
+      fn();
+      return;
+    }
+    isBatching = true;
+    try {
+      fn();
+    } finally {
+      isBatching = false;
+      const events = Array.from(queuedEvents);
+      queuedEvents.clear();
+      for (const event of events) {
+        emit(event);
+      }
+    }
+  };
+
   let cachedSpatialDoc: Document | null = null;
   let cachedSpatialIndex: SpatialIndex | null = null;
 
+  function isSpatialEquivalent(a: Document, b: Document): boolean {
+    if (a === b) return true;
+    const aShapes = a.shapes;
+    const bShapes = b.shapes;
+    const aKeys = Object.keys(aShapes);
+    const bKeys = Object.keys(bShapes);
+    if (aKeys.length !== bKeys.length) return false;
+    for (let i = 0; i < aKeys.length; i += 1) {
+      if (aKeys[i] !== bKeys[i]) return false;
+      const id = aKeys[i] as ShapeId;
+      const sA = aShapes[id];
+      const sB = bShapes[id];
+      if (sA === undefined || sB === undefined) return false;
+      if (sA === sB) continue;
+      if (sA.parentId !== sB.parentId) return false;
+      const boxA = sA.boundingBox;
+      const boxB = sB.boundingBox;
+      if (boxA === boxB) continue;
+      if (
+        boxA.x !== boxB.x ||
+        boxA.y !== boxB.y ||
+        boxA.width !== boxB.width ||
+        boxA.height !== boxB.height
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function ensureSpatialIndex(doc: Document): SpatialIndex {
-    if (cachedSpatialIndex !== null && cachedSpatialDoc === doc) {
+    if (
+      cachedSpatialIndex !== null &&
+      cachedSpatialDoc !== null &&
+      isSpatialEquivalent(cachedSpatialDoc, doc)
+    ) {
+      cachedSpatialDoc = doc;
       return cachedSpatialIndex;
     }
     cachedSpatialDoc = doc;
@@ -222,6 +283,7 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     emit: (event) => {
       emit(event);
     },
+    batch,
     clearListeners: () => {
       for (const set of Object.values(listeners)) {
         set.clear();

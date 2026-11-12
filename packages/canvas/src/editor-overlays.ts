@@ -5,6 +5,7 @@ import {
   previewLineToSvg,
   previewPenPathToSvg,
   selectionOverlayToSvg,
+  RENDER_STYLES,
 } from "@open-draw/renderer-svg";
 import type { ActiveGesture } from "./editor-gestures";
 import { GESTURE_KINDS } from "./gestures";
@@ -77,7 +78,7 @@ export function computeEditorOverlays(options: EditorOverlayOptions): readonly s
         }
         boxes.push(box);
         overlays.push(
-          `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="var(--od-accent, #000000)" stroke-dasharray="4 4" />`,
+          `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="${RENDER_STYLES.multiSelectionStroke}" stroke-dasharray="${RENDER_STYLES.selectionDasharray}" />`,
         );
       }
     }
@@ -99,7 +100,7 @@ export function computeEditorOverlays(options: EditorOverlayOptions): readonly s
   if (gesture !== null && gesture.kind === GESTURE_KINDS.select) {
     const box = normalizeBox(gesture.startWorld, lastWorld);
     overlays.push(
-      `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="var(--od-accent, #000000)" stroke-dasharray="4 4" />`,
+      `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="${RENDER_STYLES.selectionStroke}" stroke-dasharray="${RENDER_STYLES.selectionDasharray}" />`,
     );
   }
 

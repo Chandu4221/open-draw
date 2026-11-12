@@ -38,6 +38,7 @@ export const RENDER_STYLES = {
   sectionStroke: "#8a94a6",
   selectionStroke: "#2563eb",
   selectionDasharray: "4 4",
+  multiSelectionStroke: "#2563eb",
   handleFill: "#2563eb",
   fallbackFill: "none",
   fallbackStroke: "#94a3b8",
@@ -61,6 +62,7 @@ export interface RenderOptions {
   readonly resolveDisplayName?: ((shape: Shape) => string) | undefined;
   readonly instanceId?: string | undefined;
   readonly visibleShapeIds?: ReadonlySet<ShapeId> | undefined;
+  readonly wrapShapeId?: boolean | undefined;
 }
 
 function num(val: unknown, fallback = 0): number {
@@ -185,6 +187,58 @@ function resolveShapeRootId(document: Document, shape: Shape): ShapeId | undefin
   return root?.id;
 }
 
+// Render a single shape to SVG with root style resolution and optional annotation/id wrapper.
+export function renderSingleShapeSvg(
+  document: Document,
+  shape: Shape,
+  options?: RenderOptions,
+): string {
+  const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
+  const rootId = resolveShapeRootId(document, shape);
+  const effectiveDevice =
+    rootId !== undefined && options?.activeDeviceTypes !== undefined
+      ? (options.activeDeviceTypes[rootId] ?? options?.activeDeviceType)
+      : options?.activeDeviceType;
+
+  const shapeOptions: RenderOptions | undefined =
+    effectiveStyle !== options?.styleProfile || effectiveDevice !== options?.activeDeviceType
+      ? { ...options, styleProfile: effectiveStyle, activeDeviceType: effectiveDevice }
+      : options;
+  const rendered = shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
+
+  if (options?.includeAnnotations === true) {
+    const chipId = `${EXPORT_CHIP_PREFIX}${shape.id}`;
+    const shapeIdAttr = `data-shape-id="${escapeXml(shape.id)}"`;
+    const chipIdAttr = `data-chip-id="${escapeXml(chipId)}"`;
+    const semanticAttr =
+      shape.meta.semantic !== undefined
+        ? ` data-semantic="${escapeXml(shape.meta.semantic.id)}"`
+        : "";
+    const parentIdAttr = !isRootId(shape.parentId)
+      ? ` data-parent-id="${escapeXml(shape.parentId)}"`
+      : "";
+
+    const displayName =
+      options.resolveDisplayName?.(shape) ??
+      (shape.label !== undefined && shape.label !== ""
+        ? shape.label
+        : shape.kind in SHAPE_KIND_LABELS
+          ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
+          : shape.kind);
+
+    const a11yText = `${chipId} — ${displayName}`;
+    const safeA11yText = escapeXml(a11yText);
+
+    return `<g ${shapeIdAttr} ${chipIdAttr}${semanticAttr}${parentIdAttr} role="img" aria-label="${safeA11yText}"><title>${safeA11yText}</title>${rendered}</g>`;
+  }
+
+  if (options?.wrapShapeId === true) {
+    return `<g data-shape-id="${escapeXml(shape.id)}">${rendered}</g>`;
+  }
+
+  return rendered;
+}
+
 // The whole document in pre-order walk order (structural order).
 // Style selection is root-resolved (R-026).
 // Fallback emission surfaces via the pure options callback without singletons (R-008, ADR-0003 D3).
@@ -195,48 +249,5 @@ export function documentToSvg(document: Document, options?: RenderOptions): stri
       ? ordered.filter((shape) => options.visibleShapeIds!.has(shape.id))
       : ordered;
 
-  return shapes
-    .map((shape) => {
-      const effectiveStyle = options?.styleProfile ?? resolveEffectiveStyle(document, shape);
-      const rootId = resolveShapeRootId(document, shape);
-      const effectiveDevice =
-        rootId !== undefined && options?.activeDeviceTypes !== undefined
-          ? (options.activeDeviceTypes[rootId] ?? options?.activeDeviceType)
-          : options?.activeDeviceType;
-
-      const shapeOptions: RenderOptions | undefined =
-        effectiveStyle !== options?.styleProfile || effectiveDevice !== options?.activeDeviceType
-          ? { ...options, styleProfile: effectiveStyle, activeDeviceType: effectiveDevice }
-          : options;
-      const rendered = shapeToSvg(shape, absoluteBoundingBox(document, shape), shapeOptions);
-
-      if (options?.includeAnnotations === true) {
-        const chipId = `${EXPORT_CHIP_PREFIX}${shape.id}`;
-        const shapeIdAttr = `data-shape-id="${escapeXml(shape.id)}"`;
-        const chipIdAttr = `data-chip-id="${escapeXml(chipId)}"`;
-        const semanticAttr =
-          shape.meta.semantic !== undefined
-            ? ` data-semantic="${escapeXml(shape.meta.semantic.id)}"`
-            : "";
-        const parentIdAttr = !isRootId(shape.parentId)
-          ? ` data-parent-id="${escapeXml(shape.parentId)}"`
-          : "";
-
-        const displayName =
-          options.resolveDisplayName?.(shape) ??
-          (shape.label !== undefined && shape.label !== ""
-            ? shape.label
-            : shape.kind in SHAPE_KIND_LABELS
-              ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
-              : shape.kind);
-
-        const a11yText = `${chipId} — ${displayName}`;
-        const safeA11yText = escapeXml(a11yText);
-
-        return `<g ${shapeIdAttr} ${chipIdAttr}${semanticAttr}${parentIdAttr} role="img" aria-label="${safeA11yText}"><title>${safeA11yText}</title>${rendered}</g>`;
-      }
-
-      return rendered;
-    })
-    .join("");
+  return shapes.map((shape) => renderSingleShapeSvg(document, shape, options)).join("");
 }

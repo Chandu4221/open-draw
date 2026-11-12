@@ -1035,6 +1035,78 @@ describe("createEditor", () => {
     expect(editor.getDocument().shapes[shape.id]!.boundingBox.x).toBe(10);
   });
 
+  it("resets touch tracker and restores idle state on pointercancel during multi-touch pinch", () => {
+    const shape = createRect(parseShapeId("rect-pinch"), {
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 100,
+    });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([shape]),
+    });
+
+    const mockSvg = editor.svg as unknown as {
+      listeners: Record<string, ((evt: unknown) => void)[]>;
+    };
+    const downFn = mockSvg.listeners["pointerdown"]?.[0];
+    const moveFn = mockSvg.listeners["pointermove"]?.[0];
+    const cancelFn = mockSvg.listeners["pointercancel"]?.[0];
+
+    // Pointer 1 down
+    downFn!({
+      button: 0,
+      clientX: 20,
+      clientY: 20,
+      pointerId: 1,
+      pointerType: "touch",
+      preventDefault: () => {},
+    });
+    // Pointer 2 down (enters multi-touch)
+    downFn!({
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+      pointerId: 2,
+      pointerType: "touch",
+      preventDefault: () => {},
+    });
+    // Pointer 1 moves during pinch
+    moveFn!({
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+      pointerId: 1,
+      pointerType: "touch",
+      preventDefault: () => {},
+    });
+
+    // Cancel pointer 2 mid-pinch
+    cancelFn!({ pointerId: 2 });
+
+    expect(editor.canvas.getMachineState().stateId).toBe(STATES.idle);
+
+    // Subsequent single-finger touch down & move must operate cleanly without getting stuck
+    downFn!({
+      button: 0,
+      clientX: 50,
+      clientY: 50,
+      pointerId: 3,
+      pointerType: "touch",
+      preventDefault: () => {},
+    });
+    moveFn!({
+      button: 0,
+      clientX: 60,
+      clientY: 60,
+      pointerId: 3,
+      pointerType: "touch",
+      preventDefault: () => {},
+    });
+
+    expect(editor.canvas.getMachineState().stateId).not.toBe(STATES.panning);
+  });
+
   it("isolates keyboard shortcuts so focused editor handles delete without deleting in other editors", () => {
     const shape1 = createRect(parseShapeId("rect-ed1"), { x: 10, y: 10, width: 50, height: 50 });
     const shape2 = createRect(parseShapeId("rect-ed2"), { x: 100, y: 100, width: 50, height: 50 });
@@ -2323,5 +2395,98 @@ describe("createEditor", () => {
     }
     expect(editor.canRedo()).toBe(false);
     expect(Object.keys(editor.getDocument().shapes)).toHaveLength(25);
+  });
+
+  it("prunes non-existent shapes when selecting via editor (Issue 5)", () => {
+    const rectId = parseShapeId("rect-1");
+    const deadId = parseShapeId("dead-1");
+    const shape = createRect(rectId, { x: 0, y: 0, width: 50, height: 50 });
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([shape]),
+    });
+
+    editor.select(deadId);
+    expect(editor.getSelection()).toEqual([]);
+
+    editor.selectMany([rectId, deadId]);
+    expect(editor.getSelection()).toEqual([rectId]);
+  });
+
+  it("supports canvas.batch to coalesce repeated event emissions (Issue 7, R-018)", () => {
+    editor = createEditor(container as unknown as HTMLElement);
+    let docEvents = 0;
+    editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => docEvents++);
+
+    const canvas = editor.canvas;
+    canvas.batch(() => {
+      canvas.emit(CONTROLLER_EVENTS.documentChanged);
+      canvas.emit(CONTROLLER_EVENTS.documentChanged);
+      canvas.emit(CONTROLLER_EVENTS.documentChanged);
+    });
+
+    expect(docEvents).toBe(1);
+  });
+
+  it("patches changed shape DOM node incrementally when <= 3 shapes change in viewport (Issue 2)", () => {
+    const r1 = parseShapeId("rect-1");
+    const r2 = parseShapeId("rect-2");
+    const shape1 = createRect(r1, { x: 10, y: 10, width: 50, height: 50 });
+    const shape2 = createRect(r2, { x: 100, y: 100, width: 50, height: 50 });
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([shape1, shape2]),
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    const docScene = mockSvg.querySelector(".od-document-scene") as unknown as MockDomNode;
+    expect(docScene).not.toBeNull();
+
+    // Mock querySelector with data-shape-id support on docScene to simulate real browser SVG element
+    let patchedOuterHtml: string | null = null;
+    const mockElement = {
+      tagName: "g",
+      set outerHTML(val: string) {
+        patchedOuterHtml = val;
+      },
+      get outerHTML() {
+        return patchedOuterHtml ?? "";
+      },
+    };
+
+    const originalQuerySelector = docScene.querySelector.bind(docScene);
+    docScene.querySelector = <T extends MockDomNode>(selector: string): T | null => {
+      if (selector === `[data-shape-id="${r1}"]`) {
+        return mockElement as unknown as T;
+      }
+      return originalQuerySelector(selector);
+    };
+
+    // Spy on innerHTML setter of docScene
+    let innerHtmlAssigned = false;
+    let storedInnerHtml = docScene.innerHTML;
+    Object.defineProperty(docScene, "innerHTML", {
+      get() {
+        return storedInnerHtml;
+      },
+      set(val: string) {
+        innerHtmlAssigned = true;
+        storedInnerHtml = val;
+      },
+      configurable: true,
+    });
+
+    // Edit style of rect-1 only
+    editor.execute([
+      {
+        type: COMMANDS.setShapeStyle,
+        id: r1,
+        fill: "#ff0000",
+      },
+    ]);
+
+    // Incremental patch updated the element's outerHTML directly without re-serializing docScene.innerHTML
+    expect(patchedOuterHtml).not.toBeNull();
+    expect(patchedOuterHtml).toContain('fill="#ff0000"');
+    expect(innerHtmlAssigned).toBe(false);
   });
 });

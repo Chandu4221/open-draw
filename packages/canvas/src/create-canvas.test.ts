@@ -318,6 +318,30 @@ describe("createCanvas", () => {
     expect(index3.count).toBe(1);
   });
 
+  it("preserves cached spatial index when document changes only non-spatial properties (ADR-0011)", () => {
+    const canvas = createCanvas();
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc1 = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    const index1 = canvas.getSpatialIndex(doc1);
+
+    const doc2 = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      {
+        ...createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+        label: "Updated Label",
+        fill: "#ff0000",
+      },
+    ]);
+
+    const index2 = canvas.getSpatialIndex(doc2);
+    expect(index2).toBe(index1);
+  });
+
   it("performs marquee box picking through spatial index via canvas.pickShapesInBox (ADR-0011)", () => {
     const canvas = createCanvas();
     const pageId = parseShapeId("page-1");

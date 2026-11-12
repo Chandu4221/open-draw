@@ -85,6 +85,7 @@ export interface Editor {
   getSelection(): readonly ShapeId[];
   select(id: ShapeId): void;
   selectMany(ids: readonly ShapeId[]): void;
+  reconcileSelection(): void;
   clearSelection(): void;
   getCamera(): Camera;
   setCamera(camera: Camera): void;
