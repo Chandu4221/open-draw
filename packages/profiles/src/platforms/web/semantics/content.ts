@@ -53,12 +53,6 @@ export const CONTENT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = O
       }),
     ]),
   }),
-  "card-grid": Object.freeze({
-    id: parseSemanticId("card-grid"),
-    displayName: "Card Grid",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "section",
-  }),
   list: Object.freeze({
     id: parseSemanticId("list"),
     displayName: "List",
@@ -129,46 +123,10 @@ export const CONTENT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = O
     category: SEMANTIC_CATEGORIES.content,
     scope: "component",
   }),
-  timeline: Object.freeze({
-    id: parseSemanticId("timeline"),
-    displayName: "Timeline",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "section",
-  }),
   article: Object.freeze({
     id: parseSemanticId("article"),
     displayName: "Article Content",
     category: SEMANTIC_CATEGORIES.content,
     scope: "section",
-  }),
-  "article-header": Object.freeze({
-    id: parseSemanticId("article-header"),
-    displayName: "Article Header",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "section",
-  }),
-  "author-card": Object.freeze({
-    id: parseSemanticId("author-card"),
-    displayName: "Author Card",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "component",
-  }),
-  "code-block": Object.freeze({
-    id: parseSemanticId("code-block"),
-    displayName: "Code Block",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "component",
-  }),
-  "chat-interface": Object.freeze({
-    id: parseSemanticId("chat-interface"),
-    displayName: "Chat Interface",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "section",
-  }),
-  "chat-widget": Object.freeze({
-    id: parseSemanticId("chat-widget"),
-    displayName: "Chat Widget",
-    category: SEMANTIC_CATEGORIES.content,
-    scope: "component",
   }),
 });

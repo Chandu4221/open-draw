@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ANDROID_NATIVE_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
+import {
+  ANDROID_NATIVE_PROFILE,
+  FLUTTER_PROFILE,
+  IOS_PROFILE,
+  WEB_PROFILE,
+} from "@open-draw/profiles";
 import {
   buildFlatSemanticOptions,
   filterSemanticDefinitions,
@@ -43,7 +48,7 @@ describe("semantic select helpers", () => {
     const marketingGroup = groups.find((g) => g.category === "marketing");
     expect(marketingGroup).toBeDefined();
     expect(marketingGroup?.items.some((i) => i.id === "hero")).toBe(true);
-    expect(marketingGroup?.items.some((i) => i.id === "pricing-table")).toBe(true);
+    expect(marketingGroup?.items.some((i) => i.id === "pricing")).toBe(true);
 
     const layoutGroup = groups.find((g) => g.category === "layout");
     expect(layoutGroup).toBeDefined();
@@ -57,12 +62,12 @@ describe("semantic select helpers", () => {
 
   it("manages and resolves recently selected semantic tags", () => {
     saveRecentSemanticTag("hero");
-    saveRecentSemanticTag("pricing-table");
+    saveRecentSemanticTag("pricing");
     const recent = loadRecentSemanticTags();
     const resolved = resolveRecentDefinitions(WEB_PROFILE, recent);
 
     expect(resolved.some((d) => d.id === "hero")).toBe(true);
-    expect(resolved.some((d) => d.id === "pricing-table")).toBe(true);
+    expect(resolved.some((d) => d.id === "pricing")).toBe(true);
   });
 
   it("scopes recent tags by profile to prevent cross-profile tag leakage", () => {
@@ -91,6 +96,40 @@ describe("semantic select helpers", () => {
     const layoutGroup = groups.find((g) => g.category === "layout");
     expect(layoutGroup?.items.some((i) => i.id === "scaffold")).toBe(true);
     expect(layoutGroup?.items.some((i) => i.id === "card")).toBe(true);
+  });
+
+  it("groups flutter profile semantics into 5 UI categories with none in other", () => {
+    const groups = groupProfileSemantics(FLUTTER_PROFILE);
+    expect(groups.length).toBe(5);
+
+    const categories = groups.map((g) => g.category);
+    expect(categories).toEqual(["layout", "navigation", "interactive", "forms", "feedback"]);
+
+    const otherGroup = groups.find((g) => g.category === "other");
+    expect(otherGroup).toBeUndefined();
+
+    const navGroup = groups.find((g) => g.category === "navigation");
+    expect(navGroup?.items.some((i) => i.id === "app-bar")).toBe(true);
+
+    const interactiveGroup = groups.find((g) => g.category === "interactive");
+    expect(interactiveGroup?.items.some((i) => i.id === "button")).toBe(true);
+  });
+
+  it("groups ios profile semantics into 5 Apple HIG categories with none in other", () => {
+    const groups = groupProfileSemantics(IOS_PROFILE);
+    expect(groups.length).toBe(5);
+
+    const categories = groups.map((g) => g.category);
+    expect(categories).toEqual(["layout", "navigation", "interactive", "forms", "feedback"]);
+
+    const otherGroup = groups.find((g) => g.category === "other");
+    expect(otherGroup).toBeUndefined();
+
+    const navGroup = groups.find((g) => g.category === "navigation");
+    expect(navGroup?.items.some((i) => i.id === "navigation-bar")).toBe(true);
+
+    const interactiveGroup = groups.find((g) => g.category === "interactive");
+    expect(interactiveGroup?.items.some((i) => i.id === "button")).toBe(true);
   });
 
   it("filters semantic definitions by query matching display name and id", () => {

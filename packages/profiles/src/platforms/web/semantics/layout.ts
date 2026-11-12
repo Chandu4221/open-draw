@@ -17,12 +17,28 @@ export const LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Ob
     displayName: "Header",
     category: SEMANTIC_CATEGORIES.layout,
     scope: "section",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "sticky",
+        control: CONTROL_TYPES.toggle,
+        label: "Sticky",
+        defaultValue: false,
+      }),
+    ]),
   }),
   footer: Object.freeze({
     id: parseSemanticId("footer"),
     displayName: "Footer",
     category: SEMANTIC_CATEGORIES.layout,
     scope: "section",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "fixed",
+        control: CONTROL_TYPES.toggle,
+        label: "Fixed",
+        defaultValue: false,
+      }),
+    ]),
   }),
   sidebar: Object.freeze({
     id: parseSemanticId("sidebar"),
@@ -65,30 +81,6 @@ export const LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Ob
   "split-view": Object.freeze({
     id: parseSemanticId("split-view"),
     displayName: "Split View",
-    category: SEMANTIC_CATEGORIES.layout,
-    scope: "section",
-  }),
-  "sticky-header": Object.freeze({
-    id: parseSemanticId("sticky-header"),
-    displayName: "Sticky Header",
-    category: SEMANTIC_CATEGORIES.layout,
-    scope: "section",
-  }),
-  "fixed-footer": Object.freeze({
-    id: parseSemanticId("fixed-footer"),
-    displayName: "Fixed Footer",
-    category: SEMANTIC_CATEGORIES.layout,
-    scope: "section",
-  }),
-  "announcement-bar": Object.freeze({
-    id: parseSemanticId("announcement-bar"),
-    displayName: "Announcement Bar",
-    category: SEMANTIC_CATEGORIES.layout,
-    scope: "section",
-  }),
-  "breadcrumb-bar": Object.freeze({
-    id: parseSemanticId("breadcrumb-bar"),
-    displayName: "Breadcrumb Bar",
     category: SEMANTIC_CATEGORIES.layout,
     scope: "section",
   }),

@@ -57,12 +57,6 @@ export const FORMS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Obj
       }),
     ]),
   }),
-  "input-field": Object.freeze({
-    id: parseSemanticId("input-field"),
-    displayName: "Input Field with Label",
-    category: SEMANTIC_CATEGORIES.forms,
-    scope: "component",
-  }),
   textarea: Object.freeze({
     id: parseSemanticId("textarea"),
     displayName: "Textarea",
@@ -107,12 +101,6 @@ export const FORMS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Obj
     category: SEMANTIC_CATEGORIES.forms,
     scope: "component",
   }),
-  "range-slider": Object.freeze({
-    id: parseSemanticId("range-slider"),
-    displayName: "Range Slider",
-    category: SEMANTIC_CATEGORIES.forms,
-    scope: "component",
-  }),
   "date-picker": Object.freeze({
     id: parseSemanticId("date-picker"),
     displayName: "Date Picker",
@@ -134,18 +122,6 @@ export const FORMS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Obj
   combobox: Object.freeze({
     id: parseSemanticId("combobox"),
     displayName: "Combobox",
-    category: SEMANTIC_CATEGORIES.forms,
-    scope: "component",
-  }),
-  "tag-input": Object.freeze({
-    id: parseSemanticId("tag-input"),
-    displayName: "Tag Input",
-    category: SEMANTIC_CATEGORIES.forms,
-    scope: "component",
-  }),
-  "color-picker": Object.freeze({
-    id: parseSemanticId("color-picker"),
-    displayName: "Color Picker",
     category: SEMANTIC_CATEGORIES.forms,
     scope: "component",
   }),

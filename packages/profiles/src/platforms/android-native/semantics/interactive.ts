@@ -77,19 +77,11 @@ export const ANDROID_INTERACTIVE_SEMANTICS: Readonly<Record<string, SemanticDefi
           label: "Extended",
           defaultValue: false,
         }),
-      ]),
-    }),
-    "extended-fab": Object.freeze({
-      id: parseSemanticId("extended-fab"),
-      displayName: "Extended FAB",
-      category: SEMANTIC_CATEGORIES.interactive,
-      scope: "component",
-      properties: Object.freeze([
         Object.freeze({
           id: "label",
           control: CONTROL_TYPES.text,
           label: "Label",
-          defaultValue: "Action",
+          defaultValue: "",
         }),
       ]),
     }),

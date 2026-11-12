@@ -13,6 +13,19 @@ export const NAVIGATION_SEMANTICS: Readonly<Record<string, SemanticDefinition>> 
     scope: "section",
     properties: Object.freeze([
       Object.freeze({
+        id: "variant",
+        control: CONTROL_TYPES.select,
+        label: "Variant",
+        defaultValue: "standard",
+        options: Object.freeze([
+          Object.freeze({ value: "standard", label: "Standard" }),
+          Object.freeze({ value: "menu", label: "Menu" }),
+          Object.freeze({ value: "hamburger", label: "Hamburger" }),
+          Object.freeze({ value: "mobile", label: "Mobile" }),
+          Object.freeze({ value: "footer", label: "Footer" }),
+        ]),
+      }),
+      Object.freeze({
         id: "position",
         control: CONTROL_TYPES.select,
         label: "Position",
@@ -31,27 +44,9 @@ export const NAVIGATION_SEMANTICS: Readonly<Record<string, SemanticDefinition>> 
       }),
     ]),
   }),
-  "nav-menu": Object.freeze({
-    id: parseSemanticId("nav-menu"),
-    displayName: "Navigation Menu",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
   "sidebar-nav": Object.freeze({
     id: parseSemanticId("sidebar-nav"),
     displayName: "Sidebar Navigation",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
-  "mobile-nav": Object.freeze({
-    id: parseSemanticId("mobile-nav"),
-    displayName: "Mobile Navigation",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
-  "hamburger-menu": Object.freeze({
-    id: parseSemanticId("hamburger-menu"),
-    displayName: "Hamburger Menu",
     category: SEMANTIC_CATEGORIES.navigation,
     scope: "component",
   }),
@@ -76,30 +71,6 @@ export const NAVIGATION_SEMANTICS: Readonly<Record<string, SemanticDefinition>> 
   stepper: Object.freeze({
     id: parseSemanticId("stepper"),
     displayName: "Stepper",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
-  "footer-nav": Object.freeze({
-    id: parseSemanticId("footer-nav"),
-    displayName: "Footer Navigation",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
-  "skip-link": Object.freeze({
-    id: parseSemanticId("skip-link"),
-    displayName: "Skip Link",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
-  "back-button": Object.freeze({
-    id: parseSemanticId("back-button"),
-    displayName: "Back Button",
-    category: SEMANTIC_CATEGORIES.navigation,
-    scope: "component",
-  }),
-  "table-of-contents": Object.freeze({
-    id: parseSemanticId("table-of-contents"),
-    displayName: "Table of Contents",
     category: SEMANTIC_CATEGORIES.navigation,
     scope: "component",
   }),

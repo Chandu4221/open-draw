@@ -1,4 +1,5 @@
 import {
+  CONTROL_TYPES,
   SEMANTIC_CATEGORIES,
   type SemanticDefinition,
   parseSemanticId,
@@ -17,41 +18,30 @@ export const ECOMMERCE_SEMANTICS: Readonly<Record<string, SemanticDefinition>> =
     category: SEMANTIC_CATEGORIES.ecommerce,
     scope: "section",
   }),
-  "product-detail": Object.freeze({
-    id: parseSemanticId("product-detail"),
-    displayName: "Product Detail",
-    category: SEMANTIC_CATEGORIES.ecommerce,
-    scope: "section",
-  }),
   cart: Object.freeze({
     id: parseSemanticId("cart"),
     displayName: "Shopping Cart",
     category: SEMANTIC_CATEGORIES.ecommerce,
     scope: "section",
-  }),
-  "cart-drawer": Object.freeze({
-    id: parseSemanticId("cart-drawer"),
-    displayName: "Cart Drawer",
-    category: SEMANTIC_CATEGORIES.ecommerce,
-    scope: "component",
-  }),
-  "mini-cart": Object.freeze({
-    id: parseSemanticId("mini-cart"),
-    displayName: "Mini Cart",
-    category: SEMANTIC_CATEGORIES.ecommerce,
-    scope: "component",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "presentation",
+        control: CONTROL_TYPES.select,
+        label: "Presentation",
+        defaultValue: "page",
+        options: Object.freeze([
+          Object.freeze({ value: "page", label: "Page" }),
+          Object.freeze({ value: "drawer", label: "Drawer" }),
+          Object.freeze({ value: "modal", label: "Modal" }),
+        ]),
+      }),
+    ]),
   }),
   checkout: Object.freeze({
     id: parseSemanticId("checkout"),
     displayName: "Checkout",
     category: SEMANTIC_CATEGORIES.ecommerce,
     scope: "section",
-  }),
-  "order-summary": Object.freeze({
-    id: parseSemanticId("order-summary"),
-    displayName: "Order Summary",
-    category: SEMANTIC_CATEGORIES.ecommerce,
-    scope: "component",
   }),
   "price-tag": Object.freeze({
     id: parseSemanticId("price-tag"),
@@ -62,12 +52,6 @@ export const ECOMMERCE_SEMANTICS: Readonly<Record<string, SemanticDefinition>> =
   rating: Object.freeze({
     id: parseSemanticId("rating"),
     displayName: "Rating Stars",
-    category: SEMANTIC_CATEGORIES.ecommerce,
-    scope: "component",
-  }),
-  "color-swatch-picker": Object.freeze({
-    id: parseSemanticId("color-swatch-picker"),
-    displayName: "Color Swatch Picker",
     category: SEMANTIC_CATEGORIES.ecommerce,
     scope: "component",
   }),

@@ -62,25 +62,25 @@ export const FEEDBACK_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = 
       }),
     ]),
   }),
-  dialog: Object.freeze({
-    id: parseSemanticId("dialog"),
-    displayName: "Modal Dialog",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "component",
-    properties: Object.freeze([
-      Object.freeze({
-        id: "dismissible",
-        control: CONTROL_TYPES.toggle,
-        label: "Dismissible",
-        defaultValue: true,
-      }),
-    ]),
-  }),
   drawer: Object.freeze({
     id: parseSemanticId("drawer"),
     displayName: "Side Drawer",
     category: SEMANTIC_CATEGORIES.feedback,
     scope: "component",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "placement",
+        control: CONTROL_TYPES.select,
+        label: "Placement",
+        defaultValue: "right",
+        options: Object.freeze([
+          Object.freeze({ value: "right", label: "Right" }),
+          Object.freeze({ value: "left", label: "Left" }),
+          Object.freeze({ value: "bottom", label: "Bottom" }),
+          Object.freeze({ value: "top", label: "Top" }),
+        ]),
+      }),
+    ]),
   }),
   popover: Object.freeze({
     id: parseSemanticId("popover"),
@@ -93,41 +93,5 @@ export const FEEDBACK_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = 
     displayName: "Tooltip",
     category: SEMANTIC_CATEGORIES.feedback,
     scope: "component",
-  }),
-  "context-menu": Object.freeze({
-    id: parseSemanticId("context-menu"),
-    displayName: "Context Menu",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "component",
-  }),
-  "bottom-sheet": Object.freeze({
-    id: parseSemanticId("bottom-sheet"),
-    displayName: "Bottom Sheet",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "component",
-  }),
-  "cookie-banner": Object.freeze({
-    id: parseSemanticId("cookie-banner"),
-    displayName: "Cookie Consent Banner",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "component",
-  }),
-  "status-dot": Object.freeze({
-    id: parseSemanticId("status-dot"),
-    displayName: "Status Dot",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "component",
-  }),
-  "not-found": Object.freeze({
-    id: parseSemanticId("not-found"),
-    displayName: "404 Not Found",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "section",
-  }),
-  "error-page": Object.freeze({
-    id: parseSemanticId("error-page"),
-    displayName: "Error Page",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "section",
   }),
 });
