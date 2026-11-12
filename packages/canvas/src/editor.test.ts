@@ -2489,4 +2489,68 @@ describe("createEditor", () => {
     expect(patchedOuterHtml).toContain('fill="#ff0000"');
     expect(innerHtmlAssigned).toBe(false);
   });
+
+  it("patches multiple changed shape DOM nodes incrementally across multi-selection without full DOM rebuild", () => {
+    const shapes = [
+      createRect(parseShapeId("r-1"), { x: 10, y: 10, width: 50, height: 50 }),
+      createRect(parseShapeId("r-2"), { x: 70, y: 10, width: 50, height: 50 }),
+      createRect(parseShapeId("r-3"), { x: 130, y: 10, width: 50, height: 50 }),
+      createRect(parseShapeId("r-4"), { x: 190, y: 10, width: 50, height: 50 }),
+      createRect(parseShapeId("r-5"), { x: 250, y: 10, width: 50, height: 50 }),
+    ];
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument(shapes),
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    const docScene = mockSvg.querySelector(".od-document-scene") as unknown as MockDomNode;
+    expect(docScene).not.toBeNull();
+
+    const patchedOuterHtml = new Map<string, string>();
+    const originalQuerySelector = docScene.querySelector.bind(docScene);
+    docScene.querySelector = <T extends MockDomNode>(selector: string): T | null => {
+      const match = selector.match(/\[data-shape-id="([^"]+)"\]/);
+      if (match && match[1]) {
+        const id = match[1];
+        return {
+          tagName: "g",
+          set outerHTML(val: string) {
+            patchedOuterHtml.set(id, val);
+          },
+          get outerHTML() {
+            return patchedOuterHtml.get(id) ?? "";
+          },
+        } as unknown as T;
+      }
+      return originalQuerySelector(selector);
+    };
+
+    let innerHtmlAssigned = false;
+    let storedInnerHtml = docScene.innerHTML;
+    Object.defineProperty(docScene, "innerHTML", {
+      get() {
+        return storedInnerHtml;
+      },
+      set(val: string) {
+        innerHtmlAssigned = true;
+        storedInnerHtml = val;
+      },
+      configurable: true,
+    });
+
+    // Batch edit styles of all 5 shapes at once
+    editor.execute([
+      { type: COMMANDS.setShapeStyle, id: parseShapeId("r-1"), fill: "#111111" },
+      { type: COMMANDS.setShapeStyle, id: parseShapeId("r-2"), fill: "#222222" },
+      { type: COMMANDS.setShapeStyle, id: parseShapeId("r-3"), fill: "#333333" },
+      { type: COMMANDS.setShapeStyle, id: parseShapeId("r-4"), fill: "#444444" },
+      { type: COMMANDS.setShapeStyle, id: parseShapeId("r-5"), fill: "#555555" },
+    ]);
+
+    expect(patchedOuterHtml.size).toBe(5);
+    expect(patchedOuterHtml.get("r-1")).toContain('fill="#111111"');
+    expect(patchedOuterHtml.get("r-5")).toContain('fill="#555555"');
+    expect(innerHtmlAssigned).toBe(false);
+  });
 });

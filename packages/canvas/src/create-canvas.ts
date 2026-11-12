@@ -2,7 +2,7 @@
 // Encapsulates machine transition, camera transform, selection state,
 // shape-kind capabilities, and action dispatch.
 import type { BoundingBox, CapabilityId, DeviceType, Point, ShapeId } from "@open-draw/contracts";
-import type { Document } from "@open-draw/document";
+import { type Document, shapeListInOrder } from "@open-draw/document";
 import type { ActionId, KeyboardEventDescriptor } from "@open-draw/input";
 import { resolveKeyBinding } from "@open-draw/input";
 import {
@@ -75,6 +75,7 @@ export interface CanvasController {
   pickShape(doc: Document, worldPoint: Point): ShapeId | null;
   pickShapesInBox(doc: Document, marqueeBox: BoundingBox): readonly ShapeId[];
   getSpatialIndex(doc: Document): SpatialIndex;
+  invalidateSpatialIndex(): void;
   pickHandle(worldBox: BoundingBox, screenPoint: Point): HandleId | null;
   resolveAction(event: KeyboardEventDescriptor): ActionId | undefined;
   resolveSelectionDrillDown(doc: Document, hitId: ShapeId, isDoubleClick?: boolean): ShapeId;
@@ -121,11 +122,11 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     [CONTROLLER_EVENTS.machineChanged]: new Set(),
   };
 
-  let isBatching = false;
+  let batchDepth = 0;
   const queuedEvents = new Set<ControllerEvent>();
 
   const emit = (event: ControllerEvent): void => {
-    if (isBatching) {
+    if (batchDepth > 0) {
       queuedEvents.add(event);
       return;
     }
@@ -137,20 +138,23 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     }
   };
 
+  /**
+   * Batches multiple synchronous controller operations, deferring and deduplicating
+   * emitted controller events until the outermost batch scope completes (R-018, ADR-0002 D8).
+   * Nested calls increment the batch depth and do not flush prematurely.
+   */
   const batch = (fn: () => void): void => {
-    if (isBatching) {
-      fn();
-      return;
-    }
-    isBatching = true;
+    batchDepth += 1;
     try {
       fn();
     } finally {
-      isBatching = false;
-      const events = Array.from(queuedEvents);
-      queuedEvents.clear();
-      for (const event of events) {
-        emit(event);
+      batchDepth -= 1;
+      if (batchDepth === 0) {
+        const events = Array.from(queuedEvents);
+        queuedEvents.clear();
+        for (const event of events) {
+          emit(event);
+        }
       }
     }
   };
@@ -165,14 +169,44 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     const aKeys = Object.keys(aShapes);
     const bKeys = Object.keys(bShapes);
     if (aKeys.length !== bKeys.length) return false;
+    let keysMatch = true;
     for (let i = 0; i < aKeys.length; i += 1) {
-      if (aKeys[i] !== bKeys[i]) return false;
-      const id = aKeys[i] as ShapeId;
-      const sA = aShapes[id];
-      const sB = bShapes[id];
-      if (sA === undefined || sB === undefined) return false;
-      if (sA === sB) continue;
-      if (sA.parentId !== sB.parentId) return false;
+      if (aKeys[i] !== bKeys[i]) {
+        keysMatch = false;
+        break;
+      }
+    }
+    if (keysMatch) {
+      for (let i = 0; i < aKeys.length; i += 1) {
+        const id = aKeys[i] as ShapeId;
+        const sA = aShapes[id];
+        const sB = bShapes[id];
+        if (sA === undefined || sB === undefined) return false;
+        if (sA === sB) continue;
+        if (sA.parentId !== sB.parentId) return false;
+        const boxA = sA.boundingBox;
+        const boxB = sB.boundingBox;
+        if (boxA === boxB) continue;
+        if (
+          boxA.x !== boxB.x ||
+          boxA.y !== boxB.y ||
+          boxA.width !== boxB.width ||
+          boxA.height !== boxB.height
+        ) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Canonical fallback when key order differed (ADR-0011)
+    const aList = shapeListInOrder(a);
+    const bList = shapeListInOrder(b);
+    if (aList.length !== bList.length) return false;
+    for (let i = 0; i < aList.length; i += 1) {
+      const sA = aList[i]!;
+      const sB = bList[i]!;
+      if (sA.id !== sB.id || sA.parentId !== sB.parentId) return false;
       const boxA = sA.boundingBox;
       const boxB = sB.boundingBox;
       if (boxA === boxB) continue;
@@ -263,6 +297,10 @@ export function createCanvas(options: CanvasOptions = {}): CanvasController {
     hasCapability: (kind, capability) => shapeKindRegistry.hasCapability(kind, capability),
 
     getSpatialIndex: (doc) => ensureSpatialIndex(doc),
+    invalidateSpatialIndex: () => {
+      cachedSpatialDoc = null;
+      cachedSpatialIndex = null;
+    },
     pickShape: (doc, point) => pickShape(doc, point, shapeKindRegistry, ensureSpatialIndex(doc)),
     pickShapesInBox: (doc, box) => pickShapesInBox(doc, box, ensureSpatialIndex(doc)),
     pickHandle: (box, point) => pickHandle(camera, box, point),

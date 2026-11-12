@@ -356,4 +356,51 @@ describe("createCanvas", () => {
     const picked = canvas.pickShapesInBox(doc, { x: 5, y: 5, width: 40, height: 40 });
     expect(picked).toEqual([rect1]);
   });
+
+  it("defers event emission during nested batch scopes until outermost scope exits (R-018)", () => {
+    const canvas = createCanvas();
+    let docEvents = 0;
+    let selEvents = 0;
+    canvas.subscribe(CONTROLLER_EVENTS.documentChanged, () => docEvents++);
+    canvas.subscribe(CONTROLLER_EVENTS.selectionChanged, () => selEvents++);
+
+    canvas.batch(() => {
+      canvas.emit(CONTROLLER_EVENTS.documentChanged);
+      expect(docEvents).toBe(0);
+
+      // Nested batch scope
+      canvas.batch(() => {
+        canvas.emit(CONTROLLER_EVENTS.selectionChanged);
+        canvas.emit(CONTROLLER_EVENTS.documentChanged);
+        expect(docEvents).toBe(0);
+        expect(selEvents).toBe(0);
+      });
+
+      // Still inside outer batch
+      expect(docEvents).toBe(0);
+      expect(selEvents).toBe(0);
+    });
+
+    // Both emitted once upon outer batch exit
+    expect(docEvents).toBe(1);
+    expect(selEvents).toBe(1);
+  });
+
+  it("supports explicit invalidateSpatialIndex on CanvasController (ADR-0011)", () => {
+    const canvas = createCanvas();
+    const pageId = parseShapeId("page-1");
+    const rectId = parseShapeId("rect-1");
+    const doc = createDocument([
+      createPage(pageId, { x: 0, y: 0, width: 500, height: 500 }),
+      createRect(rectId, { x: 10, y: 10, width: 100, height: 100 }, { parent: pageId }),
+    ]);
+
+    const index1 = canvas.getSpatialIndex(doc);
+    expect(canvas.getSpatialIndex(doc)).toBe(index1);
+
+    canvas.invalidateSpatialIndex();
+    const index2 = canvas.getSpatialIndex(doc);
+    expect(index2).not.toBe(index1);
+    expect(index2.count).toBe(2);
+  });
 });

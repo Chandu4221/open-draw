@@ -57,6 +57,27 @@ export type {
   SetDocumentOptions,
 } from "./editor-types";
 
+function isPropertyMutationCommand(cmd: Command): boolean {
+  return (
+    cmd.type === COMMANDS.setShapeStyle ||
+    cmd.type === COMMANDS.setShapeLabel ||
+    cmd.type === COMMANDS.setShapeContent ||
+    cmd.type === COMMANDS.setShapeSemantic ||
+    cmd.type === COMMANDS.setShapeHiddenOn
+  );
+}
+
+function isGeometryMutationCommand(cmd: Command): boolean {
+  return (
+    cmd.type === COMMANDS.createShape ||
+    cmd.type === COMMANDS.deleteShape ||
+    cmd.type === COMMANDS.reparentShape ||
+    cmd.type === COMMANDS.moveShapes ||
+    cmd.type === COMMANDS.setShapeBoundingBox ||
+    cmd.type === COMMANDS.duplicateShapes
+  );
+}
+
 export function createEditor(container: HTMLElement, options: EditorOptions = {}): Editor {
   const canvas = createCanvas(options.canvasOptions);
   let doc = options.document ?? createDocument([]);
@@ -168,7 +189,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     return true;
   }
 
-  function renderDocument(force?: boolean): void {
+  function renderDocument(force?: boolean, incrementalShapeIds?: ReadonlySet<ShapeId>): void {
     if (isDestroyed) return;
     const cam = canvas.getCamera();
     let visibleShapeIds: ReadonlySet<ShapeId> | undefined;
@@ -211,50 +232,39 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
     if (
       !force &&
+      incrementalShapeIds !== undefined &&
+      incrementalShapeIds.size > 0 &&
       renderedDoc !== null &&
       setsEqual(renderedVisibleIds, visibleShapeIds) &&
       typeof docScene.querySelector === "function"
     ) {
-      const changedShapeIds: ShapeId[] = [];
-      let canIncremental = true;
-      for (const id of visibleShapeIds) {
-        if (doc.shapes[id] !== renderedDoc.shapes[id]) {
-          changedShapeIds.push(id);
-          if (changedShapeIds.length > 3) {
-            canIncremental = false;
+      let domPatched = true;
+      for (const id of incrementalShapeIds) {
+        const shape = doc.shapes[id];
+        const prevShape = renderedDoc.shapes[id];
+        if (!shape || !prevShape || shape.parentId !== prevShape.parentId) {
+          domPatched = false;
+          break;
+        }
+        const targetEl = docScene.querySelector(`[data-shape-id="${escapeXml(id)}"]`);
+        if (targetEl && "outerHTML" in targetEl) {
+          const newSvg = renderSingleShapeSvg(doc, shape, renderOpts);
+          try {
+            (targetEl as SVGElement).outerHTML = newSvg;
+          } catch {
+            domPatched = false;
             break;
           }
+        } else {
+          domPatched = false;
+          break;
         }
       }
 
-      if (canIncremental && changedShapeIds.length > 0) {
-        let domPatched = true;
-        for (const id of changedShapeIds) {
-          const shape = doc.shapes[id];
-          if (!shape) {
-            domPatched = false;
-            break;
-          }
-          const targetEl = docScene.querySelector(`[data-shape-id="${escapeXml(id)}"]`);
-          if (targetEl && "outerHTML" in targetEl) {
-            const newSvg = renderSingleShapeSvg(doc, shape, renderOpts);
-            try {
-              (targetEl as SVGElement).outerHTML = newSvg;
-            } catch {
-              domPatched = false;
-              break;
-            }
-          } else {
-            domPatched = false;
-            break;
-          }
-        }
-
-        if (domPatched) {
-          renderedDoc = doc;
-          renderedVisibleIds = visibleShapeIds;
-          return;
-        }
+      if (domPatched) {
+        renderedDoc = doc;
+        renderedVisibleIds = visibleShapeIds;
+        return;
       }
     }
 
@@ -304,6 +314,15 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     if (result.document === doc && result.inverse.length === 0) {
       return;
     }
+    const hasGeometryChange = cmds.some(isGeometryMutationCommand);
+    if (hasGeometryChange) {
+      canvas.invalidateSpatialIndex();
+    }
+    const isAllPropertyMutations = cmds.every(isPropertyMutationCommand);
+    const affectedShapeIds = isAllPropertyMutations
+      ? new Set((cmds as Array<{ id: ShapeId }>).map((c) => c.id))
+      : undefined;
+
     canvas.batch(() => {
       doc = result.document;
       reconcileSelection();
@@ -313,7 +332,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       }
       canvas.emit(CONTROLLER_EVENTS.documentChanged);
     });
-    renderDocument();
+    renderDocument(false, affectedShapeIds);
     renderOverlays();
   }
 
@@ -431,6 +450,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   updateCursor();
 
   function resetDoc(nextDoc: Document, preserveHistory?: boolean): void {
+    canvas.invalidateSpatialIndex();
     const validated = validateAndHydrateDocument(nextDoc);
     doc = validated;
     idSequence.seed(validated);
@@ -446,6 +466,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   function applyHistory(result: { document: Document; history: HistoryState } | null): boolean {
     if (result === null) return false;
+    canvas.invalidateSpatialIndex();
     doc = result.document;
     history = result.history;
     reconcileSelection();

@@ -1,6 +1,6 @@
 // Mutates a shape record in-place for a single command and returns inverse commands.
 // Used by applyTransaction to batch N commands in O(N) without intermediate Document copying (R-018, ADR-0002 D8).
-import type { ShapeId } from "@open-draw/contracts";
+import type { DeviceType, ShapeId, ThemePalette } from "@open-draw/contracts";
 import { isRootId, isRootRole, SHAPE_KINDS } from "@open-draw/contracts";
 import { COMMANDS } from "./commands/registry";
 import type { Command } from "./commands";
@@ -11,11 +11,60 @@ import type { Document } from "./document";
 import { SCHEMA_VERSION } from "./document";
 import { DocumentError } from "./errors";
 import { pruneSelectedDescendants } from "./reparent";
-import { isCustomShape, type Shape } from "./shape";
+import { isCustomShape, type SemanticTag, type Shape } from "./shape";
 import { subtreeOf } from "./tree";
 import { parseThemePalette } from "./meta-validation";
 import { parseShape } from "./validation";
 import { parseColor, parseStrokeWidth } from "./style-validation";
+
+function areSemanticsEqual(a: SemanticTag | undefined | null, b: SemanticTag | null): boolean {
+  const semA = a ?? null;
+  const semB = b;
+  if (semA === semB) return true;
+  if (semA === null || semB === null) return false;
+  if (semA.id !== semB.id || semA.platform !== semB.platform) return false;
+  const propsA = semA.properties;
+  const propsB = semB.properties;
+  if (propsA === propsB) return true;
+  const keysA = propsA !== undefined ? Object.keys(propsA) : [];
+  const keysB = propsB !== undefined ? Object.keys(propsB) : [];
+  if (keysA.length !== keysB.length) return false;
+  for (let i = 0; i < keysA.length; i += 1) {
+    const k = keysA[i]!;
+    if (propsA![k] !== propsB![k]) return false;
+  }
+  return true;
+}
+
+function areThemesEqual(a: ThemePalette | undefined | null, b: ThemePalette | null): boolean {
+  const themeA = a ?? null;
+  const themeB = b;
+  if (themeA === themeB) return true;
+  if (themeA === null || themeB === null) return false;
+  const keysA = Object.keys(themeA) as (keyof ThemePalette)[];
+  const keysB = Object.keys(themeB) as (keyof ThemePalette)[];
+  if (keysA.length !== keysB.length) return false;
+  for (let i = 0; i < keysA.length; i += 1) {
+    const k = keysA[i]!;
+    if (themeA[k] !== themeB[k]) return false;
+  }
+  return true;
+}
+
+function areHiddenOnEqual(
+  a: readonly DeviceType[] | undefined | null,
+  b: readonly DeviceType[] | null,
+): boolean {
+  const listA = a === undefined || a === null || a.length === 0 ? null : a;
+  const listB = b === null || b.length === 0 ? null : b;
+  if (listA === listB) return true;
+  if (listA === null || listB === null) return false;
+  if (listA.length !== listB.length) return false;
+  for (let i = 0; i < listA.length; i += 1) {
+    if (listA[i] !== listB[i]) return false;
+  }
+  return true;
+}
 
 export function applyCommandToMap(
   shapes: Record<ShapeId, Shape>,
@@ -72,6 +121,15 @@ export function applyCommandToMap(
       const previousParentId = shape.parentId;
       const previousBoundingBox = shape.boundingBox;
       const targetParentId = command.parentId ?? command.parent!;
+      if (
+        previousParentId === targetParentId &&
+        previousBoundingBox.x === command.boundingBox.x &&
+        previousBoundingBox.y === command.boundingBox.y &&
+        previousBoundingBox.width === command.boundingBox.width &&
+        previousBoundingBox.height === command.boundingBox.height
+      ) {
+        return [];
+      }
       shapes[command.id] = { ...shape, parentId: targetParentId, boundingBox: command.boundingBox };
       return [
         {
@@ -184,6 +242,9 @@ export function applyCommandToMap(
         throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
       }
       const previousSemantic = shape.meta.semantic ?? null;
+      if (areSemanticsEqual(previousSemantic, command.semantic)) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
       if (command.semantic === null) {
         delete nextMeta.semantic;
@@ -203,6 +264,9 @@ export function applyCommandToMap(
         throw new DocumentError("invalidShape", "platform may only be set on root shapes (R-026)");
       }
       const previousPlatform = shape.meta.platform ?? null;
+      if (previousPlatform === command.platform) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
       if (command.platform === null) {
         delete nextMeta.platform;
@@ -225,6 +289,9 @@ export function applyCommandToMap(
         );
       }
       const previousStyle = shape.meta.style ?? null;
+      if (previousStyle === command.style) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
       if (command.style === null) {
         delete nextMeta.style;
@@ -247,6 +314,9 @@ export function applyCommandToMap(
         );
       }
       const previousDesignStyle = shape.meta.designStyle ?? null;
+      if (previousDesignStyle === command.designStyle) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
       if (command.designStyle === null) {
         delete nextMeta.designStyle;
@@ -271,6 +341,9 @@ export function applyCommandToMap(
         throw new DocumentError("invalidCommand", `unknown role: ${String(command.role)}`);
       }
       const previousRole = shape.meta.role ?? null;
+      if (previousRole === command.role) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
       if (command.role === null) {
         delete nextMeta.role;
@@ -290,11 +363,15 @@ export function applyCommandToMap(
         throw new DocumentError("invalidShape", "theme may only be set on root shapes (R-026)");
       }
       const previousTheme = shape.meta.theme ?? null;
+      const targetTheme = command.theme === null ? null : parseThemePalette(command.theme);
+      if (areThemesEqual(previousTheme, targetTheme)) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
-      if (command.theme === null) {
+      if (targetTheme === null) {
         delete nextMeta.theme;
       } else {
-        nextMeta.theme = parseThemePalette(command.theme);
+        nextMeta.theme = targetTheme;
       }
       shapes[command.id] = { ...shape, meta: nextMeta };
       return [{ type: COMMANDS.setRootTheme, id: command.id, theme: previousTheme }];
@@ -309,8 +386,12 @@ export function applyCommandToMap(
         throw new DocumentError("invalidShape", "darkMode may only be set on root shapes (R-026)");
       }
       const previousDarkMode = shape.meta.darkMode ?? null;
+      const targetDarkMode = command.darkMode === null || command.darkMode === false ? null : true;
+      if (previousDarkMode === targetDarkMode) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
-      if (command.darkMode === null || command.darkMode === false) {
+      if (targetDarkMode === null) {
         delete nextMeta.darkMode;
       } else {
         nextMeta.darkMode = true;
@@ -325,6 +406,9 @@ export function applyCommandToMap(
         throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
       }
       const previousHiddenOn = shape.meta.hiddenOn ?? null;
+      if (areHiddenOnEqual(previousHiddenOn, command.hiddenOn)) {
+        return [];
+      }
       const nextMeta = { ...shape.meta };
       if (command.hiddenOn === null || command.hiddenOn.length === 0) {
         delete nextMeta.hiddenOn;
@@ -341,6 +425,9 @@ export function applyCommandToMap(
         throw new DocumentError("shapeNotFound", `no shape with id: ${command.id}`);
       }
       const previousOrder = shape.meta.order[command.deviceType] ?? null;
+      if (previousOrder === command.order) {
+        return [];
+      }
       const nextOrder = { ...shape.meta.order };
       if (command.order === null) {
         delete nextOrder[command.deviceType];
