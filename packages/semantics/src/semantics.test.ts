@@ -13,6 +13,10 @@ import {
   computeSemanticConflict,
   getPlatformEquivalents,
   getShapeSemantic,
+  isComponentScopedSemantic,
+  isContainerSemantic,
+  isLeafComponentSemantic,
+  isSectionScopedSemantic,
   resolveRootDarkMode,
   resolveRootDesignStyle,
   resolveRootPage,
@@ -657,5 +661,77 @@ describe("pluginData metadata resolution (canvas 0.9.2 plugin architecture)", ()
 
     const childShape = doc.shapes[childId]!;
     expect(getShapeSemantic(childShape)).toEqual({ platform: "flutter", id: "button" });
+  });
+
+  describe("isSectionScopedSemantic and isComponentScopedSemantic", () => {
+    it("correctly identifies section vs component scope for Web semantics", () => {
+      expect(isSectionScopedSemantic({ platform: "web", id: "hero" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "web", id: "navbar" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "web", id: "button" })).toBe(false);
+      expect(isComponentScopedSemantic({ platform: "web", id: "button" })).toBe(true);
+      expect(isComponentScopedSemantic({ platform: "web", id: "hero" })).toBe(false);
+    });
+
+    it("correctly identifies section vs component scope for iOS semantics", () => {
+      expect(isSectionScopedSemantic({ platform: "ios", id: "navigation-bar" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "ios", id: "sheet" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "ios", id: "button" })).toBe(false);
+      expect(isComponentScopedSemantic({ platform: "ios", id: "button" })).toBe(true);
+    });
+
+    it("correctly identifies section vs component scope for Android semantics", () => {
+      expect(isSectionScopedSemantic({ platform: "androidNative", id: "top-app-bar" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "androidNative", id: "bottom-sheet" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "androidNative", id: "button" })).toBe(false);
+      expect(isComponentScopedSemantic({ platform: "androidNative", id: "button" })).toBe(true);
+    });
+
+    it("correctly identifies section vs component scope for Flutter semantics", () => {
+      expect(isSectionScopedSemantic({ platform: "flutter", id: "app-bar" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "flutter", id: "drawer" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "flutter", id: "button" })).toBe(false);
+      expect(isComponentScopedSemantic({ platform: "flutter", id: "button" })).toBe(true);
+    });
+
+    it("handles undefined or unknown semantics safely", () => {
+      expect(isSectionScopedSemantic(undefined)).toBe(false);
+      expect(isComponentScopedSemantic(undefined)).toBe(false);
+      expect(isSectionScopedSemantic({ platform: "web", id: "unknown-thing" })).toBe(false);
+      expect(isComponentScopedSemantic({ platform: "web", id: "unknown-thing" })).toBe(false);
+    });
+
+    it("correctly identifies containers (including card and layout categories) vs leaf components across platforms", () => {
+      // Web
+      expect(isContainerSemantic({ platform: "web", id: "hero" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "navbar" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "card" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "container" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "form" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "table" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "button" })).toBe(false);
+      expect(isLeafComponentSemantic({ platform: "web", id: "button" })).toBe(true);
+      expect(isLeafComponentSemantic({ platform: "web", id: "card" })).toBe(false);
+
+      // iOS
+      expect(isContainerSemantic({ platform: "ios", id: "navigation-bar" })).toBe(true);
+      expect(isContainerSemantic({ platform: "ios", id: "card" })).toBe(true);
+      expect(isContainerSemantic({ platform: "ios", id: "sheet" })).toBe(true);
+      expect(isContainerSemantic({ platform: "ios", id: "button" })).toBe(false);
+      expect(isLeafComponentSemantic({ platform: "ios", id: "button" })).toBe(true);
+
+      // Android
+      expect(isContainerSemantic({ platform: "androidNative", id: "top-app-bar" })).toBe(true);
+      expect(isContainerSemantic({ platform: "androidNative", id: "card" })).toBe(true);
+      expect(isContainerSemantic({ platform: "androidNative", id: "bottom-sheet" })).toBe(true);
+      expect(isContainerSemantic({ platform: "androidNative", id: "button" })).toBe(false);
+      expect(isLeafComponentSemantic({ platform: "androidNative", id: "button" })).toBe(true);
+
+      // Flutter
+      expect(isContainerSemantic({ platform: "flutter", id: "app-bar" })).toBe(true);
+      expect(isContainerSemantic({ platform: "flutter", id: "card" })).toBe(true);
+      expect(isContainerSemantic({ platform: "flutter", id: "drawer" })).toBe(true);
+      expect(isContainerSemantic({ platform: "flutter", id: "button" })).toBe(false);
+      expect(isLeafComponentSemantic({ platform: "flutter", id: "button" })).toBe(true);
+    });
   });
 });

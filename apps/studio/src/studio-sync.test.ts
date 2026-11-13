@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CONTROLLER_EVENTS, createEditor, TOOLS, type Editor } from "@open-draw/canvas";
 import { parseShapeId, ROOT_ID } from "@open-draw/canvas";
 import { COMMANDS, createDocument, createRect } from "@open-draw/canvas";
+import { PLUGIN_ROOT_PLATFORM, PLUGIN_SEMANTICS } from "@open-draw/semantics";
 import { setupMockDomEnvironment, type MockDomNode, dispatchPointer } from "./test-dom-mock";
 import { normalizeStudioDocument } from "./normalize-document";
 
@@ -346,5 +347,225 @@ describe("StudioShell editor event synchronization", () => {
     expect(child?.boundingBox.height).toBe(50);
 
     unsub();
+  });
+
+  it("nests shape drawn inside a nested Hero Section (N=2) into the Hero Section, not the Landing Page", () => {
+    // Outer Landing Page (Level 1)
+    const landingPage = createRect(
+      parseShapeId("landing-page"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        parentId: ROOT_ID,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_ROOT_PLATFORM]: "web" },
+        },
+      },
+    );
+
+    // Nested Hero Section (Level 2)
+    const heroSection = createRect(
+      parseShapeId("hero-section"),
+      { x: 50, y: 100, width: 900, height: 400 },
+      {
+        parentId: landingPage.id,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" } },
+        },
+      },
+    );
+
+    const initialDoc = normalizeStudioDocument(createDocument([landingPage, heroSection]));
+    expect(initialDoc.shapes[heroSection.id]?.meta.isContainer).toBe(true);
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: initialDoc,
+      nestingMode: "containers-only",
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // Draw text inside Hero Section at world (100, 150)
+    editor.setTool(TOOLS.drawText);
+    dispatchPointer(mockSvg, "pointerdown", { x: 100, y: 150 }, 0);
+    dispatchPointer(mockSvg, "pointerup", { x: 100, y: 150 });
+
+    const doc = editor.getDocument();
+    const shapes = Object.values(doc.shapes);
+    const textShape = shapes.find((s) => s.id !== landingPage.id && s.id !== heroSection.id);
+
+    expect(textShape).toBeDefined();
+    // CRITICAL: Must be parented to hero-section (Level 2), NOT landing-page (Level 1)!
+    expect(textShape?.parentId).toBe(heroSection.id);
+    // Relative coordinates inside hero-section: (100 - 50 = 50, 150 - 100 = 50)
+    expect(textShape?.boundingBox.x).toBe(50);
+    expect(textShape?.boundingBox.y).toBe(50);
+  });
+
+  it("supports N-level deep nesting (N=3: Button inside Card inside Hero Section inside Landing Page)", () => {
+    const landingPage = createRect(
+      parseShapeId("landing-page-n3"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        parentId: ROOT_ID,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_ROOT_PLATFORM]: "web" },
+        },
+      },
+    );
+
+    const heroSection = createRect(
+      parseShapeId("hero-n3"),
+      { x: 50, y: 100, width: 1000, height: 600 },
+      {
+        parentId: landingPage.id,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" } },
+        },
+      },
+    );
+
+    const cardShape = createRect(
+      parseShapeId("card-n3"),
+      { x: 40, y: 80, width: 400, height: 300 },
+      {
+        parentId: heroSection.id,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "card" } },
+        },
+      },
+    );
+
+    const initialDoc = normalizeStudioDocument(
+      createDocument([landingPage, heroSection, cardShape]),
+    );
+    expect(initialDoc.shapes[cardShape.id]?.meta.isContainer).toBe(true);
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: initialDoc,
+      nestingMode: "containers-only",
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // Card world coordinates: Landing (0, 0) + Hero (50, 100) + Card (40, 80) = World (90, 180)
+    // Draw button inside Card from world (120, 220) to (200, 260)
+    editor.setTool(TOOLS.drawRect);
+    dispatchPointer(mockSvg, "pointerdown", { x: 120, y: 220 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 200, y: 260 });
+    dispatchPointer(mockSvg, "pointerup", { x: 200, y: 260 });
+
+    const doc = editor.getDocument();
+    const shapes = Object.values(doc.shapes);
+    const newBtn = shapes.find(
+      (s) => s.id !== landingPage.id && s.id !== heroSection.id && s.id !== cardShape.id,
+    );
+
+    expect(newBtn).toBeDefined();
+    // Must be parented to card-n3 (Level 3)!
+    expect(newBtn?.parentId).toBe(cardShape.id);
+    // Relative to card: (120 - 90 = 30, 220 - 180 = 40)
+    expect(newBtn?.boundingBox.x).toBe(30);
+    expect(newBtn?.boundingBox.y).toBe(40);
+  });
+
+  it("reparents a dragged shape into a nested section (Level 2)", () => {
+    const landingPage = createRect(
+      parseShapeId("landing-reparent"),
+      { x: 0, y: 0, width: 1440, height: 900 },
+      {
+        parentId: ROOT_ID,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_ROOT_PLATFORM]: "web" },
+        },
+      },
+    );
+
+    const heroSection = createRect(
+      parseShapeId("hero-drop-target"),
+      { x: 50, y: 100, width: 800, height: 400 },
+      {
+        parentId: landingPage.id,
+        meta: {
+          order: {},
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" } },
+        },
+      },
+    );
+
+    // Shape placed on Landing Page, outside Hero Section
+    const looseShape = createRect(
+      parseShapeId("loose-shape"),
+      { x: 900, y: 100, width: 100, height: 50 },
+      { parentId: landingPage.id },
+    );
+
+    const initialDoc = normalizeStudioDocument(
+      createDocument([landingPage, heroSection, looseShape]),
+    );
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: initialDoc,
+      nestingMode: "containers-only",
+    });
+
+    editor.select(looseShape.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    // Drag from looseShape center (950, 125) to inside heroSection center (450, 300)
+    dispatchPointer(mockSvg, "pointerdown", { x: 950, y: 125 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 450, y: 300 });
+    dispatchPointer(mockSvg, "pointerup", { x: 450, y: 300 });
+
+    const doc = editor.getDocument();
+    const reparented = doc.shapes[looseShape.id];
+    // Must be reparented into hero-drop-target!
+    expect(reparented?.parentId).toBe(heroSection.id);
+  });
+
+  it("ignores nested containers when platform profile is NONE / Agnostic", () => {
+    // Root container without platform
+    const rootContainer = createRect(
+      parseShapeId("root-agnostic"),
+      { x: 0, y: 0, width: 1000, height: 800 },
+      { parentId: ROOT_ID },
+    );
+
+    // Nested rect inside rootContainer
+    const nestedRect = createRect(
+      parseShapeId("nested-agnostic-rect"),
+      { x: 50, y: 50, width: 400, height: 300 },
+      { parentId: rootContainer.id },
+    );
+
+    const initialDoc = normalizeStudioDocument(createDocument([rootContainer, nestedRect]));
+    // In Platform Agnostic mode, nestedRect is NOT a container
+    expect(initialDoc.shapes[nestedRect.id]?.meta.isContainer).toBeUndefined();
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: initialDoc,
+      nestingMode: "containers-only",
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // Draw inside nestedRect from (100, 100) to (200, 150)
+    editor.setTool(TOOLS.drawRect);
+    dispatchPointer(mockSvg, "pointerdown", { x: 100, y: 100 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 200, y: 150 });
+    dispatchPointer(mockSvg, "pointerup", { x: 200, y: 150 });
+
+    const doc = editor.getDocument();
+    const shapes = Object.values(doc.shapes);
+    const newShape = shapes.find((s) => s.id !== rootContainer.id && s.id !== nestedRect.id);
+
+    expect(newShape).toBeDefined();
+    // In Platform Agnostic mode, nesting into nestedRect is bypassed; parents to rootContainer
+    expect(newShape?.parentId).toBe(rootContainer.id);
   });
 });
