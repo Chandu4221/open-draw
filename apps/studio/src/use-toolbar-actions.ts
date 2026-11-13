@@ -9,6 +9,7 @@ import {
   promptLoadDocumentJson,
   saveDocumentJson,
 } from "./document-io";
+import { normalizeStudioDocument } from "./normalize-document";
 
 function pruneSelectedDescendants(
   doc: Document,
@@ -99,7 +100,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
     promptLoadDocumentJson(
       (loaded) => {
         if (editorRef.current) {
-          editorRef.current.setDocument(loaded);
+          editorRef.current.setDocument(normalizeStudioDocument(loaded));
         }
         toast.push({ type: "success", text: "Document loaded successfully" });
       },

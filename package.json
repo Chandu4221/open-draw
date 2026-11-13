@@ -1,6 +1,6 @@
 {
   "name": "open-draw-studio",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "A semantic wireframing and design studio built on the @open-draw/canvas SDK",
   "license": "MIT",
   "main": "index.js",

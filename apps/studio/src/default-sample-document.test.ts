@@ -20,6 +20,7 @@ describe("createDefaultSampleDocument", () => {
     expect(root?.label).toBe("Profile Card");
     expect(root?.meta.role).toBe(ROOT_ROLES.component);
     expect(root?.meta.platform).toBe(PLATFORMS.web);
+    expect(root?.meta.isContainer).toBe(true);
     expect(getShapeSemantic(root!)?.id).toBe("card");
     expect(getShapeSemantic(root!)?.platform).toBe(PLATFORMS.web);
   });

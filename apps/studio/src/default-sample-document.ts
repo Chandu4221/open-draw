@@ -26,6 +26,7 @@ export function createDefaultSampleDocument(): Document {
       },
       label: "Profile Card",
       meta: {
+        isContainer: true,
         platform: PLATFORMS.web,
         role: ROOT_ROLES.component,
         order: {},

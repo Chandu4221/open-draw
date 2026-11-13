@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { parseDocument, serializeDocument, type Document } from "@open-draw/canvas";
 import { createDefaultSampleDocument } from "./default-sample-document.js";
+import { normalizeStudioDocument } from "./normalize-document";
 
 export const DRAFT_STORAGE_KEY = "opendraw:studio:draft";
 
@@ -25,13 +26,13 @@ export function loadInitialDocument(): Document {
     if (storage) {
       const saved = storage.getItem(DRAFT_STORAGE_KEY);
       if (saved !== null && saved.trim().length > 0) {
-        return parseDocument(saved);
+        return normalizeStudioDocument(parseDocument(saved));
       }
     }
   } catch {
     // Ignore corrupted drafts and fall back to default sample document
   }
-  return createDefaultSampleDocument();
+  return normalizeStudioDocument(createDefaultSampleDocument());
 }
 
 export function saveDraftDocument(doc: Document): void {

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CONTROLLER_EVENTS, createEditor, TOOLS, type Editor } from "@open-draw/canvas";
 import { parseShapeId, ROOT_ID } from "@open-draw/canvas";
 import { COMMANDS, createDocument, createRect } from "@open-draw/canvas";
-import { setupMockDomEnvironment, type MockDomNode } from "./test-dom-mock";
+import { setupMockDomEnvironment, type MockDomNode, dispatchPointer } from "./test-dom-mock";
+import { normalizeStudioDocument } from "./normalize-document";
 
 describe("StudioShell editor event synchronization", () => {
   let container: MockDomNode;
@@ -225,6 +226,124 @@ describe("StudioShell editor event synchronization", () => {
     expect(changeEventsCount).toBe(1);
     expect(currentDoc).toBe(replacement);
     expect(currentDoc.shapes[shape.id]).toBeDefined();
+
+    unsub();
+  });
+
+  it("draws shape inside normalized root container and parents to root container (not ROOT_ID)", () => {
+    const rootContainer = createRect(
+      parseShapeId("root-board"),
+      { x: 100, y: 100, width: 400, height: 300 },
+      { parentId: ROOT_ID },
+    );
+    const initialDoc = normalizeStudioDocument(createDocument([rootContainer]));
+    expect(initialDoc.shapes[rootContainer.id]?.meta.isContainer).toBe(true);
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: initialDoc,
+      nestingMode: "containers-only",
+    });
+
+    editor.setTool(TOOLS.drawRect);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    // Draw inside root container from (150, 150) to (250, 200)
+    dispatchPointer(mockSvg, "pointerdown", { x: 150, y: 150 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 250, y: 200 });
+    dispatchPointer(mockSvg, "pointerup", { x: 250, y: 200 });
+
+    const doc = editor.getDocument();
+    const shapes = Object.values(doc.shapes);
+    const childShape = shapes.find((s) => s.id !== rootContainer.id);
+
+    expect(childShape).toBeDefined();
+    // Must be parented to root-board, NOT ROOT_ID!
+    expect(childShape?.parentId).toBe(rootContainer.id);
+    // Local coordinates should be relative to parent (150 - 100 = 50, 150 - 100 = 50)
+    expect(childShape?.boundingBox.x).toBe(50);
+    expect(childShape?.boundingBox.y).toBe(50);
+    expect(childShape?.boundingBox.width).toBe(100);
+    expect(childShape?.boundingBox.height).toBe(50);
+  });
+
+  it("reparents a dragged shape into an empty root container", () => {
+    const rootContainer = createRect(
+      parseShapeId("root-board-drop"),
+      { x: 100, y: 100, width: 400, height: 300 },
+      { parentId: ROOT_ID },
+    );
+    const outsideShape = createRect(
+      parseShapeId("free-shape"),
+      { x: 600, y: 100, width: 80, height: 40 },
+      { parentId: ROOT_ID },
+    );
+    const initialDoc = normalizeStudioDocument(createDocument([rootContainer, outsideShape]));
+
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: initialDoc,
+      nestingMode: "containers-only",
+    });
+
+    editor.select(outsideShape.id);
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+    // Drag from (640, 120) to (200, 200) inside root container (dx = -440, dy = +80)
+    dispatchPointer(mockSvg, "pointerdown", { x: 640, y: 120 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 200, y: 200 });
+    dispatchPointer(mockSvg, "pointerup", { x: 200, y: 200 });
+
+    const doc = editor.getDocument();
+    const reparented = doc.shapes[outsideShape.id];
+    expect(reparented?.parentId).toBe(rootContainer.id);
+  });
+
+  it("draws a new root board from scratch, normalizes it, and nests subsequent child shape inside it", () => {
+    editor = createEditor(container as unknown as HTMLElement, {
+      document: createDocument([]),
+      nestingMode: "containers-only",
+    });
+
+    // Wire up the Studio document normalization hook
+    const unsub = editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
+      const cur = editor!.getDocument();
+      const normalized = normalizeStudioDocument(cur);
+      if (normalized !== cur) {
+        editor!.setDocument(normalized, { preserveHistory: true });
+      }
+    });
+
+    const mockSvg = editor.svg as unknown as MockDomNode;
+
+    // 1. Draw a new root board from (50, 50) to (500, 400)
+    editor.setTool(TOOLS.drawRect);
+    dispatchPointer(mockSvg, "pointerdown", { x: 50, y: 50 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 500, y: 400 });
+    dispatchPointer(mockSvg, "pointerup", { x: 500, y: 400 });
+
+    const docAfterBoard = editor.getDocument();
+    const boardShape = Object.values(docAfterBoard.shapes)[0];
+    expect(boardShape).toBeDefined();
+    expect(boardShape?.parentId).toBe(ROOT_ID);
+    expect(boardShape?.meta.isContainer).toBe(true);
+
+    // 2. Draw a child shape inside this new board from (100, 100) to (200, 150)
+    editor.setTool(TOOLS.drawRect);
+    dispatchPointer(mockSvg, "pointerdown", { x: 100, y: 100 }, 0);
+    dispatchPointer(mockSvg, "pointermove", { x: 200, y: 150 });
+    dispatchPointer(mockSvg, "pointerup", { x: 200, y: 150 });
+
+    const docAfterChild = editor.getDocument();
+    const shapes = Object.values(docAfterChild.shapes);
+    expect(shapes).toHaveLength(2);
+
+    const child = shapes.find((s) => s.id !== boardShape?.id);
+    expect(child).toBeDefined();
+    // Child shape must be parented to the new board!
+    expect(child?.parentId).toBe(boardShape?.id);
+    expect(child?.boundingBox.x).toBe(50); // 100 - 50 = 50
+    expect(child?.boundingBox.y).toBe(50); // 100 - 50 = 50
+    expect(child?.boundingBox.width).toBe(100);
+    expect(child?.boundingBox.height).toBe(50);
 
     unsub();
   });

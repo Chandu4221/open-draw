@@ -33,6 +33,7 @@ import { computeInspectionData } from "../use-inspection-data";
 import { useRootThemeMutations } from "../use-root-theme-mutations";
 import { useToolbarActions } from "../use-toolbar-actions";
 import { loadInitialDocument, saveDraftDocument, useStudioDraft } from "../use-studio-draft";
+import { normalizeStudioDocument } from "../normalize-document";
 import { useUiTheme } from "../use-ui-theme";
 
 export interface StudioShellProps {
@@ -59,6 +60,15 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       if (editor === null) return () => {};
       return editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
         const curDoc = editor.getDocument();
+        const normalized = normalizeStudioDocument(curDoc);
+        if (normalized !== curDoc) {
+          const selected = editor.getSelection();
+          editor.setDocument(normalized, { preserveHistory: true });
+          if (selected.length > 0) {
+            editor.selectMany(selected);
+          }
+          return;
+        }
         saveDraftDocument(curDoc);
         syncVisibleChipRoots(curDoc, editor.canvas);
         onStoreChange();
