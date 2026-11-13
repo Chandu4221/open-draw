@@ -4,7 +4,7 @@
 import { isRootId, ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
 import type { Document, Shape } from "@open-draw/canvas";
 import { absoluteBoundingBox } from "@open-draw/canvas";
-import { buildChildIndex } from "@open-draw/semantics";
+import { buildChildIndex, getShapeSemantic } from "@open-draw/semantics";
 import {
   ASCII_BOX_CHARS,
   ASCII_CAPTIONS,
@@ -156,7 +156,7 @@ export function renderAsciiSketch(
     const width = Math.max(1, Math.round(box.width * scale));
     const height = Math.max(1, Math.round(box.height * scale));
 
-    if (shape.kind === SHAPE_KINDS.rect && shape.meta.semantic?.id === "button") {
+    if (shape.kind === SHAPE_KINDS.rect && getShapeSemantic(shape)?.id === "button") {
       const text = shape.content ?? shape.label ?? "Button";
       const btnY = row + Math.floor(height / 2);
       drawButton(grid, col, btnY, text, width);

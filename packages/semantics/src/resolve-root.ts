@@ -6,6 +6,13 @@ import { isRootId } from "@open-draw/canvas";
 import type { DesignStyleId, PlatformId, StyleId, ThemePalette } from "@open-draw/profiles";
 import { STYLE_PROFILES } from "@open-draw/profiles";
 import { ROOT_ROLES, type RootRole } from "./root-roles";
+import {
+  PLUGIN_DARK_MODE,
+  PLUGIN_DESIGN_STYLE,
+  PLUGIN_ROOT_PLATFORM,
+  PLUGIN_ROOT_ROLE,
+  PLUGIN_THEME,
+} from "./plugins";
 
 /**
  * Resolves the root shape ancestor (immediate child of ROOT_ID) for any shape in the document (R-026).
@@ -46,7 +53,10 @@ export function resolveRootPage(doc: Document, shapeId: ShapeId): Shape | undefi
  */
 export function resolveRootPlatform(doc: Document, shapeId: ShapeId): PlatformId | undefined {
   const root = resolveRootShape(doc, shapeId);
-  return root?.meta.platform;
+  return (
+    (root?.meta.pluginData?.[PLUGIN_ROOT_PLATFORM] as PlatformId | undefined) ??
+    (root?.meta.platform as PlatformId | undefined)
+  );
 }
 
 /**
@@ -65,10 +75,14 @@ export function resolveRootStyle(doc: Document, shapeId: ShapeId): StyleId {
  */
 export function resolveRootDesignStyle(doc: Document, shapeId: ShapeId): DesignStyleId | undefined {
   const root = resolveRootShape(doc, shapeId);
-  if (root?.meta.platform === undefined) {
+  const platform = resolveRootPlatform(doc, shapeId);
+  if (platform === undefined) {
     return undefined;
   }
-  return root.meta.designStyle;
+  return (
+    (root?.meta.pluginData?.[PLUGIN_DESIGN_STYLE] as DesignStyleId | undefined) ??
+    (root?.meta.designStyle as DesignStyleId | undefined)
+  );
 }
 
 /**
@@ -77,7 +91,11 @@ export function resolveRootDesignStyle(doc: Document, shapeId: ShapeId): DesignS
  */
 export function resolveRootRole(doc: Document, shapeId: ShapeId): RootRole {
   const root = resolveRootShape(doc, shapeId);
-  return root?.meta.role ?? ROOT_ROLES.screen;
+  return (
+    (root?.meta.pluginData?.[PLUGIN_ROOT_ROLE] as RootRole | undefined) ??
+    (root?.meta.role as RootRole | undefined) ??
+    ROOT_ROLES.screen
+  );
 }
 
 /**
@@ -86,7 +104,10 @@ export function resolveRootRole(doc: Document, shapeId: ShapeId): RootRole {
  */
 export function resolveRootTheme(doc: Document, shapeId: ShapeId): ThemePalette | undefined {
   const root = resolveRootShape(doc, shapeId);
-  return root?.meta.theme;
+  return (
+    (root?.meta.pluginData?.[PLUGIN_THEME] as ThemePalette | undefined) ??
+    (root?.meta.theme as ThemePalette | undefined)
+  );
 }
 
 /**
@@ -95,5 +116,9 @@ export function resolveRootTheme(doc: Document, shapeId: ShapeId): ThemePalette 
  */
 export function resolveRootDarkMode(doc: Document, shapeId: ShapeId): boolean {
   const root = resolveRootShape(doc, shapeId);
-  return root?.meta.darkMode ?? false;
+  return (
+    (root?.meta.pluginData?.[PLUGIN_DARK_MODE] as boolean | undefined) ??
+    (root?.meta.darkMode as boolean | undefined) ??
+    false
+  );
 }

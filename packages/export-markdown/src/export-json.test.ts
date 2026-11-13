@@ -10,7 +10,7 @@ import {
   createRect,
   parseDocument,
 } from "@open-draw/canvas";
-import { SEMANTICS_REGISTRY_VERSION } from "@open-draw/semantics";
+import { getShapeSemantic, SEMANTICS_REGISTRY_VERSION } from "@open-draw/semantics";
 import { formatChipId, isChipId, parseChipId } from "./chip-id";
 import { DocumentError, exportJson, roundCoordinate } from "./export-json";
 
@@ -232,8 +232,9 @@ describe("exportJson parity (Milestone 11A Work Package A)", () => {
       expect(exportedShape.boundingBox.y).toBe(origShape.boundingBox.y);
       expect(exportedShape.boundingBox.width).toBe(origShape.boundingBox.width);
       expect(exportedShape.boundingBox.height).toBe(origShape.boundingBox.height);
-      if (origShape.meta.semantic) {
-        expect(exportedShape.meta.semantic.id).toBe(origShape.meta.semantic.id);
+      const origSemantic = getShapeSemantic(origShape);
+      if (origSemantic) {
+        expect(exportedShape.meta.semantic.id).toBe(origSemantic.id);
       } else {
         expect(exportedShape.meta.semantic).toBeNull();
       }

@@ -8,7 +8,11 @@ import {
 import { exportJson, exportMarkdown } from "@open-draw/export-markdown";
 import { documentToSvgWithLegend, type LegendItem } from "./export-image";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
-import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
+import {
+  getShapeSemantic,
+  resolveRootPlatform,
+  resolveShapeDisplayName,
+} from "@open-draw/semantics";
 import { isRootId, type ShapeId } from "@open-draw/canvas";
 import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/export-markdown";
 
@@ -29,8 +33,9 @@ export function extractDocumentLegendItems(doc: Document): readonly LegendItem[]
   const seen = new Set<string>();
   const items: LegendItem[] = [];
   for (const shape of Object.values(doc.shapes)) {
-    if (shape.meta.semantic !== undefined) {
-      const tag = shape.meta.semantic.id;
+    const semantic = getShapeSemantic(shape);
+    if (semantic !== undefined) {
+      const tag = semantic.id;
       if (!seen.has(tag)) {
         seen.add(tag);
         const rootPlatform = resolveRootPlatform(doc, shape.id);

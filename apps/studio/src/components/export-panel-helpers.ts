@@ -1,6 +1,11 @@
 import type { ShapeId, Document, Shape } from "@open-draw/canvas";
 import { PLATFORMS, PLATFORM_PROFILES } from "@open-draw/profiles";
-import { ROOT_ROLES, resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
+import {
+  ROOT_ROLES,
+  resolveRootPlatform,
+  resolveRootRole,
+  resolveShapeDisplayName,
+} from "@open-draw/semantics";
 import { generateExportJson, generateExportMarkdown, generateExportSvg } from "../document-io";
 import type { ZipFileInput } from "../zip-export";
 
@@ -28,10 +33,14 @@ export function resolveExportTargetTitle(
   targetRootShape: Shape | undefined,
 ): string {
   if (isMultiContainerSelected) {
-    const allComponents = selectedRootContainers.every((r) => r.meta.role === ROOT_ROLES.component);
+    const allComponents = selectedRootContainers.every(
+      (r) => resolveRootRole(doc, r.id) === ROOT_ROLES.component,
+    );
     if (allComponents) return "Selected Components";
 
-    const allWeb = selectedRootContainers.every((r) => r.meta.platform === PLATFORMS.web);
+    const allWeb = selectedRootContainers.every(
+      (r) => resolveRootPlatform(doc, r.id) === PLATFORMS.web,
+    );
     if (allWeb) return "Selected Pages";
 
     return "Selected Screens";

@@ -1,6 +1,7 @@
 import { isRootId } from "@open-draw/canvas";
 import type { ThemePalette } from "@open-draw/profiles";
 import { COMMANDS, type Command, type Shape } from "@open-draw/canvas";
+import { PLUGIN_DARK_MODE, PLUGIN_THEME } from "@open-draw/semantics";
 
 export interface RootThemeMutationsProps {
   readonly selectedShape: Shape | undefined;
@@ -24,14 +25,28 @@ export function useRootThemeMutations(props: RootThemeMutationsProps): RootTheme
   function handleSetTheme(theme: ThemePalette | undefined): void {
     const targetRoot = getTargetRoot();
     if (!targetRoot) return;
-    commit([{ type: COMMANDS.setRootTheme, id: targetRoot.id, theme: theme ? theme : null }]);
+    commit([
+      {
+        type: COMMANDS.setShapePluginData,
+        id: targetRoot.id,
+        pluginId: PLUGIN_THEME,
+        data: theme ? theme : null,
+      },
+    ]);
     render();
   }
 
   function handleSetDarkMode(darkMode: boolean): void {
     const targetRoot = getTargetRoot();
     if (!targetRoot) return;
-    commit([{ type: COMMANDS.setRootDarkMode, id: targetRoot.id, darkMode }]);
+    commit([
+      {
+        type: COMMANDS.setShapePluginData,
+        id: targetRoot.id,
+        pluginId: PLUGIN_DARK_MODE,
+        data: darkMode,
+      },
+    ]);
     render();
   }
 

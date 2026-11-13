@@ -11,6 +11,7 @@ import {
   shapeListInOrder,
 } from "@open-draw/canvas";
 import { EXPORT_CHIP_PREFIX } from "@open-draw/export-markdown";
+import { getShapeSemantic } from "@open-draw/semantics";
 
 export interface LegendItem {
   readonly label: string;
@@ -146,14 +147,17 @@ export function documentToSvgWithLegend(document: Document, options?: ExportSvgO
         if (label === undefined) {
           if (shape.label !== undefined && shape.label !== "") {
             label = shape.label;
-          } else if (shape.meta.semantic !== undefined) {
-            label = shape.meta.semantic.id;
           } else {
-            const kindLabel =
-              shape.kind in SHAPE_KIND_LABELS
-                ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
-                : shape.kind;
-            label = `(untagged ${kindLabel})`;
+            const semantic = getShapeSemantic(shape);
+            if (semantic !== undefined) {
+              label = semantic.id;
+            } else {
+              const kindLabel =
+                shape.kind in SHAPE_KIND_LABELS
+                  ? SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind]
+                  : shape.kind;
+              label = `(untagged ${kindLabel})`;
+            }
           }
         }
         rows.push({ badgeText: chipId, labelText: label });

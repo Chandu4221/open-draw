@@ -8,7 +8,13 @@ import {
   type Shape,
 } from "@open-draw/canvas";
 import { DESIGN_STYLES, PLATFORMS, STYLE_PROFILES } from "@open-draw/profiles";
-import { ROOT_ROLES } from "@open-draw/semantics";
+import {
+  PLUGIN_DESIGN_STYLE,
+  PLUGIN_ROOT_PLATFORM,
+  PLUGIN_ROOT_ROLE,
+  PLUGIN_SEMANTICS,
+  ROOT_ROLES,
+} from "@open-draw/semantics";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { useDocumentMutations, type DocumentMutationsProps } from "./use-document-mutations";
 
@@ -44,7 +50,7 @@ function useTestMutations(overrides: Partial<DocumentMutationsProps> = {}) {
 }
 
 describe("useDocumentMutations", () => {
-  it("commits setRootPlatform on root shape and triggers render", () => {
+  it("commits setShapePluginData for root platform on root shape and triggers render", () => {
     const rootShape = createMockShape("root-1", ROOT_ID, { order: {}, platform: PLATFORMS.web });
     const { mutations, commit, render } = useTestMutations({
       rootShape,
@@ -54,7 +60,12 @@ describe("useDocumentMutations", () => {
     mutations.handleSetPlatform(PLATFORMS.flutter);
 
     expect(commit).toHaveBeenCalledWith([
-      { type: COMMANDS.setRootPlatform, id: "root-1", platform: PLATFORMS.flutter },
+      {
+        type: COMMANDS.setShapePluginData,
+        id: "root-1",
+        pluginId: PLUGIN_ROOT_PLATFORM,
+        data: PLATFORMS.flutter,
+      },
     ]);
     expect(render).toHaveBeenCalledTimes(1);
   });
@@ -73,8 +84,18 @@ describe("useDocumentMutations", () => {
     mutations.handleSetPlatform("");
 
     expect(commit).toHaveBeenCalledWith([
-      { type: COMMANDS.setRootPlatform, id: "root-1", platform: null },
-      { type: COMMANDS.setRootDesignStyle, id: "root-1", designStyle: null },
+      {
+        type: COMMANDS.setShapePluginData,
+        id: "root-1",
+        pluginId: PLUGIN_ROOT_PLATFORM,
+        data: null,
+      },
+      {
+        type: COMMANDS.setShapePluginData,
+        id: "root-1",
+        pluginId: PLUGIN_DESIGN_STYLE,
+        data: null,
+      },
     ]);
     expect(render).toHaveBeenCalledTimes(1);
   });
@@ -104,17 +125,29 @@ describe("useDocumentMutations", () => {
     expect(render).toHaveBeenCalledTimes(1);
   });
 
-  it("commits setRootRole with specified role or null", () => {
+  it("commits setShapePluginData for root role with specified role or null", () => {
     const rootShape = createMockShape("root-1", ROOT_ID);
     const { mutations, commit } = useTestMutations({ rootShape });
 
     mutations.handleSetRole(ROOT_ROLES.component);
     expect(commit).toHaveBeenCalledWith([
-      { type: COMMANDS.setRootRole, id: "root-1", role: ROOT_ROLES.component },
+      {
+        type: COMMANDS.setShapePluginData,
+        id: "root-1",
+        pluginId: PLUGIN_ROOT_ROLE,
+        data: ROOT_ROLES.component,
+      },
     ]);
 
     mutations.handleSetRole("");
-    expect(commit).toHaveBeenCalledWith([{ type: COMMANDS.setRootRole, id: "root-1", role: null }]);
+    expect(commit).toHaveBeenCalledWith([
+      {
+        type: COMMANDS.setShapePluginData,
+        id: "root-1",
+        pluginId: PLUGIN_ROOT_ROLE,
+        data: null,
+      },
+    ]);
   });
 
   it("updates label and supports startVal custom inverse for undo", () => {
@@ -153,15 +186,21 @@ describe("useDocumentMutations", () => {
     mutations.handleSetSemantic("button");
     expect(commit).toHaveBeenCalledWith([
       {
-        type: COMMANDS.setShapeSemantic,
+        type: COMMANDS.setShapePluginData,
         id: "s-1",
-        semantic: { id: "button", platform: PLATFORMS.web },
+        pluginId: PLUGIN_SEMANTICS,
+        data: { id: "button", platform: PLATFORMS.web },
       },
     ]);
 
     mutations.handleSetSemantic("");
     expect(commit).toHaveBeenCalledWith([
-      { type: COMMANDS.setShapeSemantic, id: "s-1", semantic: null },
+      {
+        type: COMMANDS.setShapePluginData,
+        id: "s-1",
+        pluginId: PLUGIN_SEMANTICS,
+        data: null,
+      },
     ]);
   });
 

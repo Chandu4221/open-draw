@@ -12,10 +12,12 @@ import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw
 import {
   computeSemanticConflict,
   getPlatformEquivalents,
+  getShapeSemantic,
   resolveRootDarkMode,
   resolveRootDesignStyle,
   resolveRootPage,
   resolveRootPlatform,
+  resolveRootRole,
   resolveRootShape,
   resolveRootStyle,
   resolveRootTheme,
@@ -23,6 +25,13 @@ import {
   resolveShapeDisplayName,
   suggestPlatformEquivalent,
   walkSemanticTree,
+  PLUGIN_DARK_MODE,
+  PLUGIN_DESIGN_STYLE,
+  PLUGIN_ROOT_PLATFORM,
+  PLUGIN_ROOT_ROLE,
+  PLUGIN_SEMANTICS,
+  PLUGIN_THEME,
+  ROOT_ROLES,
   SEMANTICS_REGISTRY_VERSION,
 } from "./index";
 
@@ -600,5 +609,53 @@ describe("semantics-version", () => {
   it("exposes integer SEMANTICS_REGISTRY_VERSION >= 1 for export parity fingerprinting (Milestone 11A)", () => {
     expect(Number.isInteger(SEMANTICS_REGISTRY_VERSION)).toBe(true);
     expect(SEMANTICS_REGISTRY_VERSION).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("pluginData metadata resolution (canvas 0.9.2 plugin architecture)", () => {
+  it("resolves root properties from meta.pluginData when present", () => {
+    const rootId = parseShapeId("plugin-root");
+    const childId = parseShapeId("plugin-child");
+    const doc = createDocument([
+      createRect(
+        rootId,
+        { x: 0, y: 0, width: 800, height: 600 },
+        {
+          parent: ROOT_ID,
+          meta: {
+            order: {},
+            pluginData: {
+              [PLUGIN_ROOT_PLATFORM]: PLATFORMS.flutter,
+              [PLUGIN_ROOT_ROLE]: ROOT_ROLES.component,
+              [PLUGIN_DESIGN_STYLE]: DESIGN_STYLES.minimalism,
+              [PLUGIN_THEME]: "ocean",
+              [PLUGIN_DARK_MODE]: true,
+            },
+          },
+        },
+      ),
+      createRect(
+        childId,
+        { x: 10, y: 10, width: 100, height: 40 },
+        {
+          parent: rootId,
+          meta: {
+            order: {},
+            pluginData: {
+              [PLUGIN_SEMANTICS]: { platform: "flutter", id: "button" },
+            },
+          },
+        },
+      ),
+    ]);
+
+    expect(resolveRootPlatform(doc, childId)).toBe(PLATFORMS.flutter);
+    expect(resolveRootRole(doc, childId)).toBe(ROOT_ROLES.component);
+    expect(resolveRootDesignStyle(doc, childId)).toBe(DESIGN_STYLES.minimalism);
+    expect(resolveRootTheme(doc, childId)).toBe("ocean");
+    expect(resolveRootDarkMode(doc, childId)).toBe(true);
+
+    const childShape = doc.shapes[childId]!;
+    expect(getShapeSemantic(childShape)).toEqual({ platform: "flutter", id: "button" });
   });
 });

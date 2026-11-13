@@ -1,7 +1,12 @@
 import type { ShapeId } from "@open-draw/canvas";
 import { ROOT_ID, SHAPE_KINDS } from "@open-draw/canvas";
 import { PLATFORMS } from "@open-draw/profiles";
-import { ROOT_ROLES } from "@open-draw/semantics";
+import {
+  PLUGIN_ROOT_PLATFORM,
+  PLUGIN_ROOT_ROLE,
+  PLUGIN_SEMANTICS,
+  ROOT_ROLES,
+} from "@open-draw/semantics";
 import { createDocument, type Document, type Shape } from "@open-draw/canvas";
 
 /**
@@ -28,6 +33,14 @@ export function createDefaultSampleDocument(): Document {
           id: "card",
           platform: PLATFORMS.web,
         },
+        pluginData: {
+          [PLUGIN_ROOT_PLATFORM]: PLATFORMS.web,
+          [PLUGIN_ROOT_ROLE]: ROOT_ROLES.component,
+          [PLUGIN_SEMANTICS]: {
+            id: "card",
+            platform: PLATFORMS.web,
+          },
+        },
       },
     },
     {
@@ -46,6 +59,12 @@ export function createDefaultSampleDocument(): Document {
         semantic: {
           id: "image",
           platform: PLATFORMS.web,
+        },
+        pluginData: {
+          [PLUGIN_SEMANTICS]: {
+            id: "image",
+            platform: PLATFORMS.web,
+          },
         },
       },
     },
@@ -68,6 +87,15 @@ export function createDefaultSampleDocument(): Document {
           platform: PLATFORMS.web,
           properties: {
             level: "3",
+          },
+        },
+        pluginData: {
+          [PLUGIN_SEMANTICS]: {
+            id: "heading",
+            platform: PLATFORMS.web,
+            properties: {
+              level: "3",
+            },
           },
         },
       },
@@ -93,6 +121,15 @@ export function createDefaultSampleDocument(): Document {
             level: "4",
           },
         },
+        pluginData: {
+          [PLUGIN_SEMANTICS]: {
+            id: "heading",
+            platform: PLATFORMS.web,
+            properties: {
+              level: "4",
+            },
+          },
+        },
       },
     },
     {
@@ -111,6 +148,12 @@ export function createDefaultSampleDocument(): Document {
         semantic: {
           id: "button",
           platform: PLATFORMS.web,
+        },
+        pluginData: {
+          [PLUGIN_SEMANTICS]: {
+            id: "button",
+            platform: PLATFORMS.web,
+          },
         },
       },
     },
@@ -132,6 +175,15 @@ export function createDefaultSampleDocument(): Document {
           platform: PLATFORMS.web,
           properties: {
             variant: "outline",
+          },
+        },
+        pluginData: {
+          [PLUGIN_SEMANTICS]: {
+            id: "button",
+            platform: PLATFORMS.web,
+            properties: {
+              variant: "outline",
+            },
           },
         },
       },

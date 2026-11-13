@@ -2,7 +2,14 @@ import type { DeviceType, Command, Shape } from "@open-draw/canvas";
 import { COMMANDS, isRootId } from "@open-draw/canvas";
 import type { DesignStyleId, PlatformId, PlatformProfile, StyleId } from "@open-draw/profiles";
 import { PLATFORMS, PLATFORM_PROFILES } from "@open-draw/profiles";
-import type { RootRole } from "@open-draw/semantics";
+import {
+  PLUGIN_DESIGN_STYLE,
+  PLUGIN_ROOT_PLATFORM,
+  PLUGIN_ROOT_ROLE,
+  PLUGIN_SEMANTICS,
+  getShapeSemantic,
+  type RootRole,
+} from "@open-draw/semantics";
 
 export interface DocumentMutationsProps {
   readonly selectedShape: Shape | undefined;
@@ -72,13 +79,33 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
       selectedShape && isRootId(selectedShape.parentId) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const targetPlatform = platform ? platform : null;
-    if (targetPlatform === null && targetRoot.meta.designStyle !== undefined) {
+    const currentDesignStyle =
+      (targetRoot.meta.pluginData?.[PLUGIN_DESIGN_STYLE] as DesignStyleId | undefined) ??
+      targetRoot.meta.designStyle;
+    if (targetPlatform === null && currentDesignStyle !== undefined) {
       commit([
-        { type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: null },
-        { type: COMMANDS.setRootDesignStyle, id: targetRoot.id, designStyle: null },
+        {
+          type: COMMANDS.setShapePluginData,
+          id: targetRoot.id,
+          pluginId: PLUGIN_ROOT_PLATFORM,
+          data: null,
+        },
+        {
+          type: COMMANDS.setShapePluginData,
+          id: targetRoot.id,
+          pluginId: PLUGIN_DESIGN_STYLE,
+          data: null,
+        },
       ]);
     } else {
-      commit([{ type: COMMANDS.setRootPlatform, id: targetRoot.id, platform: targetPlatform }]);
+      commit([
+        {
+          type: COMMANDS.setShapePluginData,
+          id: targetRoot.id,
+          pluginId: PLUGIN_ROOT_PLATFORM,
+          data: targetPlatform,
+        },
+      ]);
     }
     const nextProfile = targetPlatform !== null ? PLATFORM_PROFILES[targetPlatform] : undefined;
     if (
@@ -105,7 +132,12 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
     if (!targetRoot) return;
     const nextDesignStyle = designStyle ? designStyle : null;
     commit([
-      { type: COMMANDS.setRootDesignStyle, id: targetRoot.id, designStyle: nextDesignStyle },
+      {
+        type: COMMANDS.setShapePluginData,
+        id: targetRoot.id,
+        pluginId: PLUGIN_DESIGN_STYLE,
+        data: nextDesignStyle,
+      },
     ]);
     render();
   }
@@ -115,7 +147,14 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
       selectedShape && isRootId(selectedShape.parentId) ? selectedShape : rootShape;
     if (!targetRoot) return;
     const nextRole = role ? (role as RootRole) : null;
-    commit([{ type: COMMANDS.setRootRole, id: targetRoot.id, role: nextRole }]);
+    commit([
+      {
+        type: COMMANDS.setShapePluginData,
+        id: targetRoot.id,
+        pluginId: PLUGIN_ROOT_ROLE,
+        data: nextRole,
+      },
+    ]);
     render();
   }
 
@@ -156,7 +195,14 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
   function handleSetSemantic(semanticIdStr: string): void {
     if (!selectedShape) return;
     if (semanticIdStr.length === 0) {
-      commit([{ type: COMMANDS.setShapeSemantic, id: selectedShape.id, semantic: null }]);
+      commit([
+        {
+          type: COMMANDS.setShapePluginData,
+          id: selectedShape.id,
+          pluginId: PLUGIN_SEMANTICS,
+          data: null,
+        },
+      ]);
     } else {
       let platform = activeProfile?.id ?? PLATFORMS.web;
       if (activeProfile && !activeProfile.semantics[semanticIdStr]) {
@@ -169,9 +215,10 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
       }
       commit([
         {
-          type: COMMANDS.setShapeSemantic,
+          type: COMMANDS.setShapePluginData,
           id: selectedShape.id,
-          semantic: { id: semanticIdStr, platform },
+          pluginId: PLUGIN_SEMANTICS,
+          data: { id: semanticIdStr, platform },
         },
       ]);
     }
@@ -179,13 +226,15 @@ export function useDocumentMutations(props: DocumentMutationsProps): DocumentMut
   }
 
   function handlePropertyChange(propId: string, val: string | number | boolean): void {
-    if (!selectedShape || !selectedShape.meta.semantic) return;
-    const nextProps = { ...selectedShape.meta.semantic.properties, [propId]: val };
+    const currentSemantic = getShapeSemantic(selectedShape);
+    if (!selectedShape || !currentSemantic) return;
+    const nextProps = { ...currentSemantic.properties, [propId]: val };
     commit([
       {
-        type: COMMANDS.setShapeSemantic,
+        type: COMMANDS.setShapePluginData,
         id: selectedShape.id,
-        semantic: { ...selectedShape.meta.semantic, properties: nextProps },
+        pluginId: PLUGIN_SEMANTICS,
+        data: { ...currentSemantic, properties: nextProps },
       },
     ]);
     render();

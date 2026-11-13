@@ -7,8 +7,9 @@ import {
   type PlatformProfile,
   type SemanticConflict,
 } from "@open-draw/profiles";
-import { ROOT_ROLES } from "./root-roles";
+import { ROOT_ROLES, type RootRole } from "./root-roles";
 import { resolveRootPlatform } from "./resolve-root";
+import { PLUGIN_ROOT_ROLE, getShapeSemantic } from "./plugins";
 
 /**
  * Computes semantic conflict status for a shape in a document.
@@ -19,7 +20,7 @@ export function computeSemanticConflict(
   shape: Shape,
   profile?: PlatformProfile,
 ): SemanticConflict | undefined {
-  const semantic = shape.meta.semantic;
+  const semantic = getShapeSemantic(shape);
   if (semantic === undefined) {
     return undefined;
   }
@@ -51,8 +52,12 @@ export function computeSemanticConflict(
     };
   }
 
+  const role =
+    (shape.meta.pluginData?.[PLUGIN_ROOT_ROLE] as RootRole | undefined) ??
+    (shape.meta.role as RootRole | undefined);
+
   if (
-    shape.meta.role === ROOT_ROLES.component &&
+    role === ROOT_ROLES.component &&
     profile !== undefined &&
     semantic.id === profile.rootSemantic
   ) {

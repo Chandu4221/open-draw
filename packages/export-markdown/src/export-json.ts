@@ -18,6 +18,14 @@ import {
   STYLE_PROFILES,
   SEMANTICS_REGISTRY_VERSION,
   buildChildIndex,
+  getShapeSemantic,
+  PLUGIN_DARK_MODE,
+  PLUGIN_ROOT_PLATFORM,
+  PLUGIN_ROOT_ROLE,
+  PLUGIN_THEME,
+  type PlatformId,
+  type RootRole,
+  type ThemePalette,
 } from "@open-draw/semantics";
 
 export class DocumentError extends Error {
@@ -215,33 +223,46 @@ export function exportJson(doc: Document, options?: JsonExportOptions): string {
     const meta: Record<string, unknown> = {};
 
     // A4: Explicit semantic: null for untagged shapes
-    if (shape.meta.semantic !== undefined) {
+    const shapeSemantic = getShapeSemantic(shape);
+    if (shapeSemantic !== undefined) {
       const semantic: Record<string, unknown> = {
-        id: shape.meta.semantic.id,
-        platform: PLATFORMS[shape.meta.semantic.platform] ?? shape.meta.semantic.platform,
+        id: shapeSemantic.id,
+        platform: PLATFORMS[shapeSemantic.platform] ?? shapeSemantic.platform,
       };
-      if (shape.meta.semantic.properties !== undefined) {
-        semantic.properties = shape.meta.semantic.properties;
+      if (shapeSemantic.properties !== undefined) {
+        semantic.properties = shapeSemantic.properties;
       }
       meta.semantic = semantic;
     } else {
       meta.semantic = null;
     }
 
-    if (shape.meta.platform !== undefined) {
-      meta.platform = PLATFORMS[shape.meta.platform] ?? shape.meta.platform;
+    const platform =
+      (shape.meta.pluginData?.[PLUGIN_ROOT_PLATFORM] as PlatformId | undefined) ??
+      (shape.meta.platform as PlatformId | undefined);
+    if (platform !== undefined) {
+      meta.platform = PLATFORMS[platform] ?? platform;
     }
     if (shape.meta.style !== undefined) {
       meta.style = STYLE_PROFILES[shape.meta.style] ?? shape.meta.style;
     }
-    if (shape.meta.role !== undefined) {
-      meta.role = ROOT_ROLES[shape.meta.role] ?? shape.meta.role;
+    const role =
+      (shape.meta.pluginData?.[PLUGIN_ROOT_ROLE] as RootRole | undefined) ??
+      (shape.meta.role as RootRole | undefined);
+    if (role !== undefined) {
+      meta.role = ROOT_ROLES[role] ?? role;
     }
-    if (shape.meta.theme !== undefined) {
-      meta.theme = shape.meta.theme;
+    const theme =
+      (shape.meta.pluginData?.[PLUGIN_THEME] as ThemePalette | undefined) ??
+      (shape.meta.theme as ThemePalette | undefined);
+    if (theme !== undefined) {
+      meta.theme = theme;
     }
-    if (shape.meta.darkMode !== undefined) {
-      meta.darkMode = shape.meta.darkMode;
+    const darkMode =
+      (shape.meta.pluginData?.[PLUGIN_DARK_MODE] as boolean | undefined) ??
+      (shape.meta.darkMode as boolean | undefined);
+    if (darkMode !== undefined) {
+      meta.darkMode = darkMode;
     }
     if (shape.meta.hiddenOn !== undefined && shape.meta.hiddenOn.length > 0) {
       meta.hiddenOn = shape.meta.hiddenOn;

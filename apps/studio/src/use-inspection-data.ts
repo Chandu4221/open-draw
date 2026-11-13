@@ -12,6 +12,7 @@ import type { RootRole, SemanticConflict, SemanticDefinition } from "@open-draw/
 import { ROOT_ROLES } from "@open-draw/semantics";
 import {
   computeSemanticConflict,
+  getShapeSemantic,
   resolveRootDarkMode,
   resolveRootDesignStyle,
   resolveRootPlatform,
@@ -59,11 +60,12 @@ export function computeInspectionData(
   const conflict = selectedShape
     ? computeSemanticConflict(doc, selectedShape, activeProfile)
     : undefined;
+  const selectedSemantic = selectedShape ? getShapeSemantic(selectedShape) : undefined;
   const semanticDef =
-    selectedShape?.meta.semantic !== undefined && activeProfile !== undefined
-      ? activeProfile.semantics[selectedShape.meta.semantic.id]
+    selectedSemantic !== undefined && activeProfile !== undefined
+      ? activeProfile.semantics[selectedSemantic.id]
       : undefined;
-  const semanticProps = selectedShape?.meta.semantic?.properties ?? {};
+  const semanticProps = selectedSemantic?.properties ?? {};
 
   const isScopedToRoot = rootShape !== undefined;
   const activeRootTitle = rootShape ? resolveShapeDisplayName(rootShape, activeProfile) : undefined;

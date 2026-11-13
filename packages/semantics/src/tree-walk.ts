@@ -11,6 +11,7 @@ import {
 } from "@open-draw/canvas";
 import {
   PLATFORM_PROFILES,
+  type PlatformId,
   type PlatformProfile,
   type SemanticConflict,
 } from "@open-draw/profiles";
@@ -18,6 +19,7 @@ import { computeSemanticConflict } from "./compute-conflict";
 import { resolveShapeDisplayName, resolveShapeSemanticType } from "./display-name";
 import { resolveRootShape } from "./resolve-root";
 import { resolveSemantic, type ResolvedSemantic } from "./resolve-semantic";
+import { PLUGIN_ROOT_PLATFORM, getShapeSemantic } from "./plugins";
 
 export type ChildIndex = ReadonlyMap<ShapeId, readonly Shape[]>;
 
@@ -64,12 +66,14 @@ export function walkSemanticTree(
   ): void {
     const isRoot = isRootId(shape.parentId);
     const rootShape = isRoot ? shape : (inheritedRoot ?? resolveRootShape(doc, shape.id));
-    const shapePlatform = rootShape?.meta.platform;
+    const shapePlatform =
+      (rootShape?.meta.pluginData?.[PLUGIN_ROOT_PLATFORM] as PlatformId | undefined) ??
+      (rootShape?.meta.platform as PlatformId | undefined);
     const shapeProfile =
       shapePlatform !== undefined
         ? PLATFORM_PROFILES[shapePlatform]
         : (inheritedProfile ?? profile);
-    const semantic = resolveSemantic(shapeProfile, shape.meta.semantic);
+    const semantic = resolveSemantic(shapeProfile, getShapeSemantic(shape));
     const conflict = computeSemanticConflict(doc, shape, shapeProfile);
     const displayName = resolveShapeDisplayName(shape, shapeProfile);
     const semanticType = resolveShapeSemanticType(shape, shapeProfile);

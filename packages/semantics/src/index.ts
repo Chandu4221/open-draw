@@ -9,6 +9,7 @@ export * from "./resolve-semantic";
 export * from "./tree-walk";
 export * from "./harmonization";
 export * from "./version";
+export * from "./plugins";
 
 export type {
   ControlId,

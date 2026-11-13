@@ -3,6 +3,7 @@ import type { Shape } from "@open-draw/canvas";
 import type { PlatformProfile } from "@open-draw/profiles";
 import {
   CONTROL_TYPES,
+  getShapeSemantic,
   type SemanticConflict,
   type SemanticDefinition,
 } from "@open-draw/semantics";
@@ -101,7 +102,7 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
           <SemanticSelect
             id="component-semantic-tag"
             activeProfile={activeProfile}
-            selectedTag={selectedShape.meta.semantic?.id ?? ""}
+            selectedTag={getShapeSemantic(selectedShape)?.id ?? ""}
             onSelect={handleSetSemantic}
           />
         </OdField>

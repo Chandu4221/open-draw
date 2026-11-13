@@ -4,6 +4,7 @@ import {
   type PlatformId,
   type StyleId,
   parseSemanticId,
+  getShapeSemantic,
   DESIGN_STYLES,
   PLATFORMS,
   STYLE_PROFILES,
@@ -206,7 +207,7 @@ describe("exportMarkdown", () => {
       "  - #item-1 — Rectangle (navbar) — rect [x:10.00 y:10.00 w:200.00 h:50.00] ⚠️ _[CONFLICT:",
     );
     // Verify document was not mutated
-    expect(doc.shapes[foreignNav.id]?.meta.semantic?.id).toBe("navbar");
+    expect(getShapeSemantic(doc.shapes[foreignNav.id]!)?.id).toBe("navbar");
   });
 
   it("is 100% byte-stable across repeated invocations (R-041)", () => {

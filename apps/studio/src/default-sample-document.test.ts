@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
 import { PLATFORMS } from "@open-draw/profiles";
-import { ROOT_ROLES } from "@open-draw/semantics";
+import { ROOT_ROLES, getShapeSemantic } from "@open-draw/semantics";
 import { createDefaultSampleDocument } from "./default-sample-document.js";
 
 describe("createDefaultSampleDocument", () => {
@@ -20,8 +20,8 @@ describe("createDefaultSampleDocument", () => {
     expect(root?.label).toBe("Profile Card");
     expect(root?.meta.role).toBe(ROOT_ROLES.component);
     expect(root?.meta.platform).toBe(PLATFORMS.web);
-    expect(root?.meta.semantic?.id).toBe("card");
-    expect(root?.meta.semantic?.platform).toBe(PLATFORMS.web);
+    expect(getShapeSemantic(root!)?.id).toBe("card");
+    expect(getShapeSemantic(root!)?.platform).toBe(PLATFORMS.web);
   });
 
   it("nests all child shapes under the root card container", () => {
@@ -42,11 +42,11 @@ describe("createDefaultSampleDocument", () => {
 
     // Verify avatar
     expect(doc.shapes["s-7a02" as ShapeId]?.kind).toBe(SHAPE_KINDS.ellipse);
-    expect(doc.shapes["s-7a02" as ShapeId]?.meta.semantic?.id).toBe("image");
+    expect(getShapeSemantic(doc.shapes["s-7a02" as ShapeId]!)?.id).toBe("image");
 
     // Verify username
     expect(doc.shapes["s-7a03" as ShapeId]?.content).toBe("John Doe");
-    expect(doc.shapes["s-7a03" as ShapeId]?.meta.semantic?.id).toBe("heading");
+    expect(getShapeSemantic(doc.shapes["s-7a03" as ShapeId]!)?.id).toBe("heading");
 
     // Verify profession
     expect(doc.shapes["s-7a04" as ShapeId]?.content).toBe("Developer");

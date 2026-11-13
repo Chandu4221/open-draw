@@ -1,8 +1,13 @@
 import { isRootId, type Point, type ShapeId } from "@open-draw/canvas";
 import { absoluteBoundingBox, ancestorsOf, type Document, type Shape } from "@open-draw/canvas";
 import { chipOverlayToSvg, pickChip } from "./chip-overlay";
-import { PLATFORM_PROFILES } from "@open-draw/profiles";
-import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
+import { PLATFORM_PROFILES, type PlatformId } from "@open-draw/profiles";
+import {
+  PLUGIN_ROOT_PLATFORM,
+  getShapeSemantic,
+  resolveRootPlatform,
+  resolveShapeDisplayName,
+} from "@open-draw/semantics";
 
 export interface SemanticChipOverlayOptions {
   readonly doc: Document;
@@ -12,7 +17,9 @@ export interface SemanticChipOverlayOptions {
 }
 
 function getRootChipLabel(shape: Shape): string {
-  const platform = shape.meta.platform;
+  const platform =
+    (shape.meta.pluginData?.[PLUGIN_ROOT_PLATFORM] as PlatformId | undefined) ??
+    (shape.meta.platform as PlatformId | undefined);
   const platformLabel =
     platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : undefined;
   return platformLabel ?? "Container";
@@ -37,7 +44,7 @@ export function computeSemanticChipOverlays(options: SemanticChipOverlayOptions)
       chipLabel = getRootChipLabel(shape);
       isInteractive = true;
       isActive = visibleChipRootIds?.has(shape.id) ?? false;
-    } else if (shape.meta.semantic !== undefined) {
+    } else if (getShapeSemantic(shape) !== undefined) {
       const root = ancestorsOf(doc, shape).find((a) => isRootId(a.parentId));
       const isRootChipsVisible = root !== undefined && (visibleChipRootIds?.has(root.id) ?? false);
       const isSelected = selectedIds.includes(shape.id);

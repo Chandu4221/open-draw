@@ -3,7 +3,7 @@
 // Formats exact parent-relative bounding boxes and chip IDs (R-025, R-041, R-042).
 import { type BoundingBox, type DeviceType, DEVICE_TYPES } from "@open-draw/canvas";
 import type { Shape } from "@open-draw/canvas";
-import { SEMANTIC_CONFLICTS, type SemanticTreeNode } from "@open-draw/semantics";
+import { SEMANTIC_CONFLICTS, getShapeSemantic, type SemanticTreeNode } from "@open-draw/semantics";
 import { formatChipId } from "./chip-id";
 import { escapeMarkdownText } from "./escape-markdown";
 
@@ -29,7 +29,7 @@ function resolveSemanticDisplayName(node: SemanticTreeNode): string | undefined 
   if (node.semantic !== undefined) {
     return node.semantic.displayName;
   }
-  const tag = node.shape.meta.semantic;
+  const tag = getShapeSemantic(node.shape);
   if (tag === undefined) {
     return undefined;
   }
@@ -43,7 +43,7 @@ function formatSemanticDetails(node: SemanticTreeNode): string {
   }
 
   const parts: string[] = [escapeMarkdownText(displayName)];
-  const properties = node.shape.meta.semantic?.properties;
+  const properties = getShapeSemantic(node.shape)?.properties;
   if (properties !== undefined) {
     const entries = Object.entries(properties);
     if (entries.length > 0) {

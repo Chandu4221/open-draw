@@ -2,9 +2,10 @@
 // Full chain: label -> semantic display name (from profile data) -> shape kind label.
 import type { BuiltinShapeKind, Shape } from "@open-draw/canvas";
 import { SHAPE_KINDS, SHAPE_KIND_LABELS, isRootId } from "@open-draw/canvas";
-import type { PlatformProfile } from "@open-draw/profiles";
+import type { PlatformId, PlatformProfile } from "@open-draw/profiles";
 import { PLATFORMS } from "@open-draw/profiles";
-import { ROOT_ROLES } from "./root-roles";
+import { ROOT_ROLES, type RootRole } from "./root-roles";
+import { PLUGIN_ROOT_PLATFORM, PLUGIN_ROOT_ROLE, getShapeSemantic } from "./plugins";
 
 export function getDisplayName(shape: Shape): string {
   if (shape.label !== undefined && shape.label !== "") {
@@ -32,10 +33,15 @@ export function resolveShapeDisplayName(shape: Shape, profile?: PlatformProfile)
   if (shape.label !== undefined && shape.label !== "") {
     return shape.label;
   }
+  const semantic = getShapeSemantic(shape);
+  const role =
+    (shape.meta.pluginData?.[PLUGIN_ROOT_ROLE] as RootRole | undefined) ??
+    (shape.meta.role as RootRole | undefined);
+
   if (isRootId(shape.parentId)) {
-    if (shape.meta.role === ROOT_ROLES.component) {
-      if (shape.meta.semantic !== undefined && profile !== undefined) {
-        const definition = profile.semantics[shape.meta.semantic.id];
+    if (role === ROOT_ROLES.component) {
+      if (semantic !== undefined && profile !== undefined) {
+        const definition = profile.semantics[semantic.id];
         if (definition !== undefined && definition.displayName !== "") {
           return definition.displayName;
         }
@@ -52,8 +58,8 @@ export function resolveShapeDisplayName(shape: Shape, profile?: PlatformProfile)
       return SHAPE_KIND_LABELS[SHAPE_KINDS.page];
     }
   }
-  if (shape.meta.semantic !== undefined && profile !== undefined) {
-    const definition = profile.semantics[shape.meta.semantic.id];
+  if (semantic !== undefined && profile !== undefined) {
+    const definition = profile.semantics[semantic.id];
     if (definition !== undefined && definition.displayName !== "") {
       return definition.displayName;
     }
@@ -77,16 +83,24 @@ export function resolveShapeSemanticType(
   shape: Shape,
   profile?: PlatformProfile,
 ): string | undefined {
+  const semantic = getShapeSemantic(shape);
+  const role =
+    (shape.meta.pluginData?.[PLUGIN_ROOT_ROLE] as RootRole | undefined) ??
+    (shape.meta.role as RootRole | undefined);
+  const platform =
+    (shape.meta.pluginData?.[PLUGIN_ROOT_PLATFORM] as PlatformId | undefined) ??
+    (shape.meta.platform as PlatformId | undefined);
+
   if (isRootId(shape.parentId)) {
     // Platform-Agnostic mode (R-024, Ruling 10)
-    if (shape.meta.platform === undefined) {
+    if (platform === undefined) {
       return SHAPE_KIND_LABELS[shape.kind as BuiltinShapeKind] ?? shape.kind;
     }
 
     // Root component role
-    if (shape.meta.role === ROOT_ROLES.component) {
-      if (shape.meta.semantic !== undefined && profile !== undefined) {
-        const definition = profile.semantics[shape.meta.semantic.id];
+    if (role === ROOT_ROLES.component) {
+      if (semantic !== undefined && profile !== undefined) {
+        const definition = profile.semantics[semantic.id];
         if (definition !== undefined && definition.displayName !== "") {
           return definition.displayName;
         }
@@ -95,9 +109,9 @@ export function resolveShapeSemanticType(
     }
 
     // Root screen / page role (defaults to screen role per R-024)
-    const platform = shape.meta.platform ?? profile?.id;
+    const effectivePlatform = platform ?? profile?.id;
     if (
-      platform === PLATFORMS.web ||
+      effectivePlatform === PLATFORMS.web ||
       profile?.id === PLATFORMS.web ||
       profile?.rootSemantic === "page"
     ) {
@@ -107,8 +121,8 @@ export function resolveShapeSemanticType(
   }
 
   // Child shape: returns profile semantic displayName if tagged, undefined if untagged
-  if (shape.meta.semantic !== undefined && profile !== undefined) {
-    const definition = profile.semantics[shape.meta.semantic.id];
+  if (semantic !== undefined && profile !== undefined) {
+    const definition = profile.semantics[semantic.id];
     if (definition !== undefined && definition.displayName !== "") {
       return definition.displayName;
     }

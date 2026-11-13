@@ -127,7 +127,7 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   const isContainer =
     selectedShape !== undefined &&
     isRootId(selectedShape.parentId) &&
-    (CONTAINER_KINDS.has(selectedShape.kind) || selectedShape.meta.platform !== undefined);
+    (CONTAINER_KINDS.has(selectedShape.kind) || rootPlatform !== undefined);
 
   return (
     <div className="od-inspector-content">
