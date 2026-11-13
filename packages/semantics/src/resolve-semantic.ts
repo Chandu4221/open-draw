@@ -19,9 +19,9 @@ export interface ResolvedSemantic {
  */
 export function resolveSemantic(
   profile: PlatformProfile | undefined,
-  tag: SemanticTag | undefined,
+  tag: SemanticTag | undefined | null,
 ): ResolvedSemantic | undefined {
-  if (tag === undefined || profile === undefined) {
+  if (!tag || !tag.id || profile === undefined) {
     return undefined;
   }
   const definition = profile.semantics[tag.id];
@@ -40,10 +40,10 @@ export function resolveSemantic(
  * Checks whether a semantic tag has scope === "section" in its platform profile.
  */
 export function isSectionScopedSemantic(
-  tag: SemanticTag | undefined,
+  tag: SemanticTag | undefined | null,
   profile?: PlatformProfile,
 ): boolean {
-  if (tag === undefined) {
+  if (!tag || !tag.id || !tag.platform) {
     return false;
   }
   const targetProfile = profile ?? PLATFORM_PROFILES[tag.platform];
@@ -55,10 +55,10 @@ export function isSectionScopedSemantic(
  * Checks whether a semantic tag has scope === "component" in its platform profile.
  */
 export function isComponentScopedSemantic(
-  tag: SemanticTag | undefined,
+  tag: SemanticTag | undefined | null,
   profile?: PlatformProfile,
 ): boolean {
-  if (tag === undefined) {
+  if (!tag || !tag.id || !tag.platform) {
     return false;
   }
   const targetProfile = profile ?? PLATFORM_PROFILES[tag.platform];
@@ -71,10 +71,10 @@ export function isComponentScopedSemantic(
  * (scope === "section", layout category, cards, or explicit container tags).
  */
 export function isContainerSemantic(
-  tag: SemanticTag | undefined,
+  tag: SemanticTag | undefined | null,
   profile?: PlatformProfile,
 ): boolean {
-  if (tag === undefined) {
+  if (!tag || !tag.id || !tag.platform) {
     return false;
   }
   const targetProfile = profile ?? PLATFORM_PROFILES[tag.platform];
@@ -96,10 +96,10 @@ export function isContainerSemantic(
  * Checks whether a semantic tag represents an atomic leaf component (button, input, toggle, etc.).
  */
 export function isLeafComponentSemantic(
-  tag: SemanticTag | undefined,
+  tag: SemanticTag | undefined | null,
   profile?: PlatformProfile,
 ): boolean {
-  if (tag === undefined) {
+  if (!tag || !tag.id) {
     return false;
   }
   return !isContainerSemantic(tag, profile);

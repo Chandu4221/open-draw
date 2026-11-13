@@ -47,7 +47,6 @@ export function createDefaultSampleDocument(): Document {
         isContainer: true,
         platform: PLATFORMS.web,
         role: ROOT_ROLES.screen,
-        semantic: null,
         pluginData: {
           [PLUGIN_ROOT_PLATFORM]: "web",
           [PLUGIN_DESIGN_STYLE]: "glassmorphism",
@@ -440,7 +439,6 @@ export function createDefaultSampleDocument(): Document {
       content: "Build layouts with shapes, hierarchy, and structure.",
       meta: {
         order: {},
-        semantic: null,
       },
     },
     {
@@ -494,7 +492,6 @@ export function createDefaultSampleDocument(): Document {
       content: "Mark what each element is—button, nav, form, screen.",
       meta: {
         order: {},
-        semantic: null,
       },
     },
     {
@@ -548,7 +545,6 @@ export function createDefaultSampleDocument(): Document {
       content: "Turn the document into specs and frontend-ready output.",
       meta: {
         order: {},
-        semantic: null,
       },
     },
     {
@@ -602,7 +598,6 @@ export function createDefaultSampleDocument(): Document {
       content: "Explore visual languages on the same underlying structure.",
       meta: {
         order: {},
-        semantic: null,
       },
     },
     {
@@ -656,7 +651,6 @@ export function createDefaultSampleDocument(): Document {
       content: "Open Draw is the canvas between visual design and working markup.",
       meta: {
         order: {},
-        semantic: null,
       },
     },
     {

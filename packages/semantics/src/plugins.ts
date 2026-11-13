@@ -14,8 +14,11 @@ export const PLUGIN_DARK_MODE: PluginId = parsePluginId("open-draw:dark-mode");
  */
 export function getShapeSemantic(shape: Shape | undefined): SemanticTag | undefined {
   if (!shape) return undefined;
-  return (
-    (shape.meta.pluginData?.[PLUGIN_SEMANTICS] as SemanticTag | undefined) ??
-    (shape.meta.semantic as SemanticTag | undefined)
-  );
+  const tag =
+    (shape.meta.pluginData?.[PLUGIN_SEMANTICS] as SemanticTag | undefined | null) ??
+    (shape.meta.semantic as SemanticTag | undefined | null);
+  if (tag === null || tag === undefined) {
+    return undefined;
+  }
+  return tag;
 }

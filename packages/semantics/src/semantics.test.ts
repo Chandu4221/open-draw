@@ -733,5 +733,44 @@ describe("pluginData metadata resolution (canvas 0.9.2 plugin architecture)", ()
       expect(isContainerSemantic({ platform: "flutter", id: "button" })).toBe(false);
       expect(isLeafComponentSemantic({ platform: "flutter", id: "button" })).toBe(true);
     });
+
+    it("safely handles null or malformed semantic tags without throwing (null reading id guard)", () => {
+      // getShapeSemantic returns undefined for null
+      const shapeWithNullSemantic = createRect(
+        parseShapeId("rect-null-semantic"),
+        { x: 0, y: 0, width: 100, height: 100 },
+        { meta: { order: {}, semantic: null } },
+      );
+      expect(getShapeSemantic(shapeWithNullSemantic)).toBeUndefined();
+
+      // resolveSemantic returns undefined safely
+      expect(resolveSemantic(WEB_PROFILE, null as unknown as undefined)).toBeUndefined();
+      expect(resolveSemantic(undefined, null as unknown as undefined)).toBeUndefined();
+
+      // Scoped checks return false safely
+      expect(isSectionScopedSemantic(null as unknown as undefined)).toBe(false);
+      expect(isComponentScopedSemantic(null as unknown as undefined)).toBe(false);
+      expect(isContainerSemantic(null as unknown as undefined)).toBe(false);
+      expect(isLeafComponentSemantic(null as unknown as undefined)).toBe(false);
+
+      // walkSemanticTree does not crash on document with null semantics
+      const nullDoc = createDocument([
+        createRect(
+          parseShapeId("root-screen"),
+          { x: 0, y: 0, width: 800, height: 600 },
+          {
+            meta: {
+              order: {},
+              platform: PLATFORMS.web,
+              role: ROOT_ROLES.screen,
+              semantic: null,
+            },
+          },
+        ),
+      ]);
+      const nodes = walkSemanticTree(nullDoc, parseShapeId("root-screen"));
+      expect(nodes.length).toBe(1);
+      expect(nodes[0]?.shape.id).toBe("root-screen");
+    });
   });
 });

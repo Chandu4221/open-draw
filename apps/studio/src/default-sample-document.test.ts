@@ -9,6 +9,8 @@ import {
   getShapeSemantic,
 } from "@open-draw/semantics";
 import { createDefaultSampleDocument } from "./default-sample-document.js";
+import { normalizeStudioDocument } from "./normalize-document.js";
+import { computeInspectionData } from "./use-inspection-data.js";
 
 describe("createDefaultSampleDocument", () => {
   it("creates a valid document containing the 34 sample landing page wireframe shapes", () => {
@@ -100,5 +102,22 @@ describe("createDefaultSampleDocument", () => {
       expect(card?.content).toBe(expectedLabels[index]);
       expect(getShapeSemantic(card!)?.id).toBe("card");
     });
+  });
+
+  it("normalizes and computes inspection data for the initial document without throwing", () => {
+    const rawDoc = createDefaultSampleDocument();
+    const doc = normalizeStudioDocument(rawDoc);
+    expect(doc).toBeDefined();
+
+    // Initial unselected state (what renders when opening studio)
+    const inspection = computeInspectionData(doc, null, undefined);
+    expect(inspection.rootShape).toBeUndefined();
+    expect(inspection.treeNodes.length).toBeGreaterThan(0);
+
+    // Selected root screen state
+    const rootInspection = computeInspectionData(doc, "s-7a07" as ShapeId, undefined);
+    expect(rootInspection.rootShape?.id).toBe("s-7a07");
+    expect(rootInspection.rootPlatform).toBe("web");
+    expect(rootInspection.treeNodes.length).toBe(34);
   });
 });
