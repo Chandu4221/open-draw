@@ -94,17 +94,11 @@ describe("LandingFeatures", () => {
 });
 
 describe("LandingPillars", () => {
-  it("renders the combined philosophy manifesto and four numbered capabilities", () => {
+  it("renders the four numbered capabilities matching the wireframe", () => {
     const theme = LANDING_THEMES.minimal;
     const html = renderToString(<LandingPillars theme={theme} />);
 
     expect(html).toContain("More than shapes on a canvas.");
-    expect(html).toContain("Philosophy");
-    expect(html).toContain("Design should not stop at pixels.");
-    expect(html).toContain("When design understands meaning, it becomes more powerful.");
-    expect(html).toContain(
-      "Open Draw explores what happens when visual creativity meets semantic structure and code generation.",
-    );
     expect(html).toContain("01 —");
     expect(html).toContain("Draw on a real canvas");
     expect(html).toContain("Build layouts with shapes, hierarchy, and structure.");
