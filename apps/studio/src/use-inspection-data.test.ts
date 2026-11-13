@@ -1,14 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  PLATFORMS,
-  ROOT_ID,
-  ROOT_ROLES,
-  SEMANTIC_CONFLICTS,
-  SHAPE_KINDS,
-  STYLE_PROFILES,
-  type ShapeId,
-} from "@open-draw/contracts";
-import { createDocument, type Document, type Shape } from "@open-draw/document";
+import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
+import { PLATFORMS, STYLE_PROFILES } from "@open-draw/profiles";
+import { ROOT_ROLES, SEMANTIC_CONFLICTS } from "@open-draw/semantics";
+import { createDocument, type Document, type Shape } from "@open-draw/canvas";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { useInspectionData } from "./use-inspection-data";
 

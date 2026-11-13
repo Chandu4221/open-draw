@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { parseShapeId, ROOT_ID, SHAPE_KINDS, STYLE_PROFILES } from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/canvas";
+import { STYLE_PROFILES } from "@open-draw/profiles";
+import type { Shape } from "@open-draw/canvas";
 import type { SemanticTreeNode } from "@open-draw/semantics";
 import { Sidebar } from "./Sidebar";
 

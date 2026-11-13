@@ -3,7 +3,7 @@ import {
   type CreativityLevel,
   CREATIVITY_LEVEL_DEFINITIONS,
   DEFAULT_CREATIVITY_LEVEL,
-} from "@open-draw/contracts";
+} from "@open-draw/export-markdown";
 
 export interface AiCreativityMeterProps {
   readonly creativityLevel: CreativityLevel;

@@ -3,7 +3,7 @@ import {
   SEMANTIC_CATEGORIES,
   type SemanticDefinition,
   parseSemanticId,
-} from "@open-draw/contracts";
+} from "../../../semantic-contract";
 
 export const ANDROID_LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze(
   {

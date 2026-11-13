@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDocument } from "@open-draw/document";
+import { parseDocument } from "@open-draw/canvas";
 import { exportMarkdown } from "./export-markdown";
 import { formatBoundingBox } from "./format-tree";
 

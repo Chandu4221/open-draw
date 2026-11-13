@@ -1,18 +1,11 @@
 // Root resolution for platform and design style (R-026, ADR-0004 D7).
 // Platform and style are properties of root shapes only; children
 // inherit both by tree position and never store either.
-import {
-  type DesignStyleId,
-  type PlatformId,
-  type RootRole,
-  type ShapeId,
-  type StyleId,
-  type ThemePalette,
-  isRootId,
-  ROOT_ROLES,
-  STYLE_PROFILES,
-} from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
+import type { Document, Shape, ShapeId } from "@open-draw/canvas";
+import { isRootId } from "@open-draw/canvas";
+import type { DesignStyleId, PlatformId, StyleId, ThemePalette } from "@open-draw/profiles";
+import { STYLE_PROFILES } from "@open-draw/profiles";
+import { ROOT_ROLES, type RootRole } from "./root-roles";
 
 /**
  * Resolves the root shape ancestor (immediate child of ROOT_ID) for any shape in the document (R-026).

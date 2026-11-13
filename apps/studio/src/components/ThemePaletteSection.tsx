@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  THEME_PALETTE_SLOTS,
-  type ThemePalette,
-  type ThemePaletteSlot,
-} from "@open-draw/contracts";
+import { THEME_PALETTE_SLOTS, type ThemePalette, type ThemePaletteSlot } from "@open-draw/profiles";
 import { OdField } from "@open-draw/ui";
 
 export interface ThemePaletteSectionProps {

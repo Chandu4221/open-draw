@@ -1,6 +1,6 @@
-import { isRootId, type Point, type ShapeId } from "@open-draw/contracts";
-import { absoluteBoundingBox, ancestorsOf, type Document, type Shape } from "@open-draw/document";
-import { chipOverlayToSvg, pickChip } from "@open-draw/renderer-svg";
+import { isRootId, type Point, type ShapeId } from "@open-draw/canvas";
+import { absoluteBoundingBox, ancestorsOf, type Document, type Shape } from "@open-draw/canvas";
+import { chipOverlayToSvg, pickChip } from "./chip-overlay";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
 
@@ -16,6 +16,12 @@ function getRootChipLabel(shape: Shape): string {
   const platformLabel =
     platform !== undefined ? (PLATFORM_PROFILES[platform]?.label ?? platform) : undefined;
   return platformLabel ?? "Container";
+}
+
+export function getRootContainerIds(doc: Document): readonly ShapeId[] {
+  return Object.values(doc.shapes)
+    .filter((shape) => isRootId(shape.parentId))
+    .map((shape) => shape.id);
 }
 
 export function computeSemanticChipOverlays(options: SemanticChipOverlayOptions): string[] {

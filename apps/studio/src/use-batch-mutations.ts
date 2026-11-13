@@ -1,5 +1,5 @@
-import type { ShapeId } from "@open-draw/contracts";
-import { COMMANDS, type Command, type Document, type Shape } from "@open-draw/document";
+import type { ShapeId } from "@open-draw/canvas";
+import { COMMANDS, type Command, type Document, type Shape } from "@open-draw/canvas";
 
 export interface BatchMutationsProps {
   readonly doc?: Document | undefined;

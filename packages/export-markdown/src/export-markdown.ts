@@ -2,8 +2,8 @@
 // Pure Document → string projection, zero side effects (R-008, R-016).
 // Consumes walkSemanticTree to guarantee 100% hierarchy parity with the canvas (ADR-0004).
 // Byte-stable by construction: deterministic sort orders, zero timestamps (R-041).
-import { ROOT_ID } from "@open-draw/contracts";
-import type { Document } from "@open-draw/document";
+import { ROOT_ID } from "@open-draw/canvas";
+import type { Document } from "@open-draw/canvas";
 import { walkSemanticTree } from "@open-draw/semantics";
 import { compileAiDirectives } from "./ai-directives";
 import { renderAsciiSketch } from "./ascii-sketch";

@@ -1,5 +1,5 @@
-import type { ShapeId } from "@open-draw/contracts";
-import type { Document } from "@open-draw/document";
+import type { ShapeId } from "@open-draw/canvas";
+import type { Document } from "@open-draw/canvas";
 import { generateExportSvg } from "./document-io";
 
 /**

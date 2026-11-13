@@ -1,4 +1,5 @@
-import { type PlatformProfile, parseSemanticId } from "@open-draw/contracts";
+import type { PlatformProfile } from "../../profile-contract";
+import { parseSemanticId } from "../../semantic-contract";
 import { ANDROID_NATIVE_SEMANTICS } from "./semantics/index.js";
 
 export * from "./semantics/index.js";

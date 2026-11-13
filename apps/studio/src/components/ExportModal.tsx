@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  isRootId,
-  type CreativityLevel,
-  type ShapeId,
-  DEFAULT_CREATIVITY_LEVEL,
-} from "@open-draw/contracts";
-import { ancestorsOf, type Document } from "@open-draw/document";
+import { isRootId, type ShapeId } from "@open-draw/canvas";
+import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/export-markdown";
+import { ancestorsOf, type Document } from "@open-draw/canvas";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdButton, OdIcon, OdIconButton } from "@open-draw/ui";

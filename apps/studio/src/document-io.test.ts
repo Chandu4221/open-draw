@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PLATFORMS, ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import { createDocument, parseDocument, type Document, type Shape } from "@open-draw/document";
+import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
+import { PLATFORMS } from "@open-draw/profiles";
+import { createDocument, parseDocument, type Document, type Shape } from "@open-draw/canvas";
 import {
   extractDocumentLegendItems,
   generateExportJson,

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import type { Shape } from "@open-draw/document";
+import type { Shape } from "@open-draw/canvas";
 import { OdField, OdIcon } from "@open-draw/ui";
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;

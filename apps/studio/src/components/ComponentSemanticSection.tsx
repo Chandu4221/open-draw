@@ -1,7 +1,11 @@
 import React from "react";
-import type { PlatformProfile, SemanticConflict, SemanticDefinition } from "@open-draw/contracts";
-import { CONTROL_TYPES } from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+import type { Shape } from "@open-draw/canvas";
+import type { PlatformProfile } from "@open-draw/profiles";
+import {
+  CONTROL_TYPES,
+  type SemanticConflict,
+  type SemanticDefinition,
+} from "@open-draw/semantics";
 import { OdField } from "@open-draw/ui";
 import { SemanticSelect } from "./SemanticSelect";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";

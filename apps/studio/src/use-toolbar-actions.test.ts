@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import { COMMANDS, createDocument, type Shape } from "@open-draw/document";
+import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
+import { COMMANDS, createDocument, type Shape } from "@open-draw/canvas";
 import type { Editor } from "@open-draw/canvas";
 import type { OdToastContextValue } from "@open-draw/ui";
 import { useToolbarActions } from "./use-toolbar-actions";

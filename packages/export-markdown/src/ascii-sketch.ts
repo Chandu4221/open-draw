@@ -1,9 +1,10 @@
 // Deterministic 80-column ASCII layout sketch renderer (Milestone 11A B4).
 // Pure Document → string projection, zero side effects (R-008, R-016).
 // Byte-stable: fixed 80-column width, pinned rounding, zero Math.random (R-021, R-041).
-import { isRootId, ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
-import { absoluteBoundingBox, buildChildIndex } from "@open-draw/document";
+import { isRootId, ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
+import type { Document, Shape } from "@open-draw/canvas";
+import { absoluteBoundingBox } from "@open-draw/canvas";
+import { buildChildIndex } from "@open-draw/semantics";
 import {
   ASCII_BOX_CHARS,
   ASCII_CAPTIONS,

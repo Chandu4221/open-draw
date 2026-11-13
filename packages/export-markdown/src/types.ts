@@ -1,5 +1,5 @@
-// Types and options for structured Markdown export (ADR-0005 D1, D2).
-import type { DeviceType, ExportOptions, ShapeId } from "@open-draw/contracts";
+import type { DeviceType, ShapeId } from "@open-draw/canvas";
+import type { ExportOptions } from "./export-contract";
 
 export interface MarkdownExportOptions extends ExportOptions {
   readonly rootId?: ShapeId | undefined;

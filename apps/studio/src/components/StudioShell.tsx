@@ -6,8 +6,8 @@ import React, {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { DeviceType, ShapeId } from "@open-draw/contracts";
-import type { Command, Shape } from "@open-draw/document";
+import type { DeviceType, ShapeId } from "@open-draw/canvas";
+import type { Command, Shape } from "@open-draw/canvas";
 import {
   CONTROLLER_EVENTS,
   createEditor,
@@ -16,7 +16,8 @@ import {
   type ToolId,
 } from "@open-draw/canvas";
 import { useToast } from "@open-draw/ui";
-import { computeSemanticChipOverlays, pickAnyRootChip } from "../canvas-overlays";
+import { computeSemanticChipOverlays } from "../canvas-overlays";
+import { useRootChipVisibility } from "../use-root-chip-visibility";
 import { StudioLayout } from "../templates/StudioLayout";
 import { Sidebar } from "./Sidebar";
 import { CanvasBrand } from "./CanvasBrand";
@@ -45,16 +46,25 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const editorRef = useRef<Editor | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const initialDoc = useMemo(() => loadInitialDocument(), []);
+  const {
+    initialRootIds,
+    visibleChipRoots,
+    handleToggleChildChips,
+    interceptPointerDown,
+    syncVisibleChipRoots,
+  } = useRootChipVisibility({ initialDoc, editorRef });
 
   const subscribeDoc = useCallback(
     (onStoreChange: () => void) => {
       if (editor === null) return () => {};
       return editor.subscribe(CONTROLLER_EVENTS.documentChanged, () => {
-        saveDraftDocument(editor.getDocument());
+        const curDoc = editor.getDocument();
+        saveDraftDocument(curDoc);
+        syncVisibleChipRoots(curDoc, editor.canvas);
         onStoreChange();
       });
     },
-    [editor],
+    [editor, syncVisibleChipRoots],
   );
 
   const getDocSnapshot = useCallback(
@@ -74,7 +84,6 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
   const [selectedShapeId, setSelectedShapeId] = useState<ShapeId | null>(null);
   const [selectedShapeIds, setSelectedShapeIds] = useState<readonly ShapeId[]>([]);
   const [activeDeviceType, setActiveDeviceType] = useState<DeviceType | undefined>(undefined);
-  const [visibleChipRoots, setVisibleChipRoots] = useState<ReadonlySet<ShapeId>>(() => new Set());
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [includeLegend, setIncludeLegend] = useState<boolean>(false);
@@ -90,6 +99,9 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       document: initialDoc,
       tool: TOOLS.select,
       nestingMode: "containers-only",
+      canvasOptions: {
+        visibleChipRootIds: initialRootIds,
+      },
       onFallback: (msg) => toastRef.current.push({ type: "info", text: msg }),
       renderCustomOverlays: (ctx) =>
         computeSemanticChipOverlays({
@@ -98,16 +110,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           zoom: ctx.zoom,
           visibleChipRootIds: ctx.canvas.getVisibleChipRootIds(),
         }),
-      interceptPointerDown: (_event, { world, canvas, doc: curDoc }) => {
-        const hitChip = pickAnyRootChip(curDoc, world, canvas.getCamera().zoom);
-        if (hitChip !== null) {
-          canvas.toggleRootChipsVisible(hitChip);
-          setVisibleChipRoots(new Set(canvas.getVisibleChipRootIds()));
-          newEditor.render();
-          return true;
-        }
-        return false;
-      },
+      interceptPointerDown,
     });
 
     editorRef.current = newEditor;
@@ -132,7 +135,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       editorRef.current = null;
       setEditor(null);
     };
-  }, [initialDoc]);
+  }, [initialDoc, initialRootIds, interceptPointerDown]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -174,14 +177,6 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       ed.render();
     }
     setActiveDeviceType(deviceType);
-  };
-
-  const handleToggleChildChips = (rootId: ShapeId): void => {
-    const ed = editorRef.current;
-    if (!ed) return;
-    ed.canvas.toggleRootChipsVisible(rootId);
-    setVisibleChipRoots(new Set(ed.canvas.getVisibleChipRootIds()));
-    ed.render();
   };
 
   const handleZoom = (factor: number): void => {

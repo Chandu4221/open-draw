@@ -3,7 +3,7 @@ import {
   type PlatformId,
   type SemanticId,
   parseSemanticId,
-} from "@open-draw/contracts";
+} from "@open-draw/profiles";
 
 /**
  * Universal UI concepts mapped to equivalent semantic tag identifiers on each platform.

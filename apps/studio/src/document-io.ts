@@ -4,17 +4,13 @@ import {
   subtreeOf,
   type Document,
   type Shape,
-} from "@open-draw/document";
+} from "@open-draw/canvas";
 import { exportJson, exportMarkdown } from "@open-draw/export-markdown";
-import { documentToSvgWithLegend, type LegendItem } from "@open-draw/renderer-svg";
+import { documentToSvgWithLegend, type LegendItem } from "./export-image";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
-import {
-  isRootId,
-  type CreativityLevel,
-  type ShapeId,
-  DEFAULT_CREATIVITY_LEVEL,
-} from "@open-draw/contracts";
+import { isRootId, type ShapeId } from "@open-draw/canvas";
+import { type CreativityLevel, DEFAULT_CREATIVITY_LEVEL } from "@open-draw/export-markdown";
 
 export interface SvgExportOptions {
   readonly includeLegend?: boolean | undefined;

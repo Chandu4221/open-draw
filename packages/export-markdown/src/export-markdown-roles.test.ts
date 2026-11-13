@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  parseShapeId,
-  parseSemanticId,
-  PLATFORMS,
-  ROOT_ID,
-  ROOT_ROLES,
-  STYLE_PROFILES,
-} from "@open-draw/contracts";
-import { createDocument, createRect } from "@open-draw/document";
+import { parseShapeId, ROOT_ID } from "@open-draw/canvas";
+import { parseSemanticId, PLATFORMS, ROOT_ROLES, STYLE_PROFILES } from "@open-draw/semantics";
+import { createDocument, createRect } from "@open-draw/canvas";
 import { exportMarkdown } from "./export-markdown";
 
 describe("exportMarkdown with root roles (R-024, R-026)", () => {

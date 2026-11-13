@@ -3,7 +3,7 @@ import {
   SEMANTIC_CATEGORIES,
   type SemanticDefinition,
   parseSemanticId,
-} from "@open-draw/contracts";
+} from "../../../semantic-contract";
 
 export const MARKETING_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze({
   hero: Object.freeze({

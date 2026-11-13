@@ -1,24 +1,18 @@
 import { describe, expect, it } from "vitest";
-import {
-  CREATIVITY_LEVELS,
-  EXPORT_CHIP_PREFIX,
-  parseCustomShapeKind,
-  parseShapeId,
-  PLATFORMS,
-  ROOT_ID,
-} from "@open-draw/contracts";
+import { parseCustomShapeKind, parseShapeId, ROOT_ID } from "@open-draw/canvas";
+import { CREATIVITY_LEVELS, EXPORT_CHIP_PREFIX } from "./export-contract";
+import { PLATFORMS } from "@open-draw/semantics";
 import {
   createCustomShape,
   createDocument,
   createLine,
   createPenPath,
   createRect,
-  DocumentError,
   parseDocument,
-} from "@open-draw/document";
+} from "@open-draw/canvas";
 import { SEMANTICS_REGISTRY_VERSION } from "@open-draw/semantics";
 import { formatChipId, isChipId, parseChipId } from "./chip-id";
-import { exportJson, roundCoordinate } from "./export-json";
+import { DocumentError, exportJson, roundCoordinate } from "./export-json";
 
 describe("chip-id (Milestone 11A Section 3)", () => {
   it("formats a shape ID into an export chip reference with prefix # (R-042)", () => {

@@ -1,7 +1,6 @@
-import { PLATFORMS, ROOT_ROLES, type ShapeId } from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
-import { PLATFORM_PROFILES } from "@open-draw/profiles";
-import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
+import type { ShapeId, Document, Shape } from "@open-draw/canvas";
+import { PLATFORMS, PLATFORM_PROFILES } from "@open-draw/profiles";
+import { ROOT_ROLES, resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
 import { generateExportJson, generateExportMarkdown, generateExportSvg } from "../document-io";
 import type { ZipFileInput } from "../zip-export";
 

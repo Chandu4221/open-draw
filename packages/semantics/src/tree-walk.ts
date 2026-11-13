@@ -3,23 +3,36 @@
 // Provides the pure traversal seam consumed by future Markdown exporters.
 import {
   isRootId,
-  type DeviceType,
-  type PlatformProfile,
-  type SemanticConflict,
-  type ShapeId,
-} from "@open-draw/contracts";
-import {
-  buildChildIndex,
   childrenOf,
-  type ChildIndex,
+  type DeviceType,
   type Document,
   type Shape,
-} from "@open-draw/document";
-import { PLATFORM_PROFILES } from "@open-draw/profiles";
+  type ShapeId,
+} from "@open-draw/canvas";
+import {
+  PLATFORM_PROFILES,
+  type PlatformProfile,
+  type SemanticConflict,
+} from "@open-draw/profiles";
 import { computeSemanticConflict } from "./compute-conflict";
 import { resolveShapeDisplayName, resolveShapeSemanticType } from "./display-name";
 import { resolveRootShape } from "./resolve-root";
 import { resolveSemantic, type ResolvedSemantic } from "./resolve-semantic";
+
+export type ChildIndex = ReadonlyMap<ShapeId, readonly Shape[]>;
+
+export function buildChildIndex(document: Document): ChildIndex {
+  const index = new Map<ShapeId, Shape[]>();
+  for (const shape of Object.values(document.shapes)) {
+    const list = index.get(shape.parentId);
+    if (list === undefined) {
+      index.set(shape.parentId, [shape]);
+    } else {
+      list.push(shape);
+    }
+  }
+  return index;
+}
 
 export interface SemanticTreeNode {
   readonly shape: Shape;

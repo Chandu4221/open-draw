@@ -1,21 +1,21 @@
 import React from "react";
+import type { BoundingBox, Shape, ShapeId } from "@open-draw/canvas";
 import {
   PLATFORM_BY_VALUE,
   PLATFORMS,
-  ROOT_ROLES,
   STYLE_PROFILES,
-  type BoundingBox,
   type DesignStyleId,
   type PlatformId,
   type PlatformProfile,
+  type StyleId,
+  type ThemePalette,
+} from "@open-draw/profiles";
+import {
+  ROOT_ROLES,
   type RootRole,
   type SemanticConflict,
   type SemanticDefinition,
-  type ShapeId,
-  type StyleId,
-  type ThemePalette,
-} from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+} from "@open-draw/semantics";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdCard, OdField, OdSegmentedControl } from "@open-draw/ui";
 import { ComponentSemanticSection } from "./ComponentSemanticSection";
@@ -230,8 +230,8 @@ export function ContainerInspector(props: ContainerInspectorProps): React.JSX.El
                 id="container-show-chips"
                 type="checkbox"
                 role="switch"
-                aria-checked={showChildChips ?? false}
-                checked={showChildChips ?? false}
+                aria-checked={showChildChips ?? true}
+                checked={showChildChips ?? true}
                 onChange={() => handleToggleChildChips(selectedShape.id)}
               />
               <span className="od-switch__track" aria-hidden="true">

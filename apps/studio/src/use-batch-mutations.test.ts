@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import { COMMANDS, type Shape } from "@open-draw/document";
+import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
+import { COMMANDS, type Shape } from "@open-draw/canvas";
 import { useBatchMutations } from "./use-batch-mutations";
 
 function createMockShape(

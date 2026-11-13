@@ -1,5 +1,5 @@
 import React from "react";
-import type { Document, Shape } from "@open-draw/document";
+import type { Document, Shape } from "@open-draw/canvas";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { resolveRootPlatform, resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdButton, OdIcon, OdSegmentedControl } from "@open-draw/ui";

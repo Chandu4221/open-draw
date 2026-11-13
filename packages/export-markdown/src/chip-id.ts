@@ -1,7 +1,8 @@
 // Chip ID system (Milestone 11A Section 3).
 // Pure export-time reference derivation from ShapeId (R-025, R-042).
 // Format: "#" + shapeId (e.g. #s-7a01). Never stored, byte-stable.
-import { EXPORT_CHIP_PREFIX, parseShapeId, type ShapeId } from "@open-draw/contracts";
+import { parseShapeId, type ShapeId } from "@open-draw/canvas";
+import { EXPORT_CHIP_PREFIX } from "./export-contract";
 
 /**
  * Formats a canonical ShapeId into an export chip reference (e.g. "#s-7a01").

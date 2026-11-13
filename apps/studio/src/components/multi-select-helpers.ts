@@ -1,4 +1,4 @@
-import type { Shape } from "@open-draw/document";
+import type { Shape } from "@open-draw/canvas";
 
 export interface DerivedSharedStyles {
   readonly fill: string | undefined;

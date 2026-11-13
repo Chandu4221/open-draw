@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { isRootId, type ShapeId } from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
+import { isRootId, type ShapeId } from "@open-draw/canvas";
+import type { Document, Shape } from "@open-draw/canvas";
 import { resolveRootShape } from "@open-draw/semantics";
 import { OdButton, OdIcon } from "@open-draw/ui";
 import {

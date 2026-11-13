@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Point } from "@open-draw/contracts";
+import type { Point } from "@open-draw/canvas";
 
 export class MockDomNode {
   readonly tagName: string;

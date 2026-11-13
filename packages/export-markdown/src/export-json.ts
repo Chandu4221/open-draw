@@ -3,24 +3,37 @@
 // Derives chipId, explicit shapeOrder, and semantics registry fingerprint at export time (R-025, R-041, R-042).
 import {
   isRootId,
-  PLATFORMS,
   ROOT_ID,
-  ROOT_ROLES,
   SHAPE_KINDS,
-  STYLE_PROFILES,
   type ShapeId,
-} from "@open-draw/contracts";
-import {
-  buildChildIndex,
-  DocumentError,
-  isCustomShape,
   shapeListInOrder,
   type Document,
   type LineShape,
   type PenPathShape,
   type Shape,
-} from "@open-draw/document";
-import { SEMANTICS_REGISTRY_VERSION } from "@open-draw/semantics";
+} from "@open-draw/canvas";
+import {
+  PLATFORMS,
+  ROOT_ROLES,
+  STYLE_PROFILES,
+  SEMANTICS_REGISTRY_VERSION,
+  buildChildIndex,
+} from "@open-draw/semantics";
+
+export class DocumentError extends Error {
+  readonly code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = "DocumentError";
+    this.code = code;
+  }
+}
+
+const BUILTIN_SHAPE_KINDS = new Set<string>(Object.values(SHAPE_KINDS));
+
+function isCustomShape(shape: Shape): boolean {
+  return !BUILTIN_SHAPE_KINDS.has(shape.kind);
+}
 import { compileAiDirectives } from "./ai-directives";
 import { formatChipId } from "./chip-id";
 import type { JsonExportOptions } from "./types";
@@ -154,8 +167,9 @@ export function exportJson(doc: Document, options?: JsonExportOptions): string {
     }
 
     if (isCustomShape(shape)) {
-      if (shape.customData !== undefined) {
-        for (const [k, v] of Object.entries(shape.customData)) {
+      const customShape = shape as { customData?: Record<string, unknown> };
+      if (customShape.customData !== undefined) {
+        for (const [k, v] of Object.entries(customShape.customData)) {
           if (RESERVED_CUSTOM_DATA_KEYS.has(k)) {
             throw new DocumentError(
               "invalidDocument",
@@ -173,7 +187,7 @@ export function exportJson(doc: Document, options?: JsonExportOptions): string {
         case SHAPE_KINDS.text:
           break;
         case SHAPE_KINDS.section:
-          shapeRecord.direction = shape.direction;
+          shapeRecord.direction = (shape as { direction?: string }).direction;
           break;
         case SHAPE_KINDS.line: {
           const line = shape as LineShape;

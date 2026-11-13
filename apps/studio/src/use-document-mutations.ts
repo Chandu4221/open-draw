@@ -1,18 +1,13 @@
-import type {
-  DesignStyleId,
-  DeviceType,
-  PlatformId,
-  RootRole,
-  StyleId,
-} from "@open-draw/contracts";
-import { isRootId, PLATFORMS } from "@open-draw/contracts";
-import { COMMANDS, type Command, type Shape } from "@open-draw/document";
-import { PLATFORM_PROFILES } from "@open-draw/profiles";
+import type { DeviceType, Command, Shape } from "@open-draw/canvas";
+import { COMMANDS, isRootId } from "@open-draw/canvas";
+import type { DesignStyleId, PlatformId, PlatformProfile, StyleId } from "@open-draw/profiles";
+import { PLATFORMS, PLATFORM_PROFILES } from "@open-draw/profiles";
+import type { RootRole } from "@open-draw/semantics";
 
 export interface DocumentMutationsProps {
   readonly selectedShape: Shape | undefined;
   readonly rootShape: Shape | undefined;
-  readonly activeProfile: import("@open-draw/contracts").PlatformProfile | undefined;
+  readonly activeProfile: PlatformProfile | undefined;
   readonly activeDeviceType: DeviceType | undefined;
   readonly setActiveDeviceType: (dt: DeviceType | undefined) => void;
   readonly commit: (

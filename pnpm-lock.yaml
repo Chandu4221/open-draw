@@ -241,32 +241,17 @@ importers:
   apps/studio:
     dependencies:
       "@open-draw/canvas":
-        specifier: workspace:*
-        version: link:../../packages/canvas
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      "@open-draw/document":
-        specifier: workspace:*
-        version: link:../../packages/document
+        specifier: ^0.9.0
+        version: 0.9.0
       "@open-draw/export-markdown":
         specifier: workspace:*
         version: link:../../packages/export-markdown
-      "@open-draw/input":
-        specifier: workspace:*
-        version: link:../../packages/input
       "@open-draw/profiles":
         specifier: workspace:*
         version: link:../../packages/profiles
-      "@open-draw/renderer-svg":
-        specifier: workspace:*
-        version: link:../../packages/renderer-svg
       "@open-draw/semantics":
         specifier: workspace:*
         version: link:../../packages/semantics
-      "@open-draw/shapes":
-        specifier: workspace:*
-        version: link:../../packages/shapes
       "@open-draw/ui":
         specifier: workspace:*
         version: link:../../packages/ui
@@ -317,72 +302,11 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
 
-  packages/canvas:
-    devDependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
-      "@open-draw/document":
-        specifier: workspace:*
-        version: link:../document
-      "@open-draw/input":
-        specifier: workspace:*
-        version: link:../input
-      "@open-draw/renderer-svg":
-        specifier: workspace:*
-        version: link:../renderer-svg
-      "@open-draw/shapes":
-        specifier: workspace:*
-        version: link:../shapes
-      eslint:
-        specifier: ^10.13.0
-        version: 10.13.0(supports-color@7.2.0)
-      tsup:
-        specifier: ^9.0.0
-        version: 9.0.0(postcss@8.5.32)(typescript@6.0.3)
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
-
-  packages/contracts:
-    devDependencies:
-      eslint:
-        specifier: ^10.13.0
-        version: 10.13.0(supports-color@7.2.0)
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
-
-  packages/document:
-    dependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
-    devDependencies:
-      eslint:
-        specifier: ^10.13.0
-        version: 10.13.0(supports-color@7.2.0)
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
-
   packages/export-markdown:
     dependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
-      "@open-draw/document":
-        specifier: workspace:*
-        version: link:../document
+      "@open-draw/canvas":
+        specifier: ^0.9.0
+        version: 0.9.0
       "@open-draw/semantics":
         specifier: workspace:*
         version: link:../semantics
@@ -397,42 +321,11 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
 
-  packages/input:
-    devDependencies:
-      eslint:
-        specifier: ^10.13.0
-        version: 10.13.0(supports-color@7.2.0)
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
-
   packages/profiles:
     dependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
-    devDependencies:
-      eslint:
-        specifier: ^10.13.0
-        version: 10.13.0(supports-color@7.2.0)
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
-
-  packages/renderer-svg:
-    dependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
-      "@open-draw/document":
-        specifier: workspace:*
-        version: link:../document
+      "@open-draw/canvas":
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       eslint:
         specifier: ^10.13.0
@@ -446,31 +339,12 @@ importers:
 
   packages/semantics:
     dependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
-      "@open-draw/document":
-        specifier: workspace:*
-        version: link:../document
+      "@open-draw/canvas":
+        specifier: ^0.9.0
+        version: 0.9.0
       "@open-draw/profiles":
         specifier: workspace:*
         version: link:../profiles
-    devDependencies:
-      eslint:
-        specifier: ^10.13.0
-        version: 10.13.0(supports-color@7.2.0)
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.5
-        version: 5.0.5(@types/node@24.19.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2))
-
-  packages/shapes:
-    dependencies:
-      "@open-draw/contracts":
-        specifier: workspace:*
-        version: link:../contracts
     devDependencies:
       eslint:
         specifier: ^10.13.0
@@ -1021,6 +895,12 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [glibc]
+
+  "@open-draw/canvas@0.9.0":
+    resolution:
+      {
+        integrity: sha512-7sYXLD5WyOBWYEfuB4Y9RjIzjfiHVhECx1hA2KeEQztZgavTXs61ycBrTQ6u4KQm0eOAgsKPFzkwdpMyf48pQw==,
+      }
 
   "@oxc-project/types@0.155.0":
     resolution:
@@ -3463,6 +3343,8 @@ snapshots:
 
   "@napi-rs/lzma-linux-x64-gnu@1.5.1":
     optional: true
+
+  "@open-draw/canvas@0.9.0": {}
 
   "@oxc-project/types@0.155.0": {}
 

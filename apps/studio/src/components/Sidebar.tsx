@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
-import type { ShapeId } from "@open-draw/contracts";
-import type { Document } from "@open-draw/document";
+import type { ShapeId } from "@open-draw/canvas";
+import type { Document } from "@open-draw/canvas";
 import type { SemanticTreeNode } from "@open-draw/semantics";
 import { OdBadge, OdIconButton } from "@open-draw/ui";
 import { ExportPanel } from "./ExportPanel";

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { parseShapeId } from "@open-draw/canvas";
 import {
   type PlatformId,
   type StyleId,
-  parseShapeId,
   parseSemanticId,
   DESIGN_STYLES,
   PLATFORMS,
   STYLE_PROFILES,
-} from "@open-draw/contracts";
-import { createDocument, createRect, createSection, createPage } from "@open-draw/document";
+} from "@open-draw/semantics";
+import { createDocument, createRect, createSection, createPage } from "@open-draw/canvas";
 import { exportMarkdown } from "./export-markdown";
 
 describe("exportMarkdown", () => {

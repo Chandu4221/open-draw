@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { PlatformProfile } from "@open-draw/contracts";
+import type { PlatformProfile } from "@open-draw/profiles";
 import { OdIcon } from "@open-draw/ui";
 import {
   buildFlatSemanticOptions,

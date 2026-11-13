@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/contracts";
-import { createDocument, serializeDocument, type Shape } from "@open-draw/document";
+import { ROOT_ID, SHAPE_KINDS, type ShapeId } from "@open-draw/canvas";
+import { createDocument, serializeDocument, type Shape } from "@open-draw/canvas";
 import {
   clearDraftDocument,
   DRAFT_STORAGE_KEY,
@@ -44,9 +44,11 @@ describe("useStudioDraft", () => {
     vi.unstubAllGlobals();
   });
 
-  it("loads empty document when localStorage has no draft", () => {
+  it("loads default sample component document when localStorage has no draft", () => {
     const doc = loadInitialDocument();
-    expect(Object.keys(doc.shapes)).toHaveLength(0);
+    expect(Object.keys(doc.shapes)).toHaveLength(6);
+    expect(doc.shapes["s-7a01" as ShapeId]?.label).toBe("Profile Card");
+    expect(doc.shapes["s-7a03" as ShapeId]?.content).toBe("John Doe");
   });
 
   it("loads and parses existing valid draft from localStorage", () => {
@@ -58,10 +60,11 @@ describe("useStudioDraft", () => {
     expect(loaded.shapes[shape.id]?.id).toBe("saved-shape");
   });
 
-  it("recovers gracefully to empty document if localStorage draft is corrupted", () => {
+  it("recovers gracefully to default sample document if localStorage draft is corrupted", () => {
     store[DRAFT_STORAGE_KEY] = "{ corrupted json ";
     const loaded = loadInitialDocument();
-    expect(Object.keys(loaded.shapes)).toHaveLength(0);
+    expect(Object.keys(loaded.shapes)).toHaveLength(6);
+    expect(loaded.shapes["s-7a01" as ShapeId]?.label).toBe("Profile Card");
   });
 
   it("persists document to localStorage when shapes exist", () => {

@@ -1,18 +1,15 @@
+import type { DeviceType, Document, Shape, ShapeId } from "@open-draw/canvas";
+import { ROOT_ID } from "@open-draw/canvas";
 import type {
-  DeviceType,
   DesignStyleId,
   PlatformId,
   PlatformProfile,
-  SemanticConflict,
-  SemanticDefinition,
-  ShapeId,
   StyleId,
-  RootRole,
   ThemePalette,
-} from "@open-draw/contracts";
-import { ROOT_ID, ROOT_ROLES, STYLE_PROFILES } from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
-import { PLATFORM_PROFILES } from "@open-draw/profiles";
+} from "@open-draw/profiles";
+import { PLATFORM_PROFILES, STYLE_PROFILES } from "@open-draw/profiles";
+import type { RootRole, SemanticConflict, SemanticDefinition } from "@open-draw/semantics";
+import { ROOT_ROLES } from "@open-draw/semantics";
 import {
   computeSemanticConflict,
   resolveRootDarkMode,

@@ -1142,7 +1142,7 @@
   top: var(--od-16);
   left: var(--od-16);
   z-index: 10;
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
 }
 

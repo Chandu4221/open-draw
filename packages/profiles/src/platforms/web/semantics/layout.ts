@@ -3,7 +3,7 @@ import {
   SEMANTIC_CATEGORIES,
   type SemanticDefinition,
   parseSemanticId,
-} from "@open-draw/contracts";
+} from "../../../semantic-contract";
 
 export const LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze({
   "app-shell": Object.freeze({

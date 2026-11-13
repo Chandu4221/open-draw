@@ -1,5 +1,6 @@
-import { isRootId, type ThemePalette } from "@open-draw/contracts";
-import { COMMANDS, type Command, type Shape } from "@open-draw/document";
+import { isRootId } from "@open-draw/canvas";
+import type { ThemePalette } from "@open-draw/profiles";
+import { COMMANDS, type Command, type Shape } from "@open-draw/canvas";
 
 export interface RootThemeMutationsProps {
   readonly selectedShape: Shape | undefined;

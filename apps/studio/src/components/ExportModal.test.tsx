@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { createDocument } from "@open-draw/document";
-import { parseShapeId, PLATFORMS, ROOT_ID, ROOT_ROLES, SHAPE_KINDS } from "@open-draw/contracts";
+import { createDocument } from "@open-draw/canvas";
+import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/canvas";
+import { PLATFORMS } from "@open-draw/profiles";
+import { ROOT_ROLES } from "@open-draw/semantics";
 import { ExportModal } from "./ExportModal";
 import * as DocumentIo from "../document-io";
 

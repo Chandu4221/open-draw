@@ -1,19 +1,13 @@
 import { describe, expect, it } from "vitest";
-import {
-  DESIGN_STYLES,
-  DEVICE_TYPES,
-  parseShapeId,
-  PLATFORMS,
-  ROOT_ID,
-  STYLE_PROFILES,
-} from "@open-draw/contracts";
+import { DEVICE_TYPES, parseShapeId, ROOT_ID } from "@open-draw/canvas";
+import { DESIGN_STYLES, PLATFORMS, STYLE_PROFILES } from "@open-draw/profiles";
 import {
   createDocument,
   createPage,
   createRect,
   createSection,
   type Shape,
-} from "@open-draw/document";
+} from "@open-draw/canvas";
 import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   computeSemanticConflict,
