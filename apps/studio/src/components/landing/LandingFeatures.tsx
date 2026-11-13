@@ -110,11 +110,10 @@ export function LandingFeatures({
                 outline: isSelected ? `2px solid ${theme.accent}` : "none",
                 outlineOffset: "2px",
                 position: "relative",
-                background: isSelected
-                  ? theme.id === "glass"
+                backgroundColor:
+                  isSelected && theme.id === "glass"
                     ? "rgba(255, 255, 255, 0.12)"
-                    : undefined
-                  : undefined,
+                    : theme.card.backgroundColor,
               }}
             >
               <div
