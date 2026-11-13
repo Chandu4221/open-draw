@@ -1,14 +1,9 @@
 // Pure tree row and on-demand legend formatting (Milestone 11A B1-B3, B5).
 // Pure Document -> string projections, zero side effects (R-008, R-016).
 // Formats exact parent-relative bounding boxes and chip IDs (R-025, R-041, R-042).
-import {
-  type BoundingBox,
-  type DeviceType,
-  DEVICE_TYPES,
-  SEMANTIC_CONFLICTS,
-} from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
-import type { SemanticTreeNode } from "@open-draw/semantics";
+import { type BoundingBox, type DeviceType, DEVICE_TYPES } from "@open-draw/canvas";
+import type { Shape } from "@open-draw/canvas";
+import { SEMANTIC_CONFLICTS, type SemanticTreeNode } from "@open-draw/semantics";
 import { formatChipId } from "./chip-id";
 import { escapeMarkdownText } from "./escape-markdown";
 
@@ -85,7 +80,7 @@ function formatHiddenOn(hiddenOn: readonly DeviceType[] | undefined): string {
 }
 
 function formatConflict(node: SemanticTreeNode): string {
-  if (node.conflict?.status !== SEMANTIC_CONFLICTS.conflicted) {
+  if (!node.conflict || node.conflict.status !== SEMANTIC_CONFLICTS.conflicted) {
     return "";
   }
   const reason = escapeMarkdownText(node.conflict.reason ?? "conflicted semantic tag");

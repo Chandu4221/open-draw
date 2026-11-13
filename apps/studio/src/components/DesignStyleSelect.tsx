@@ -1,5 +1,5 @@
 import React from "react";
-import { DESIGN_STYLES, DESIGN_STYLE_LABELS, type DesignStyleId } from "@open-draw/contracts";
+import { DESIGN_STYLES, DESIGN_STYLE_LABELS, type DesignStyleId } from "@open-draw/profiles";
 import { OdField } from "@open-draw/ui";
 
 export interface DesignStyleSelectProps {

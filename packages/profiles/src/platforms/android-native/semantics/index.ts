@@ -1,4 +1,4 @@
-import type { SemanticDefinition } from "@open-draw/contracts";
+import type { SemanticDefinition } from "../../../semantic-contract";
 import { ANDROID_FEEDBACK_SEMANTICS } from "./feedback.js";
 import { ANDROID_FORMS_SEMANTICS } from "./forms.js";
 import { ANDROID_INTERACTIVE_SEMANTICS } from "./interactive.js";

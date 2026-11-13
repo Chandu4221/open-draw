@@ -12,8 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@open-draw/contracts": "workspace:*",
-    "@open-draw/document": "workspace:*",
+    "@open-draw/canvas": "^0.9.0",
     "@open-draw/semantics": "workspace:*"
   },
   "devDependencies": {

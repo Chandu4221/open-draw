@@ -9,4 +9,5 @@ export * from "./ascii-grid";
 export * from "./ascii-sketch";
 export * from "./ai-directives";
 export * from "./escape-markdown";
+export * from "./export-contract";
 export * from "./types";

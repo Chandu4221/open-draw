@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/canvas";
+import type { Shape } from "@open-draw/canvas";
 import { MultiSelectInspector } from "./MultiSelectInspector";
 
 function createMockRect(id: string): Shape {

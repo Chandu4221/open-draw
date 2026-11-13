@@ -1,11 +1,7 @@
 // Studio draft persistence: localStorage auto-save + beforeunload warning (Audit v4 Finding D2).
 import { useEffect } from "react";
-import {
-  createDocument,
-  parseDocument,
-  serializeDocument,
-  type Document,
-} from "@open-draw/document";
+import { parseDocument, serializeDocument, type Document } from "@open-draw/canvas";
+import { createDefaultSampleDocument } from "./default-sample-document.js";
 
 export const DRAFT_STORAGE_KEY = "opendraw:studio:draft";
 
@@ -33,9 +29,9 @@ export function loadInitialDocument(): Document {
       }
     }
   } catch {
-    // Ignore corrupted drafts and fall back to empty document
+    // Ignore corrupted drafts and fall back to default sample document
   }
-  return createDocument([]);
+  return createDefaultSampleDocument();
 }
 
 export function saveDraftDocument(doc: Document): void {

@@ -5,8 +5,8 @@ import {
   createRect,
   createLine,
   createPenPath,
-} from "@open-draw/document";
-import { DEVICE_TYPES, parseShapeId, ROOT_ID } from "@open-draw/contracts";
+} from "@open-draw/canvas";
+import { DEVICE_TYPES, parseShapeId, ROOT_ID } from "@open-draw/canvas";
 import { exportMarkdown, renderAsciiSketch } from "./export-markdown";
 import { ASCII_SKETCH_SHAPE_THRESHOLD } from "./ascii-constants";
 

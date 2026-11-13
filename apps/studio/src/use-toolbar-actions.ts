@@ -1,13 +1,6 @@
-import {
-  COMMANDS,
-  DocumentError,
-  pruneSelectedDescendants,
-  subtreeOf,
-  type Command,
-  type Document,
-} from "@open-draw/document";
+import { ancestorsOf, COMMANDS, subtreeOf, type Command, type Document } from "@open-draw/canvas";
 import { createShapeIdGenerator, type Editor } from "@open-draw/canvas";
-import type { ShapeId } from "@open-draw/contracts";
+import type { ShapeId } from "@open-draw/canvas";
 import type { useToast } from "@open-draw/ui";
 import {
   exportDocumentMarkdown,
@@ -16,6 +9,25 @@ import {
   promptLoadDocumentJson,
   saveDocumentJson,
 } from "./document-io";
+
+function pruneSelectedDescendants(
+  doc: Document,
+  selectedIds: readonly ShapeId[],
+): readonly ShapeId[] {
+  const selectedSet = new Set<ShapeId>(selectedIds);
+  return selectedIds.filter((id) => {
+    const shape = doc.shapes[id];
+    if (shape === undefined) {
+      return false;
+    }
+    for (const ancestor of ancestorsOf(doc, shape)) {
+      if (selectedSet.has(ancestor.id)) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
 
 export interface UseToolbarActionsProps {
   readonly getDoc: () => Document;
@@ -93,9 +105,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
       },
       (err) => {
         const msg =
-          err instanceof DocumentError
-            ? `Load error (${err.code}): ${err.message}`
-            : `Load error: ${err instanceof Error ? err.message : String(err)}`;
+          err instanceof Error ? `Load error: ${err.message}` : `Load error: ${String(err)}`;
         toast.push({ type: "error", text: msg });
       },
     );
@@ -145,7 +155,7 @@ export function useToolbarActions(props: UseToolbarActionsProps) {
       }
     }
     commit([{ type: COMMANDS.duplicateShapes, ids: topLevelIds, dx: 20, dy: 20, newShapeIds }]);
-    const newTopIds = topLevelIds.map((id) => newShapeIds[id]!);
+    const newTopIds = topLevelIds.map((id: ShapeId) => newShapeIds[id]!);
     editor?.selectMany(newTopIds);
     setSelectedShapeId(newTopIds.length === 1 ? newTopIds[0]! : null);
     toast.push({

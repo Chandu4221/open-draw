@@ -1,15 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  DESIGN_STYLES,
   DEVICE_TYPES,
-  PLATFORMS,
   ROOT_ID,
-  ROOT_ROLES,
   SHAPE_KINDS,
-  STYLE_PROFILES,
   type ShapeId,
-} from "@open-draw/contracts";
-import { COMMANDS, type Shape } from "@open-draw/document";
+  COMMANDS,
+  type Shape,
+} from "@open-draw/canvas";
+import { DESIGN_STYLES, PLATFORMS, STYLE_PROFILES } from "@open-draw/profiles";
+import { ROOT_ROLES } from "@open-draw/semantics";
 import { PLATFORM_PROFILES } from "@open-draw/profiles";
 import { useDocumentMutations, type DocumentMutationsProps } from "./use-document-mutations";
 

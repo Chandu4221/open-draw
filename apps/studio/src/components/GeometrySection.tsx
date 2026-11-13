@@ -1,7 +1,7 @@
 import React from "react";
-import type { BoundingBox } from "@open-draw/contracts";
+import type { BoundingBox } from "@open-draw/canvas";
 import { MIN_SHAPE_SIZE } from "@open-draw/canvas";
-import type { Shape } from "@open-draw/document";
+import type { Shape } from "@open-draw/canvas";
 import { OdField, OdInputGroup } from "@open-draw/ui";
 
 export interface GeometrySectionProps {

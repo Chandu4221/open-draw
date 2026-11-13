@@ -1,5 +1,5 @@
-import type { BoundingBox } from "@open-draw/contracts";
-import { COMMANDS, type Command, type Shape } from "@open-draw/document";
+import type { BoundingBox } from "@open-draw/canvas";
+import { COMMANDS, type Command, type Shape } from "@open-draw/canvas";
 
 export interface GeometryMutationsProps {
   readonly selectedShape: Shape | undefined;

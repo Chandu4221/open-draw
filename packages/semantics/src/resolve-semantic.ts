@@ -1,6 +1,10 @@
 // Pure semantic resolver (ADR-0004 D1, D5).
-import type { PlatformProfile, SemanticDefinition, SemanticId } from "@open-draw/contracts";
-import type { SemanticTag } from "@open-draw/document";
+import type {
+  PlatformProfile,
+  SemanticDefinition,
+  SemanticId,
+  SemanticTag,
+} from "@open-draw/profiles";
 
 export interface ResolvedSemantic {
   readonly id: SemanticId;

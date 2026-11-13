@@ -3,7 +3,7 @@ import {
   SHAPE_KIND_LABELS,
   type BuiltinShapeKind,
   type ShapeId,
-} from "@open-draw/contracts";
+} from "@open-draw/canvas";
 import { resolveShapeSemanticType, type walkSemanticTree } from "@open-draw/semantics";
 import { OdBadge } from "@open-draw/ui";
 

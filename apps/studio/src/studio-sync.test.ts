@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CONTROLLER_EVENTS, createEditor, TOOLS, type Editor } from "@open-draw/canvas";
-import { parseShapeId, ROOT_ID } from "@open-draw/contracts";
-import { COMMANDS, createDocument, createRect } from "@open-draw/document";
+import { parseShapeId, ROOT_ID } from "@open-draw/canvas";
+import { COMMANDS, createDocument, createRect } from "@open-draw/canvas";
 import { setupMockDomEnvironment, type MockDomNode } from "./test-dom-mock";
 
 describe("StudioShell editor event synchronization", () => {

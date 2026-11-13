@@ -1,14 +1,13 @@
 // Computed foreign-tag conflict evaluation (R-025, ADR-0004 D3).
 // Pure function: nothing is ever written back to the document.
 // Foreign tags stay stored; switching page platforms computes conflict dynamically.
+import { isRootId, type Document, type Shape } from "@open-draw/canvas";
 import {
-  isRootId,
-  ROOT_ROLES,
   SEMANTIC_CONFLICTS,
   type PlatformProfile,
   type SemanticConflict,
-} from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
+} from "@open-draw/profiles";
+import { ROOT_ROLES } from "./root-roles";
 import { resolveRootPlatform } from "./resolve-root";
 
 /**

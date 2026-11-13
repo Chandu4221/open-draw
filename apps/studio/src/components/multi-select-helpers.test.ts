@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/canvas";
+import type { Shape } from "@open-draw/canvas";
 import { computeSharedStyles, toColorInputValue } from "./multi-select-helpers";
 
 function createMockShape(

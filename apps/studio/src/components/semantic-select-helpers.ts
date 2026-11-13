@@ -1,4 +1,4 @@
-import type { PlatformProfile, SemanticDefinition } from "@open-draw/contracts";
+import type { PlatformProfile, SemanticDefinition } from "@open-draw/profiles";
 
 export const CATEGORY_TITLES: Record<string, string> = {
   layout: "Layout & Structure",

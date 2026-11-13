@@ -8,15 +8,18 @@ import {
   type CustomShapeExtension,
   type Editor,
 } from "@open-draw/canvas";
-import { ROOT_ID, type BoundingBox, type Point } from "@open-draw/contracts";
+import { ROOT_ID, type BoundingBox, type Point } from "@open-draw/canvas";
 import {
   COMMANDS,
   createCustomShape,
   createDocument,
   createRect,
-  type CustomShape,
   type Shape,
-} from "@open-draw/document";
+} from "@open-draw/canvas";
+
+type CustomShape = Shape & {
+  readonly customData?: Record<string, unknown>;
+};
 import { generateSaveDocumentJson } from "./document-io";
 import { dispatchPointer, setupMockDomEnvironment, type MockDomNode } from "./test-dom-mock";
 

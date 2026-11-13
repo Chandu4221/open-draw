@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { parseShapeId, PLATFORMS, ROOT_ID, ROOT_ROLES } from "@open-draw/contracts";
+import { parseShapeId, ROOT_ID } from "@open-draw/canvas";
+import { PLATFORMS } from "@open-draw/profiles";
+import { ROOT_ROLES } from "./root-roles";
 import {
   createDocument,
   createEllipse,
   createPage,
   createRect,
   createText,
-} from "@open-draw/document";
+} from "@open-draw/canvas";
 import { ANDROID_NATIVE_PROFILE, FLUTTER_PROFILE, WEB_PROFILE } from "@open-draw/profiles";
 import {
   computeSemanticConflict,

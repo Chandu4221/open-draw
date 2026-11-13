@@ -1,18 +1,18 @@
 // @open-draw/profiles — platform and style profile data modules (ADR-0004 D5).
 // Pure data; core engine contains zero platform vocabularies (R-023).
-import {
-  PLATFORM_BY_VALUE,
-  type PlatformId,
-  type PlatformProfile,
-  type StyleId,
-  type StyleProfile,
-} from "@open-draw/contracts";
+import { PLATFORM_BY_VALUE, type PlatformId } from "./platforms";
+import type { PlatformProfile, StyleId, StyleProfile } from "./profile-contract";
 import { ANDROID_NATIVE_PROFILE } from "./platforms/android-native";
 import { FLUTTER_PROFILE } from "./platforms/flutter";
 import { IOS_PROFILE } from "./platforms/ios";
 import { WEB_PROFILE } from "./platforms/web";
 import { MINIMAL_STYLE_PROFILE } from "./styles/minimal";
 import { CRAYON_STYLE_PROFILE } from "./styles/crayon";
+
+export * from "./platforms";
+export * from "./design-styles";
+export * from "./semantic-contract";
+export * from "./profile-contract";
 
 export * from "./platforms/web";
 export * from "./platforms/android-native";

@@ -1,17 +1,17 @@
 // AI Prompt Directives Compiler (Milestone 11, Idea 3, 4, 6, R-026, R-040).
 // Pure Document → directives string projection, zero side effects (R-008, R-016).
 // Strict boundary compliance: depends only on contracts, document, semantics (R-020).
+import { isRootId, ROOT_ID } from "@open-draw/canvas";
+import type { Document, Shape } from "@open-draw/canvas";
+import { type CreativityLevel, CREATIVITY_LEVEL_DEFINITIONS } from "./export-contract";
 import {
-  type CreativityLevel,
   type ThemePalette,
-  CREATIVITY_LEVEL_DEFINITIONS,
-  isRootId,
   PLATFORMS,
-  ROOT_ID,
   THEME_PALETTE_SLOTS,
-} from "@open-draw/contracts";
-import type { Document, Shape } from "@open-draw/document";
-import { resolveRootDarkMode, resolveRootPlatform, resolveRootTheme } from "@open-draw/semantics";
+  resolveRootDarkMode,
+  resolveRootPlatform,
+  resolveRootTheme,
+} from "@open-draw/semantics";
 import { escapeCodeSpan, escapeMarkdownText } from "./escape-markdown";
 import type { MarkdownExportOptions } from "./types";
 

@@ -1,13 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import {
-  SHAPE_KINDS,
-  type BoundingBox,
-  type DeviceType,
-  type PlatformProfile,
-  type SemanticConflict,
-  type SemanticDefinition,
-} from "@open-draw/contracts";
-import type { Shape } from "@open-draw/document";
+import { SHAPE_KINDS, type BoundingBox, type DeviceType, type Shape } from "@open-draw/canvas";
+import type { PlatformProfile } from "@open-draw/profiles";
+import type { SemanticConflict, SemanticDefinition } from "@open-draw/semantics";
 import { resolveShapeDisplayName } from "@open-draw/semantics";
 import { OdCard, OdField } from "@open-draw/ui";
 import { GeometrySection } from "./GeometrySection";

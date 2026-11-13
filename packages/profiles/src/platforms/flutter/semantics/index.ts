@@ -1,4 +1,4 @@
-import type { SemanticDefinition } from "@open-draw/contracts";
+import type { SemanticDefinition } from "../../../semantic-contract";
 import { FLUTTER_FEEDBACK_SEMANTICS } from "./feedback.js";
 import { FLUTTER_FORMS_SEMANTICS } from "./forms.js";
 import { FLUTTER_INTERACTIVE_SEMANTICS } from "./interactive.js";

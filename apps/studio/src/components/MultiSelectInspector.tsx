@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import type { Shape } from "@open-draw/document";
+import type { Shape } from "@open-draw/canvas";
 import {
   OdBadge,
   OdButton,

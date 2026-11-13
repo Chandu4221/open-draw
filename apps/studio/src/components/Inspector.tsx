@@ -1,18 +1,25 @@
 import {
   isRootId,
   type BoundingBox,
-  type DesignStyleId,
   type DeviceType,
-  type PlatformId,
-  type PlatformProfile,
-  type RootRole,
-  type SemanticConflict,
-  type SemanticDefinition,
   type ShapeId,
-  type StyleId,
-  type ThemePalette,
-} from "@open-draw/contracts";
-import { CONTAINER_KINDS, type Shape } from "@open-draw/document";
+  SHAPE_KINDS,
+  type Shape,
+} from "@open-draw/canvas";
+
+const CONTAINER_KINDS: ReadonlySet<string> = new Set([
+  SHAPE_KINDS.page,
+  SHAPE_KINDS.section,
+  SHAPE_KINDS.rect,
+]);
+import type {
+  DesignStyleId,
+  PlatformId,
+  PlatformProfile,
+  StyleId,
+  ThemePalette,
+} from "@open-draw/profiles";
+import type { RootRole, SemanticConflict, SemanticDefinition } from "@open-draw/semantics";
 import { ContainerInspector } from "./ContainerInspector";
 import { ShapeInspector } from "./ShapeInspector";
 import { MultiSelectInspector } from "./MultiSelectInspector";

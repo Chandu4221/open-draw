@@ -1,5 +1,5 @@
 import React from "react";
-import type { PlatformProfile, SemanticDefinition } from "@open-draw/contracts";
+import type { PlatformProfile, SemanticDefinition } from "@open-draw/profiles";
 import type { SemanticGroup } from "./semantic-select-helpers";
 
 export interface SemanticOptionsListProps {

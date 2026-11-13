@@ -2,8 +2,8 @@
 // Proves identical shape visitation order, chip ID matching, and rootId scoping.
 // Pure Document → export projections, byte-stable (R-016, R-025, R-041).
 import { describe, expect, it } from "vitest";
-import { DEVICE_TYPES, parseShapeId, ROOT_ID, type ShapeId } from "@open-draw/contracts";
-import { createDocument, createRect, createText } from "@open-draw/document";
+import { DEVICE_TYPES, parseShapeId, ROOT_ID, type ShapeId } from "@open-draw/canvas";
+import { createDocument, createRect, createText } from "@open-draw/canvas";
 import { exportJson, type ExportedJsonDocument } from "./export-json";
 import { exportMarkdown } from "./export-markdown";
 

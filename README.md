@@ -1,22 +1,21 @@
-# OpenDraw
+# OpenDraw Studio
 
-A modular, framework-agnostic vector canvas SDK and semantic wireframing engine.
+A semantic wireframing and design studio built on the [@open-draw/canvas](https://github.com/Chandu4221/open-draw-canvas) SDK.
 
 > **Status:** Alpha. APIs and document schemas are in active development and subject to change.
 
 ## Features
 
-- **Framework-Agnostic Canvas Controller:** Interaction state machine handling shape creation, selection, translation, corner and edge resizing, viewport panning, and zooming with zero DOM or UI framework dependencies.
-- **Reactive Controller Events:** Typed event subscriptions (`documentChanged`, `selectionChanged`, `historyChanged`, `cameraChanged`, `toolChanged`, `machineChanged`) allowing host shells to observe changes with zero global state.
-- **Canonical Document Model:** Pure, immutable document tree supporting transactional commands, history tracking (undo/redo), hierarchical nesting, and JSON serialization.
-- **Pluggable Vector Rendering:** SVG rendering pipeline supporting presentation styles (minimal clean lines and deterministic hand-drawn crayon style) without altering underlying geometry.
+- **Built on Standalone Canvas SDK:** Powered by `@open-draw/canvas` on npm — a framework-free, batteries-included vector canvas engine with zero runtime dependencies.
 - **Semantic Wireframing:** Platform profiles (Web, Android Native, Flutter, iOS) with dynamic semantic tags, device visibility filters, and visual chip overlays.
 - **Structured Markdown Export:** Hierarchical document export generating Markdown specifications with semantic annotations for AI-assisted implementation.
+- **Pluggable Vector Rendering:** SVG rendering pipeline supporting presentation styles (minimal clean lines and deterministic hand-drawn crayon style) without altering underlying geometry.
+- **Transactional Document State:** Pure document mutations, undo/redo history, and hierarchical parenting.
 
 ## Packages
 
-- **`@open-draw/canvas`**: Published on npm (`npm install @open-draw/canvas`). Standalone, batteries-included vector drawing canvas with zero runtime dependencies.
-- **Internal Modules**: Proprietary semantics, platform profiles, export prompt compilers, and Studio UI remain private.
+- **`@open-draw/canvas`**: External dependency on npm (`npm install @open-draw/canvas`). Standalone vector drawing canvas SDK.
+- **Internal Modules**: Proprietary semantics, platform profiles, export prompt compilers, and Studio UI (`apps/studio`).
 
 ## Getting Started
 
@@ -33,14 +32,13 @@ pnpm install
 
 ### Running Locally
 
-To launch the development servers for the Playground and Studio apps:
+To launch the development server for the Studio app:
 
 ```bash
 pnpm dev
 ```
 
-- Playground: `http://localhost:5176` (or next available port)
-- Studio: `http://localhost:5175` (or next available port)
+- Studio: `http://localhost:5173` (or next available port)
 
 ### Verification
 

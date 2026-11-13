@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/contracts";
-import { createDocument, type Shape } from "@open-draw/document";
+import { parseShapeId, ROOT_ID, SHAPE_KINDS } from "@open-draw/canvas";
+import { createDocument, type Shape } from "@open-draw/canvas";
 import { buildExportZipFiles } from "./export-panel-helpers";
 
 describe("export-panel-helpers buildExportZipFiles", () => {

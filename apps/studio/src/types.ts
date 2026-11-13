@@ -1,4 +1,4 @@
-import type { BoundingBox, Point, ShapeId } from "@open-draw/contracts";
+import type { BoundingBox, Point, ShapeId } from "@open-draw/canvas";
 import type { GestureKind, HandleId } from "@open-draw/canvas";
 
 export interface Gesture {
