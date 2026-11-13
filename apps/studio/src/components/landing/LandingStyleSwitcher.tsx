@@ -18,10 +18,10 @@ export function LandingStyleSwitcher({
 }: LandingStyleSwitcherProps): React.JSX.Element {
   const stylesList: readonly LandingDesignStyle[] = [
     LANDING_DESIGN_STYLES.minimal,
-    LANDING_DESIGN_STYLES.brutalist,
     LANDING_DESIGN_STYLES.glass,
     LANDING_DESIGN_STYLES.editorial,
-    LANDING_DESIGN_STYLES.retro,
+    LANDING_DESIGN_STYLES.brutalist,
+    LANDING_DESIGN_STYLES.soft,
   ];
 
   const getContainerStyle = (): React.CSSProperties => {
@@ -52,6 +52,15 @@ export function LandingStyleSwitcher({
         boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
+      };
+    }
+    if (theme.id === "soft") {
+      return {
+        ...base,
+        borderRadius: "14px",
+        backgroundColor: "#ffffff",
+        border: "1px solid #f2e8e1",
+        boxShadow: "0 4px 12px rgba(120, 113, 108, 0.06)",
       };
     }
     if (theme.id === "retro") {
@@ -115,6 +124,16 @@ export function LandingStyleSwitcher({
         color: isActive ? "#ffffff" : theme.textSecondary,
         boxShadow: isActive ? "0 0 12px rgba(168, 85, 247, 0.5)" : "none",
         border: isActive ? "1px solid rgba(255, 255, 255, 0.4)" : "1px solid transparent",
+      };
+    }
+    if (theme.id === "soft") {
+      return {
+        ...base,
+        borderRadius: "10px",
+        backgroundColor: isActive ? "#f472b6" : "transparent",
+        color: isActive ? "#ffffff" : theme.textSecondary,
+        boxShadow: isActive ? "0 2px 8px rgba(244, 114, 182, 0.3)" : "none",
+        border: "1px solid transparent",
       };
     }
     if (theme.id === "retro") {

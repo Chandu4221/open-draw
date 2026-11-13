@@ -14,24 +14,23 @@ interface PillarItem {
 const PILLARS: readonly PillarItem[] = [
   {
     number: "01",
-    title: "Visual Design",
-    description: "Create interfaces intuitively using a flexible visual canvas.",
+    title: "Draw on a real canvas",
+    description: "Build layouts with shapes, hierarchy, and structure.",
   },
   {
     number: "02",
-    title: "Semantic Intelligence",
-    description: "Go beyond rectangles and lines. Give your components meaning and structure.",
+    title: "Tag components with meaning",
+    description: "Mark what each element is—button, nav, form, screen.",
   },
   {
     number: "03",
-    title: "Code Generation",
-    description: "Turn your visual compositions into actual frontend markup.",
+    title: "Export structured markup",
+    description: "Turn the document into specs and frontend-ready output.",
   },
   {
     number: "04",
-    title: "Design Exploration",
-    description:
-      "Experiment with different visual styles without rebuilding the underlying interface.",
+    title: "Swap styles without redrawing",
+    description: "Explore visual languages on the same underlying structure.",
   },
 ];
 

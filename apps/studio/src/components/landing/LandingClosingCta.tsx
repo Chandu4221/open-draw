@@ -23,7 +23,7 @@ export function LandingClosingCta({ theme, onLaunch }: LandingClosingCtaProps): 
         gap: "32px",
       }}
     >
-      {/* Statement Heading (s-7a22) */}
+      {/* Statement Heading (s-7a38) */}
       <h2
         id="closing-cta-heading"
         style={{
@@ -37,11 +37,24 @@ export function LandingClosingCta({ theme, onLaunch }: LandingClosingCtaProps): 
           maxWidth: "760px",
         }}
       >
-        Your ideas deserve more than a mockup. Start drawing. Give your ideas meaning. Bring them to
-        life.
+        Start drawing. Add meaning. Ship the interface.
       </h2>
 
-      {/* Launch Action Button (s-7a23) */}
+      {/* Subhead / Bridge text (s-7a39) */}
+      <p
+        style={{
+          fontFamily: theme.bodyFont,
+          color: theme.textSecondary,
+          fontSize: "clamp(16px, 2vw, 19px)",
+          lineHeight: 1.6,
+          maxWidth: "640px",
+          margin: 0,
+        }}
+      >
+        Open Draw is the canvas between visual design and working markup.
+      </p>
+
+      {/* Launch Action Button (s-7a3a) */}
       <div>
         <button
           type="button"
@@ -59,7 +72,7 @@ export function LandingClosingCta({ theme, onLaunch }: LandingClosingCtaProps): 
             boxSizing: "border-box",
           }}
         >
-          Launch App
+          Try OpenDraw
         </button>
       </div>
     </section>

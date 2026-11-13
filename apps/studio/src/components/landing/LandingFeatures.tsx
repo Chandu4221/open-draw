@@ -24,11 +24,6 @@ const STYLE_FEATURES: readonly StyleFeatureItem[] = [
     description: "Clean, elegant and distraction-free.",
   },
   {
-    id: LANDING_DESIGN_STYLES.brutalist,
-    name: "Brutalist",
-    description: "Bold, expressive and unconventional.",
-  },
-  {
     id: LANDING_DESIGN_STYLES.glass,
     name: "Glass",
     description: "Modern, translucent and layered.",
@@ -39,9 +34,14 @@ const STYLE_FEATURES: readonly StyleFeatureItem[] = [
     description: "Typography-driven and expressive.",
   },
   {
-    id: LANDING_DESIGN_STYLES.retro,
-    name: "Retro",
-    description: "Nostalgic with a contemporary twist.",
+    id: LANDING_DESIGN_STYLES.brutalist,
+    name: "Brutalist",
+    description: "Bold, expressive and unconventional.",
+  },
+  {
+    id: LANDING_DESIGN_STYLES.soft,
+    name: "Soft",
+    description: "Warm, tactile and approachable.",
   },
 ];
 
@@ -75,7 +75,7 @@ export function LandingFeatures({
           maxWidth: "760px",
         }}
       >
-        {/* Main Section Heading (s-7a08) */}
+        {/* Main Section Heading (s-7a16) */}
         <h2
           id="features-heading"
           style={{
@@ -87,7 +87,7 @@ export function LandingFeatures({
             lineHeight: 1.2,
           }}
         >
-          One Design, Many Possibilities
+          Same structure. Different design languages.
         </h2>
 
         {/* Subhead (s-7a09) */}

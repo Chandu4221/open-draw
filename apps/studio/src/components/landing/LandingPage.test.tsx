@@ -17,16 +17,15 @@ describe("LandingPage", () => {
     const html = renderToString(<LandingPage onLaunch={onLaunch} />);
 
     expect(html).toContain('data-landing-style="minimal"');
-    expect(html).toContain("From ideas to interfaces. Without limits.");
+    expect(html).toContain("Design interfaces visually. Add meaning. Ship code");
     expect(html).toContain(
-      "Design your ideas visually, give them meaning, and transform them into working interfaces.",
+      "Open Draw turns canvas wireframes into semantic structure and frontend markup.",
     );
-    expect(html).toContain("Try Open Draw");
-    expect(html).toContain("One Design, Many Possibilities");
+    expect(html).toContain("Try OpenDraw");
+    expect(html).toContain("Same structure. Different design languages.");
     expect(html).toContain("More than shapes on a canvas.");
-    expect(html).toContain("Design should not stop at pixels.");
-    expect(html).toContain("Your ideas deserve more than a mockup.");
-    expect(html).toContain("Launch App");
+    expect(html).toContain("Draw on a real canvas");
+    expect(html).toContain("Start drawing. Add meaning. Ship the interface.");
   });
 
   it("renders with a custom initial design style when specified", () => {
@@ -41,10 +40,10 @@ describe("LandingPage", () => {
   it("renders all 5 design styles distinctly", () => {
     const styles = [
       LANDING_DESIGN_STYLES.minimal,
-      LANDING_DESIGN_STYLES.brutalist,
       LANDING_DESIGN_STYLES.glass,
       LANDING_DESIGN_STYLES.editorial,
-      LANDING_DESIGN_STYLES.retro,
+      LANDING_DESIGN_STYLES.brutalist,
+      LANDING_DESIGN_STYLES.soft,
     ];
 
     for (const style of styles) {
@@ -60,14 +59,11 @@ describe("LandingHero", () => {
     const theme = LANDING_THEMES.minimal;
     const html = renderToString(<LandingHero theme={theme} onLaunch={onLaunch} />);
 
-    expect(html).toContain("From ideas to interfaces. Without limits.");
+    expect(html).toContain("Design interfaces visually. Add meaning. Ship code");
     expect(html).toContain(
-      "Design your ideas visually, give them meaning, and transform them into working interfaces.",
+      "Open Draw turns canvas wireframes into semantic structure and frontend markup.",
     );
-    expect(html).toContain(
-      "Open Draw bridges the gap between visual design and frontend development",
-    );
-    expect(html).toContain("Try Open Draw");
+    expect(html).toContain("Try OpenDraw");
   });
 });
 
@@ -83,19 +79,17 @@ describe("LandingFeatures", () => {
       />,
     );
 
-    expect(html).toContain("One Design, Many Possibilities");
-    expect(html).toContain("What if you could change the entire visual identity");
+    expect(html).toContain("Same structure. Different design languages.");
     expect(html).toContain("Minimal");
     expect(html).toContain("Clean, elegant and distraction-free.");
-    expect(html).toContain("Brutalist");
-    expect(html).toContain("Bold, expressive and unconventional.");
     expect(html).toContain("Glass");
     expect(html).toContain("Modern, translucent and layered.");
     expect(html).toContain("Editorial");
     expect(html).toContain("Typography-driven and expressive.");
-    expect(html).toContain("Retro");
-    expect(html).toContain("Nostalgic with a contemporary twist.");
-    expect(html).toContain("Why redesign when you can reimagine?");
+    expect(html).toContain("Brutalist");
+    expect(html).toContain("Bold, expressive and unconventional.");
+    expect(html).toContain("Soft");
+    expect(html).toContain("Warm, tactile and approachable.");
   });
 });
 
@@ -112,13 +106,17 @@ describe("LandingPillars", () => {
       "Open Draw explores what happens when visual creativity meets semantic structure and code generation.",
     );
     expect(html).toContain("01 —");
-    expect(html).toContain("Visual Design");
+    expect(html).toContain("Draw on a real canvas");
+    expect(html).toContain("Build layouts with shapes, hierarchy, and structure.");
     expect(html).toContain("02 —");
-    expect(html).toContain("Semantic Intelligence");
+    expect(html).toContain("Tag components with meaning");
+    expect(html).toContain("Mark what each element is—button, nav, form, screen.");
     expect(html).toContain("03 —");
-    expect(html).toContain("Code Generation");
+    expect(html).toContain("Export structured markup");
+    expect(html).toContain("Turn the document into specs and frontend-ready output.");
     expect(html).toContain("04 —");
-    expect(html).toContain("Design Exploration");
+    expect(html).toContain("Swap styles without redrawing");
+    expect(html).toContain("Explore visual languages on the same underlying structure.");
   });
 });
 
@@ -128,10 +126,9 @@ describe("LandingClosingCta", () => {
     const onLaunch = vi.fn();
     const html = renderToString(<LandingClosingCta theme={theme} onLaunch={onLaunch} />);
 
-    expect(html).toContain(
-      "Your ideas deserve more than a mockup. Start drawing. Give your ideas meaning. Bring them to life.",
-    );
-    expect(html).toContain("Launch App");
+    expect(html).toContain("Start drawing. Add meaning. Ship the interface.");
+    expect(html).toContain("Open Draw is the canvas between visual design and working markup.");
+    expect(html).toContain("Try OpenDraw");
   });
 });
 

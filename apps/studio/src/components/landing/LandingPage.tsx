@@ -102,7 +102,7 @@ export function LandingPage({
               minHeight: "36px",
             }}
           >
-            Launch App
+            Try OpenDraw
           </button>
         </div>
       </header>

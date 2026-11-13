@@ -23,10 +23,7 @@ export function LandingHero({ theme, onLaunch }: LandingHeroProps): React.JSX.El
         gap: "28px",
       }}
     >
-      {/* Kicker / Banner Badge (s-7a03) */}
-      <div style={theme.badge}>From ideas to interfaces. Without limits.</div>
-
-      {/* Main Statement Headline (s-7a04) */}
+      {/* Main Statement Headline (s-7a14) */}
       <h1
         id="hero-heading"
         style={{
@@ -40,25 +37,24 @@ export function LandingHero({ theme, onLaunch }: LandingHeroProps): React.JSX.El
           maxWidth: "820px",
         }}
       >
-        Design your ideas visually, give them meaning, and transform them into working interfaces.
+        Design interfaces visually. Add meaning. Ship code
       </h1>
 
-      {/* Subhead / Bridge text (s-7a05) */}
+      {/* Subhead / Bridge text (s-7a12) */}
       <p
         style={{
           fontFamily: theme.bodyFont,
           color: theme.textSecondary,
-          fontSize: "clamp(16px, 2vw, 19px)",
+          fontSize: "clamp(16px, 2vw, 20px)",
           lineHeight: 1.6,
           maxWidth: "680px",
           margin: 0,
         }}
       >
-        Open Draw bridges the gap between visual design and frontend development — helping you move
-        from a blank canvas to real, usable code.
+        Open Draw turns canvas wireframes into semantic structure and frontend markup.
       </p>
 
-      {/* Primary CTA (s-7a06) */}
+      {/* Primary CTA (s-7a13) */}
       <div style={{ paddingTop: "12px" }}>
         <button
           type="button"
@@ -76,7 +72,7 @@ export function LandingHero({ theme, onLaunch }: LandingHeroProps): React.JSX.El
             boxSizing: "border-box",
           }}
         >
-          Try Open Draw
+          Try OpenDraw
         </button>
       </div>
     </section>

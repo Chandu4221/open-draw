@@ -5,6 +5,7 @@ export const LANDING_DESIGN_STYLES = {
   brutalist: "brutalist",
   glass: "glass",
   editorial: "editorial",
+  soft: "soft",
   retro: "retro",
 } as const;
 

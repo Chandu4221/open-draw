@@ -46,9 +46,9 @@ describe("useStudioDraft", () => {
 
   it("loads default sample component document when localStorage has no draft", () => {
     const doc = loadInitialDocument();
-    expect(Object.keys(doc.shapes)).toHaveLength(6);
-    expect(doc.shapes["s-7a01" as ShapeId]?.label).toBe("Profile Card");
-    expect(doc.shapes["s-7a03" as ShapeId]?.content).toBe("John Doe");
+    expect(Object.keys(doc.shapes)).toHaveLength(34);
+    expect(doc.shapes["s-7a07" as ShapeId]?.label).toBe("OpenDraw Studio Landing Page");
+    expect(doc.shapes["s-7a0a" as ShapeId]?.content).toBe("Open Draw");
   });
 
   it("loads and parses existing valid draft from localStorage", () => {
@@ -63,8 +63,8 @@ describe("useStudioDraft", () => {
   it("recovers gracefully to default sample document if localStorage draft is corrupted", () => {
     store[DRAFT_STORAGE_KEY] = "{ corrupted json ";
     const loaded = loadInitialDocument();
-    expect(Object.keys(loaded.shapes)).toHaveLength(6);
-    expect(loaded.shapes["s-7a01" as ShapeId]?.label).toBe("Profile Card");
+    expect(Object.keys(loaded.shapes)).toHaveLength(34);
+    expect(loaded.shapes["s-7a07" as ShapeId]?.label).toBe("OpenDraw Studio Landing Page");
   });
 
   it("persists document to localStorage when shapes exist", () => {
