@@ -17,6 +17,8 @@ describe("LandingPage", () => {
     const html = renderToString(<LandingPage onLaunch={onLaunch} />);
 
     expect(html).toContain('data-landing-style="minimal"');
+    expect(html).toContain("OpenDraw Studio");
+    expect(html).not.toContain("v0.");
     expect(html).toContain("Design interfaces visually. Add meaning. Ship code");
     expect(html).toContain(
       "Open Draw turns canvas wireframes into semantic structure and frontend markup.",

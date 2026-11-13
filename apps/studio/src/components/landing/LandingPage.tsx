@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { CANVAS_VERSION } from "@open-draw/canvas";
 import {
   LANDING_DESIGN_STYLES,
   LANDING_THEMES,
@@ -80,9 +79,8 @@ export function LandingPage({
               color: theme.textPrimary,
             }}
           >
-            OpenDraw
+            OpenDraw Studio
           </span>
-          <span style={theme.badge}>v{CANVAS_VERSION}</span>
         </div>
 
         {/* Global Style Switcher in Header */}
