@@ -192,6 +192,168 @@ describe("TreeOutline", () => {
     expect(html).toContain("Mobile Login Screen");
     expect(html).toContain("All Screens");
   });
+
+  it("renders pure CSS guide rails, chevrons, and semantic category dots", () => {
+    const rootShape: Shape = {
+      id: parseShapeId("root-screen"),
+      parentId: ROOT_ID,
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 0, y: 0, width: 360, height: 800 },
+      label: "Home Screen",
+      meta: { order: {}, platform: "androidNative" },
+    };
+
+    const containerSection: Shape = {
+      id: parseShapeId("section-1"),
+      parentId: parseShapeId("root-screen"),
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 10, y: 10, width: 340, height: 200 },
+      label: "Tasks Container",
+      meta: { order: {}, semantic: { id: "section", platform: "androidNative" } },
+    };
+
+    const contentItem: Shape = {
+      id: parseShapeId("text-heading"),
+      parentId: parseShapeId("section-1"),
+      kind: SHAPE_KINDS.text,
+      boundingBox: { x: 20, y: 20, width: 200, height: 32 },
+      label: "Title Heading",
+      content: "Title",
+      meta: { order: {}, semantic: { id: "heading", platform: "androidNative" } },
+    };
+
+    const interactiveItem: Shape = {
+      id: parseShapeId("btn-action"),
+      parentId: parseShapeId("section-1"),
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 20, y: 60, width: 100, height: 40 },
+      label: "Submit Button",
+      meta: { order: {}, semantic: { id: "button", platform: "androidNative" } },
+    };
+
+    const untaggedItem: Shape = {
+      id: parseShapeId("rect-box"),
+      parentId: parseShapeId("section-1"),
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 20, y: 110, width: 100, height: 40 },
+      meta: { order: {} },
+    };
+
+    const treeNodes: SemanticTreeNode[] = [
+      {
+        shape: rootShape,
+        depth: 0,
+        displayName: "Home Screen",
+        semanticType: "Screen",
+      },
+      {
+        shape: containerSection,
+        depth: 1,
+        displayName: "Tasks Container",
+        semantic: {
+          id: parseSemanticId("section"),
+          displayName: "Section",
+          definition: {
+            id: parseSemanticId("section"),
+            displayName: "Section",
+            category: "layout",
+          },
+        },
+      },
+      {
+        shape: contentItem,
+        depth: 2,
+        displayName: "Title Heading",
+        semantic: {
+          id: parseSemanticId("heading"),
+          displayName: "Heading",
+          definition: {
+            id: parseSemanticId("heading"),
+            displayName: "Heading",
+            category: "content",
+          },
+        },
+      },
+      {
+        shape: interactiveItem,
+        depth: 2,
+        displayName: "Submit Button",
+        semantic: {
+          id: parseSemanticId("button"),
+          displayName: "Button",
+          definition: {
+            id: parseSemanticId("button"),
+            displayName: "Button",
+            category: "interactive",
+          },
+        },
+      },
+      {
+        shape: untaggedItem,
+        depth: 2,
+        displayName: "Rectangle",
+      },
+    ];
+
+    const html = renderToString(
+      <TreeOutline treeNodes={treeNodes} selectedShapeId={null} selectShape={vi.fn()} />,
+    );
+
+    // Root (depth 0) and container section (depth 1 with children) render chevrons
+    expect(html).toContain('class="od-tree-chevron"');
+
+    // Leaf items do not render chevron spacers (no empty whitespace)
+    expect(html).not.toContain("od-tree-chevron-spacer");
+
+    // Indented items render guide rails with computed width
+    expect(html).toContain('class="od-tree-guide" style="width:14px"');
+    expect(html).toContain('class="od-tree-guide" style="width:28px"');
+
+    // Semantic dots render category modifier classes
+    expect(html).toContain("od-tree-dot--container");
+    expect(html).toContain("od-tree-dot--content");
+    expect(html).toContain("od-tree-dot--interactive");
+    expect(html).toContain("od-tree-dot--primitive");
+  });
+
+  it("renders od-tree-item--hovered class when hoveredShapeId matches an unselected item", () => {
+    const rootShape: Shape = {
+      id: parseShapeId("root-screen"),
+      parentId: ROOT_ID,
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 0, y: 0, width: 360, height: 800 },
+      label: "Home Screen",
+      meta: { order: {} },
+    };
+
+    const treeNodes: SemanticTreeNode[] = [
+      {
+        shape: rootShape,
+        depth: 0,
+        displayName: "Home Screen",
+      },
+    ];
+
+    const htmlHovered = renderToString(
+      <TreeOutline
+        treeNodes={treeNodes}
+        selectedShapeId={null}
+        selectShape={vi.fn()}
+        hoveredShapeId={rootShape.id}
+      />,
+    );
+    expect(htmlHovered).toContain("od-tree-item--hovered");
+
+    const htmlSelected = renderToString(
+      <TreeOutline
+        treeNodes={treeNodes}
+        selectedShapeId={rootShape.id}
+        selectShape={vi.fn()}
+        hoveredShapeId={rootShape.id}
+      />,
+    );
+    expect(htmlSelected).not.toContain("od-tree-item--hovered");
+  });
 });
 
 describe("ContainerInspector role synchronization (R-004, R-016, R-023, R-024)", () => {

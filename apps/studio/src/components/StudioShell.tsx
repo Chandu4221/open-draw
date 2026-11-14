@@ -17,6 +17,7 @@ import {
 } from "@open-draw/canvas";
 import { useToast } from "@open-draw/ui";
 import { computeSemanticChipOverlays } from "../canvas-overlays";
+import { useCanvasHover } from "../use-canvas-hover";
 import { useRootChipVisibility } from "../use-root-chip-visibility";
 import { StudioLayout } from "../templates/StudioLayout";
 import { Sidebar } from "./Sidebar";
@@ -54,6 +55,10 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
     interceptPointerDown,
     syncVisibleChipRoots,
   } = useRootChipVisibility({ initialDoc, editorRef });
+  const { hoveredShapeId, hoveredShapeIdRef, setHoveredShapeId } = useCanvasHover({
+    editor,
+    editorRef,
+  });
 
   const subscribeDoc = useCallback(
     (onStoreChange: () => void) => {
@@ -119,6 +124,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           selectedIds: ctx.selectedIds,
           zoom: ctx.zoom,
           visibleChipRootIds: ctx.canvas.getVisibleChipRootIds(),
+          hoveredShapeId: hoveredShapeIdRef.current,
         }),
       interceptPointerDown,
     });
@@ -145,7 +151,7 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
       editorRef.current = null;
       setEditor(null);
     };
-  }, [initialDoc, initialRootIds, interceptPointerDown]);
+  }, [initialDoc, initialRootIds, interceptPointerDown, hoveredShapeIdRef]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -303,6 +309,8 @@ export function StudioShell({ onBackToLanding }: StudioShellProps): React.JSX.El
           selectShape={selectShape}
           showChildChips={selectedShapeId ? visibleChipRoots.has(selectedShapeId) : false}
           handleToggleChildChips={handleToggleChildChips}
+          hoveredShapeId={hoveredShapeId}
+          onHoverShape={setHoveredShapeId}
           onClose={() => setShowSidebar(false)}
         />
       }

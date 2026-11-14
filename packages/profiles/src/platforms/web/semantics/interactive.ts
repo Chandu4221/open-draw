@@ -39,12 +39,6 @@ export const INTERACTIVE_SEMANTICS: Readonly<Record<string, SemanticDefinition>>
     category: SEMANTIC_CATEGORIES.interactive,
     scope: "component",
   }),
-  fab: Object.freeze({
-    id: parseSemanticId("fab"),
-    displayName: "Floating Action Button",
-    category: SEMANTIC_CATEGORIES.interactive,
-    scope: "component",
-  }),
   link: Object.freeze({
     id: parseSemanticId("link"),
     displayName: "Link",

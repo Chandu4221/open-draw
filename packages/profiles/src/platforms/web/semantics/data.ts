@@ -32,22 +32,4 @@ export const DATA_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Obje
     category: SEMANTIC_CATEGORIES.data,
     scope: "component",
   }),
-  "metric-card": Object.freeze({
-    id: parseSemanticId("metric-card"),
-    displayName: "Metric Card",
-    category: SEMANTIC_CATEGORIES.data,
-    scope: "component",
-  }),
-  "filter-bar": Object.freeze({
-    id: parseSemanticId("filter-bar"),
-    displayName: "Filter Bar",
-    category: SEMANTIC_CATEGORIES.data,
-    scope: "component",
-  }),
-  "kanban-board": Object.freeze({
-    id: parseSemanticId("kanban-board"),
-    displayName: "Kanban Board",
-    category: SEMANTIC_CATEGORIES.data,
-    scope: "section",
-  }),
 });

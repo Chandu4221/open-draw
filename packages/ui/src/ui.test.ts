@@ -152,10 +152,14 @@ describe("accessibility and design tokens", () => {
     const lightDangerSoft = parseToken(rootBlock, "--od-danger-soft");
     const lightSuccess = parseToken(rootBlock, "--od-success");
 
+    const lightTreeGuide = parseToken(rootBlock, "--od-tree-guide");
+
     expect(contrast(lightText, lightSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(lightTextSecondary, lightSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(lightTextTertiary, lightSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(lightTextTertiary, lightBg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(lightTreeGuide, lightSurface)).toBeGreaterThanOrEqual(3.0);
+    expect(contrast(lightTreeGuide, lightBg)).toBeGreaterThanOrEqual(3.0);
     expect(contrast(lightDanger, lightSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(lightDanger, lightDangerSoft)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(lightSuccess, lightSurface)).toBeGreaterThanOrEqual(4.5);
@@ -167,6 +171,7 @@ describe("accessibility and design tokens", () => {
     const darkText = parseToken(darkBlock, "--od-text");
     const darkTextSecondary = parseToken(darkBlock, "--od-text-secondary");
     const darkTextTertiary = parseToken(darkBlock, "--od-text-tertiary");
+    const darkTreeGuide = parseToken(darkBlock, "--od-tree-guide");
     const darkDanger = parseToken(darkBlock, "--od-danger");
     const darkDangerSoft = parseToken(darkBlock, "--od-danger-soft");
     const darkSuccess = parseToken(darkBlock, "--od-success");
@@ -175,6 +180,8 @@ describe("accessibility and design tokens", () => {
     expect(contrast(darkTextSecondary, darkSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(darkTextTertiary, darkSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(darkTextTertiary, darkBg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(darkTreeGuide, darkSurface)).toBeGreaterThanOrEqual(3.0);
+    expect(contrast(darkTreeGuide, darkBg)).toBeGreaterThanOrEqual(3.0);
     expect(contrast(darkDanger, darkSurface)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(darkDanger, darkDangerSoft)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(darkSuccess, darkSurface)).toBeGreaterThanOrEqual(4.5);

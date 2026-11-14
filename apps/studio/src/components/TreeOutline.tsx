@@ -8,6 +8,29 @@ import { resolveShapeSemanticType, type walkSemanticTree } from "@open-draw/sema
 import { OdBadge } from "@open-draw/ui";
 
 type TreeNodes = ReturnType<typeof walkSemanticTree>;
+type TreeNode = TreeNodes[number];
+
+function determineDotCategory(
+  node: TreeNode,
+): "conflict" | "container" | "interactive" | "content" | "primitive" {
+  if (node.conflict !== undefined) {
+    return "conflict";
+  }
+  if (isRootId(node.shape.parentId)) {
+    return "container";
+  }
+  const category = node.semantic?.definition?.category;
+  if (category === "layout") {
+    return "container";
+  }
+  if (category === "interactive" || category === "forms" || category === "navigation") {
+    return "interactive";
+  }
+  if (category === "content" || category === "feedback") {
+    return "content";
+  }
+  return "primitive";
+}
 
 export interface TreeOutlineProps {
   readonly treeNodes: TreeNodes;
@@ -17,6 +40,8 @@ export interface TreeOutlineProps {
   readonly isScopedToRoot?: boolean | undefined;
   readonly activeRootTitle?: string | undefined;
   readonly onClearScope?: (() => void) | undefined;
+  readonly hoveredShapeId?: ShapeId | null | undefined;
+  readonly onHoverShape?: ((id: ShapeId | null) => void) | undefined;
 }
 
 export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
@@ -28,6 +53,8 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
     isScopedToRoot,
     activeRootTitle,
     onClearScope,
+    hoveredShapeId,
+    onHoverShape,
   } = props;
 
   return (
@@ -114,8 +141,9 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
             <span>No layers</span>
           </div>
         ) : (
-          treeNodes.map((node) => {
+          treeNodes.map((node, index) => {
             const isSelected = node.shape.id === selectedShapeId;
+            const isHovered = !isSelected && node.shape.id === hoveredShapeId;
             const itemName =
               node.shape.label && node.shape.label.trim().length > 0
                 ? node.shape.label
@@ -124,6 +152,11 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
               node.semanticType ??
               node.semantic?.displayName ??
               (isRootId(node.shape.parentId) ? resolveShapeSemanticType(node.shape) : undefined);
+            const nextNode = treeNodes[index + 1];
+            const isContainer =
+              isRootId(node.shape.parentId) ||
+              (nextNode !== undefined && nextNode.depth > node.depth);
+            const dotCategory = determineDotCategory(node);
 
             return (
               <div
@@ -132,13 +165,13 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                 tabIndex={0}
                 aria-pressed={isSelected}
                 aria-label={`Select layer ${itemName}`}
-                className="od-tree-item"
+                className={`od-tree-item${isHovered ? " od-tree-item--hovered" : ""}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: "var(--od-8)",
-                  paddingLeft: `calc(${node.depth} * var(--od-12) + var(--od-4))`,
+                  paddingLeft: "var(--od-4)",
                   paddingTop: "var(--od-2)",
                   paddingBottom: "var(--od-2)",
                   paddingRight: "var(--od-4)",
@@ -146,6 +179,8 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                   color: isSelected ? "var(--od-accent)" : "var(--od-text)",
                 }}
                 onClick={() => selectShape(node.shape.id)}
+                onPointerEnter={() => onHoverShape?.(node.shape.id)}
+                onPointerLeave={() => onHoverShape?.(null)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -153,17 +188,18 @@ export function TreeOutline(props: TreeOutlineProps): React.JSX.Element {
                   }
                 }}
               >
-                <span
-                  style={{
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  {itemName}
-                </span>
+                <div className="od-tree-item__left">
+                  {node.depth > 0 && (
+                    <span
+                      className="od-tree-guide"
+                      style={{ width: `${node.depth * 14}px` }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isContainer && <span className="od-tree-chevron" aria-hidden="true" />}
+                  <span className={`od-tree-dot od-tree-dot--${dotCategory}`} aria-hidden="true" />
+                  <span className="od-tree-item__label">{itemName}</span>
+                </div>
                 <div
                   style={{
                     display: "flex",

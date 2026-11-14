@@ -149,6 +149,15 @@
   overflow: hidden;
   box-sizing: border-box;
 }
+.od-segmented--full {
+  display: flex;
+  width: 100%;
+}
+.od-segmented--full .od-segmented__item {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--od-4);
+}
 .od-segmented__item {
   display: inline-flex;
   align-items: center;
@@ -419,6 +428,117 @@
 .od-tree-item:focus-visible {
   outline: var(--od-focus-ring) solid var(--od-accent);
   outline-offset: -1px;
+}
+.od-tree-item:hover:not([aria-pressed="true"]),
+.od-tree-item--hovered:not([aria-pressed="true"]) {
+  background-color: var(--od-bg);
+  outline: 1px dashed var(--od-tree-guide);
+  outline-offset: -1px;
+}
+
+.od-tree-item__left {
+  display: flex;
+  align-items: center;
+  gap: var(--od-4);
+  min-width: 0;
+  flex: 1;
+}
+
+.od-tree-item__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tree Guide Rails */
+.od-tree-guide {
+  display: inline-block;
+  position: relative;
+  align-self: stretch;
+  flex-shrink: 0;
+  background-image: linear-gradient(
+    to right,
+    transparent 6px,
+    var(--od-tree-guide) 6px,
+    var(--od-tree-guide) 7px,
+    transparent 7px
+  );
+  background-size: 14px 100%;
+  background-repeat: repeat-x;
+}
+.od-tree-guide::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 7px;
+  height: 1px;
+  background-color: var(--od-tree-guide);
+}
+
+/* Tree Chevron */
+.od-tree-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+.od-tree-chevron::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-right: 1.5px solid var(--od-text-secondary);
+  border-bottom: 1.5px solid var(--od-text-secondary);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  position: relative;
+  z-index: 1;
+}
+.od-tree-chevron::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  bottom: calc(var(--od-2) * -1);
+  width: 1px;
+  background-color: var(--od-tree-guide);
+  transform: translateX(-50%);
+}
+.od-tree-chevron--collapsed::before {
+  transform: rotate(-45deg);
+}
+.od-tree-chevron--collapsed::after {
+  display: none;
+}
+
+/* Tree Semantic Category Dot */
+.od-tree-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--od-radius-full);
+  flex-shrink: 0;
+}
+.od-tree-dot--interactive {
+  background-color: #0ea5e9;
+}
+.od-tree-dot--content {
+  background-color: var(--od-success);
+}
+.od-tree-dot--container {
+  background-color: #8b5cf6;
+}
+.od-tree-dot--conflict {
+  background-color: #f59e0b;
+}
+.od-tree-dot--primitive {
+  background-color: var(--od-border-strong);
 }
 
 /* Canvas background */

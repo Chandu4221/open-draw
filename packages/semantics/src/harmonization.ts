@@ -48,7 +48,7 @@ export const HARMONIZED_CONCEPTS: Readonly<
     ios: "alert",
   }),
   switch: Object.freeze({
-    web: "toggle-switch",
+    web: "checkbox",
     androidNative: "switch",
     flutter: "switch",
     ios: "switch",
@@ -65,6 +65,41 @@ export const HARMONIZED_CONCEPTS: Readonly<
     flutter: "search-bar",
     ios: "search-bar",
   }),
+  heading: Object.freeze({
+    web: "heading",
+    androidNative: "heading",
+    flutter: "heading",
+    ios: "heading",
+  }),
+  text: Object.freeze({
+    web: "text",
+    androidNative: "text",
+    flutter: "text",
+    ios: "text",
+  }),
+  image: Object.freeze({
+    web: "image",
+    androidNative: "image",
+    flutter: "image",
+    ios: "image",
+  }),
+  icon: Object.freeze({
+    web: "icon",
+    androidNative: "icon",
+    flutter: "icon",
+    ios: "icon",
+  }),
+  avatar: Object.freeze({
+    web: "avatar",
+    androidNative: "avatar",
+    flutter: "avatar",
+  }),
+  badge: Object.freeze({
+    web: "badge",
+    androidNative: "badge",
+    flutter: "badge",
+    ios: "badge",
+  }),
 });
 
 function normalizePlatform(platform: PlatformId | string): PlatformId {
@@ -79,6 +114,9 @@ function normalizeSemanticId(platform: PlatformId, semanticId: string): string {
       semanticId === "text-button")
   ) {
     return "button";
+  }
+  if (platform === "web" && semanticId === "toggle-switch") {
+    return "checkbox";
   }
   return semanticId;
 }

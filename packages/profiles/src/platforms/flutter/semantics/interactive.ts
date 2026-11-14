@@ -27,24 +27,6 @@ export const FLUTTER_INTERACTIVE_SEMANTICS: Readonly<Record<string, SemanticDefi
         }),
       ]),
     }),
-    "elevated-button": Object.freeze({
-      id: parseSemanticId("elevated-button"),
-      displayName: "ElevatedButton",
-      category: SEMANTIC_CATEGORIES.interactive,
-      scope: "component",
-    }),
-    "outlined-button": Object.freeze({
-      id: parseSemanticId("outlined-button"),
-      displayName: "OutlinedButton",
-      category: SEMANTIC_CATEGORIES.interactive,
-      scope: "component",
-    }),
-    "text-button": Object.freeze({
-      id: parseSemanticId("text-button"),
-      displayName: "TextButton",
-      category: SEMANTIC_CATEGORIES.interactive,
-      scope: "component",
-    }),
     "icon-button": Object.freeze({
       id: parseSemanticId("icon-button"),
       displayName: "IconButton",

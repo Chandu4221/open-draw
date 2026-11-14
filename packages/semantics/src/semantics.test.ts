@@ -571,12 +571,15 @@ describe("cross-platform concept harmonization (Idea 2, Issues D1, D2, D3)", () 
       suggestPlatformEquivalent(PLATFORMS.flutter, PLATFORMS.androidNative, "elevated-button"),
     ).toBe("button");
 
-    // Switch equivalents (Web toggle-switch <-> Android switch)
+    // Switch equivalents (Web checkbox / toggle-switch <-> Android switch)
+    expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.androidNative, "checkbox")).toBe(
+      "switch",
+    );
     expect(suggestPlatformEquivalent(PLATFORMS.web, PLATFORMS.androidNative, "toggle-switch")).toBe(
       "switch",
     );
     expect(suggestPlatformEquivalent(PLATFORMS.androidNative, PLATFORMS.web, "switch")).toBe(
-      "toggle-switch",
+      "checkbox",
     );
 
     // Search equivalents
@@ -602,10 +605,22 @@ describe("cross-platform concept harmonization (Idea 2, Issues D1, D2, D3)", () 
     expect(equivalents.ios).toBe("text-field");
 
     const switchEquivalents = getPlatformEquivalents("switch", PLATFORMS.androidNative);
-    expect(switchEquivalents.web).toBe("toggle-switch");
+    expect(switchEquivalents.web).toBe("checkbox");
     expect(switchEquivalents.androidNative).toBe("switch");
     expect(switchEquivalents.flutter).toBe("switch");
     expect(switchEquivalents.ios).toBe("switch");
+
+    const headingEquivalents = getPlatformEquivalents("heading", PLATFORMS.web);
+    expect(headingEquivalents.web).toBe("heading");
+    expect(headingEquivalents.androidNative).toBe("heading");
+    expect(headingEquivalents.flutter).toBe("heading");
+    expect(headingEquivalents.ios).toBe("heading");
+
+    const imageEquivalents = getPlatformEquivalents("image", PLATFORMS.androidNative);
+    expect(imageEquivalents.web).toBe("image");
+    expect(imageEquivalents.androidNative).toBe("image");
+    expect(imageEquivalents.flutter).toBe("image");
+    expect(imageEquivalents.ios).toBe("image");
   });
 });
 
@@ -665,11 +680,11 @@ describe("pluginData metadata resolution (canvas 0.9.2 plugin architecture)", ()
 
   describe("isSectionScopedSemantic and isComponentScopedSemantic", () => {
     it("correctly identifies section vs component scope for Web semantics", () => {
-      expect(isSectionScopedSemantic({ platform: "web", id: "hero" })).toBe(true);
+      expect(isSectionScopedSemantic({ platform: "web", id: "header" })).toBe(true);
       expect(isSectionScopedSemantic({ platform: "web", id: "navbar" })).toBe(true);
       expect(isSectionScopedSemantic({ platform: "web", id: "button" })).toBe(false);
       expect(isComponentScopedSemantic({ platform: "web", id: "button" })).toBe(true);
-      expect(isComponentScopedSemantic({ platform: "web", id: "hero" })).toBe(false);
+      expect(isComponentScopedSemantic({ platform: "web", id: "header" })).toBe(false);
     });
 
     it("correctly identifies section vs component scope for iOS semantics", () => {
@@ -702,10 +717,10 @@ describe("pluginData metadata resolution (canvas 0.9.2 plugin architecture)", ()
 
     it("correctly identifies containers (including card and layout categories) vs leaf components across platforms", () => {
       // Web
-      expect(isContainerSemantic({ platform: "web", id: "hero" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "header" })).toBe(true);
       expect(isContainerSemantic({ platform: "web", id: "navbar" })).toBe(true);
       expect(isContainerSemantic({ platform: "web", id: "card" })).toBe(true);
-      expect(isContainerSemantic({ platform: "web", id: "container" })).toBe(true);
+      expect(isContainerSemantic({ platform: "web", id: "grid" })).toBe(true);
       expect(isContainerSemantic({ platform: "web", id: "form" })).toBe(true);
       expect(isContainerSemantic({ platform: "web", id: "table" })).toBe(true);
       expect(isContainerSemantic({ platform: "web", id: "button" })).toBe(false);

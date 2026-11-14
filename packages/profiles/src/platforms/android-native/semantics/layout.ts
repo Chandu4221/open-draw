@@ -7,12 +7,6 @@ import {
 
 export const ANDROID_LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze(
   {
-    scaffold: Object.freeze({
-      id: parseSemanticId("scaffold"),
-      displayName: "Scaffold",
-      category: SEMANTIC_CATEGORIES.layout,
-      scope: "section",
-    }),
     card: Object.freeze({
       id: parseSemanticId("card"),
       displayName: "Material Card",
@@ -80,24 +74,6 @@ export const ANDROID_LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinitio
           control: CONTROL_TYPES.toggle,
           label: "Drag Handle",
           defaultValue: true,
-        }),
-      ]),
-    }),
-    "side-sheet": Object.freeze({
-      id: parseSemanticId("side-sheet"),
-      displayName: "Side Sheet",
-      category: SEMANTIC_CATEGORIES.layout,
-      scope: "section",
-      properties: Object.freeze([
-        Object.freeze({
-          id: "variant",
-          control: CONTROL_TYPES.select,
-          label: "Variant",
-          defaultValue: "modal",
-          options: Object.freeze([
-            Object.freeze({ value: "modal", label: "Modal" }),
-            Object.freeze({ value: "standard", label: "Standard" }),
-          ]),
         }),
       ]),
     }),

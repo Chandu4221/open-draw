@@ -70,7 +70,7 @@ describe("normalizeStudioDocument", () => {
         meta: {
           order: {},
           pluginData: {
-            [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" },
+            [PLUGIN_SEMANTICS]: { platform: "web", id: "section" },
           },
         },
       },

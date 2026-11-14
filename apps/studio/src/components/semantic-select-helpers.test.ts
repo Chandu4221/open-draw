@@ -41,19 +41,19 @@ describe("semantic select helpers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("groups active profile semantics across all 10 categories", () => {
+  it("groups active profile semantics across all active categories", () => {
     const groups = groupProfileSemantics(WEB_PROFILE);
-    expect(groups.length).toBe(10);
+    expect(groups.length).toBe(7);
 
-    const marketingGroup = groups.find((g) => g.category === "marketing");
-    expect(marketingGroup).toBeDefined();
-    expect(marketingGroup?.items.some((i) => i.id === "hero")).toBe(true);
-    expect(marketingGroup?.items.some((i) => i.id === "pricing")).toBe(true);
+    const contentGroup = groups.find((g) => g.category === "content");
+    expect(contentGroup).toBeDefined();
+    expect(contentGroup?.items.some((i) => i.id === "heading")).toBe(true);
+    expect(contentGroup?.items.some((i) => i.id === "text")).toBe(true);
+    expect(contentGroup?.items.some((i) => i.id === "image")).toBe(true);
 
     const layoutGroup = groups.find((g) => g.category === "layout");
     expect(layoutGroup).toBeDefined();
     expect(layoutGroup?.items.some((i) => i.id === "section")).toBe(true);
-    expect(layoutGroup?.items.some((i) => i.id === "app-shell")).toBe(true);
   });
 
   it("returns empty array when active profile is undefined", () => {
@@ -61,13 +61,13 @@ describe("semantic select helpers", () => {
   });
 
   it("manages and resolves recently selected semantic tags", () => {
-    saveRecentSemanticTag("hero");
-    saveRecentSemanticTag("pricing");
+    saveRecentSemanticTag("heading");
+    saveRecentSemanticTag("button");
     const recent = loadRecentSemanticTags();
     const resolved = resolveRecentDefinitions(WEB_PROFILE, recent);
 
-    expect(resolved.some((d) => d.id === "hero")).toBe(true);
-    expect(resolved.some((d) => d.id === "pricing")).toBe(true);
+    expect(resolved.some((d) => d.id === "heading")).toBe(true);
+    expect(resolved.some((d) => d.id === "button")).toBe(true);
   });
 
   it("scopes recent tags by profile to prevent cross-profile tag leakage", () => {
@@ -79,12 +79,19 @@ describe("semantic select helpers", () => {
     expect(loadRecentSemanticTags("flutter")).toEqual([]);
   });
 
-  it("groups android native profile semantics into 5 Material 3 categories with none in other", () => {
+  it("groups android native profile semantics into 6 Material 3 categories with none in other", () => {
     const groups = groupProfileSemantics(ANDROID_NATIVE_PROFILE);
-    expect(groups.length).toBe(5);
+    expect(groups.length).toBe(6);
 
     const categories = groups.map((g) => g.category);
-    expect(categories).toEqual(["layout", "navigation", "interactive", "forms", "feedback"]);
+    expect(categories).toEqual([
+      "layout",
+      "navigation",
+      "interactive",
+      "forms",
+      "content",
+      "feedback",
+    ]);
 
     const otherGroup = groups.find((g) => g.category === "other");
     expect(otherGroup).toBeUndefined();
@@ -94,16 +101,26 @@ describe("semantic select helpers", () => {
     expect(navGroup?.items.some((i) => i.id === "navigation-rail")).toBe(true);
 
     const layoutGroup = groups.find((g) => g.category === "layout");
-    expect(layoutGroup?.items.some((i) => i.id === "scaffold")).toBe(true);
     expect(layoutGroup?.items.some((i) => i.id === "card")).toBe(true);
+
+    const contentGroup = groups.find((g) => g.category === "content");
+    expect(contentGroup?.items.some((i) => i.id === "heading")).toBe(true);
+    expect(contentGroup?.items.some((i) => i.id === "text")).toBe(true);
   });
 
-  it("groups flutter profile semantics into 5 UI categories with none in other", () => {
+  it("groups flutter profile semantics into 6 UI categories with none in other", () => {
     const groups = groupProfileSemantics(FLUTTER_PROFILE);
-    expect(groups.length).toBe(5);
+    expect(groups.length).toBe(6);
 
     const categories = groups.map((g) => g.category);
-    expect(categories).toEqual(["layout", "navigation", "interactive", "forms", "feedback"]);
+    expect(categories).toEqual([
+      "layout",
+      "navigation",
+      "interactive",
+      "forms",
+      "content",
+      "feedback",
+    ]);
 
     const otherGroup = groups.find((g) => g.category === "other");
     expect(otherGroup).toBeUndefined();
@@ -113,14 +130,25 @@ describe("semantic select helpers", () => {
 
     const interactiveGroup = groups.find((g) => g.category === "interactive");
     expect(interactiveGroup?.items.some((i) => i.id === "button")).toBe(true);
+
+    const contentGroup = groups.find((g) => g.category === "content");
+    expect(contentGroup?.items.some((i) => i.id === "heading")).toBe(true);
+    expect(contentGroup?.items.some((i) => i.id === "text")).toBe(true);
   });
 
-  it("groups ios profile semantics into 5 Apple HIG categories with none in other", () => {
+  it("groups ios profile semantics into 6 Apple HIG categories with none in other", () => {
     const groups = groupProfileSemantics(IOS_PROFILE);
-    expect(groups.length).toBe(5);
+    expect(groups.length).toBe(6);
 
     const categories = groups.map((g) => g.category);
-    expect(categories).toEqual(["layout", "navigation", "interactive", "forms", "feedback"]);
+    expect(categories).toEqual([
+      "layout",
+      "navigation",
+      "interactive",
+      "forms",
+      "content",
+      "feedback",
+    ]);
 
     const otherGroup = groups.find((g) => g.category === "other");
     expect(otherGroup).toBeUndefined();
@@ -130,6 +158,10 @@ describe("semantic select helpers", () => {
 
     const interactiveGroup = groups.find((g) => g.category === "interactive");
     expect(interactiveGroup?.items.some((i) => i.id === "button")).toBe(true);
+
+    const contentGroup = groups.find((g) => g.category === "content");
+    expect(contentGroup?.items.some((i) => i.id === "heading")).toBe(true);
+    expect(contentGroup?.items.some((i) => i.id === "text")).toBe(true);
   });
 
   it("filters semantic definitions by query matching display name and id", () => {

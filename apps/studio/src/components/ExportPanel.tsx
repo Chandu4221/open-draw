@@ -109,10 +109,29 @@ export function ExportPanel(props: ExportPanelProps): React.JSX.Element {
           .replace(/(^-|-$)/g, "") || "export";
 
       if (!isMultiContainerSelected && selectedFormatsCount === 1) {
-        if (selectedFormats.markdown) exportDocumentMarkdown(doc, { rootId });
-        else if (selectedFormats.json) exportDocumentJson(doc, undefined, rootId);
-        else if (selectedFormats.svg) exportDocumentSvg(doc, { rootId, includeAnnotations: true });
-        else if (selectedFormats.png) exportDocumentPng(doc, { rootId, includeAnnotations: true });
+        const singleFilename = targetRootShape ? baseSlug : undefined;
+        if (selectedFormats.markdown)
+          exportDocumentMarkdown(doc, {
+            rootId,
+            filename: singleFilename ? `${singleFilename}.md` : undefined,
+          });
+        else if (selectedFormats.json)
+          exportDocumentJson(doc, {
+            rootId,
+            filename: singleFilename ? `${singleFilename}.json` : undefined,
+          });
+        else if (selectedFormats.svg)
+          exportDocumentSvg(doc, {
+            rootId,
+            includeAnnotations: true,
+            filename: singleFilename ? `${singleFilename}.svg` : undefined,
+          });
+        else if (selectedFormats.png)
+          exportDocumentPng(doc, {
+            rootId,
+            includeAnnotations: true,
+            filename: singleFilename ? `${singleFilename}.png` : undefined,
+          });
         return;
       }
 
