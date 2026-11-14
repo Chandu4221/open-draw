@@ -20,6 +20,7 @@ export interface SvgExportOptions {
   readonly includeLegend?: boolean | undefined;
   readonly includeAnnotations?: boolean | undefined;
   readonly rootId?: ShapeId | undefined;
+  readonly filename?: string | undefined;
 }
 
 export interface MarkdownExportIoOptions {
@@ -27,6 +28,13 @@ export interface MarkdownExportIoOptions {
   readonly includeLegend?: boolean | undefined;
   readonly includeAsciiSketch?: boolean | undefined;
   readonly rootId?: ShapeId | undefined;
+  readonly filename?: string | undefined;
+}
+
+export interface JsonExportIoOptions {
+  readonly creativityLevel?: CreativityLevel | undefined;
+  readonly rootId?: ShapeId | undefined;
+  readonly filename?: string | undefined;
 }
 
 export function extractDocumentLegendItems(doc: Document): readonly LegendItem[] {
@@ -83,13 +91,20 @@ function safeRevokeUrl(url: string): void {
   }
 }
 
-export function exportDocumentSvg(doc: Document, options?: SvgExportOptions | boolean): void {
+export function exportDocumentSvg(
+  doc: Document,
+  options?: SvgExportOptions | boolean,
+  filename?: string,
+): void {
   const svg = generateExportSvg(doc, options);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "opendraw-diagram.svg";
+  a.download =
+    (typeof options === "object" ? options.filename : undefined) ||
+    filename ||
+    "opendraw-diagram.svg";
   a.click();
   safeRevokeUrl(url);
 }
@@ -98,6 +113,7 @@ export function exportDocumentPng(
   doc: Document,
   options?: SvgExportOptions | boolean,
   onError?: (err: unknown) => void,
+  filename?: string,
 ): void {
   const svg = generateExportSvg(doc, options);
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
@@ -126,7 +142,10 @@ export function exportDocumentPng(
         const pngUrl = URL.createObjectURL(pngBlob);
         const a = document.createElement("a");
         a.href = pngUrl;
-        a.download = "opendraw-diagram.png";
+        a.download =
+          (typeof options === "object" ? options.filename : undefined) ||
+          filename ||
+          "opendraw-diagram.png";
         a.click();
         safeRevokeUrl(pngUrl);
       }, "image/png");
@@ -239,15 +258,27 @@ export function saveDocumentJson(doc: Document): void {
 
 export function exportDocumentJson(
   doc: Document,
-  creativityLevel?: CreativityLevel,
+  creativityLevelOrOptions?: CreativityLevel | JsonExportIoOptions,
   rootId?: ShapeId | undefined,
+  filename?: string,
 ): void {
-  const json = generateExportJson(doc, creativityLevel, rootId);
+  const isOptionsObj =
+    typeof creativityLevelOrOptions === "object" && creativityLevelOrOptions !== null;
+  const creativityLevel = isOptionsObj
+    ? creativityLevelOrOptions.creativityLevel
+    : (creativityLevelOrOptions as CreativityLevel | undefined);
+  const targetRootId = isOptionsObj ? creativityLevelOrOptions.rootId : rootId;
+  const resolvedFilename =
+    (isOptionsObj ? creativityLevelOrOptions.filename : undefined) ||
+    filename ||
+    "opendraw-document.json";
+
+  const json = generateExportJson(doc, creativityLevel, targetRootId);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "opendraw-document.json";
+  a.download = resolvedFilename;
   a.click();
   safeRevokeUrl(url);
 }
@@ -255,13 +286,18 @@ export function exportDocumentJson(
 export function exportDocumentMarkdown(
   doc: Document,
   options?: MarkdownExportIoOptions | CreativityLevel,
+  filename?: string,
 ): void {
   const md = generateExportMarkdown(doc, options);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "opendraw-document.md";
+  const resolvedFilename =
+    (typeof options === "object" ? options.filename : undefined) ||
+    filename ||
+    "opendraw-document.md";
+  a.download = resolvedFilename;
   a.click();
   safeRevokeUrl(url);
 }

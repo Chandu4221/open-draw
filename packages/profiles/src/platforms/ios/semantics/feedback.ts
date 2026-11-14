@@ -12,12 +12,6 @@ export const IOS_FEEDBACK_SEMANTICS: Readonly<Record<string, SemanticDefinition>
     category: SEMANTIC_CATEGORIES.feedback,
     scope: "section",
   }),
-  "action-sheet": Object.freeze({
-    id: parseSemanticId("action-sheet"),
-    displayName: "Action Sheet",
-    category: SEMANTIC_CATEGORIES.feedback,
-    scope: "section",
-  }),
   "progress-indicator": Object.freeze({
     id: parseSemanticId("progress-indicator"),
     displayName: "Activity Indicator",

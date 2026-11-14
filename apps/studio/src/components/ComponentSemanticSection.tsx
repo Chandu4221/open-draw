@@ -7,7 +7,7 @@ import {
   type SemanticConflict,
   type SemanticDefinition,
 } from "@open-draw/semantics";
-import { OdField } from "@open-draw/ui";
+import { OdField, OdSegmentedControl } from "@open-draw/ui";
 import { SemanticSelect } from "./SemanticSelect";
 import { ShapeStyleInspector } from "./ShapeStyleInspector";
 
@@ -160,21 +160,37 @@ export function ComponentSemanticSection(props: ComponentSemanticSectionProps): 
                     <span style={{ fontSize: "var(--od-text-sm)" }}>Enabled</span>
                   </label>
                 )}
-                {schema.control === CONTROL_TYPES.select && (
-                  <select
-                    id={propInputId}
-                    className="od-select"
-                    style={{ width: "100%" }}
-                    value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}
-                    onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
-                  >
-                    {schema.options?.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                {schema.control === CONTROL_TYPES.select &&
+                  (schema.id === "level" && schema.options && schema.options.length > 0 ? (
+                    <OdSegmentedControl
+                      items={schema.options.map((opt) => ({
+                        id: opt.value,
+                        label: opt.label.includes("/")
+                          ? (opt.label.split("/")[0] ?? opt.label).trim()
+                          : opt.label,
+                        tooltip: opt.label,
+                        "aria-label": opt.label,
+                      }))}
+                      value={val !== undefined ? String(val) : (schema.options[0]?.value ?? "")}
+                      aria-label={schema.label}
+                      className="od-segmented--full"
+                      onSelect={(id) => handlePropertyChange(schema.id, id)}
+                    />
+                  ) : (
+                    <select
+                      id={propInputId}
+                      className="od-select"
+                      style={{ width: "100%" }}
+                      value={val !== undefined ? String(val) : (schema.options?.[0]?.value ?? "")}
+                      onChange={(e) => handlePropertyChange(schema.id, e.target.value)}
+                    >
+                      {schema.options?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  ))}
               </OdField>
             );
           })}

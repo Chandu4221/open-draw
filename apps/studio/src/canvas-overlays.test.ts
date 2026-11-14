@@ -4,6 +4,7 @@ import { createDocument, type Shape } from "@open-draw/canvas";
 import {
   computeSemanticChipOverlays,
   getRootContainerIds,
+  hoverOutlineOverlayToSvg,
   pickAnyRootChip,
 } from "./canvas-overlays";
 
@@ -101,6 +102,81 @@ describe("computeSemanticChipOverlays", () => {
 
     expect(overlays).toHaveLength(2);
     expect(overlays.some((o) => o.includes("Button"))).toBe(true);
+  });
+
+  it("renders hover outline when hoveredShapeId is provided and shape is not selected", () => {
+    const rootShape: Shape = {
+      id: "root-1" as ShapeId,
+      parentId: ROOT_ID,
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 0, y: 0, width: 500, height: 500 },
+      meta: { order: {} },
+    };
+    const doc = createDocument([rootShape]);
+
+    const overlays = computeSemanticChipOverlays({
+      doc,
+      selectedIds: [],
+      zoom: 1,
+      hoveredShapeId: rootShape.id,
+    });
+
+    expect(overlays.some((o) => o.includes("od-canvas-hover-outline"))).toBe(true);
+  });
+
+  it("does not render hover outline when hovered shape is already selected", () => {
+    const rootShape: Shape = {
+      id: "root-1" as ShapeId,
+      parentId: ROOT_ID,
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 0, y: 0, width: 500, height: 500 },
+      meta: { order: {} },
+    };
+    const doc = createDocument([rootShape]);
+
+    const overlays = computeSemanticChipOverlays({
+      doc,
+      selectedIds: [rootShape.id],
+      zoom: 1,
+      hoveredShapeId: rootShape.id,
+    });
+
+    expect(overlays.some((o) => o.includes("od-canvas-hover-outline"))).toBe(false);
+  });
+
+  it("does not render hover outline when hoveredShapeId does not exist in document", () => {
+    const rootShape: Shape = {
+      id: "root-1" as ShapeId,
+      parentId: ROOT_ID,
+      kind: SHAPE_KINDS.rect,
+      boundingBox: { x: 0, y: 0, width: 500, height: 500 },
+      meta: { order: {} },
+    };
+    const doc = createDocument([rootShape]);
+
+    const overlays = computeSemanticChipOverlays({
+      doc,
+      selectedIds: [],
+      zoom: 1,
+      hoveredShapeId: "non-existent" as ShapeId,
+    });
+
+    expect(overlays.some((o) => o.includes("od-canvas-hover-outline"))).toBe(false);
+  });
+});
+
+describe("hoverOutlineOverlayToSvg", () => {
+  it("generates an SVG rect with sky blue stroke and counter-scales stroke and dashes with zoom", () => {
+    const box = { x: 10, y: 20, width: 100, height: 50 };
+    const svg1 = hoverOutlineOverlayToSvg(box, 1);
+    expect(svg1).toContain('stroke="#0ea5e9"');
+    expect(svg1).toContain('stroke-width="1.5"');
+    expect(svg1).toContain('stroke-dasharray="4.0 2.0"');
+    expect(svg1).toContain('pointer-events="none"');
+
+    const svg2 = hoverOutlineOverlayToSvg(box, 2);
+    expect(svg2).toContain('stroke-width="0.8"');
+    expect(svg2).toContain('stroke-dasharray="2.0 1.0"');
   });
 });
 

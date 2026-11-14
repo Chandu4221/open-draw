@@ -28,6 +28,39 @@ export const CONTENT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = O
       }),
     ]),
   }),
+  text: Object.freeze({
+    id: parseSemanticId("text"),
+    displayName: "Text / Paragraph",
+    category: SEMANTIC_CATEGORIES.content,
+    scope: "component",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "variant",
+        control: CONTROL_TYPES.select,
+        label: "Variant",
+        defaultValue: "body",
+        options: Object.freeze([
+          Object.freeze({ value: "body", label: "Body" }),
+          Object.freeze({ value: "lead", label: "Lead" }),
+          Object.freeze({ value: "caption", label: "Caption" }),
+        ]),
+      }),
+    ]),
+  }),
+  icon: Object.freeze({
+    id: parseSemanticId("icon"),
+    displayName: "Icon",
+    category: SEMANTIC_CATEGORIES.content,
+    scope: "component",
+    properties: Object.freeze([
+      Object.freeze({
+        id: "name",
+        control: CONTROL_TYPES.text,
+        label: "Icon Name",
+        defaultValue: "",
+      }),
+    ]),
+  }),
   card: Object.freeze({
     id: parseSemanticId("card"),
     displayName: "Card",

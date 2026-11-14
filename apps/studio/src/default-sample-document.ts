@@ -144,9 +144,9 @@ export function createDefaultSampleDocument(): Document {
       meta: {
         order: {},
         isContainer: true,
-        semantic: { id: "hero", platform: "web" },
+        semantic: { id: "section", platform: "web" },
         pluginData: {
-          [PLUGIN_SEMANTICS]: { id: "hero", platform: "web" },
+          [PLUGIN_SEMANTICS]: { id: "section", platform: "web" },
         },
       },
     },

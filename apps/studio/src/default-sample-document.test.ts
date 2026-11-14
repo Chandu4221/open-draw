@@ -52,7 +52,7 @@ describe("createDefaultSampleDocument", () => {
     }
 
     expect(getShapeSemantic(doc.shapes["s-7a09" as ShapeId]!)?.id).toBe("navbar");
-    expect(getShapeSemantic(doc.shapes["s-7a11" as ShapeId]!)?.id).toBe("hero");
+    expect(getShapeSemantic(doc.shapes["s-7a11" as ShapeId]!)?.id).toBe("section");
     expect(getShapeSemantic(doc.shapes["s-7a15" as ShapeId]!)?.id).toBe("section");
     expect(getShapeSemantic(doc.shapes["s-7a29" as ShapeId]!)?.id).toBe("section");
     expect(getShapeSemantic(doc.shapes["s-7a37" as ShapeId]!)?.id).toBe("section");

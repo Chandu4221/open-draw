@@ -371,7 +371,7 @@ describe("StudioShell editor event synchronization", () => {
         parentId: landingPage.id,
         meta: {
           order: {},
-          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" } },
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "section" } },
         },
       },
     );
@@ -423,7 +423,7 @@ describe("StudioShell editor event synchronization", () => {
         parentId: landingPage.id,
         meta: {
           order: {},
-          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" } },
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "section" } },
         },
       },
     );
@@ -493,7 +493,7 @@ describe("StudioShell editor event synchronization", () => {
         parentId: landingPage.id,
         meta: {
           order: {},
-          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "hero" } },
+          pluginData: { [PLUGIN_SEMANTICS]: { platform: "web", id: "section" } },
         },
       },
     );

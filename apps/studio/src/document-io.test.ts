@@ -225,6 +225,60 @@ describe("document-io", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-md-url");
   });
 
+  it("triggers Markdown export download with custom filename when options.filename is provided (R-042)", () => {
+    const doc = createDocument();
+    const mockAnchor = { href: "", download: "", click: vi.fn() };
+    const createObjectURL = vi.fn().mockReturnValue("blob:mock-md-url");
+    const revokeObjectURL = vi.fn();
+
+    // @ts-expect-error mock DOM
+    globalThis.document = {
+      createElement: vi.fn().mockReturnValue(mockAnchor),
+    };
+    // @ts-expect-error mock URL
+    globalThis.URL = { createObjectURL, revokeObjectURL };
+
+    exportDocumentMarkdown(doc, { filename: "profile-card.md" });
+
+    expect(mockAnchor.download).toBe("profile-card.md");
+  });
+
+  it("triggers JSON export download with custom filename when options.filename is provided (R-042)", () => {
+    const doc = createDocument();
+    const mockAnchor = { href: "", download: "", click: vi.fn() };
+    const createObjectURL = vi.fn().mockReturnValue("blob:mock-json-url");
+    const revokeObjectURL = vi.fn();
+
+    // @ts-expect-error mock DOM
+    globalThis.document = {
+      createElement: vi.fn().mockReturnValue(mockAnchor),
+    };
+    // @ts-expect-error mock URL
+    globalThis.URL = { createObjectURL, revokeObjectURL };
+
+    exportDocumentJson(doc, { filename: "profile-card.json" });
+
+    expect(mockAnchor.download).toBe("profile-card.json");
+  });
+
+  it("triggers SVG export download with custom filename when options.filename is provided (R-042)", () => {
+    const doc = createDocument();
+    const mockAnchor = { href: "", download: "", click: vi.fn() };
+    const createObjectURL = vi.fn().mockReturnValue("blob:mock-svg-url");
+    const revokeObjectURL = vi.fn();
+
+    // @ts-expect-error mock DOM
+    globalThis.document = {
+      createElement: vi.fn().mockReturnValue(mockAnchor),
+    };
+    // @ts-expect-error mock URL
+    globalThis.URL = { createObjectURL, revokeObjectURL };
+
+    exportDocumentSvg(doc, { filename: "profile-card.svg" });
+
+    expect(mockAnchor.download).toBe("profile-card.svg");
+  });
+
   it("prompts file picker and parses loaded document JSON", async () => {
     const validDoc = createDocument();
     const jsonText = JSON.stringify(validDoc);

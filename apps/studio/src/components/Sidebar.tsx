@@ -18,6 +18,8 @@ export interface SidebarProps extends InspectorProps {
   readonly onClearScope?: (() => void) | undefined;
   readonly doc?: Document | undefined;
   readonly onOpenAdvancedModal?: (() => void) | undefined;
+  readonly hoveredShapeId?: ShapeId | null | undefined;
+  readonly onHoverShape?: ((id: ShapeId | null) => void) | undefined;
 }
 
 export function Sidebar(props: SidebarProps): React.JSX.Element {
@@ -31,6 +33,8 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
     onClearScope,
     doc,
     onOpenAdvancedModal,
+    hoveredShapeId,
+    onHoverShape,
     ...inspectorProps
   } = props;
   const [propertiesExpanded, setPropertiesExpanded] = useState(true);
@@ -131,6 +135,8 @@ export function Sidebar(props: SidebarProps): React.JSX.Element {
             isScopedToRoot={isScopedToRoot}
             activeRootTitle={activeRootTitle}
             onClearScope={onClearScope}
+            hoveredShapeId={hoveredShapeId}
+            onHoverShape={onHoverShape}
           />
         </div>
       </div>

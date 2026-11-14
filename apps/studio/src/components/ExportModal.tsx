@@ -153,19 +153,29 @@ function ExportModalDialog(props: ExportModalProps): React.JSX.Element {
     }
   };
 
+  const targetRoot = targetRootId ? doc.shapes[targetRootId] : undefined;
+  const targetPlatform = targetRootId ? resolveRootPlatform(doc, targetRootId) : undefined;
+  const targetProfile = targetPlatform ? PLATFORM_PROFILES[targetPlatform] : undefined;
+  const targetTitle = targetRoot ? resolveShapeDisplayName(targetRoot, targetProfile) : undefined;
+  const baseSlug = targetTitle
+    ? targetTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "export"
+    : undefined;
+
   const handleDownload = () => {
     try {
-      if (format === "markdown") exportDocumentMarkdown(doc, mdOptions);
-      else if (format === "json") exportDocumentJson(doc, creativityLevel, targetRootId);
-      else if (format === "svg") exportDocumentSvg(doc, svgOptions);
-      else exportDocumentPng(doc, svgOptions);
+      const filename = baseSlug ? `${baseSlug}.${format}` : undefined;
+      if (format === "markdown") exportDocumentMarkdown(doc, { ...mdOptions, filename });
+      else if (format === "json")
+        exportDocumentJson(doc, { creativityLevel, rootId: targetRootId, filename });
+      else if (format === "svg") exportDocumentSvg(doc, { ...svgOptions, filename });
+      else exportDocumentPng(doc, { ...svgOptions, filename });
     } catch {
       // Export failure handled gracefully
     }
   };
-
-  const targetRoot = targetRootId ? doc.shapes[targetRootId] : undefined;
-  const targetPlatform = targetRootId ? resolveRootPlatform(doc, targetRootId) : undefined;
 
   return (
     <div

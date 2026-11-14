@@ -89,12 +89,6 @@ export const FORMS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Obj
     category: SEMANTIC_CATEGORIES.forms,
     scope: "component",
   }),
-  "toggle-switch": Object.freeze({
-    id: parseSemanticId("toggle-switch"),
-    displayName: "Toggle Switch",
-    category: SEMANTIC_CATEGORIES.forms,
-    scope: "component",
-  }),
   slider: Object.freeze({
     id: parseSemanticId("slider"),
     displayName: "Slider",
@@ -116,12 +110,6 @@ export const FORMS_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Obj
   "search-bar": Object.freeze({
     id: parseSemanticId("search-bar"),
     displayName: "Search Bar",
-    category: SEMANTIC_CATEGORIES.forms,
-    scope: "component",
-  }),
-  combobox: Object.freeze({
-    id: parseSemanticId("combobox"),
-    displayName: "Combobox",
     category: SEMANTIC_CATEGORIES.forms,
     scope: "component",
   }),

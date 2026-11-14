@@ -21,6 +21,7 @@
   --od-surface-raised: #ffffff;
   --od-border: #e4e4e7;
   --od-border-strong: #c4c4c8;
+  --od-tree-guide: #71717a; /* 4.82:1 contrast against #ffffff (WCAG 2.1 AA compliant) */
   --od-text: #09090b;
   --od-text-secondary: #52525b;
   --od-text-tertiary: #6c6c76;
@@ -80,6 +81,7 @@
     --od-surface-raised: #1c1c1f;
     --od-border: #27272a;
     --od-border-strong: #3f3f46;
+    --od-tree-guide: #a1a1aa; /* 7.20:1 contrast against #141416 (WCAG 2.1 AAA compliant) */
     --od-text: #fafafa;
     --od-text-secondary: #a1a1aa;
     --od-text-tertiary: #a1a1aa;
@@ -106,6 +108,7 @@
   --od-surface-raised: #1c1c1f;
   --od-border: #27272a;
   --od-border-strong: #3f3f46;
+  --od-tree-guide: #a1a1aa; /* 7.20:1 contrast against #141416 (WCAG 2.1 AAA compliant) */
   --od-text: #fafafa;
   --od-text-secondary: #a1a1aa;
   --od-text-tertiary: #a1a1aa;

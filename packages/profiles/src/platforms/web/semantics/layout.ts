@@ -6,12 +6,6 @@ import {
 } from "../../../semantic-contract";
 
 export const LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Object.freeze({
-  "app-shell": Object.freeze({
-    id: parseSemanticId("app-shell"),
-    displayName: "App Shell",
-    category: SEMANTIC_CATEGORIES.layout,
-    scope: "section",
-  }),
   header: Object.freeze({
     id: parseSemanticId("header"),
     displayName: "Header",
@@ -63,12 +57,6 @@ export const LAYOUT_SEMANTICS: Readonly<Record<string, SemanticDefinition>> = Ob
   section: Object.freeze({
     id: parseSemanticId("section"),
     displayName: "Section",
-    category: SEMANTIC_CATEGORIES.layout,
-    scope: "section",
-  }),
-  container: Object.freeze({
-    id: parseSemanticId("container"),
-    displayName: "Container",
     category: SEMANTIC_CATEGORIES.layout,
     scope: "section",
   }),

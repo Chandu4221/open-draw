@@ -1,4 +1,4 @@
-import { isRootId, type Point, type ShapeId } from "@open-draw/canvas";
+import { isRootId, type BoundingBox, type Point, type ShapeId } from "@open-draw/canvas";
 import { absoluteBoundingBox, ancestorsOf, type Document, type Shape } from "@open-draw/canvas";
 import { chipOverlayToSvg, pickChip } from "./chip-overlay";
 import { PLATFORM_PROFILES, type PlatformId } from "@open-draw/profiles";
@@ -14,6 +14,18 @@ export interface SemanticChipOverlayOptions {
   readonly selectedIds: readonly ShapeId[];
   readonly zoom: number;
   readonly visibleChipRootIds?: ReadonlySet<ShapeId> | undefined;
+  readonly hoveredShapeId?: ShapeId | null | undefined;
+}
+
+export function hoverOutlineOverlayToSvg(box: BoundingBox, zoom: number): string {
+  const safeZoom = Math.max(0.01, zoom);
+  const scale = 1 / safeZoom;
+  const strokeWidth = (1.5 * scale).toFixed(1);
+  const dash1 = (4 * scale).toFixed(1);
+  const dash2 = (2 * scale).toFixed(1);
+  const rx = (4 * scale).toFixed(1);
+
+  return `<rect class="od-canvas-hover-outline" x="${box.x.toFixed(1)}" y="${box.y.toFixed(1)}" width="${box.width.toFixed(1)}" height="${box.height.toFixed(1)}" fill="none" stroke="#0ea5e9" stroke-width="${strokeWidth}" stroke-dasharray="${dash1} ${dash2}" rx="${rx}" pointer-events="none" />`;
 }
 
 function getRootChipLabel(shape: Shape): string {
@@ -32,8 +44,17 @@ export function getRootContainerIds(doc: Document): readonly ShapeId[] {
 }
 
 export function computeSemanticChipOverlays(options: SemanticChipOverlayOptions): string[] {
-  const { doc, selectedIds, zoom, visibleChipRootIds } = options;
+  const { doc, selectedIds, zoom, visibleChipRootIds, hoveredShapeId } = options;
   const overlays: string[] = [];
+
+  // Hover outline (Figma-style pre-selection focus, R-018, R-031)
+  if (hoveredShapeId && !selectedIds.includes(hoveredShapeId)) {
+    const hoveredShape = doc.shapes[hoveredShapeId];
+    if (hoveredShape !== undefined) {
+      const box = absoluteBoundingBox(doc, hoveredShape);
+      overlays.push(hoverOutlineOverlayToSvg(box, zoom));
+    }
+  }
 
   for (const shape of Object.values(doc.shapes)) {
     let chipLabel: string | undefined;
